@@ -119,13 +119,18 @@ export async function applyDebtCarryForward(client: PoolClient, orgId: string, p
           ? current.payment_status
           : "pending";
 
+  const holdReasonSql =
+    nextStatus === "hold"
+      ? `, hold_reason = COALESCE(hold_reason, 'system_debt_forgiven')`
+      : "";
+
   await client.query(
     `UPDATE driver_payouts
      SET net_driver_payout = $1,
          debt_amount = $2,
          debt_applied_amount = $3,
          remaining_debt_amount = $4,
-         payment_status = $5
+         payment_status = $5${holdReasonSql}
      WHERE id = $6::uuid AND organization_id = $7::uuid`,
     [payable, debtAmount, debtApplied, remainingDebtAmount, nextStatus, payoutId, orgId],
   );

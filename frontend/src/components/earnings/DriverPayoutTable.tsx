@@ -20,6 +20,7 @@ type DriverPayoutTableProps = {
   onPayNow: (id: string) => void | Promise<void>;
   onPaySelected: (ids: string[]) => void | Promise<void>;
   onOpenDebtActions?: (row: PayoutListItem) => void;
+  onOpenReleaseHold?: (row: PayoutListItem) => void;
 };
 
 const BADGE_BY_STATUS: Record<string, string> = {
@@ -170,6 +171,7 @@ export function DriverPayoutTable({
   onPayNow,
   onPaySelected,
   onOpenDebtActions,
+  onOpenReleaseHold,
 }: DriverPayoutTableProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [payConfirm, setPayConfirm] = useState<
@@ -381,6 +383,11 @@ export function DriverPayoutTable({
                       toNum(row.raw_net_amount) < 0 ||
                       toNum(row.remaining_debt_amount) > 0 ||
                       toNum(row.debt_amount) > 0);
+                  const canReleaseHold =
+                    onOpenReleaseHold &&
+                    row.payment_status === "hold" &&
+                    !row.subcontractor_id &&
+                    !row.subcontractor_payout_id;
                   return (
                     <Fragment key={row.id}>
                       <tr
@@ -501,6 +508,16 @@ export function DriverPayoutTable({
                                 Adjust debt
                               </button>
                             )}
+                            {canReleaseHold && (
+                              <button
+                                type="button"
+                                disabled={isPaying}
+                                onClick={() => onOpenReleaseHold?.(row)}
+                                className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                              >
+                                Release hold
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() =>
@@ -618,6 +635,14 @@ export function DriverPayoutTable({
                               <div>
                                 <p className="font-semibold text-slate-800">Payment status</p>
                                 <p>Status: {row.payment_status}</p>
+                                {row.hold_reason && <p>Hold reason: {row.hold_reason}</p>}
+                                {row.hold_released_at && (
+                                  <p>
+                                    Released: {row.hold_released_at.slice(0, 10)}
+                                    {row.hold_released_by_name ? ` by ${row.hold_released_by_name}` : ""}
+                                  </p>
+                                )}
+                                {row.hold_notes && <p>Release notes: {row.hold_notes}</p>}
                                 <p>Paid on: {row.payment_date?.slice(0, 10) ?? "—"}</p>
                                 <p>Payout ID: {row.id}</p>
                               </div>
@@ -654,6 +679,11 @@ export function DriverPayoutTable({
                   toNum(row.raw_net_amount) < 0 ||
                   toNum(row.remaining_debt_amount) > 0 ||
                   toNum(row.debt_amount) > 0);
+              const canReleaseHold =
+                onOpenReleaseHold &&
+                row.payment_status === "hold" &&
+                !row.subcontractor_id &&
+                !row.subcontractor_payout_id;
               return (
                 <div
                   key={row.id}
@@ -755,6 +785,16 @@ export function DriverPayoutTable({
                         className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
                       >
                         Adjust debt
+                      </button>
+                    )}
+                    {canReleaseHold && (
+                      <button
+                        type="button"
+                        disabled={isPaying}
+                        onClick={() => onOpenReleaseHold?.(row)}
+                        className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        Release hold
                       </button>
                     )}
                     <button
