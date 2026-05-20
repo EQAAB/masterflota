@@ -13,6 +13,7 @@ import {
 import type { PayoutListItem } from "../../api/earnings";
 import { DriverPayoutTable } from "../../components/earnings/DriverPayoutTable";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
+import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 
 function errMessage(e: unknown): string {
   if (axios.isAxiosError(e)) {
@@ -40,7 +41,9 @@ export function EarningsPayoutsPage() {
   const [error, setError] = useState<string | null>(null);
   const [payingRowId, setPayingRowId] = useState<string | null>(null);
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
+  const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
   const [debtActionMsg, setDebtActionMsg] = useState<string | null>(null);
+  const [releaseHoldMsg, setReleaseHoldMsg] = useState<string | null>(null);
   const [bulkDebtBusy, setBulkDebtBusy] = useState(false);
   const [showSubManaged, setShowSubManaged] = useState(false);
 
@@ -252,6 +255,14 @@ export function EarningsPayoutsPage() {
           </div>
         )}
 
+        {status === "hold" && (query.data?.total ?? 0) > 0 && (
+          <div className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <span className="font-semibold text-slate-900">{query.data?.total ?? 0}</span> payout
+            {(query.data?.total ?? 0) === 1 ? "" : "s"} on hold. Use <span className="font-medium">Release hold</span>{" "}
+            on a row to return it to the payment workflow.
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row flex-wrap gap-3 items-stretch lg:items-end">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
             <div>
@@ -353,7 +364,14 @@ export function EarningsPayoutsPage() {
             await bulkMut.mutateAsync(ids);
           }}
           onOpenDebtActions={(row) => setDebtModalRow(row)}
+          onOpenReleaseHold={(row) => setReleaseHoldRow(row)}
         />
+
+        {releaseHoldMsg && (
+          <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            {releaseHoldMsg}
+          </p>
+        )}
 
         <DebtActionsModal
           row={debtModalRow}
@@ -362,6 +380,16 @@ export function EarningsPayoutsPage() {
           onSuccess={() => {
             void queryClient.invalidateQueries({ queryKey: ["earnings"] });
             void debtSummaryQuery.refetch();
+          }}
+        />
+
+        <ReleaseHoldModal
+          row={releaseHoldRow}
+          open={releaseHoldRow != null}
+          onClose={() => setReleaseHoldRow(null)}
+          onSuccess={() => {
+            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
+            setReleaseHoldMsg("Hold released successfully.");
           }}
         />
 

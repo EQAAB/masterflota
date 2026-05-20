@@ -18,6 +18,7 @@
     "migrate:064": "node scripts/apply-migration-064.mjs",
     "migrate:065": "node scripts/apply-migration-065.mjs",
     "migrate:066": "node scripts/apply-migration-066.mjs",
+    "migrate:067": "node scripts/apply-migration-067.mjs",
     "audit:rentals": "node scripts/audit-rental-tables.mjs"
   },
   "keywords": [],

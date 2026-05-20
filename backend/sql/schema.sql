@@ -248,6 +248,10 @@ CREATE TABLE IF NOT EXISTS driver_payouts (
     net_driver_payout DECIMAL(10, 2),
     vehicle_rental_fee DECIMAL(12, 2) DEFAULT 0,
     payment_status VARCHAR(50) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'processing', 'approved', 'paid', 'failed', 'hold', 'debt')),
+    hold_reason VARCHAR(200),
+    hold_released_by UUID REFERENCES users(id),
+    hold_released_at TIMESTAMP,
+    hold_notes TEXT,
     payment_date DATE,
     payment_method VARCHAR(50),
     transaction_ref VARCHAR(100),
@@ -319,6 +323,9 @@ CREATE INDEX IF NOT EXISTS idx_earnings_records_import ON earnings_records(impor
 CREATE INDEX IF NOT EXISTS idx_driver_payouts_driver ON driver_payouts(driver_id);
 CREATE INDEX IF NOT EXISTS idx_driver_payouts_platform_id ON driver_payouts(platform_id);
 CREATE INDEX IF NOT EXISTS idx_driver_payouts_status ON driver_payouts(payment_status);
+CREATE INDEX IF NOT EXISTS idx_driver_payouts_hold
+    ON driver_payouts (organization_id, payment_status)
+    WHERE payment_status = 'hold';
 CREATE INDEX IF NOT EXISTS idx_driver_payouts_period ON driver_payouts(payment_period_start, payment_period_end);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_payouts_org_driver_period ON driver_payouts (organization_id, driver_id, payment_period_start, payment_period_end);
 

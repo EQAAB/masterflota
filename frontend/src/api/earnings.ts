@@ -74,6 +74,10 @@ export interface PayoutListItem {
   rent_entries?: PayoutRentEntry[] | null;
   payment_status: string;
   payment_date: string | null;
+  hold_reason?: string | null;
+  hold_released_at?: string | null;
+  hold_notes?: string | null;
+  hold_released_by_name?: string | null;
   total_gross_earnings: string | null;
   /** Period sum of base earnings (income), excluding tips. */
   income: string | null;
@@ -261,8 +265,31 @@ export function bulkUpdatePayouts(body: {
   paymentDate?: string;
   paymentMethod?: string;
   transactionRef?: string;
+  holdReason?: string;
 }) {
   return api.patch<BulkUpdatePayoutsResponse>("/earnings/payouts/bulk", body);
+}
+
+export type ReleaseHoldResponse = {
+  ok: boolean;
+  payoutId: string;
+  paymentStatus: string;
+  holdReleasedAt: string | null;
+  payout?: AdjustDebtPayoutSnapshot | null;
+};
+
+export function postReleasePayoutHold(payoutId: string, body?: { notes?: string }) {
+  return api.post<ReleaseHoldResponse>(
+    `/earnings/payouts/${encodeURIComponent(payoutId)}/release-hold`,
+    body ?? {},
+  );
+}
+
+export function postReleasePayoutHoldBulk(body: { ids: string[]; notes?: string }) {
+  return api.post<{ released: number; releasedIds: string[]; skipped: { id: string; message: string }[] }>(
+    "/earnings/payouts/release-hold/bulk",
+    body,
+  );
 }
 
 export function downloadEarningsReportCsv(params: {
