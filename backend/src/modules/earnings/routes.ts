@@ -24,6 +24,11 @@ import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
 import { readOrgGlovoCommissionBase, writeOrgGlovoCommissionBase } from "./orgImportSettings";
 import { refreshVehicleRentForPeriod } from "./refreshVehicleRentForPeriod";
+import {
+  computeStatusAfterReleaseHold,
+  holdReasonForAdjustDebt,
+  holdReasonForBulk,
+} from "./payoutHold";
 
 /** Platform net from row columns (matches netIncomeFromGrossAndTaxa in calculatePayout). Alias: er */
 const ER_NET_INCOME_SQL = `(
@@ -890,6 +895,8 @@ async function fetchEarningsReportRows(
               '[]'::json
             ) AS rent_entries,
             dp.payment_status, dp.payment_date::text,
+            dp.hold_reason, dp.hold_released_at::text, dp.hold_notes,
+            TRIM(CONCAT(COALESCE(hru.first_name, ''), ' ', COALESCE(hru.last_name, ''))) AS hold_released_by_name,
             dp.total_gross_earnings::text, dp.income::text, dp.tips::text,
             dp.total_platform_fees::text, dp.total_daily_cash::text, dp.account_opening_fee::text,
             dp.gross_income::text, dp.net_income::text,
@@ -898,6 +905,7 @@ async function fetchEarningsReportRows(
             d.first_name, d.last_name, d.phone, CONCAT(d.first_name, ' ', d.last_name) AS driver_name
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id
+     LEFT JOIN users hru ON hru.id = dp.hold_released_by
      WHERE ${whereSql}
      ORDER BY dp.payment_period_end DESC, dp.created_at DESC
      LIMIT $${nextParamIndex}`,
@@ -960,6 +968,8 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
     `SELECT dp.id::text, dp.driver_id::text, dp.platform_id,
             dp.payment_period_start::text, dp.payment_period_end::text,
             dp.net_driver_payout::text, dp.payment_status, dp.payment_date::text,
+            dp.hold_reason, dp.hold_released_at::text, dp.hold_notes,
+            TRIM(CONCAT(COALESCE(hru.first_name, ''), ' ', COALESCE(hru.last_name, ''))) AS hold_released_by_name,
             dp.raw_net_amount::text, dp.debt_amount::text, dp.debt_applied_amount::text, dp.remaining_debt_amount::text,
             dp.total_gross_earnings::text, dp.income::text, dp.tips::text, dp.total_platform_fees::text,
             dp.total_daily_cash::text, dp.account_opening_fee::text, dp.company_commission::text,
@@ -990,6 +1000,7 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id
      LEFT JOIN subcontractors s ON s.id = d.subcontractor_id AND s.organization_id = d.organization_id
+     LEFT JOIN users hru ON hru.id = dp.hold_released_by
      LEFT JOIN LATERAL (
        SELECT er.platform
        FROM earnings_records er
@@ -1207,6 +1218,7 @@ router.patch("/payouts/bulk", async (req, res) => {
     paymentDate?: string;
     paymentMethod?: string;
     transactionRef?: string;
+    holdReason?: string;
   };
   const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string") : [];
   if (!ids.length) return res.status(400).json({ message: "ids is required" });
@@ -1253,12 +1265,20 @@ router.patch("/payouts/bulk", async (req, res) => {
   try {
     await client.query("BEGIN");
 
+    const placingHold = paymentStatus === "hold";
+    const holdReason = placingHold ? holdReasonForBulk(body.holdReason) : null;
+
     const updateRes = await client.query<{ id: string }>(
       `UPDATE driver_payouts dp
        SET payment_status = $2::varchar(50),
            payment_date = CASE WHEN $7 THEN COALESCE($3::date, CURRENT_DATE) ELSE payment_date END,
            payment_method = COALESCE($4, payment_method),
-           transaction_ref = COALESCE($5, transaction_ref)
+           transaction_ref = COALESCE($5, transaction_ref),
+           hold_reason = CASE WHEN $9::boolean THEN $10 ELSE hold_reason END,
+           hold_released_by = CASE WHEN $9::boolean THEN NULL ELSE hold_released_by END,
+           hold_released_at = CASE WHEN $9::boolean THEN NULL ELSE hold_released_at END,
+           hold_notes = CASE WHEN $9::boolean THEN NULL ELSE hold_notes END,
+           updated_at = NOW()
        WHERE dp.organization_id = $1
          AND dp.id = ANY($6::uuid[])
          AND dp.subcontractor_payout_id IS NULL
@@ -1279,6 +1299,8 @@ router.patch("/payouts/bulk", async (req, res) => {
         ids,
         setPaidDate,
         blockPayableTransition,
+        placingHold,
+        holdReason,
       ],
     );
 
@@ -1453,13 +1475,20 @@ router.post("/payouts/:id/adjust-debt", async (req, res) => {
       [orgId, payoutId, delta, note, type, userId, oldRem, newRem, appliedAmount],
     );
 
+    const holdReason =
+      nextStatus === "hold" ? holdReasonForAdjustDebt(note ?? undefined) : null;
+
     await client.query(
       `UPDATE driver_payouts
        SET remaining_debt_amount = $1,
            payment_status = $2,
+           hold_reason = CASE WHEN $5::boolean THEN $6 ELSE hold_reason END,
+           hold_released_by = CASE WHEN $5::boolean THEN NULL ELSE hold_released_by END,
+           hold_released_at = CASE WHEN $5::boolean THEN NULL ELSE hold_released_at END,
+           hold_notes = CASE WHEN $5::boolean THEN NULL ELSE hold_notes END,
            updated_at = NOW()
        WHERE id = $3::uuid AND organization_id = $4::uuid`,
-      [newRem, nextStatus, payoutId, orgId],
+      [newRem, nextStatus, payoutId, orgId, nextStatus === "hold", holdReason],
     );
 
     await propagateDebtAfterManualEdit(client, orgId, row.driver_id, row.payment_period_end.slice(0, 10), row.id);
@@ -1486,6 +1515,154 @@ router.post("/payouts/:id/adjust-debt", async (req, res) => {
     // eslint-disable-next-line no-console
     console.error("adjust-debt error", err);
     return res.status(500).json({ message: "adjust-debt failed" });
+  } finally {
+    client.release();
+  }
+});
+
+async function releasePayoutHoldForRow(
+  client: PoolClient,
+  orgId: string,
+  userId: string,
+  payoutId: string,
+  holdNotes: string | null,
+): Promise<{ ok: true; nextStatus: string } | { ok: false; status: number; message: string }> {
+  const pr = await client.query<{
+    payment_status: string;
+    raw_net_amount: string | null;
+    remaining_debt_amount: string | null;
+    subcontractor_payout_id: string | null;
+    driver_subcontractor_id: string | null;
+  }>(
+    `SELECT dp.payment_status, dp.raw_net_amount::text, dp.remaining_debt_amount::text,
+            dp.subcontractor_payout_id::text, d.subcontractor_id::text AS driver_subcontractor_id
+     FROM driver_payouts dp
+     INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
+     WHERE dp.id = $1::uuid AND dp.organization_id = $2::uuid
+     FOR UPDATE OF dp`,
+    [payoutId, orgId],
+  );
+  const row = pr.rows[0];
+  if (!row) {
+    return { ok: false, status: 404, message: "Payout not found" };
+  }
+  if (row.subcontractor_payout_id || row.driver_subcontractor_id) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Sub-managed driver payouts must be released via subcontractor settlement.",
+    };
+  }
+
+  const statusResult = computeStatusAfterReleaseHold({
+    payment_status: row.payment_status,
+    raw_net_amount: row.raw_net_amount,
+    remaining_debt_amount: row.remaining_debt_amount,
+  });
+  if (!statusResult.ok) {
+    return { ok: false, status: 400, message: statusResult.message };
+  }
+
+  await client.query(
+    `UPDATE driver_payouts
+     SET payment_status = $1,
+         hold_released_by = $2::uuid,
+         hold_released_at = NOW(),
+         hold_notes = $3,
+         updated_at = NOW()
+     WHERE id = $4::uuid AND organization_id = $5::uuid`,
+    [statusResult.nextStatus, userId, holdNotes, payoutId, orgId],
+  );
+
+  return { ok: true, nextStatus: statusResult.nextStatus };
+}
+
+router.post("/payouts/release-hold/bulk", async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  const body = req.body as { ids?: unknown; notes?: unknown };
+  const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string" && UUID_RE.test(x)) : [];
+  if (!ids.length) return res.status(400).json({ message: "ids is required" });
+
+  const holdNotes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : null;
+
+  const client = await pool.connect();
+  const released: string[] = [];
+  const skipped: { id: string; message: string }[] = [];
+
+  try {
+    await client.query("BEGIN");
+    for (const id of ids) {
+      const result = await releasePayoutHoldForRow(client, orgId, userId, id, holdNotes);
+      if (result.ok) {
+        released.push(id);
+      } else {
+        skipped.push({ id, message: result.message });
+      }
+    }
+    await client.query("COMMIT");
+    return res.json({ released: released.length, releasedIds: released, skipped });
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    console.error("release-hold bulk error", err);
+    return res.status(500).json({ message: "Bulk release hold failed" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/payouts/:id/release-hold", async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  const payoutId = String(req.params.id ?? "");
+  if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
+
+  const body = req.body as { notes?: unknown };
+  const holdNotes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : null;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await releasePayoutHoldForRow(client, orgId, userId, payoutId, holdNotes);
+    if (!result.ok) {
+      await client.query("ROLLBACK");
+      return res.status(result.status).json({ message: result.message });
+    }
+
+    const payoutSnapshot = await selectPayoutDebtSnapshot(client, orgId, payoutId);
+    const releasedRes = await client.query<{ hold_released_at: string | null }>(
+      `SELECT hold_released_at::text FROM driver_payouts WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [payoutId, orgId],
+    );
+
+    await client.query("COMMIT");
+    return res.json({
+      ok: true,
+      payoutId,
+      paymentStatus: result.nextStatus,
+      holdReleasedAt: releasedRes.rows[0]?.hold_released_at ?? null,
+      payout: payoutSnapshot,
+    });
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    console.error("release-hold error", err);
+    return res.status(500).json({ message: "release-hold failed" });
   } finally {
     client.release();
   }
