@@ -67,6 +67,8 @@ export function SubcontractorSettlementDetailPage() {
           account_opening_fee: d.account_opening_fee,
           platform_fees: d.platform_fees,
           daily_cash: d.daily_cash,
+          custom_deductions: d.custom_deductions,
+          custom_additions: d.custom_additions,
           net: d.net,
         })),
       );
@@ -133,6 +135,8 @@ export function SubcontractorSettlementDetailPage() {
     account_opening_fee: sumDrivers(drivers, "account_opening_fee"),
     platform_fees: sumDrivers(drivers, "platform_fees"),
     daily_cash: sumDrivers(drivers, "daily_cash"),
+    custom_deductions: sumDrivers(drivers, "custom_deductions"),
+    custom_additions: sumDrivers(drivers, "custom_additions"),
     net: sumDrivers(drivers, "net"),
   };
 
@@ -231,6 +235,8 @@ export function SubcontractorSettlementDetailPage() {
             { label: "Acct. fee", value: formatCurrency(Number(totals.account_opening_fee)) },
             { label: "Platform fee", value: formatCurrency(Number(totals.platform_fees)) },
             { label: "Daily cash", value: formatCurrency(Number(totals.daily_cash)) },
+            { label: "Custom deductions", value: formatCurrency(Number(totals.custom_deductions)) },
+            { label: "Custom additions", value: formatCurrency(Number(totals.custom_additions)) },
             { label: "Payable", value: formatCurrency(Number(totals.payable)) },
           ].map((c) => (
             <div key={c.label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -257,6 +263,8 @@ export function SubcontractorSettlementDetailPage() {
                 <th className="px-3 py-2 text-right">Acct. fee</th>
                 <th className="px-3 py-2 text-right">Platform fee</th>
                 <th className="px-3 py-2 text-right">Daily cash</th>
+                <th className="px-3 py-2 text-right">Custom ded.</th>
+                <th className="px-3 py-2 text-right">Custom add.</th>
                 <th className="px-3 py-2 text-right">Net</th>
               </tr>
             </thead>
@@ -277,6 +285,12 @@ export function SubcontractorSettlementDetailPage() {
                   <td className="px-3 py-2 text-right tabular-nums">
                     {formatCurrency(Number(d.daily_cash))}
                   </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {formatCurrency(Number(d.custom_deductions))}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {formatCurrency(Number(d.custom_additions))}
+                  </td>
                   <td className="px-3 py-2 text-right tabular-nums font-medium">{formatCurrency(Number(d.net))}</td>
                 </tr>
               ))}
@@ -291,6 +305,8 @@ export function SubcontractorSettlementDetailPage() {
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.account_opening_fee)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.platform_fees)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.daily_cash)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.custom_deductions)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.custom_additions)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.net)}</td>
               </tr>
             </tfoot>

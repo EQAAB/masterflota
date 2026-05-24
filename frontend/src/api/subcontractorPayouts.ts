@@ -16,6 +16,8 @@ export interface SubcontractorPayoutListItem {
   total_account_opening_fee: string;
   total_platform_fees: string;
   total_daily_cash: string;
+  total_custom_deductions: string;
+  total_custom_additions: string;
   total_payable: string;
   amount_payable: string;
   payment_status: string;
@@ -65,6 +67,8 @@ export interface SubcontractorSettlementDetailDriver {
   account_opening_fee: string;
   platform_fees: string;
   daily_cash: string;
+  custom_deductions: string;
+  custom_additions: string;
   net: string;
 }
 
@@ -88,6 +92,8 @@ export interface SubcontractorSettlementDetail {
     account_opening_fee: string;
     platform_fees: string;
     daily_cash: string;
+    custom_deductions: string;
+    custom_additions: string;
     payable: string;
   };
   drivers: SubcontractorSettlementDetailDriver[];

@@ -389,6 +389,48 @@ export function adjustDebt(
   return postPayoutAdjustDebt(payoutId, body);
 }
 
+export type CustomFeeType = "deduction" | "addition";
+
+export interface DriverPayoutCustomFee {
+  id: string;
+  fee_name: string;
+  fee_type: CustomFeeType;
+  amount: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface DriverPayoutCustomFeesResponse {
+  items: DriverPayoutCustomFee[];
+  base_raw_net: string;
+  total_deductions: string;
+  total_additions: string;
+  raw_net_amount: string;
+  net_driver_payout: string;
+}
+
+export function getPayoutCustomFees(payoutId: string) {
+  return api.get<DriverPayoutCustomFeesResponse>(
+    `/earnings/payouts/${encodeURIComponent(payoutId)}/custom-fees`,
+  );
+}
+
+export function postPayoutCustomFee(
+  payoutId: string,
+  body: { fee_name: string; fee_type: CustomFeeType; amount: number; notes?: string },
+) {
+  return api.post<DriverPayoutCustomFeesResponse & { id?: string }>(
+    `/earnings/payouts/${encodeURIComponent(payoutId)}/custom-fees`,
+    body,
+  );
+}
+
+export function deletePayoutCustomFee(payoutId: string, adjustmentId: string) {
+  return api.delete<DriverPayoutCustomFeesResponse & { ok: boolean }>(
+    `/earnings/payouts/${encodeURIComponent(payoutId)}/custom-fees/${encodeURIComponent(adjustmentId)}`,
+  );
+}
+
 export function postDebtsBulkCarryForward(body?: { driverIds?: string[]; from?: string; to?: string }) {
   return api.post<{ ok: boolean; driversProcessed: number }>("/earnings/debts/bulk-carry-forward", body ?? {});
 }
@@ -451,6 +493,8 @@ export interface SubcontractorSettlementRow {
   total_account_opening_fee: string;
   total_platform_fees: string;
   total_daily_cash: string;
+  total_custom_deductions: string;
+  total_custom_additions: string;
   total_payable: string | null;
   amount_payable: string | null;
   payment_status: string | null;

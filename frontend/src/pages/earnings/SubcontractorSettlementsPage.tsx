@@ -152,6 +152,8 @@ export function SubcontractorSettlementsPage() {
                   <th className="px-3 py-2 text-right">Acct. fee</th>
                   <th className="px-3 py-2 text-right">Platform fee</th>
                   <th className="px-3 py-2 text-right">Daily cash</th>
+                  <th className="px-3 py-2 text-right">Custom ded.</th>
+                  <th className="px-3 py-2 text-right">Custom add.</th>
                   <th className="px-3 py-2 text-right">Payable</th>
                   <th className="px-3 py-2">Status</th>
                 </tr>
@@ -207,6 +209,12 @@ export function SubcontractorSettlementsPage() {
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {formatCurrency(Number(r.total_daily_cash ?? 0))}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {formatCurrency(Number(r.total_custom_deductions ?? 0))}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {formatCurrency(Number(r.total_custom_additions ?? 0))}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums font-semibold text-slate-900">
                         <span className="block">

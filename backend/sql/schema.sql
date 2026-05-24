@@ -355,6 +355,25 @@ CREATE INDEX IF NOT EXISTS idx_payout_adjustments_org_payout
 CREATE INDEX IF NOT EXISTS idx_payout_adjustments_org_created
     ON payout_adjustments (organization_id, created_at DESC);
 
+-- Custom operational fees per driver payout (accommodation, food, bonuses, penalties)
+CREATE TABLE IF NOT EXISTS driver_payout_adjustments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    driver_payout_id UUID NOT NULL REFERENCES driver_payouts(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    fee_name VARCHAR(100) NOT NULL,
+    fee_type VARCHAR(20) NOT NULL CHECK (fee_type IN ('deduction', 'addition')),
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+    notes TEXT,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_driver_payout_adj_payout
+    ON driver_payout_adjustments (driver_payout_id);
+
+CREATE INDEX IF NOT EXISTS idx_driver_payout_adj_org
+    ON driver_payout_adjustments (organization_id);
+
 -- Vehicles (company-owned, rented to drivers)
 CREATE TABLE IF NOT EXISTS vehicles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -603,12 +622,14 @@ CREATE OR REPLACE FUNCTION subcontractor_settlement_totals(
     total_account_opening_fee NUMERIC(12, 2),
     total_platform_fees NUMERIC(12, 2),
     total_daily_cash NUMERIC(12, 2),
+    total_custom_deductions NUMERIC(12, 2),
+    total_custom_additions NUMERIC(12, 2),
     total_payable NUMERIC(12, 2)
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT d.subcontractor_id,
-           COUNT(*)::int,
+           COUNT(DISTINCT dp.id)::int,
            ROUND(COALESCE(SUM(dp.total_gross_earnings), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.tips), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.company_commission), 0)::numeric, 2),
@@ -628,11 +649,20 @@ BEGIN
              2
            ),
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2),
+           ROUND(COALESCE(SUM(fee.deductions), 0)::numeric, 2),
+           ROUND(COALESCE(SUM(fee.additions), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2)
     FROM driver_payouts dp
     INNER JOIN drivers d
       ON d.id = dp.driver_id
      AND d.organization_id = dp.organization_id
+    LEFT JOIN LATERAL (
+        SELECT
+            COALESCE(SUM(CASE WHEN pa.fee_type = 'deduction' THEN pa.amount ELSE 0 END), 0) AS deductions,
+            COALESCE(SUM(CASE WHEN pa.fee_type = 'addition' THEN pa.amount ELSE 0 END), 0) AS additions
+        FROM driver_payout_adjustments pa
+        WHERE pa.driver_payout_id = dp.id
+    ) fee ON true
     WHERE dp.organization_id = p_organization_id
       AND dp.payment_period_start = p_period_start
       AND dp.payment_period_end = p_period_end
@@ -642,7 +672,7 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 COMMENT ON FUNCTION subcontractor_settlement_totals(UUID, DATE, DATE) IS
-    'Per-subcontractor SUM of driver_payouts. Account opening and platform fees sum Glovo rows only; total_commission = SUM(company_commission); total_payable = SUM(net_driver_payout).';
+    'Per-subcontractor SUM of driver_payouts. Custom fee columns sum driver_payout_adjustments; total_payable = SUM(net_driver_payout).';
 
 CREATE OR REPLACE FUNCTION refresh_subcontractor_payouts(
     p_organization_id UUID,

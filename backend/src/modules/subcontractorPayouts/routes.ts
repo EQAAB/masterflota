@@ -239,6 +239,8 @@ router.get("/:id/detail", async (req, res) => {
       total_account_opening_fee: string;
       total_platform_fees: string;
       total_daily_cash: string;
+      total_custom_deductions: string;
+      total_custom_additions: string;
       total_payable: string;
       payment_status: string;
       paid_amount: string | null;
@@ -270,6 +272,8 @@ router.get("/:id/detail", async (req, res) => {
       account_opening_fee: string;
       platform_fees: string;
       daily_cash: string;
+      custom_deductions: string;
+      custom_additions: string;
       net: string;
     }>(
       `SELECT dp.id::text,
@@ -282,9 +286,18 @@ router.get("/:id/detail", async (req, res) => {
               COALESCE(dp.account_opening_fee, 0)::text AS account_opening_fee,
               COALESCE(dp.total_platform_fees, 0)::text AS platform_fees,
               COALESCE(dp.total_daily_cash, 0)::text AS daily_cash,
+              COALESCE(fee.deductions, 0)::text AS custom_deductions,
+              COALESCE(fee.additions, 0)::text AS custom_additions,
               COALESCE(dp.net_driver_payout, 0)::text AS net
        FROM driver_payouts dp
        INNER JOIN drivers d ON d.id = dp.driver_id
+       LEFT JOIN LATERAL (
+         SELECT
+           COALESCE(SUM(CASE WHEN pa.fee_type = 'deduction' THEN pa.amount ELSE 0 END), 0) AS deductions,
+           COALESCE(SUM(CASE WHEN pa.fee_type = 'addition' THEN pa.amount ELSE 0 END), 0) AS additions
+         FROM driver_payout_adjustments pa
+         WHERE pa.driver_payout_id = dp.id
+       ) fee ON true
        WHERE dp.subcontractor_payout_id = $1::uuid
        ORDER BY d.last_name, d.first_name`,
       [id],
@@ -302,6 +315,9 @@ router.get("/:id/detail", async (req, res) => {
       daily_cash: num(d.daily_cash),
       net: num(d.net),
     }));
+
+    const totalCustomDeductions = num(parent.total_custom_deductions);
+    const totalCustomAdditions = num(parent.total_custom_additions);
 
     const validation = validateSettlementDetail(driversForValidation, {
       gross_incl_tips: num(parent.total_gross_income),
@@ -334,6 +350,8 @@ router.get("/:id/detail", async (req, res) => {
         account_opening_fee: num(parent.total_account_opening_fee).toFixed(2),
         platform_fees: num(parent.total_platform_fees).toFixed(2),
         daily_cash: num(parent.total_daily_cash).toFixed(2),
+        custom_deductions: totalCustomDeductions.toFixed(2),
+        custom_additions: totalCustomAdditions.toFixed(2),
         payable: payable.toFixed(2),
       },
       drivers: driverRows,

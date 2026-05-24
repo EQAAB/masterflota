@@ -20,6 +20,7 @@ type DriverPayoutTableProps = {
   onPayNow: (id: string) => void | Promise<void>;
   onPaySelected: (ids: string[]) => void | Promise<void>;
   onOpenDebtActions?: (row: PayoutListItem) => void;
+  onOpenCustomFees?: (row: PayoutListItem) => void;
   onOpenReleaseHold?: (row: PayoutListItem) => void;
 };
 
@@ -181,6 +182,7 @@ export function DriverPayoutTable({
   onPayNow,
   onPaySelected,
   onOpenDebtActions,
+  onOpenCustomFees,
   onOpenReleaseHold,
 }: DriverPayoutTableProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -393,6 +395,10 @@ export function DriverPayoutTable({
                       toNum(row.raw_net_amount) < 0 ||
                       toNum(row.remaining_debt_amount) > 0 ||
                       toNum(row.debt_amount) > 0);
+                  const canCustomFees =
+                    onOpenCustomFees &&
+                    row.payment_status !== "paid" &&
+                    row.payment_status !== "approved";
                   const canReleaseHold =
                     onOpenReleaseHold &&
                     row.payment_status === "hold" &&
@@ -506,6 +512,16 @@ export function DriverPayoutTable({
                                 className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
                               >
                                 {isPayingRow ? "Paying…" : "Pay Now"}
+                              </button>
+                            )}
+                            {canCustomFees && (
+                              <button
+                                type="button"
+                                disabled={isPaying}
+                                onClick={() => onOpenCustomFees?.(row)}
+                                className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                              >
+                                Custom fees
                               </button>
                             )}
                             {canDebtActions && (
@@ -690,6 +706,10 @@ export function DriverPayoutTable({
                   toNum(row.raw_net_amount) < 0 ||
                   toNum(row.remaining_debt_amount) > 0 ||
                   toNum(row.debt_amount) > 0);
+              const canCustomFees =
+                onOpenCustomFees &&
+                row.payment_status !== "paid" &&
+                row.payment_status !== "approved";
               const canReleaseHold =
                 onOpenReleaseHold &&
                 row.payment_status === "hold" &&
@@ -786,6 +806,16 @@ export function DriverPayoutTable({
                         className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
                       >
                         {isPayingRow ? "Paying…" : "Pay Now"}
+                      </button>
+                    )}
+                    {canCustomFees && (
+                      <button
+                        type="button"
+                        disabled={isPaying}
+                        onClick={() => onOpenCustomFees?.(row)}
+                        className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                      >
+                        Custom fees
                       </button>
                     )}
                     {canDebtActions && (
