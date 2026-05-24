@@ -18,7 +18,7 @@ const PROVIDER_OPTIONS = [
   { value: "uber", label: "Uber" },
   { value: "bolt", label: "Bolt" },
   { value: "glovo", label: "Glovo Courier" },
-  { value: "bolt_courier", label: "Bolt Courier" },
+  { value: "bolt_courier", label: "Bolt Delivery" },
   { value: "wolt_courier", label: "Wolt Courier" },
 ] as const;
 

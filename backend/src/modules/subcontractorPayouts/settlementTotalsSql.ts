@@ -41,8 +41,20 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_LATERAL = `
            ROUND(COALESCE(SUM(dp.tips), 0)::numeric, 2) AS total_tips,
            ROUND(COALESCE(SUM(dp.company_commission), 0)::numeric, 2) AS total_commission,
            ROUND(COALESCE(SUM(dp.vehicle_rental_fee), 0)::numeric, 2) AS total_vehicle_rent,
-           ROUND(COALESCE(SUM(dp.account_opening_fee), 0)::numeric, 2) AS total_account_opening_fee,
-           ROUND(COALESCE(SUM(dp.total_platform_fees), 0)::numeric, 2) AS total_platform_fees,
+           ROUND(
+             COALESCE(
+               SUM(CASE WHEN dp.platform = 'glovo' THEN dp.account_opening_fee ELSE 0 END),
+               0
+             )::numeric,
+             2
+           ) AS total_account_opening_fee,
+           ROUND(
+             COALESCE(
+               SUM(CASE WHEN dp.platform = 'glovo' THEN dp.total_platform_fees ELSE 0 END),
+               0
+             )::numeric,
+             2
+           ) AS total_platform_fees,
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2) AS total_daily_cash,
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2) AS total_payable
     FROM driver_payouts dp

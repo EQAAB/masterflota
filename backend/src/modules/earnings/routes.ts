@@ -3,13 +3,20 @@ import { Router } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
-import { buildColumnMap } from "./romanHeaderMap";
+import { buildEarningsColumnMap, isBoltWeeklyColumnMap } from "./earningsColumnMap";
+import type { EarningsColumnField } from "./normalizeRow";
 import { rowCellsToNormalized, type EarningsStagingPayload } from "./normalizeRow";
 import {
   detectPlatformWithMeta,
   isEarningsPlatform,
   type EarningsPlatform,
 } from "./detectPlatform";
+import {
+  earningsPlatformFromPayout,
+  isDriverPayoutPlatform,
+  payoutPlatformFromFilter,
+  type DriverPayoutPlatform,
+} from "./payoutPlatform";
 import { extractDateFromFilename, weekBoundsFromDates } from "./filenameDate";
 import { parseEarningsFile } from "./parseFile";
 import { DriverMatchIndex, type DriverMatchRow } from "./matchDriver";
@@ -22,6 +29,7 @@ import {
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
+import { readOrgDefaultAccountOpeningFee, readOrgDefaultPlatformFee } from "./accountOpeningFee";
 import { readOrgGlovoCommissionBase, writeOrgGlovoCommissionBase } from "./orgImportSettings";
 import { refreshVehicleRentForPeriod } from "./refreshVehicleRentForPeriod";
 import {
@@ -99,7 +107,7 @@ router.patch("/import/org-settings", async (req, res) => {
 });
 
 function collectWarnings(
-  colMap: Map<number, import("./normalizeRow").CanonicalField>,
+  colMap: Map<number, EarningsColumnField>,
   normalizedRows: ReturnType<typeof rowCellsToNormalized>[],
   filenameDate: string | null,
   platform: EarningsPlatform,
@@ -197,12 +205,14 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
       req.file.originalname,
       table.headers,
     );
-    const colMap = buildColumnMap(table.headers);
+    const boltWeekly = isBoltWeeklyColumnMap(table.headers);
+    const colMap = buildEarningsColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
 
     const normalizedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
         skipInferredPlatformFee: platform === "glovo",
+        boltWeeklyExport: boltWeekly,
       }),
     );
 
@@ -242,6 +252,10 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
     const matchRate =
       normalizedRows.length === 0 ? 0 : Math.round((1000 * totalMatchPreview) / normalizedRows.length) / 1000;
 
+    const defaultAccountOpeningFee =
+      platform === "glovo" ? await readOrgDefaultAccountOpeningFee(orgId) : 0;
+    const defaultPlatformFee = platform === "glovo" ? await readOrgDefaultPlatformFee(orgId) : 0;
+
     const client = await pool.connect();
     let importId: string;
     try {
@@ -259,6 +273,10 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
         rowCount: table.rows.length,
         normalizedRows,
         glovoCommissionBaseType: platform === "glovo" ? effectiveGlovoBase : undefined,
+        defaultAccountOpeningFee:
+          platform === "glovo" ? defaultAccountOpeningFee : undefined,
+        defaultPlatformFee: platform === "glovo" ? defaultPlatformFee : undefined,
+        boltWeeklyExport: boltWeekly,
       });
       await client.query("COMMIT");
     } catch (e) {
@@ -311,8 +329,8 @@ router.get("/import/:id/preview-rows", async (req, res) => {
   const limit = Math.min(2000, Math.max(1, limitIn));
 
   try {
-    const { rows: impRows } = await query<{ platform: string }>(
-      `SELECT platform FROM earnings_imports
+    const { rows: impRows } = await query<{ platform: string; detection_meta: unknown }>(
+      `SELECT platform, detection_meta FROM earnings_imports
        WHERE id = $1::uuid AND organization_id = $2::uuid AND status = 'preview'`,
       [importId, orgId],
     );
@@ -339,8 +357,30 @@ router.get("/import/:id/preview-rows", async (req, res) => {
     );
 
     const index = await loadMatchIndex(orgId);
+    const meta = (impRows[0].detection_meta as Record<string, unknown> | null) ?? {};
+    const metaFee = meta.defaultAccountOpeningFee;
+    const orgDefaultOpening =
+      platform === "glovo"
+        ? typeof metaFee === "number" && Number.isFinite(metaFee)
+          ? metaFee
+          : await readOrgDefaultAccountOpeningFee(orgId)
+        : 0;
+    const defaultOpeningApplied = new Set<string>();
+    const metaPlatformFee = meta.defaultPlatformFee;
+    const orgDefaultPlatform =
+      platform === "glovo"
+        ? typeof metaPlatformFee === "number" && Number.isFinite(metaPlatformFee)
+          ? metaPlatformFee
+          : await readOrgDefaultPlatformFee(orgId)
+        : 0;
+    const defaultPlatformApplied = new Set<string>();
     const previewRows = staging.map((r) =>
-      stagingPayloadToPreviewRow(r.row_index, r.payload, platform, index),
+      stagingPayloadToPreviewRow(r.row_index, r.payload, platform, index, {
+        orgDefaultOpeningFee: orgDefaultOpening,
+        defaultOpeningApplied,
+        orgDefaultPlatformFee: orgDefaultPlatform,
+        defaultPlatformApplied,
+      }),
     );
 
     return res.json({ offset, limit, total, rows: previewRows });
@@ -751,6 +791,8 @@ type PayoutReportFilters = {
   minVehicleRental: number | null;
   /** When true, hide sub-managed drivers from list (unless driverId is set). */
   excludeSubcontractorManaged: boolean;
+  /** Payout row platform (glovo | bolt). */
+  platform: DriverPayoutPlatform | null;
 };
 
 type PayoutFilterQuery = Record<string, unknown>;
@@ -788,7 +830,13 @@ function parsePayoutReportFilters(queryParams: PayoutFilterQuery): PayoutReportF
       ? true
       : String(excludeRaw).toLowerCase() !== "false";
 
-  return { status, from, to, q, driverId, minVehicleRental, excludeSubcontractorManaged };
+  const platformRaw =
+    queryParams.platform != null && String(queryParams.platform).trim() !== ""
+      ? String(queryParams.platform).trim()
+      : null;
+  const platform = payoutPlatformFromFilter(platformRaw);
+
+  return { status, from, to, q, driverId, minVehicleRental, excludeSubcontractorManaged, platform };
 }
 
 function buildPayoutReportWhereClause(orgId: string, filters: PayoutReportFilters) {
@@ -825,6 +873,10 @@ function buildPayoutReportWhereClause(orgId: string, filters: PayoutReportFilter
   }
   if (filters.excludeSubcontractorManaged && !filters.driverId) {
     where.push(`d.subcontractor_id IS NULL`);
+  }
+  if (filters.platform) {
+    where.push(`dp.platform = $${p++}`);
+    params.push(filters.platform);
   }
 
   return { whereSql: where.join(" AND "), params, nextParamIndex: p };
@@ -863,6 +915,7 @@ type EarningsReportRow = {
   last_name: string;
   phone: string | null;
   driver_name: string;
+  earnings_platform: string | null;
 };
 
 async function fetchEarningsReportRows(
@@ -902,7 +955,8 @@ async function fetchEarningsReportRows(
             dp.gross_income::text, dp.net_income::text,
             dp.company_commission::text,
             dp.commission_base::text, dp.commission_rate::text, dp.commission_base_type,
-            d.first_name, d.last_name, d.phone, CONCAT(d.first_name, ' ', d.last_name) AS driver_name
+            d.first_name, d.last_name, d.phone, CONCAT(d.first_name, ' ', d.last_name) AS driver_name,
+            dp.platform AS earnings_platform
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id
      LEFT JOIN users hru ON hru.id = dp.hold_released_by
@@ -996,21 +1050,11 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
             CONCAT(d.first_name, ' ', d.last_name) AS driver_name,
             TO_CHAR(dp.payment_period_start, 'YYYY-MM-DD') AS period_start_label,
             TO_CHAR(dp.payment_period_end, 'YYYY-MM-DD') AS period_end_label,
-            er_plat.platform AS earnings_platform
+            dp.platform AS earnings_platform
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id
      LEFT JOIN subcontractors s ON s.id = d.subcontractor_id AND s.organization_id = d.organization_id
      LEFT JOIN users hru ON hru.id = dp.hold_released_by
-     LEFT JOIN LATERAL (
-       SELECT er.platform
-       FROM earnings_records er
-       INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = dp.organization_id
-       WHERE er.driver_id = dp.driver_id
-         AND er.trip_date >= dp.payment_period_start
-         AND er.trip_date <= dp.payment_period_end
-       ORDER BY er.trip_date DESC
-       LIMIT 1
-     ) er_plat ON true
      WHERE ${whereSql}
      ORDER BY dp.payment_period_end DESC, dp.created_at DESC
      LIMIT $${nextParamIndex} OFFSET $${nextParamIndex + 1}`,
@@ -1317,6 +1361,71 @@ router.patch("/payouts/bulk", async (req, res) => {
     return res.status(500).json({ message: "Bulk update failed" });
   } finally {
     client.release();
+  }
+});
+
+router.get("/payouts/:id/platform-breakdown", async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+
+  const payoutId = String(req.params.id ?? "");
+  if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
+
+  try {
+    const payoutRes = await pool.query<{
+      driver_id: string;
+      platform: string;
+      payment_period_start: string;
+      payment_period_end: string;
+    }>(
+      `SELECT driver_id::text, platform, payment_period_start::text, payment_period_end::text
+         FROM driver_payouts
+        WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [payoutId, orgId],
+    );
+    const payout = payoutRes.rows[0];
+    if (!payout) return res.status(404).json({ message: "Payout not found" });
+
+    const erPlatform = isDriverPayoutPlatform(payout.platform)
+      ? earningsPlatformFromPayout(payout.platform)
+      : "glovo";
+
+    const { rows } = await pool.query<{
+      platform: string;
+      gross: string;
+      fees: string;
+      net: string;
+      row_count: string;
+    }>(
+      `SELECT er.platform::text AS platform,
+              SUM(COALESCE(er.gross_earnings, 0))::text AS gross,
+              SUM(ABS(COALESCE(er.platform_fee, 0)))::text AS fees,
+              SUM(COALESCE(er.net_earnings, 0))::text AS net,
+              COUNT(*)::text AS row_count
+         FROM earnings_records er
+         INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
+        WHERE er.driver_id = $2::uuid
+          AND er.platform = $5
+          AND er.trip_date >= $3::date
+          AND er.trip_date <= $4::date
+        GROUP BY er.platform
+        ORDER BY er.platform`,
+      [orgId, payout.driver_id, payout.payment_period_start, payout.payment_period_end, erPlatform],
+    );
+
+    return res.json({
+      platforms: rows.map((r) => ({
+        platform: r.platform,
+        gross: r.gross,
+        fees: r.fees,
+        net: r.net,
+        row_count: parseInt(r.row_count, 10),
+      })),
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("platform-breakdown error", err);
+    return res.status(500).json({ message: "Failed to load platform breakdown" });
   }
 });
 

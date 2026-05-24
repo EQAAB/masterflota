@@ -18,6 +18,11 @@ export async function insertEarningsPreviewStaging(
     normalizedRows: NormalizedEarningsRow[];
     /** Snapshot for commit: Glovo transfer commission base policy. */
     glovoCommissionBaseType?: string;
+    /** Snapshot for commit/preview: org default account opening fee (Glovo). */
+    defaultAccountOpeningFee?: number;
+    /** Snapshot for commit/preview: org default Taxa aplicatie (Glovo). */
+    defaultPlatformFee?: number;
+    boltWeeklyExport?: boolean;
   },
 ): Promise<string> {
   const detectionMeta = {
@@ -29,6 +34,13 @@ export async function insertEarningsPreviewStaging(
     ...(params.platform === "glovo" && params.glovoCommissionBaseType
       ? { glovoCommissionBaseType: params.glovoCommissionBaseType }
       : {}),
+    ...(params.platform === "glovo" && params.defaultAccountOpeningFee != null
+      ? { defaultAccountOpeningFee: params.defaultAccountOpeningFee }
+      : {}),
+    ...(params.platform === "glovo" && params.defaultPlatformFee != null
+      ? { defaultPlatformFee: params.defaultPlatformFee }
+      : {}),
+    ...(params.boltWeeklyExport ? { boltWeeklyExport: true } : {}),
   };
   const ins = await client.query<{ id: string }>(
     `INSERT INTO earnings_imports (

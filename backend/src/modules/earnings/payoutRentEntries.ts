@@ -48,6 +48,8 @@ export async function syncPayoutRentEntries(client: PoolClient, orgId: string, p
        vehicle_rental_fee = COALESCE(agg.sum_amt, 0),
        raw_net_amount = ROUND((
          COALESCE(dp.total_net_earnings, 0)::numeric
+         - COALESCE(dp.company_commission, 0)::numeric
+         - ABS(COALESCE(dp.total_daily_cash, 0)::numeric)
          - ABS(COALESCE(dp.account_opening_fee, 0)::numeric)
          - COALESCE(agg.sum_amt, 0)::numeric
        )::numeric, 2),
