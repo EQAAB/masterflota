@@ -350,7 +350,14 @@ export function EarningsImportPreviewVirtualTable({
                           ? `−${formatCurrency(r.accountOpeningFee)}`
                           : "—"}
                       </td>
-                      <td className="max-w-[140px] truncate px-2 py-1.5 font-mono text-[11px] text-slate-600" title={r.hints?.courierId || r.hints?.phone || r.hints?.plate || ""}>
+                      <td
+                        className="max-w-[140px] truncate px-2 py-1.5 font-mono text-[11px] text-slate-600"
+                        title={
+                          [r.hints?.courierId && `Courier UID: ${r.hints.courierId}`, r.hints?.phone, r.hints?.driverName]
+                            .filter(Boolean)
+                            .join(" · ") || ""
+                        }
+                      >
                         {r.hints?.courierId || r.hints?.phone || r.hints?.plate || "—"}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">
@@ -360,7 +367,9 @@ export function EarningsImportPreviewVirtualTable({
                         {r.driverMatched ? (
                           <span className="font-medium text-emerald-700">Matched</span>
                         ) : (
-                          <span className="text-slate-400">Unmatched</span>
+                          <span className="text-slate-400" title={r.hints?.driverName}>
+                            Unmatched{r.hints?.driverName ? ` (${r.hints.driverName})` : ""}
+                          </span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5">

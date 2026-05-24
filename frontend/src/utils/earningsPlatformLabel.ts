@@ -1,9 +1,9 @@
 /** Labels for `earnings_records.platform` / `earnings_imports.platform` (DB CHECK). */
 const EARNINGS_PLATFORM_LABELS: Record<string, string> = {
   uber: "Uber",
-  bolt: "Bolt",
+  bolt: "Bolt Delivery",
   glovo: "Glovo Courier",
-  bolt_courier: "Bolt Courier",
+  bolt_courier: "Bolt Delivery",
   wolt_courier: "Wolt Courier",
 };
 

@@ -14,7 +14,7 @@ export const PLATFORM_ID_LABELS: Record<PlatformId, string> = {
   [PLATFORM_IDS.UBER]: "Uber",
   [PLATFORM_IDS.BOLT]: "Bolt",
   [PLATFORM_IDS.GLOVO]: "Glovo",
-  [PLATFORM_IDS.BOLT_COURIER]: "Bolt Courier",
+  [PLATFORM_IDS.BOLT_COURIER]: "Bolt Delivery",
   [PLATFORM_IDS.WOLT]: "Wolt", // NEW PLATFORM
 };
 

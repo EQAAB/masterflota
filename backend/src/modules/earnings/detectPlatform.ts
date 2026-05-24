@@ -52,6 +52,19 @@ export function isGlovoRomaniaCourierExport(norm: string[]): boolean {
   return idCurier && hasVenituriHeader && totalTransfer;
 }
 
+/**
+ * Bolt Delivery weekly export (Tier A): exact normalized English headers.
+ */
+export function isBoltCourierWeeklyExport(norm: string[]): boolean {
+  if (isGlovoRomaniaCourierExport(norm)) return false;
+  return (
+    norm.includes("courier uid") &&
+    norm.includes("adjusted earnings with courier tips with vat") &&
+    norm.includes("adjusted earnings with courier tips without vat") &&
+    (norm.includes("overdue courier cash debt") || norm.includes("cash received from clients"))
+  );
+}
+
 function scoreFilename(name: string): Partial<Record<EarningsPlatform, number>> {
   const n = name.toLowerCase();
   const s: Partial<Record<EarningsPlatform, number>> = {};
@@ -85,6 +98,11 @@ export function detectPlatformWithMeta(
     const scores = zeroScores();
     scores.glovo = 1000;
     return { platform: "glovo", scores, confidence: 1 };
+  }
+  if (isBoltCourierWeeklyExport(norm)) {
+    const scores = zeroScores();
+    scores.bolt_courier = 1000;
+    return { platform: "bolt_courier", scores, confidence: 1 };
   }
 
   const f = scoreFilename(fileName);

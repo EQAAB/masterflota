@@ -39,6 +39,7 @@ export function EarningsReportsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [minVehicleRental, setMinVehicleRental] = useState("");
+  const [platform, setPlatform] = useState("");
   const [csvBusy, setCsvBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,16 +56,17 @@ export function EarningsReportsPage() {
     status: status || undefined,
     driverId: driverIdFromUrl,
     minVehicleRental: minVehicleRental.trim() ? Number(minVehicleRental) : undefined,
+    platform: platform || undefined,
   };
 
   const query = useQuery({
-    queryKey: ["earnings", "reports", from, to, q, status, driverIdFromUrl, minVehicleRental],
+    queryKey: ["earnings", "reports", from, to, q, status, driverIdFromUrl, minVehicleRental, platform],
     queryFn: () => getEarningsReports(reportFilters).then((r) => r.data),
     enabled: user?.role === "admin" || user?.role === "accountant",
   });
 
   const commissionByBaseQuery = useQuery({
-    queryKey: ["earnings", "reports", "commission-base", from, to, q, status, driverIdFromUrl, minVehicleRental],
+    queryKey: ["earnings", "reports", "commission-base", from, to, q, status, driverIdFromUrl, minVehicleRental, platform],
     queryFn: () => getCommissionByBaseTypeReport(reportFilters).then((r) => r.data),
     enabled: user?.role === "admin" || user?.role === "accountant",
   });
@@ -258,6 +260,18 @@ export function EarningsReportsPage() {
                   onChange={(e) => setMinVehicleRental(e.target.value)}
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Earnings platform</label>
+                <select
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[44px]"
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="glovo">Glovo</option>
+                  <option value="bolt_courier">Bolt Delivery</option>
+                </select>
+              </div>
             </div>
             <button
               type="button"
@@ -268,6 +282,7 @@ export function EarningsReportsPage() {
                 setQ("");
                 setStatus("");
                 setMinVehicleRental("");
+                setPlatform("");
               }}
             >
               Reset filters

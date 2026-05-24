@@ -20,6 +20,8 @@ export interface EarningsPreviewRow {
     courierId?: string;
     phone?: string;
     plate?: string;
+    /** Bolt weekly export: First + Last name from CSV */
+    driverName?: string;
   };
   /** From server preview mapper; client may infer from transferTotal when absent. */
   negativeTransferTotal?: boolean;

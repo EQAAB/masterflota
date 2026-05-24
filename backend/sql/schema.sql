@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS driver_payouts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE,
+    platform VARCHAR(20) NOT NULL DEFAULT 'glovo' CHECK (platform IN ('glovo', 'bolt')),
     platform_id VARCHAR(255),
     payment_period_start DATE NOT NULL,
     payment_period_end DATE NOT NULL,
@@ -327,7 +328,10 @@ CREATE INDEX IF NOT EXISTS idx_driver_payouts_hold
     ON driver_payouts (organization_id, payment_status)
     WHERE payment_status = 'hold';
 CREATE INDEX IF NOT EXISTS idx_driver_payouts_period ON driver_payouts(payment_period_start, payment_period_end);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_payouts_org_driver_period ON driver_payouts (organization_id, driver_id, payment_period_start, payment_period_end);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_payouts_org_driver_platform_period
+  ON driver_payouts (organization_id, driver_id, platform, payment_period_start, payment_period_end);
+CREATE INDEX IF NOT EXISTS idx_driver_payouts_platform
+  ON driver_payouts (organization_id, platform, payment_period_start, payment_period_end);
 
 -- Manual debt adjustments (audit)
 CREATE TABLE IF NOT EXISTS payout_adjustments (
@@ -609,8 +613,20 @@ BEGIN
            ROUND(COALESCE(SUM(dp.tips), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.company_commission), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.vehicle_rental_fee), 0)::numeric, 2),
-           ROUND(COALESCE(SUM(dp.account_opening_fee), 0)::numeric, 2),
-           ROUND(COALESCE(SUM(dp.total_platform_fees), 0)::numeric, 2),
+           ROUND(
+             COALESCE(
+               SUM(CASE WHEN dp.platform = 'glovo' THEN dp.account_opening_fee ELSE 0 END),
+               0
+             )::numeric,
+             2
+           ),
+           ROUND(
+             COALESCE(
+               SUM(CASE WHEN dp.platform = 'glovo' THEN dp.total_platform_fees ELSE 0 END),
+               0
+             )::numeric,
+             2
+           ),
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2),
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2)
     FROM driver_payouts dp
@@ -626,7 +642,7 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 COMMENT ON FUNCTION subcontractor_settlement_totals(UUID, DATE, DATE) IS
-    'Per-subcontractor SUM of driver_payouts for the period. total_commission = SUM(company_commission); total_payable = SUM(net_driver_payout). subcontractor_payouts has no commission columns.';
+    'Per-subcontractor SUM of driver_payouts. Account opening and platform fees sum Glovo rows only; total_commission = SUM(company_commission); total_payable = SUM(net_driver_payout).';
 
 CREATE OR REPLACE FUNCTION refresh_subcontractor_payouts(
     p_organization_id UUID,
@@ -721,6 +737,8 @@ BEGIN
     raw_net_amount = ROUND(
       (
         COALESCE(dp.total_net_earnings, 0)::numeric
+        - COALESCE(dp.company_commission, 0)::numeric
+        - ABS(COALESCE(dp.total_daily_cash, 0)::numeric)
         - ABS(COALESCE(dp.account_opening_fee, 0)::numeric)
         - rf.calc
       )::numeric,
@@ -750,6 +768,11 @@ DECLARE
   ni numeric;
   payout numeric;
 BEGIN
+  IF NEW.platform IN ('bolt', 'bolt_courier') THEN
+    NEW.driver_payout := COALESCE(NEW.driver_payout, 0);
+    RETURN NEW;
+  END IF;
+
   ni := CASE
     WHEN COALESCE(NEW.platform_fee, 0) < 0 THEN
       COALESCE(NEW.gross_earnings, 0) + COALESCE(NEW.tips, 0) + COALESCE(NEW.platform_fee, 0)

@@ -213,6 +213,20 @@ export function getEarningsPayouts(params: {
   return api.get<EarningsPayoutsResponse>("/earnings/payouts", { params });
 }
 
+export interface PayoutPlatformBreakdownRow {
+  platform: string;
+  gross: string;
+  fees: string;
+  net: string;
+  row_count: number;
+}
+
+export function getPayoutPlatformBreakdown(payoutId: string) {
+  return api.get<{ platforms: PayoutPlatformBreakdownRow[] }>(
+    `/earnings/payouts/${payoutId}/platform-breakdown`,
+  );
+}
+
 export function getEarningsReports(params: {
   from?: string;
   to?: string;
@@ -220,6 +234,7 @@ export function getEarningsReports(params: {
   status?: string;
   driverId?: string;
   minVehicleRental?: number;
+  platform?: string;
   limit?: number;
 }) {
   return api.get<EarningsReportsResponse>("/earnings/reports", { params });
@@ -232,6 +247,7 @@ export function getCommissionByBaseTypeReport(params: {
   status?: string;
   driverId?: string;
   minVehicleRental?: number;
+  platform?: string;
 }) {
   return api.get<{ items: CommissionByBaseTypeRow[] }>("/earnings/reports/commission-by-base-type", { params });
 }

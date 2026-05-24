@@ -29,6 +29,82 @@ export function nextRemainingForNegativePayoutRow(params: {
   return rem;
 }
 
+export type DebtPayoutResolution = {
+  net_driver_payout: number;
+  debt_amount: number;
+  remaining_debt_amount: number;
+  payment_status: string;
+};
+
+/**
+ * Pure debt/payout resolution from raw_net (after rent sync). Used by applyDebtCarryForward and tests.
+ * Negative raw_net → signed net_driver_payout (e.g. -443.91), debt status, debt_amount = |raw_net|.
+ * Positive raw_net → net_driver_payout = max(0, after carry-forward to older debts).
+ */
+export function resolveDebtPayoutFromRawNet(params: {
+  rawNet: number;
+  existingRemainingDebt: number;
+  currentPaymentStatus: string;
+  /** Remaining raw_net after applying this period's surplus to older debt rows (only when rawNet >= 0). */
+  availableAfterCarryForward: number;
+}): DebtPayoutResolution {
+  const rawNet = roundMoney(params.rawNet);
+  let debtAmount = 0;
+  let remainingDebtAmount = 0;
+  let netDriverPayout = 0;
+
+  if (rawNet < 0) {
+    debtAmount = roundMoney(Math.abs(rawNet));
+    remainingDebtAmount = nextRemainingForNegativePayoutRow({
+      debtAmount,
+      existingRem: params.existingRemainingDebt,
+      paymentStatus: params.currentPaymentStatus,
+    });
+    netDriverPayout = rawNet;
+  } else {
+    netDriverPayout = roundMoney(Math.max(0, params.availableAfterCarryForward));
+  }
+
+  const payment_status = resolvePaymentStatusAfterDebtAllocation({
+    rawNet,
+    remainingDebtAmount,
+    currentPaymentStatus: params.currentPaymentStatus,
+  });
+
+  return {
+    net_driver_payout: netDriverPayout,
+    debt_amount: debtAmount,
+    remaining_debt_amount: remainingDebtAmount,
+    payment_status,
+  };
+}
+
+export function resolvePaymentStatusAfterDebtAllocation(params: {
+  rawNet: number;
+  remainingDebtAmount: number;
+  currentPaymentStatus: string;
+}): string {
+  const { rawNet, remainingDebtAmount, currentPaymentStatus } = params;
+  if (
+    rawNet < 0 &&
+    currentPaymentStatus === "hold" &&
+    roundMoney(Math.max(0, remainingDebtAmount)) === 0
+  ) {
+    return "hold";
+  }
+  if (rawNet < 0 || remainingDebtAmount > 0) {
+    return "debt";
+  }
+  if (
+    currentPaymentStatus === "paid" ||
+    currentPaymentStatus === "approved" ||
+    currentPaymentStatus === "hold"
+  ) {
+    return currentPaymentStatus;
+  }
+  return "pending";
+}
+
 type CurrentPayoutRow = {
   id: string;
   driver_id: string;
@@ -87,6 +163,7 @@ export async function applyDebtCarryForward(client: PoolClient, orgId: string, p
       existingRem,
       paymentStatus: current.payment_status,
     });
+    payable = rawNet;
   } else {
     let available = rawNet;
     for (const debt of outstandingDebtRes.rows) {
@@ -108,16 +185,11 @@ export async function applyDebtCarryForward(client: PoolClient, orgId: string, p
     payable = roundMoney(Math.max(0, available));
   }
 
-  const nextStatus =
-    remainingDebtAmount > 0
-      ? "debt"
-      : rawNet < 0 && current.payment_status === "hold"
-        ? "hold"
-        : current.payment_status === "paid" ||
-            current.payment_status === "approved" ||
-            current.payment_status === "hold"
-          ? current.payment_status
-          : "pending";
+  const nextStatus = resolvePaymentStatusAfterDebtAllocation({
+    rawNet,
+    remainingDebtAmount,
+    currentPaymentStatus: current.payment_status,
+  });
 
   const holdReasonSql =
     nextStatus === "hold"
@@ -193,7 +265,7 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
          WHEN COALESCE(raw_net_amount, 0) < 0 THEN ROUND(ABS(raw_net_amount)::numeric, 2)
          ELSE 0
        END,
-       net_driver_payout = CASE WHEN COALESCE(raw_net_amount, 0) < 0 THEN 0 ELSE raw_net_amount END,
+       net_driver_payout = raw_net_amount,
        payment_status = CASE
          WHEN COALESCE(raw_net_amount, 0) < 0
               AND payment_status = 'hold'

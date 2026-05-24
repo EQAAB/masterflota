@@ -36,7 +36,10 @@ const BADGE_BY_STATUS: Record<string, string> = {
 function periodLabel(row: PayoutListItem): string {
   const start = row.payment_period_start?.slice(0, 10) ?? "—";
   const end = row.payment_period_end?.slice(0, 10) ?? "—";
-  return `${start} – ${end}`;
+  const plat = row.earnings_platform?.trim()
+    ? ` · ${earningsPlatformLabel(row.earnings_platform)}`
+    : "";
+  return `${start} – ${end}${plat}`;
 }
 
 function toNum(value: string | null | undefined): number {
@@ -89,12 +92,19 @@ function payoutCommissionTitle(row: PayoutListItem): string {
 }
 
 /** Native tooltip: linear payout chain. */
+function boltPayoutCashDeductionLabel(row: PayoutListItem): string {
+  return row.earnings_platform === "bolt"
+    ? "Overdue courier cash debt"
+    : "Daily cash deduction";
+}
+
 function payoutGlovoBreakdownTitle(row: PayoutListItem): string | undefined {
   const ni = row.net_income;
   if (ni == null || ni === "") return undefined;
   const rNum = toNum(row.commission_rate);
   const pctLabel = formatRatePctFromFraction(rNum);
   const baseLabel = commissionBaseTypeLabel(row.commission_base_type);
+  const cashLabel = boltPayoutCashDeductionLabel(row);
   return [
     `Base income: ${formatCurrency(toNum(row.income))}`,
     `Tips: ${formatCurrency(toNum(row.tips))}`,
@@ -104,7 +114,7 @@ function payoutGlovoBreakdownTitle(row: PayoutListItem): string | undefined {
     `Commission base (${baseLabel}): ${formatCurrency(toNum(row.commission_base))}`,
     `Nominal commission rate: ${pctLabel}`,
     `Commission (fleet): ${formatCurrency(toNum(row.company_commission))}`,
-    `Daily cash deduction: ${formatCurrency(Math.abs(toNum(row.total_daily_cash)))} (stored sum may be signed)`,
+    `${cashLabel}: ${formatCurrency(Math.abs(toNum(row.total_daily_cash)))} (stored sum may be signed)`,
     `Account opening fee deduction: ${formatCurrency(Math.abs(toNum(row.account_opening_fee)))}`,
     `Vehicle rent (fleet week prorated): ${formatCurrency(toNum(row.vehicle_rental_fee))}`,
     `Raw period roll-up (after opening fee and vehicle rent): ${formatCurrency(toNum(row.raw_net_amount))}`,
@@ -593,7 +603,8 @@ export function DriverPayoutTable({
                                   })()}
                                 </div>
                                 <p className="mt-2">
-                                  Cash (deduction): {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
+                                  {boltPayoutCashDeductionLabel(row)}:{" "}
+                                  {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
                                 </p>
                                 <p>
                                   Account opening fee (deduction):{" "}
@@ -854,7 +865,8 @@ export function DriverPayoutTable({
                         <p className="font-semibold">Charged: {formatCurrency(toNum(row.company_commission))}</p>
                       </div>
                       <p className="mt-2">
-                        Cash (deduction): {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
+                        {boltPayoutCashDeductionLabel(row)}:{" "}
+                        {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
                       </p>
                       <p>
                         Account opening fee (deduction):{" "}

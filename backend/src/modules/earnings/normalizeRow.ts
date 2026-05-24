@@ -1,3 +1,5 @@
+import { roundMoney } from "./debtAllocation";
+
 export type CanonicalField =
   | "plate"
   | "phone"
@@ -16,6 +18,8 @@ export interface RowHints {
   courierId?: string;
   phone?: string;
   plate?: string;
+  /** Bolt weekly export: First Name + Last Name (preview / warnings only). */
+  driverName?: string;
 }
 
 export interface NormalizedAmounts {
@@ -30,6 +34,9 @@ export interface NormalizedAmounts {
   tripCount: number | null;
   /** Tips / bacșiș; gross remains base income (CSV Venituri) when both columns exist. */
   tips?: number | null;
+  /** Bolt weekly: component columns before manual sum (commit uses all four). */
+  boltAdjustedWithoutVat?: number | null;
+  boltTipsWithoutVat?: number | null;
 }
 
 export interface NormalizedEarningsRow {
@@ -101,15 +108,33 @@ export interface RowNormalizeOptions {
    * That difference is often the “Ajustări” bucket, not Taxa aplicatie.
    */
   skipInferredPlatformFee?: boolean;
+  /** Bolt Tier-A weekly export: do not infer platform fee from gross−net (VAT gap). */
+  boltWeeklyExport?: boolean;
 }
+
+/** Bolt weekly CSV component columns (manual tip sum). */
+export type BoltComponentField =
+  | "adjusted_with_vat"
+  | "adjusted_without_vat"
+  | "tips_with_vat"
+  | "tips_without_vat"
+  | "overdue_cash_debt";
+
+export type EarningsColumnField =
+  | CanonicalField
+  | "first_name"
+  | "last_name"
+  | BoltComponentField;
 
 export function rowCellsToNormalized(
   cells: string[],
-  colMap: Map<number, CanonicalField>,
+  colMap: Map<number, EarningsColumnField>,
   fallbackTripDate: string | null,
   opts?: RowNormalizeOptions,
 ): NormalizedEarningsRow {
   const hints: RowHints = {};
+  let firstName = "";
+  let lastName = "";
   let tripDateIso: string | null = null;
   const amounts: NormalizedAmounts = {
     gross: null,
@@ -122,6 +147,11 @@ export function rowCellsToNormalized(
     tips: null,
   };
   const rawSample: Record<string, string> = {};
+  let boltAdjustedWithVat: number | null = null;
+  let boltAdjustedWithoutVat: number | null = null;
+  let boltTipsWithVat: number | null = null;
+  let boltTipsWithoutVat: number | null = null;
+  let boltOverdueCashDebt: number | null = null;
 
   colMap.forEach((field, idx) => {
     const raw = String(cells[idx] ?? "").trim();
@@ -170,26 +200,69 @@ export function rowCellsToNormalized(
       case "tips":
         amounts.tips = parseRoNumber(raw);
         break;
+      case "first_name":
+        firstName = raw;
+        break;
+      case "last_name":
+        lastName = raw;
+        break;
+      case "adjusted_with_vat":
+        boltAdjustedWithVat = parseRoNumber(raw);
+        break;
+      case "adjusted_without_vat":
+        boltAdjustedWithoutVat = parseRoNumber(raw);
+        break;
+      case "tips_with_vat":
+        boltTipsWithVat = parseRoNumber(raw);
+        break;
+      case "tips_without_vat":
+        boltTipsWithoutVat = parseRoNumber(raw);
+        break;
+      case "overdue_cash_debt":
+        boltOverdueCashDebt = parseRoNumber(raw);
+        break;
       default:
         break;
     }
   });
 
+  const nameParts = [firstName.trim(), lastName.trim()].filter(Boolean);
+  if (nameParts.length) hints.driverName = nameParts.join(" ");
+
   if (!tripDateIso && fallbackTripDate) tripDateIso = fallbackTripDate;
 
-  if (amounts.gross === null && amounts.net !== null && amounts.platformFee !== null) {
-    amounts.gross = amounts.net + amounts.platformFee;
-  }
-  if (amounts.net === null && amounts.gross !== null && amounts.platformFee !== null) {
-    amounts.net = amounts.gross - amounts.platformFee;
-  }
-  if (
-    !opts?.skipInferredPlatformFee &&
-    amounts.platformFee === null &&
-    amounts.gross !== null &&
-    amounts.net !== null
-  ) {
-    amounts.platformFee = amounts.gross - amounts.net;
+  if (opts?.boltWeeklyExport) {
+    const income = boltAdjustedWithVat ?? 0;
+    const tipsGross = boltTipsWithVat ?? 0;
+    const netBase = boltAdjustedWithoutVat ?? 0;
+    const tipsNet = boltTipsWithoutVat ?? 0;
+    amounts.boltAdjustedWithoutVat = boltAdjustedWithoutVat;
+    amounts.boltTipsWithoutVat = boltTipsWithoutVat;
+    amounts.gross =
+      boltAdjustedWithVat !== null || boltTipsWithVat !== null ? roundMoney(income) : null;
+    amounts.tips =
+      boltTipsWithVat !== null ? roundMoney(tipsGross) : null;
+    amounts.net =
+      boltAdjustedWithoutVat !== null || boltTipsWithoutVat !== null
+        ? roundMoney(netBase + tipsNet)
+        : null;
+    amounts.dailyCash =
+      boltOverdueCashDebt !== null ? roundMoney(Math.abs(boltOverdueCashDebt)) : null;
+  } else {
+    if (amounts.gross === null && amounts.net !== null && amounts.platformFee !== null) {
+      amounts.gross = amounts.net + amounts.platformFee;
+    }
+    if (amounts.net === null && amounts.gross !== null && amounts.platformFee !== null) {
+      amounts.net = amounts.gross - amounts.platformFee;
+    }
+    if (
+      !opts?.skipInferredPlatformFee &&
+      amounts.platformFee === null &&
+      amounts.gross !== null &&
+      amounts.net !== null
+    ) {
+      amounts.platformFee = amounts.gross - amounts.net;
+    }
   }
 
   return { tripDateIso, hints, amounts, rawSample };

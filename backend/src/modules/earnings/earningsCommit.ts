@@ -4,9 +4,17 @@ import type { DriverMatchRow } from "./matchDriver";
 import { DriverMatchIndex } from "./matchDriver";
 import { query } from "../../db/pool";
 import type { EarningsStagingPayload } from "./normalizeRow";
-import { applyDebtCarryForward, roundMoney } from "./debtAllocation";
+import { roundMoney } from "./debtAllocation";
 import { calculatePayout, parseCommissionBaseType } from "./calculatePayout";
-import { syncPayoutRentEntries } from "./payoutRentEntries";
+import { payoutPlatformIdForDriver } from "./payoutPlatformId";
+import { isBoltWeeklyImportMeta, recomputeDriverPayoutRollup } from "./recomputeDriverPayoutRollup";
+import { mapBoltWeeklyAmounts } from "./mapBoltWeeklyAmounts";
+import {
+  readOrgDefaultAccountOpeningFee,
+  readOrgDefaultPlatformFee,
+  resolveAccountOpeningFeeForEarningsRow,
+  resolvePlatformFeeForEarningsRow,
+} from "./accountOpeningFee";
 
 export type EarningsCommitTotals = {
   gross: number;
@@ -63,23 +71,6 @@ type InsertRow = {
   commission_rate_frac: number;
 };
 
-function payoutPlatformIdForDriver(drv: DriverMatchRow, platform: EarningsPlatform): string | null {
-  switch (platform) {
-    case "uber":
-      return drv.uber_driver_id ?? null;
-    case "bolt":
-      return drv.bolt_driver_id ?? null;
-    case "glovo":
-      return drv.glovo_courier_id ?? null;
-    case "bolt_courier":
-      return drv.bolt_courier_id ?? null;
-    case "wolt_courier":
-      return drv.wolt_courier_id ?? null;
-    default:
-      return null;
-  }
-}
-
 /** Build rows and write earnings_records, driver_payouts rollup, finalize import (same transaction as caller). */
 export async function runEarningsCommitFromStaging(
   client: PoolClient,
@@ -98,12 +89,15 @@ export async function runEarningsCommitFromStaging(
     `SELECT detection_meta FROM earnings_imports WHERE id = $1::uuid AND organization_id = $2::uuid`,
     [importId, orgId],
   );
+  const detectionMeta = impMetaRes.rows[0]?.detection_meta;
   const commissionBaseType =
     platformEff === "glovo"
       ? parseCommissionBaseType(
-          (impMetaRes.rows[0]?.detection_meta as Record<string, unknown> | null)?.glovoCommissionBaseType,
+          (detectionMeta as Record<string, unknown> | null)?.glovoCommissionBaseType,
         )
       : "net_income";
+  const isBoltWeekly =
+    platformEff === "bolt_courier" && isBoltWeeklyImportMeta(detectionMeta);
 
   const index = await loadMatchIndex(orgId);
   const driversRes = await client.query<DriverMatchRow & { id: string }>(
@@ -115,6 +109,23 @@ export async function runEarningsCommitFromStaging(
     [orgId],
   );
   const driverById = new Map(driversRes.rows.map((d) => [d.id, d]));
+
+  const metaDefault = (detectionMeta as Record<string, unknown> | null)?.defaultAccountOpeningFee;
+  const orgDefaultOpeningFee =
+    platformEff === "glovo"
+      ? typeof metaDefault === "number" && Number.isFinite(metaDefault)
+        ? metaDefault
+        : await readOrgDefaultAccountOpeningFee(orgId)
+      : 0;
+  const defaultOpeningApplied = new Set<string>();
+  const metaPlatformDefault = (detectionMeta as Record<string, unknown> | null)?.defaultPlatformFee;
+  const orgDefaultPlatformFee =
+    platformEff === "glovo"
+      ? typeof metaPlatformDefault === "number" && Number.isFinite(metaPlatformDefault)
+        ? metaPlatformDefault
+        : await readOrgDefaultPlatformFee(orgId)
+      : 0;
+  const defaultPlatformApplied = new Set<string>();
 
   const toInsert: InsertRow[] = [];
   let skippedNoDriver = 0;
@@ -137,7 +148,12 @@ export async function runEarningsCommitFromStaging(
     const net = p.amounts.net;
     const fee = p.amounts.platformFee;
     const transferTotalRaw = p.amounts.transferTotal ?? null;
-    if (gross === null && net === null && transferTotalRaw === null) {
+    if (isBoltWeekly) {
+      if (gross === null && net === null) {
+        skippedNoMoney += 1;
+        continue;
+      }
+    } else if (gross === null && net === null && transferTotalRaw === null) {
       skippedNoMoney += 1;
       continue;
     }
@@ -148,13 +164,63 @@ export async function runEarningsCommitFromStaging(
       continue;
     }
 
+    if (isBoltWeekly) {
+      const bolt = mapBoltWeeklyAmounts({
+        adjustedEarningsWithVat: gross ?? 0,
+        adjustedEarningsWithoutVat: p.amounts.boltAdjustedWithoutVat ?? 0,
+        courierTipsWithVat: p.amounts.tips ?? 0,
+        courierTipsWithoutVat: p.amounts.boltTipsWithoutVat ?? 0,
+      });
+
+      const courierUid = p.hints.courierId?.trim();
+      if (courierUid && !drv.bolt_courier_id) {
+        await client.query(
+          `UPDATE drivers SET bolt_courier_id = $1
+           WHERE id = $2::uuid AND organization_id = $3::uuid AND (bolt_courier_id IS NULL OR TRIM(bolt_courier_id) = '')`,
+          [courierUid, driverId, orgId],
+        );
+        drv.bolt_courier_id = courierUid;
+      }
+
+      toInsert.push({
+        driver_id: driverId,
+        platform_id: payoutPlatformIdForDriver(drv, platformEff) ?? courierUid ?? null,
+        trip_date: tripDateIso,
+        trip_count: p.amounts.tripCount,
+        gross: bolt.income,
+        fee: 0,
+        net: bolt.net_income,
+        total_transfer_earnings: null,
+        daily_cash: p.amounts.dailyCash ?? null,
+        account_opening_fee: 0,
+        company_commission: 0,
+        tips: bolt.tips,
+        driver_payout: 0,
+        commission_type: drv.commission_type || "percentage",
+        glovo_gross_income: bolt.gross_income,
+        glovo_net_income: bolt.net_income,
+        commission_base: 0,
+        commission_rate_frac: 0,
+      });
+      continue;
+    }
+
     let g = gross;
     let n = net;
-    let f = fee;
-    if (g === null && n !== null && f !== null) g = n + Math.abs(f);
-    if (n === null && g !== null && f !== null) n = g - Math.abs(f);
-    if (f === null && g !== null && n !== null) f = Math.abs(g - n);
-    if (f !== null) f = Math.abs(f);
+    const resolvedPlatformFee = resolvePlatformFeeForEarningsRow({
+      platform: platformEff,
+      csvFee: fee,
+      orgDefault: orgDefaultPlatformFee,
+      driverId,
+      defaultAppliedForDriver: defaultPlatformApplied,
+    });
+    let f = resolvedPlatformFee;
+    if (g === null && n !== null && f != null) g = n + Math.abs(f);
+    if (n === null && g !== null && f != null) n = g - Math.abs(f);
+    if (f == null && g !== null && n !== null && platformEff !== "glovo") {
+      f = Math.abs(g - n);
+    }
+    if (f != null) f = Math.abs(f);
 
     const tipsVal = p.amounts.tips ?? null;
     const calc = calculatePayout({
@@ -168,7 +234,13 @@ export async function runEarningsCommitFromStaging(
       commission_base_type: commissionBaseType,
     });
 
-    const accountOpeningRaw = p.amounts.accountOpeningFee ?? null;
+    const accountOpeningRaw = resolveAccountOpeningFeeForEarningsRow({
+      platform: platformEff,
+      csvFee: p.amounts.accountOpeningFee,
+      orgDefault: orgDefaultOpeningFee,
+      driverId,
+      defaultAppliedForDriver: defaultOpeningApplied,
+    });
 
     toInsert.push({
       driver_id: driverId,
@@ -177,7 +249,7 @@ export async function runEarningsCommitFromStaging(
       trip_count: p.amounts.tripCount,
       gross: g,
       fee: f,
-      net: calc.driver_payout,
+      net: calc.net_income,
       total_transfer_earnings: transferTotalRaw,
       daily_cash: p.amounts.dailyCash ?? null,
       account_opening_fee: accountOpeningRaw,
@@ -255,125 +327,21 @@ export async function runEarningsCommitFromStaging(
     [importId, toInsert.length, totals.gross, totals.trips],
   );
 
-  const byDriver = new Map<
-    string,
-    {
-      income: number;
-      tips: number;
-      fee: number;
-      net: number;
-      comm: number;
-      payout: number;
-      dailyCash: number;
-      accountOpeningFee: number;
-      platformId: string | null;
-      glovoGross: number;
-      glovoNet: number;
-      commissionBase: number;
-      commissionRateFrac: number;
-    }
-  >();
-  for (const r of toInsert) {
-    const cur = byDriver.get(r.driver_id) ?? {
-      income: 0,
-      tips: 0,
-      fee: 0,
-      net: 0,
-      comm: 0,
-      payout: 0,
-      dailyCash: 0,
-      accountOpeningFee: 0,
-      platformId: null,
-      glovoGross: 0,
-      glovoNet: 0,
-      commissionBase: 0,
-      commissionRateFrac: r.commission_rate_frac,
-    };
-    cur.income += r.gross ?? 0;
-    cur.tips += r.tips ?? 0;
-    cur.fee += r.fee ?? 0;
-    cur.net += r.net ?? 0;
-    cur.comm += r.company_commission;
-    cur.payout += r.driver_payout;
-    cur.dailyCash += Math.abs(r.daily_cash ?? 0);
-    cur.accountOpeningFee += Math.abs(r.account_opening_fee ?? 0);
-    cur.platformId ??= r.platform_id ?? null;
-    cur.glovoGross += r.glovo_gross_income;
-    cur.glovoNet += r.glovo_net_income;
-    cur.commissionBase += r.commission_base;
-    cur.commissionRateFrac = r.commission_rate_frac;
-    byDriver.set(r.driver_id, cur);
-  }
-  for (const [driverId, agg] of byDriver) {
-    const upsertRes = await client.query<{ id: string }>(
-      `INSERT INTO driver_payouts (
-          organization_id, driver_id, platform_id, payment_period_start, payment_period_end,
-          income, tips, total_platform_fees, total_net_earnings,
-          total_daily_cash, account_opening_fee,
-          company_commission, raw_net_amount, net_driver_payout, debt_amount, debt_applied_amount, remaining_debt_amount,
-          vehicle_rental_fee, payment_status,
-          gross_income, net_income, commission_base, commission_rate, commission_base_type
-        ) VALUES ($1, $2, $3, $4::date, $5::date, $6, $7, $8, $9, $10, $11, $12,
-          ROUND((
-            $9::numeric - ABS($11::numeric)
-            - calculate_rental_fee($1::uuid, $2::uuid, $4::date, $5::date)
-          )::numeric, 2),
-          0, 0, 0, 0,
-          calculate_rental_fee($1::uuid, $2::uuid, $4::date, $5::date),
-          'pending',
-          $13, $14, $15, $16, $17)
-        ON CONFLICT (organization_id, driver_id, payment_period_start, payment_period_end)
-        DO UPDATE SET
-          platform_id = COALESCE(driver_payouts.platform_id, EXCLUDED.platform_id),
-          income = COALESCE(driver_payouts.income, 0) + EXCLUDED.income,
-          tips = COALESCE(driver_payouts.tips, 0) + EXCLUDED.tips,
-          total_platform_fees = COALESCE(driver_payouts.total_platform_fees, 0) + EXCLUDED.total_platform_fees,
-          total_net_earnings = COALESCE(driver_payouts.total_net_earnings, 0) + EXCLUDED.total_net_earnings,
-          total_daily_cash = COALESCE(driver_payouts.total_daily_cash, 0) + EXCLUDED.total_daily_cash,
-          account_opening_fee = COALESCE(driver_payouts.account_opening_fee, 0) + EXCLUDED.account_opening_fee,
-          company_commission = COALESCE(driver_payouts.company_commission, 0) + EXCLUDED.company_commission,
-          raw_net_amount = ROUND((
-            (COALESCE(driver_payouts.total_net_earnings, 0) + COALESCE(EXCLUDED.total_net_earnings, 0))
-            - ABS(
-              COALESCE(driver_payouts.account_opening_fee, 0) + COALESCE(EXCLUDED.account_opening_fee, 0)
-            )
-            - calculate_rental_fee($1::uuid, EXCLUDED.driver_id, EXCLUDED.payment_period_start::date, EXCLUDED.payment_period_end::date)
-          )::numeric, 2),
-          vehicle_rental_fee = calculate_rental_fee($1::uuid, EXCLUDED.driver_id, EXCLUDED.payment_period_start::date, EXCLUDED.payment_period_end::date),
-          gross_income = COALESCE(driver_payouts.gross_income, 0) + EXCLUDED.gross_income,
-          net_income = COALESCE(driver_payouts.net_income, 0) + EXCLUDED.net_income,
-          commission_base = COALESCE(driver_payouts.commission_base, 0) + EXCLUDED.commission_base,
-          commission_rate = EXCLUDED.commission_rate,
-          commission_base_type = EXCLUDED.commission_base_type
-        RETURNING id::text`,
-      [
-        orgId,
-        driverId,
-        agg.platformId,
-        weekStartEff,
-        weekEndEff,
-        agg.income,
-        agg.tips,
-        agg.fee,
-        agg.net,
-        agg.dailyCash,
-        roundMoney(agg.accountOpeningFee),
-        agg.comm,
-        roundMoney(agg.glovoGross),
-        roundMoney(agg.glovoNet),
-        roundMoney(agg.commissionBase),
-        agg.commissionRateFrac,
-        commissionBaseType,
-      ],
+  const touchedDriverIds = [...new Set(toInsert.map((r) => r.driver_id))];
+  for (const driverId of touchedDriverIds) {
+    const drv = driverById.get(driverId);
+    if (!drv) continue;
+    await recomputeDriverPayoutRollup(
+      client,
+      orgId,
+      { ...drv, id: driverId },
+      weekStartEff,
+      weekEndEff,
+      platformEff,
     );
-    const payoutId = upsertRes.rows[0]?.id;
-    if (payoutId) {
-      await syncPayoutRentEntries(client, orgId, payoutId);
-      await applyDebtCarryForward(client, orgId, payoutId);
-    }
   }
 
-  const driverIds = [...byDriver.keys()];
+  const driverIds = touchedDriverIds;
   const warnings: string[] = [];
   if (driverIds.length > 0) {
     const zeroWeeklyRent = await client.query<{ first_name: string; last_name: string; license_plate: string }>(
