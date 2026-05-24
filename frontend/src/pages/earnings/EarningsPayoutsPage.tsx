@@ -13,6 +13,7 @@ import {
 import type { PayoutListItem } from "../../api/earnings";
 import { DriverPayoutTable } from "../../components/earnings/DriverPayoutTable";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
+import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 
 function errMessage(e: unknown): string {
@@ -41,6 +42,7 @@ export function EarningsPayoutsPage() {
   const [error, setError] = useState<string | null>(null);
   const [payingRowId, setPayingRowId] = useState<string | null>(null);
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
+  const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
   const [debtActionMsg, setDebtActionMsg] = useState<string | null>(null);
   const [releaseHoldMsg, setReleaseHoldMsg] = useState<string | null>(null);
@@ -364,6 +366,7 @@ export function EarningsPayoutsPage() {
             await bulkMut.mutateAsync(ids);
           }}
           onOpenDebtActions={(row) => setDebtModalRow(row)}
+          onOpenCustomFees={(row) => setCustomFeesModalRow(row)}
           onOpenReleaseHold={(row) => setReleaseHoldRow(row)}
         />
 
@@ -380,6 +383,15 @@ export function EarningsPayoutsPage() {
           onSuccess={() => {
             void queryClient.invalidateQueries({ queryKey: ["earnings"] });
             void debtSummaryQuery.refetch();
+          }}
+        />
+
+        <CustomFeesModal
+          row={customFeesModalRow}
+          open={customFeesModalRow != null}
+          onClose={() => setCustomFeesModalRow(null)}
+          onSuccess={() => {
+            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
           }}
         />
 

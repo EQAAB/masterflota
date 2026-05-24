@@ -280,6 +280,8 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
   );
 
   for (const id of ids) {
+    const { applyCustomFeesToRawNet } = await import("./driverPayoutCustomFees");
+    await applyCustomFeesToRawNet(client, orgId, id);
     await applyDebtCarryForward(client, orgId, id);
   }
 }

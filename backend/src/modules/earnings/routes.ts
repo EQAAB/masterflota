@@ -26,6 +26,12 @@ import {
   recomputeDriverDebtAllocation,
   roundMoney,
 } from "./debtAllocation";
+import {
+  fetchPayoutCustomFeeSummary,
+  listCustomFeesForPayout,
+  recomputeDriverPayoutAfterCustomFees,
+  type CustomFeeType,
+} from "./driverPayoutCustomFees";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
@@ -1629,6 +1635,197 @@ router.post("/payouts/:id/adjust-debt", async (req, res) => {
   }
 });
 
+const CUSTOM_FEE_TYPES = new Set<CustomFeeType>(["deduction", "addition"]);
+
+router.get("/payouts/:id/custom-fees", async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+
+  const payoutId = String(req.params.id ?? "");
+  if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
+
+  const client = await pool.connect();
+  try {
+    const exists = await client.query<{ id: string }>(
+      `SELECT id::text FROM driver_payouts WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [payoutId, orgId],
+    );
+    if (!exists.rows[0]) return res.status(404).json({ message: "Payout not found" });
+
+    const [items, summary] = await Promise.all([
+      listCustomFeesForPayout(client, orgId, payoutId),
+      fetchPayoutCustomFeeSummary(client, orgId, payoutId),
+    ]);
+
+    return res.json({
+      items,
+      base_raw_net: summary.base_raw_net.toFixed(2),
+      total_deductions: summary.total_deductions.toFixed(2),
+      total_additions: summary.total_additions.toFixed(2),
+      raw_net_amount: summary.raw_net_amount.toFixed(2),
+      net_driver_payout: summary.net_driver_payout.toFixed(2),
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Get custom fees error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/payouts/:id/custom-fees", async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
+
+  const payoutId = String(req.params.id ?? "");
+  if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
+
+  const body = req.body as { fee_name?: unknown; fee_type?: unknown; amount?: unknown; notes?: unknown };
+  const feeName = typeof body.fee_name === "string" ? body.fee_name.trim() : "";
+  if (!feeName || feeName.length > 100) {
+    return res.status(400).json({ message: "fee_name is required (max 100 characters)" });
+  }
+  const feeType = typeof body.fee_type === "string" ? body.fee_type.trim() : "";
+  if (!CUSTOM_FEE_TYPES.has(feeType as CustomFeeType)) {
+    return res.status(400).json({ message: "fee_type must be deduction or addition" });
+  }
+  const amountNum = Number(body.amount);
+  if (!Number.isFinite(amountNum) || amountNum < 0) {
+    return res.status(400).json({ message: "amount must be a non-negative number" });
+  }
+  const amount = roundMoney(amountNum);
+  const notes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : null;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const pr = await client.query<{ payment_status: string }>(
+      `SELECT payment_status FROM driver_payouts
+       WHERE id = $1::uuid AND organization_id = $2::uuid
+       FOR UPDATE`,
+      [payoutId, orgId],
+    );
+    const row = pr.rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Payout not found" });
+    }
+    if (row.payment_status === "paid" || row.payment_status === "approved") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Cannot add custom fees to a paid or approved payout" });
+    }
+
+    const ins = await client.query<{ id: string }>(
+      `INSERT INTO driver_payout_adjustments
+         (driver_payout_id, organization_id, fee_name, fee_type, amount, notes, created_by)
+       VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid)
+       RETURNING id::text`,
+      [payoutId, orgId, feeName, feeType, amount, notes, userId],
+    );
+
+    await recomputeDriverPayoutAfterCustomFees(client, orgId, payoutId);
+
+    const [items, summary] = await Promise.all([
+      listCustomFeesForPayout(client, orgId, payoutId),
+      fetchPayoutCustomFeeSummary(client, orgId, payoutId),
+    ]);
+
+    await client.query("COMMIT");
+    return res.status(201).json({
+      id: ins.rows[0]?.id,
+      items,
+      base_raw_net: summary.base_raw_net.toFixed(2),
+      total_deductions: summary.total_deductions.toFixed(2),
+      total_additions: summary.total_additions.toFixed(2),
+      raw_net_amount: summary.raw_net_amount.toFixed(2),
+      net_driver_payout: summary.net_driver_payout.toFixed(2),
+    });
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line no-console
+    console.error("Post custom fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+
+  const payoutId = String(req.params.id ?? "");
+  const adjustmentId = String(req.params.adjustmentId ?? "");
+  if (!UUID_RE.test(payoutId) || !UUID_RE.test(adjustmentId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const pr = await client.query<{ payment_status: string }>(
+      `SELECT payment_status FROM driver_payouts
+       WHERE id = $1::uuid AND organization_id = $2::uuid
+       FOR UPDATE`,
+      [payoutId, orgId],
+    );
+    const row = pr.rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Payout not found" });
+    }
+    if (row.payment_status === "paid" || row.payment_status === "approved") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Cannot remove custom fees from a paid or approved payout" });
+    }
+
+    const del = await client.query(
+      `DELETE FROM driver_payout_adjustments
+       WHERE id = $1::uuid AND driver_payout_id = $2::uuid AND organization_id = $3::uuid`,
+      [adjustmentId, payoutId, orgId],
+    );
+    if (del.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Custom fee not found" });
+    }
+
+    await recomputeDriverPayoutAfterCustomFees(client, orgId, payoutId);
+
+    const [items, summary] = await Promise.all([
+      listCustomFeesForPayout(client, orgId, payoutId),
+      fetchPayoutCustomFeeSummary(client, orgId, payoutId),
+    ]);
+
+    await client.query("COMMIT");
+    return res.json({
+      ok: true,
+      items,
+      base_raw_net: summary.base_raw_net.toFixed(2),
+      total_deductions: summary.total_deductions.toFixed(2),
+      total_additions: summary.total_additions.toFixed(2),
+      raw_net_amount: summary.raw_net_amount.toFixed(2),
+      net_driver_payout: summary.net_driver_payout.toFixed(2),
+    });
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line no-console
+    console.error("Delete custom fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
 async function releasePayoutHoldForRow(
   client: PoolClient,
   orgId: string,
@@ -2158,6 +2355,8 @@ router.get("/subcontractors/settlements", async (req, res) => {
       total_account_opening_fee: string;
       total_vehicle_rent: string;
       total_daily_cash: string;
+      total_custom_deductions: string;
+      total_custom_additions: string;
       driver_payout_count: number | null;
       total_payable: string | null;
       amount_payable: string | null;
@@ -2176,6 +2375,8 @@ router.get("/subcontractors/settlements", async (req, res) => {
               COALESCE(st.total_account_opening_fee, 0)::text AS total_account_opening_fee,
               COALESCE(st.total_platform_fees, 0)::text AS total_platform_fees,
               COALESCE(st.total_daily_cash, 0)::text AS total_daily_cash,
+              COALESCE(st.total_custom_deductions, 0)::text AS total_custom_deductions,
+              COALESCE(st.total_custom_additions, 0)::text AS total_custom_additions,
               st.driver_payout_count,
               COALESCE(st.total_payable, 0)::text AS total_payable,
               COALESCE(st.total_payable, 0)::text AS amount_payable,

@@ -25,6 +25,8 @@ export const SETTLEMENT_TOTALS_SELECT = `
        COALESCE(st.total_account_opening_fee, 0)::text AS total_account_opening_fee,
        COALESCE(st.total_platform_fees, 0)::text AS total_platform_fees,
        COALESCE(st.total_daily_cash, 0)::text AS total_daily_cash,
+       COALESCE(st.total_custom_deductions, 0)::text AS total_custom_deductions,
+       COALESCE(st.total_custom_additions, 0)::text AS total_custom_additions,
        COALESCE(st.total_payable, 0)::text AS total_payable,
        COALESCE(st.total_payable, 0)::text AS amount_payable,
        COALESCE(sp.payment_status, 'pending') AS payment_status,
@@ -56,8 +58,17 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_LATERAL = `
              2
            ) AS total_platform_fees,
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2) AS total_daily_cash,
+           ROUND(COALESCE(SUM(fee.deductions), 0)::numeric, 2) AS total_custom_deductions,
+           ROUND(COALESCE(SUM(fee.additions), 0)::numeric, 2) AS total_custom_additions,
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2) AS total_payable
     FROM driver_payouts dp
+    LEFT JOIN LATERAL (
+        SELECT
+            COALESCE(SUM(CASE WHEN pa.fee_type = 'deduction' THEN pa.amount ELSE 0 END), 0) AS deductions,
+            COALESCE(SUM(CASE WHEN pa.fee_type = 'addition' THEN pa.amount ELSE 0 END), 0) AS additions
+        FROM driver_payout_adjustments pa
+        WHERE pa.driver_payout_id = dp.id
+    ) fee ON true
     WHERE dp.subcontractor_payout_id = sp.id
   ) pt ON true`;
 
@@ -70,6 +81,8 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_SELECT = `
        COALESCE(pt.total_account_opening_fee, 0)::text AS total_account_opening_fee,
        COALESCE(pt.total_platform_fees, 0)::text AS total_platform_fees,
        COALESCE(pt.total_daily_cash, 0)::text AS total_daily_cash,
+       COALESCE(pt.total_custom_deductions, 0)::text AS total_custom_deductions,
+       COALESCE(pt.total_custom_additions, 0)::text AS total_custom_additions,
        COALESCE(pt.total_payable, 0)::text AS total_payable,
        COALESCE(pt.total_payable, 0)::text AS amount_payable`;
 
