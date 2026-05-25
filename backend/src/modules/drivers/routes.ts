@@ -5,7 +5,9 @@ import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { roundMoney } from "../earnings/debtAllocation";
 import {
+  assertSupportedRecurringFrequency,
   listRecurringFeesForDriver,
+  parseRecurringFrequency,
   type RecurringFeeRow,
 } from "../earnings/driverRecurringFees";
 import { recomputeDriverOpenPayoutsAfterRecurringChange } from "../earnings/driverPayoutCustomFees";
@@ -839,6 +841,16 @@ router.post("/:id/recurring-fees", requireRole("admin", "accountant"), async (re
   }
   const notes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : null;
   const isActive = body.is_active !== false;
+  const frequency = parseRecurringFrequency(
+    body.frequency !== undefined && body.frequency !== null ? body.frequency : "weekly",
+  );
+  if (!frequency) {
+    return res.status(400).json({ message: "frequency must be weekly or monthly_first_week" });
+  }
+  const freqCheck = assertSupportedRecurringFrequency(frequency);
+  if (!freqCheck.ok) {
+    return res.status(400).json({ message: freqCheck.message });
+  }
 
   const client = await pool.connect();
   try {
@@ -849,18 +861,19 @@ router.post("/:id/recurring-fees", requireRole("admin", "accountant"), async (re
     }
     const ins = await client.query<RecurringFeeRow>(
       `INSERT INTO driver_recurring_fees (
-         organization_id, driver_id, fee_name, fee_type, amount, is_active, start_date, end_date, notes, created_by
-       ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::date, $8::date, $9, $10::uuid)
-       RETURNING id::text, fee_name, fee_type, amount::text, is_active,
+         organization_id, driver_id, fee_name, fee_type, amount, frequency,
+         is_active, start_date, end_date, notes, created_by
+       ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11::uuid)
+       RETURNING id::text, fee_name, fee_type, amount::text, frequency, is_active,
                  start_date::text, end_date::text, notes, created_at::text, updated_at::text`,
-      [orgId, driverId, feeName, feeType, amount, isActive, startDate, endDate, notes, userId],
+      [orgId, driverId, feeName, feeType, amount, frequency, isActive, startDate, endDate, notes, userId],
     );
     await recomputeDriverOpenPayoutsAfterRecurringChange(client, orgId, driverId);
     await client.query("COMMIT");
     await logDriverActivity(driverId, "recurring_fee_create", {
       description: `Recurring fee added: ${feeName}`,
       performedBy: userId,
-      newValues: { fee_name: feeName, fee_type: feeType, amount },
+      newValues: { fee_name: feeName, fee_type: feeType, amount, frequency },
     });
     return res.status(201).json(ins.rows[0]);
   } catch (err) {
@@ -887,7 +900,7 @@ router.patch("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), a
   try {
     await client.query("BEGIN");
     const existing = await client.query<RecurringFeeRow>(
-      `SELECT id::text, fee_name, fee_type, amount::text, is_active,
+      `SELECT id::text, fee_name, fee_type, amount::text, frequency, is_active,
               start_date::text, end_date::text, notes, created_at::text, updated_at::text
        FROM driver_recurring_fees
        WHERE id = $1::uuid AND driver_id = $2::uuid AND organization_id = $3::uuid
@@ -936,14 +949,29 @@ router.patch("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), a
           : null
         : prev.notes;
 
+    let frequency = prev.frequency;
+    if (body.frequency !== undefined && body.frequency !== null) {
+      const parsed = parseRecurringFrequency(body.frequency);
+      if (!parsed) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "frequency must be weekly or monthly_first_week" });
+      }
+      const freqCheck = assertSupportedRecurringFrequency(parsed);
+      if (!freqCheck.ok) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: freqCheck.message });
+      }
+      frequency = parsed;
+    }
+
     const upd = await client.query<RecurringFeeRow>(
       `UPDATE driver_recurring_fees SET
-         fee_name = $1, fee_type = $2, amount = $3, is_active = $4,
-         start_date = $5::date, end_date = $6::date, notes = $7, updated_at = NOW()
-       WHERE id = $8::uuid AND driver_id = $9::uuid AND organization_id = $10::uuid
-       RETURNING id::text, fee_name, fee_type, amount::text, is_active,
+         fee_name = $1, fee_type = $2, amount = $3, frequency = $4, is_active = $5,
+         start_date = $6::date, end_date = $7::date, notes = $8, updated_at = NOW()
+       WHERE id = $9::uuid AND driver_id = $10::uuid AND organization_id = $11::uuid
+       RETURNING id::text, fee_name, fee_type, amount::text, frequency, is_active,
                  start_date::text, end_date::text, notes, created_at::text, updated_at::text`,
-      [feeName, feeType, amount, isActive, startDate, endDate, notes, feeId, driverId, orgId],
+      [feeName, feeType, amount, frequency, isActive, startDate, endDate, notes, feeId, driverId, orgId],
     );
     await recomputeDriverOpenPayoutsAfterRecurringChange(client, orgId, driverId);
     await client.query("COMMIT");

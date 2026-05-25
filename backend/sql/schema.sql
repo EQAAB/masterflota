@@ -363,6 +363,8 @@ CREATE TABLE IF NOT EXISTS driver_recurring_fees (
     fee_name VARCHAR(100) NOT NULL,
     fee_type VARCHAR(20) NOT NULL CHECK (fee_type IN ('deduction', 'addition')),
     amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+    frequency VARCHAR(30) NOT NULL DEFAULT 'weekly'
+        CHECK (frequency IN ('weekly', 'monthly_first_week', 'monthly_last_week', 'one_time')),
     is_active BOOLEAN NOT NULL DEFAULT true,
     start_date DATE,
     end_date DATE,
