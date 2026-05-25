@@ -1,11 +1,14 @@
 import { api } from "../lib/api";
 import type { CustomFeeType } from "./earnings";
 
+export type RecurringFeeFrequency = "weekly" | "monthly_first_week";
+
 export interface DriverRecurringFee {
   id: string;
   fee_name: string;
   fee_type: CustomFeeType;
   amount: string;
+  frequency: RecurringFeeFrequency;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -26,6 +29,7 @@ export function postDriverRecurringFee(
     fee_name: string;
     fee_type: CustomFeeType;
     amount: number;
+    frequency?: RecurringFeeFrequency;
     is_active?: boolean;
     start_date?: string | null;
     end_date?: string | null;
@@ -45,6 +49,7 @@ export function patchDriverRecurringFee(
     fee_name: string;
     fee_type: CustomFeeType;
     amount: number;
+    frequency: RecurringFeeFrequency;
     is_active: boolean;
     start_date: string | null;
     end_date: string | null;
@@ -61,4 +66,14 @@ export function deleteDriverRecurringFee(driverId: string, feeId: string) {
   return api.delete<{ ok: boolean }>(
     `/drivers/${encodeURIComponent(driverId)}/recurring-fees/${encodeURIComponent(feeId)}`,
   );
+}
+
+export function recurringFeeFrequencyLabel(frequency: RecurringFeeFrequency): string {
+  switch (frequency) {
+    case "monthly_first_week":
+      return "Monthly · 1st week";
+    case "weekly":
+    default:
+      return "Weekly";
+  }
 }

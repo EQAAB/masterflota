@@ -5,7 +5,9 @@ import {
   getDriverRecurringFees,
   patchDriverRecurringFee,
   postDriverRecurringFee,
+  recurringFeeFrequencyLabel,
   type DriverRecurringFee,
+  type RecurringFeeFrequency,
 } from "../../api/driverRecurringFees";
 import type { CustomFeeType } from "../../api/earnings";
 import { formatCurrency } from "../../utils/currency";
@@ -38,6 +40,9 @@ function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
             {!f.is_active && (
               <span className="ml-2 text-xs text-slate-500">(paused)</span>
             )}
+            <span className="ml-2 text-xs text-slate-500">
+              {recurringFeeFrequencyLabel(f.frequency ?? "weekly")}
+            </span>
             <div className="text-slate-700 tabular-nums mt-0.5">
               {f.fee_type === "deduction" ? "−" : "+"}
               {formatCurrency(Number(f.amount))}
@@ -66,6 +71,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [frequency, setFrequency] = useState<RecurringFeeFrequency>("weekly");
   const [err, setErr] = useState<string | null>(null);
 
   const q = useQuery({
@@ -88,6 +94,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
     setEndDate("");
     setNotes("");
     setIsActive(true);
+    setFrequency("weekly");
     setErr(null);
     setModalOpen(true);
   };
@@ -101,6 +108,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
     setEndDate(f.end_date ?? "");
     setNotes(f.notes ?? "");
     setIsActive(f.is_active);
+    setFrequency(f.frequency ?? "weekly");
     setErr(null);
     setModalOpen(true);
   };
@@ -115,6 +123,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
         fee_name: feeName.trim(),
         fee_type: feeType,
         amount: amountNum,
+        frequency,
         is_active: isActive,
         start_date: startDate.trim() || null,
         end_date: endDate.trim() || null,
@@ -149,7 +158,8 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Recurring fees</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Applied automatically to each weekly payout when the period overlaps the fee dates.
+            Applied to weekly payouts when the period overlaps the fee dates (weekly every time;
+            monthly only in the week that includes the 1st).
           </p>
         </div>
         {canEdit && (
@@ -255,6 +265,23 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600 mb-1">Frequency</label>
+              <select
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value as RecurringFeeFrequency)}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly_first_week">Monthly (first week of month)</option>
+              </select>
+              {frequency === "monthly_first_week" && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Deducted only in the payout week that includes the 1st of the month (e.g.
+                  accommodation rent).
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
