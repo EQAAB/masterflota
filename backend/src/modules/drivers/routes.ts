@@ -2,7 +2,13 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
-import { query } from "../../db/pool";
+import { pool, query } from "../../db/pool";
+import { roundMoney } from "../earnings/debtAllocation";
+import {
+  listRecurringFeesForDriver,
+  type RecurringFeeRow,
+} from "../earnings/driverRecurringFees";
+import { recomputeDriverOpenPayoutsAfterRecurringChange } from "../earnings/driverPayoutCustomFees";
 import { logDriverActivity } from "./activity";
 import { driverProfilePhotoUpload } from "../../config/multer";
 import { handleDriverVehicleHistory } from "../vehicles/vehicleAssignmentHistoryHandlers";
@@ -762,6 +768,237 @@ router.patch("/:id/status", requireRole("admin", "accountant"), async (req, res)
     // eslint-disable-next-line no-console
     console.error("Update driver status error", err);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+const RECURRING_FEE_TYPES = new Set(["deduction", "addition"]);
+
+function parseOptionalDate(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  const s = typeof value === "string" ? value.slice(0, 10) : "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+}
+
+async function assertDriverInOrg(driverId: string, orgId: string): Promise<boolean> {
+  const { rows } = await query<{ id: string }>(
+    `SELECT id::text FROM drivers WHERE id = $1::uuid AND organization_id = $2::uuid
+     AND (is_deleted = false OR is_deleted IS NULL)`,
+    [driverId, orgId],
+  );
+  return !!rows[0];
+}
+
+router.get("/:id/recurring-fees", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+  if (!(await assertDriverInOrg(driverId, orgId))) {
+    return res.status(404).json({ message: "Driver not found" });
+  }
+  const client = await pool.connect();
+  try {
+    const items = await listRecurringFeesForDriver(client, orgId, driverId);
+    return res.json({ items });
+  } catch (err) {
+    console.error("List recurring fees error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/:id/recurring-fees", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+
+  const body = req.body as Record<string, unknown>;
+  const feeName = typeof body.fee_name === "string" ? body.fee_name.trim() : "";
+  if (!feeName || feeName.length > 100) {
+    return res.status(400).json({ message: "fee_name is required (max 100 characters)" });
+  }
+  const feeType = typeof body.fee_type === "string" ? body.fee_type.trim() : "";
+  if (!RECURRING_FEE_TYPES.has(feeType)) {
+    return res.status(400).json({ message: "fee_type must be deduction or addition" });
+  }
+  const amountNum = Number(body.amount);
+  if (!Number.isFinite(amountNum) || amountNum < 0) {
+    return res.status(400).json({ message: "amount must be a non-negative number" });
+  }
+  const amount = roundMoney(amountNum);
+  const startDate = parseOptionalDate(body.start_date);
+  const endDate = parseOptionalDate(body.end_date);
+  if (body.start_date != null && body.start_date !== "" && !startDate) {
+    return res.status(400).json({ message: "start_date must be YYYY-MM-DD" });
+  }
+  if (body.end_date != null && body.end_date !== "" && !endDate) {
+    return res.status(400).json({ message: "end_date must be YYYY-MM-DD" });
+  }
+  const notes = typeof body.notes === "string" ? body.notes.slice(0, 2000) : null;
+  const isActive = body.is_active !== false;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (!(await assertDriverInOrg(driverId, orgId))) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    const ins = await client.query<RecurringFeeRow>(
+      `INSERT INTO driver_recurring_fees (
+         organization_id, driver_id, fee_name, fee_type, amount, is_active, start_date, end_date, notes, created_by
+       ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::date, $8::date, $9, $10::uuid)
+       RETURNING id::text, fee_name, fee_type, amount::text, is_active,
+                 start_date::text, end_date::text, notes, created_at::text, updated_at::text`,
+      [orgId, driverId, feeName, feeType, amount, isActive, startDate, endDate, notes, userId],
+    );
+    await recomputeDriverOpenPayoutsAfterRecurringChange(client, orgId, driverId);
+    await client.query("COMMIT");
+    await logDriverActivity(driverId, "recurring_fee_create", {
+      description: `Recurring fee added: ${feeName}`,
+      performedBy: userId,
+      newValues: { fee_name: feeName, fee_type: feeType, amount },
+    });
+    return res.status(201).json(ins.rows[0]);
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("Create recurring fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.patch("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  const feeId = String(req.params.feeId ?? "");
+  if (!UUID_RE.test(driverId) || !UUID_RE.test(feeId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const existing = await client.query<RecurringFeeRow>(
+      `SELECT id::text, fee_name, fee_type, amount::text, is_active,
+              start_date::text, end_date::text, notes, created_at::text, updated_at::text
+       FROM driver_recurring_fees
+       WHERE id = $1::uuid AND driver_id = $2::uuid AND organization_id = $3::uuid
+       FOR UPDATE`,
+      [feeId, driverId, orgId],
+    );
+    if (!existing.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Recurring fee not found" });
+    }
+    const prev = existing.rows[0];
+
+    const feeName =
+      typeof body.fee_name === "string" && body.fee_name.trim()
+        ? body.fee_name.trim().slice(0, 100)
+        : prev.fee_name;
+    const feeType =
+      typeof body.fee_type === "string" && RECURRING_FEE_TYPES.has(body.fee_type.trim())
+        ? body.fee_type.trim()
+        : prev.fee_type;
+    let amount = Number(prev.amount);
+    if (body.amount !== undefined && body.amount !== null && String(body.amount).trim() !== "") {
+      const amountNum = Number(body.amount);
+      if (!Number.isFinite(amountNum) || amountNum < 0) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ message: "amount must be a non-negative number" });
+      }
+      amount = roundMoney(amountNum);
+    }
+    const isActive = typeof body.is_active === "boolean" ? body.is_active : prev.is_active;
+    const startDate =
+      body.start_date !== undefined ? parseOptionalDate(body.start_date) : prev.start_date;
+    const endDate = body.end_date !== undefined ? parseOptionalDate(body.end_date) : prev.end_date;
+    if (body.start_date !== undefined && body.start_date !== null && body.start_date !== "" && !startDate) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "start_date must be YYYY-MM-DD" });
+    }
+    if (body.end_date !== undefined && body.end_date !== null && body.end_date !== "" && !endDate) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "end_date must be YYYY-MM-DD" });
+    }
+    const notes =
+      body.notes !== undefined
+        ? typeof body.notes === "string"
+          ? body.notes.slice(0, 2000)
+          : null
+        : prev.notes;
+
+    const upd = await client.query<RecurringFeeRow>(
+      `UPDATE driver_recurring_fees SET
+         fee_name = $1, fee_type = $2, amount = $3, is_active = $4,
+         start_date = $5::date, end_date = $6::date, notes = $7, updated_at = NOW()
+       WHERE id = $8::uuid AND driver_id = $9::uuid AND organization_id = $10::uuid
+       RETURNING id::text, fee_name, fee_type, amount::text, is_active,
+                 start_date::text, end_date::text, notes, created_at::text, updated_at::text`,
+      [feeName, feeType, amount, isActive, startDate, endDate, notes, feeId, driverId, orgId],
+    );
+    await recomputeDriverOpenPayoutsAfterRecurringChange(client, orgId, driverId);
+    await client.query("COMMIT");
+    await logDriverActivity(driverId, "recurring_fee_update", {
+      description: `Recurring fee updated: ${feeName}`,
+      performedBy: userId ?? undefined,
+      oldValues: { ...prev },
+      newValues: { ...upd.rows[0] },
+    });
+    return res.json(upd.rows[0]);
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("Update recurring fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  const feeId = String(req.params.feeId ?? "");
+  if (!UUID_RE.test(driverId) || !UUID_RE.test(feeId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const del = await client.query<RecurringFeeRow>(
+      `DELETE FROM driver_recurring_fees
+       WHERE id = $1::uuid AND driver_id = $2::uuid AND organization_id = $3::uuid
+       RETURNING fee_name`,
+      [feeId, driverId, orgId],
+    );
+    if (!del.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Recurring fee not found" });
+    }
+    await recomputeDriverOpenPayoutsAfterRecurringChange(client, orgId, driverId);
+    await client.query("COMMIT");
+    await logDriverActivity(driverId, "recurring_fee_delete", {
+      description: `Recurring fee removed: ${del.rows[0].fee_name}`,
+      performedBy: userId ?? undefined,
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("Delete recurring fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
   }
 });
 

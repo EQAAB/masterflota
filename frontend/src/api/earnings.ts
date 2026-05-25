@@ -391,17 +391,23 @@ export function adjustDebt(
 
 export type CustomFeeType = "deduction" | "addition";
 
+export type CustomFeeSource = "manual" | "recurring";
+
 export interface DriverPayoutCustomFee {
   id: string;
   fee_name: string;
   fee_type: CustomFeeType;
   amount: string;
+  source: CustomFeeSource;
+  recurring_fee_id: string | null;
   notes: string | null;
   created_at: string;
 }
 
 export interface DriverPayoutCustomFeesResponse {
   items: DriverPayoutCustomFee[];
+  recurring_items: DriverPayoutCustomFee[];
+  manual_items: DriverPayoutCustomFee[];
   base_raw_net: string;
   total_deductions: string;
   total_additions: string;

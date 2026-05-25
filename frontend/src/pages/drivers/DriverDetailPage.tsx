@@ -21,6 +21,7 @@ import { assignVehicleToDriver, unassignDriverVehicle } from "../../api/vehicleA
 import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
+import { DriverRecurringFeesPanel } from "../../components/drivers/DriverRecurringFeesPanel";
 
 type TabId = "profile" | "documents" | "activity";
 
@@ -50,6 +51,9 @@ const ACTIVITY_LABELS: Record<string, string> = {
   document_delete: "Document deleted",
   driver_delete: "Driver deleted",
   notes_update: "Notes updated",
+  recurring_fee_create: "Recurring fee added",
+  recurring_fee_update: "Recurring fee updated",
+  recurring_fee_delete: "Recurring fee removed",
 };
 
 export function DriverDetailPage() {
@@ -439,6 +443,21 @@ export function DriverDetailPage() {
                   </div>
                 </div>
               )}
+            </section>
+
+            {id && <DriverRecurringFeesPanel driverId={id} canEdit={canEdit} />}
+
+            <section className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-sm font-semibold text-slate-800 mb-3">Payout history</h2>
+              <p className="text-sm text-slate-600 mb-2">
+                View weekly payouts and one-off adjustments for this driver.
+              </p>
+              <Link
+                to={`/earnings/payouts?driverId=${encodeURIComponent(id)}`}
+                className="text-sm text-sky-700 hover:underline font-medium"
+              >
+                Open payouts for this driver
+              </Link>
             </section>
 
             <section className="bg-white rounded-xl shadow-sm p-6">
