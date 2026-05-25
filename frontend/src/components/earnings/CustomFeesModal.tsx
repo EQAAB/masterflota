@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import type { CustomFeeType, PayoutListItem } from "../../api/earnings";
+import type { CustomFeeType, DriverPayoutCustomFee, PayoutListItem } from "../../api/earnings";
 import {
   deletePayoutCustomFee,
   getPayoutCustomFees,
@@ -103,6 +104,41 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
   };
 
   const data = q.data;
+  const recurringItems = data?.recurring_items ?? data?.items.filter((i) => i.source === "recurring") ?? [];
+  const manualItems = data?.manual_items ?? data?.items.filter((i) => i.source === "manual") ?? [];
+
+  const renderFeeLine = (item: DriverPayoutCustomFee, readOnly: boolean) => (
+    <li key={item.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm bg-white">
+      <div>
+        <span className="font-medium text-slate-900">{item.fee_name}</span>
+        <span
+          className={`ml-2 text-xs font-medium ${
+            item.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
+          }`}
+        >
+          {item.fee_type === "deduction" ? "Deduction" : "Addition"}
+        </span>
+        {readOnly && (
+          <span className="ml-2 text-xs text-violet-600">(recurring)</span>
+        )}
+        <div className="text-slate-700 tabular-nums mt-0.5">
+          {item.fee_type === "deduction" ? "−" : "+"}
+          {formatCurrency(toNum(item.amount))}
+        </div>
+        {item.notes && <p className="text-xs text-slate-500 mt-0.5">{item.notes}</p>}
+      </div>
+      {!readOnly && !locked && (
+        <button
+          type="button"
+          disabled={!!deleteBusyId || busy}
+          onClick={() => void removeFee(item.id)}
+          className="shrink-0 text-xs text-rose-700 hover:underline disabled:opacity-50"
+        >
+          {deleteBusyId === item.id ? "Removing…" : "Delete"}
+        </button>
+      )}
+    </li>
+  );
 
   return (
     <div
@@ -156,46 +192,44 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
             </div>
           )}
 
-          {data && data.items.length > 0 && (
+          {recurringItems.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Existing fees</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Recurring fees (auto)
+                </h3>
+                {row.driver_id && (
+                  <Link
+                    to={`/drivers/${row.driver_id}`}
+                    className="text-xs text-sky-700 hover:underline"
+                    onClick={handleClose}
+                  >
+                    Manage on profile
+                  </Link>
+                )}
+              </div>
               <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
-                {data.items.map((item) => (
-                  <li key={item.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm bg-white">
-                    <div>
-                      <span className="font-medium text-slate-900">{item.fee_name}</span>
-                      <span
-                        className={`ml-2 text-xs font-medium ${
-                          item.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
-                        }`}
-                      >
-                        {item.fee_type === "deduction" ? "Deduction" : "Addition"}
-                      </span>
-                      <div className="text-slate-700 tabular-nums mt-0.5">
-                        {item.fee_type === "deduction" ? "−" : "+"}
-                        {formatCurrency(toNum(item.amount))}
-                      </div>
-                      {item.notes && <p className="text-xs text-slate-500 mt-0.5">{item.notes}</p>}
-                    </div>
-                    {!locked && (
-                      <button
-                        type="button"
-                        disabled={!!deleteBusyId || busy}
-                        onClick={() => void removeFee(item.id)}
-                        className="shrink-0 text-xs text-rose-700 hover:underline disabled:opacity-50"
-                      >
-                        {deleteBusyId === item.id ? "Removing…" : "Delete"}
-                      </button>
-                    )}
-                  </li>
-                ))}
+                {recurringItems.map((item) => renderFeeLine(item, true))}
+              </ul>
+            </div>
+          )}
+
+          {manualItems.length > 0 && (
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                Manual adjustments
+              </h3>
+              <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+                {manualItems.map((item) => renderFeeLine(item, false))}
               </ul>
             </div>
           )}
 
           {!locked && (
             <div className="space-y-3 border-t border-slate-100 pt-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Add custom fee</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Add manual adjustment
+              </h3>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Fee name</label>
                 <input
@@ -250,7 +284,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                 onClick={() => void submit()}
                 className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
               >
-                {busy ? "Saving…" : "Add custom fee"}
+                {busy ? "Saving…" : "Add manual fee"}
               </button>
             </div>
           )}

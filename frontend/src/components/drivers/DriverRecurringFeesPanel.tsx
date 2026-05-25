@@ -1,0 +1,322 @@
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteDriverRecurringFee,
+  getDriverRecurringFees,
+  patchDriverRecurringFee,
+  postDriverRecurringFee,
+  type DriverRecurringFee,
+} from "../../api/driverRecurringFees";
+import type { CustomFeeType } from "../../api/earnings";
+import { formatCurrency } from "../../utils/currency";
+
+type DriverRecurringFeesPanelProps = {
+  driverId: string;
+  canEdit: boolean;
+};
+
+function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
+  if (!items.length) {
+    return <p className="text-sm text-slate-500">No recurring fees configured.</p>;
+  }
+  return (
+    <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden text-sm">
+      {items.map((f) => (
+        <li
+          key={f.id}
+          className={`px-3 py-2 flex flex-wrap justify-between gap-2 ${!f.is_active ? "bg-slate-50 opacity-70" : "bg-white"}`}
+        >
+          <div>
+            <span className="font-medium text-slate-900">{f.fee_name}</span>
+            <span
+              className={`ml-2 text-xs font-medium ${
+                f.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
+              }`}
+            >
+              {f.fee_type === "deduction" ? "Deduction" : "Addition"}
+            </span>
+            {!f.is_active && (
+              <span className="ml-2 text-xs text-slate-500">(paused)</span>
+            )}
+            <div className="text-slate-700 tabular-nums mt-0.5">
+              {f.fee_type === "deduction" ? "−" : "+"}
+              {formatCurrency(Number(f.amount))}
+            </div>
+            {(f.start_date || f.end_date) && (
+              <p className="text-xs text-slate-500 mt-0.5">
+                {f.start_date ?? "…"} → {f.end_date ?? "…"}
+              </p>
+            )}
+            {f.notes && <p className="text-xs text-slate-500">{f.notes}</p>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringFeesPanelProps) {
+  const qc = useQueryClient();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<DriverRecurringFee | null>(null);
+  const [feeName, setFeeName] = useState("");
+  const [feeType, setFeeType] = useState<CustomFeeType>("deduction");
+  const [amount, setAmount] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  const q = useQuery({
+    queryKey: ["driver-recurring-fees", driverId],
+    queryFn: () => getDriverRecurringFees(driverId).then((r) => r.data.items),
+    enabled: !!driverId,
+  });
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["driver-recurring-fees", driverId] });
+    void qc.invalidateQueries({ queryKey: ["earnings"] });
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setFeeName("");
+    setFeeType("deduction");
+    setAmount("");
+    setStartDate("");
+    setEndDate("");
+    setNotes("");
+    setIsActive(true);
+    setErr(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (f: DriverRecurringFee) => {
+    setEditing(f);
+    setFeeName(f.fee_name);
+    setFeeType(f.fee_type);
+    setAmount(String(f.amount));
+    setStartDate(f.start_date ?? "");
+    setEndDate(f.end_date ?? "");
+    setNotes(f.notes ?? "");
+    setIsActive(f.is_active);
+    setErr(null);
+    setModalOpen(true);
+  };
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      const amountNum = parseFloat(amount);
+      if (!feeName.trim() || !Number.isFinite(amountNum) || amountNum < 0) {
+        throw new Error("Name and a non-negative amount are required.");
+      }
+      const body = {
+        fee_name: feeName.trim(),
+        fee_type: feeType,
+        amount: amountNum,
+        is_active: isActive,
+        start_date: startDate.trim() || null,
+        end_date: endDate.trim() || null,
+        notes: notes.trim() || null,
+      };
+      if (editing) {
+        return patchDriverRecurringFee(driverId, editing.id, body);
+      }
+      return postDriverRecurringFee(driverId, body);
+    },
+    onSuccess: () => {
+      setModalOpen(false);
+      invalidate();
+    },
+    onError: (e: Error) => setErr(e.message),
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: (f: DriverRecurringFee) =>
+      patchDriverRecurringFee(driverId, f.id, { is_active: !f.is_active }),
+    onSuccess: invalidate,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (feeId: string) => deleteDriverRecurringFee(driverId, feeId),
+    onSuccess: invalidate,
+  });
+
+  return (
+    <section className="bg-white rounded-xl shadow-sm p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-800">Recurring fees</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Applied automatically to each weekly payout when the period overlaps the fee dates.
+          </p>
+        </div>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
+          >
+            Add recurring fee
+          </button>
+        )}
+      </div>
+
+      {q.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+      {q.isError && <p className="text-sm text-red-700">Failed to load recurring fees.</p>}
+      {q.data && (
+        <>
+          <FeeRowList items={q.data} />
+          {canEdit && q.data.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {q.data.map((f) => (
+                <span key={f.id} className="inline-flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(f)}
+                    className="text-xs text-sky-700 hover:underline"
+                  >
+                    Edit {f.fee_name}
+                  </button>
+                  <span className="text-slate-300">·</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleMut.mutate(f)}
+                    disabled={toggleMut.isPending}
+                    className="text-xs text-slate-600 hover:underline disabled:opacity-50"
+                  >
+                    {f.is_active ? "Pause" : "Enable"}
+                  </button>
+                  <span className="text-slate-300">·</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`Delete recurring fee "${f.fee_name}"?`)) {
+                        deleteMut.mutate(f.id);
+                      }
+                    }}
+                    disabled={deleteMut.isPending}
+                    className="text-xs text-rose-700 hover:underline disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !saveMut.isPending && setModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-xl p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-slate-900">
+              {editing ? "Edit recurring fee" : "Add recurring fee"}
+            </h3>
+            {err && <p className="text-sm text-red-700">{err}</p>}
+            <div>
+              <label className="block text-xs text-slate-600 mb-1">Fee name</label>
+              <input
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                value={feeName}
+                maxLength={100}
+                onChange={(e) => setFeeName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">Type</label>
+                <select
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  value={feeType}
+                  onChange={(e) => setFeeType(e.target.value as CustomFeeType)}
+                >
+                  <option value="deduction">Deduction</option>
+                  <option value="addition">Addition</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">Amount (RON)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">Start date (optional)</label>
+                <input
+                  type="date"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">End date (optional)</label>
+                <input
+                  type="date"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+              />
+              Active (apply to matching payout weeks)
+            </label>
+            <div>
+              <label className="block text-xs text-slate-600 mb-1">Notes</label>
+              <textarea
+                rows={2}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+                onClick={() => setModalOpen(false)}
+                disabled={saveMut.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-violet-600 px-3 py-1.5 text-sm text-white hover:bg-violet-700 disabled:opacity-50"
+                disabled={saveMut.isPending}
+                onClick={() => {
+                  setErr(null);
+                  saveMut.mutate();
+                }}
+              >
+                {saveMut.isPending ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

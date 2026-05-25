@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { recomputeDriverDebtAllocation, roundMoney } from "./debtAllocation";
+import { syncRecurringFeesToPayout } from "./driverRecurringFees";
 
 export type CustomFeeType = "deduction" | "addition";
 
@@ -43,8 +44,10 @@ export async function sumCustomFees(client: PoolClient, payoutId: string): Promi
   };
 }
 
-/** Apply custom fee rows to raw_net_amount before debt carry-forward. */
+/** Apply recurring materialization + all adjustment rows to raw_net_amount before debt carry-forward. */
 export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string, payoutId: string): Promise<number> {
+  await syncRecurringFeesToPayout(client, orgId, payoutId);
+
   const pr = await client.query<{
     total_net_earnings: string | null;
     company_commission: string | null;
@@ -83,6 +86,27 @@ export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string,
   return adjustedRaw;
 }
 
+/** Re-sync recurring + custom raw net on all open payouts for a driver, then debt allocation. */
+export async function recomputeDriverOpenPayoutsAfterRecurringChange(
+  client: PoolClient,
+  orgId: string,
+  driverId: string,
+): Promise<void> {
+  const { rows } = await client.query<{ id: string }>(
+    `SELECT id::text FROM driver_payouts
+     WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+       AND payment_status NOT IN ('paid', 'approved')
+     ORDER BY payment_period_end ASC, id ASC`,
+    [orgId, driverId],
+  );
+  for (const p of rows) {
+    await applyCustomFeesToRawNet(client, orgId, p.id);
+  }
+  if (rows.length > 0) {
+    await recomputeDriverDebtAllocation(client, orgId, driverId);
+  }
+}
+
 /** Re-apply custom fees then full debt carry-forward for the driver. */
 export async function recomputeDriverPayoutAfterCustomFees(
   client: PoolClient,
@@ -100,11 +124,15 @@ export async function recomputeDriverPayoutAfterCustomFees(
   await recomputeDriverDebtAllocation(client, orgId, driverId);
 }
 
+export type CustomFeeSource = "manual" | "recurring";
+
 export type CustomFeeRow = {
   id: string;
   fee_name: string;
   fee_type: CustomFeeType;
   amount: string;
+  source: CustomFeeSource;
+  recurring_fee_id: string | null;
   notes: string | null;
   created_at: string;
 };
@@ -115,10 +143,11 @@ export async function listCustomFeesForPayout(
   payoutId: string,
 ): Promise<CustomFeeRow[]> {
   const { rows } = await client.query<CustomFeeRow>(
-    `SELECT id::text, fee_name, fee_type, amount::text, notes, created_at::text
+    `SELECT id::text, fee_name, fee_type, amount::text, source, recurring_fee_id::text,
+            notes, created_at::text
      FROM driver_payout_adjustments
      WHERE driver_payout_id = $1::uuid AND organization_id = $2::uuid
-     ORDER BY created_at ASC, id ASC`,
+     ORDER BY source ASC, created_at ASC, id ASC`,
     [payoutId, orgId],
   );
   return rows;

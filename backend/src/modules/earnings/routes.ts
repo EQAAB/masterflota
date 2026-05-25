@@ -1656,9 +1656,13 @@ router.get("/payouts/:id/custom-fees", async (req, res) => {
       listCustomFeesForPayout(client, orgId, payoutId),
       fetchPayoutCustomFeeSummary(client, orgId, payoutId),
     ]);
+    const recurring_items = items.filter((i) => i.source === "recurring");
+    const manual_items = items.filter((i) => i.source === "manual");
 
     return res.json({
       items,
+      recurring_items,
+      manual_items,
       base_raw_net: summary.base_raw_net.toFixed(2),
       total_deductions: summary.total_deductions.toFixed(2),
       total_additions: summary.total_additions.toFixed(2),
@@ -1719,8 +1723,8 @@ router.post("/payouts/:id/custom-fees", async (req, res) => {
 
     const ins = await client.query<{ id: string }>(
       `INSERT INTO driver_payout_adjustments
-         (driver_payout_id, organization_id, fee_name, fee_type, amount, notes, created_by)
-       VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid)
+         (driver_payout_id, organization_id, fee_name, fee_type, amount, source, notes, created_by)
+       VALUES ($1::uuid, $2::uuid, $3, $4, $5, 'manual', $6, $7::uuid)
        RETURNING id::text`,
       [payoutId, orgId, feeName, feeType, amount, notes, userId],
     );
@@ -1733,9 +1737,13 @@ router.post("/payouts/:id/custom-fees", async (req, res) => {
     ]);
 
     await client.query("COMMIT");
+    const recurring_items = items.filter((i) => i.source === "recurring");
+    const manual_items = items.filter((i) => i.source === "manual");
     return res.status(201).json({
       id: ins.rows[0]?.id,
       items,
+      recurring_items,
+      manual_items,
       base_raw_net: summary.base_raw_net.toFixed(2),
       total_deductions: summary.total_deductions.toFixed(2),
       total_additions: summary.total_additions.toFixed(2),
@@ -1785,15 +1793,27 @@ router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
       return res.status(400).json({ message: "Cannot remove custom fees from a paid or approved payout" });
     }
 
-    const del = await client.query(
-      `DELETE FROM driver_payout_adjustments
+    const existing = await client.query<{ source: string }>(
+      `SELECT source FROM driver_payout_adjustments
        WHERE id = $1::uuid AND driver_payout_id = $2::uuid AND organization_id = $3::uuid`,
       [adjustmentId, payoutId, orgId],
     );
-    if (del.rowCount === 0) {
+    if (!existing.rows[0]) {
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Custom fee not found" });
     }
+    if (existing.rows[0].source === "recurring") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        message: "Recurring fees are managed on the driver profile. Edit or disable them there.",
+      });
+    }
+
+    await client.query(
+      `DELETE FROM driver_payout_adjustments
+       WHERE id = $1::uuid AND driver_payout_id = $2::uuid AND organization_id = $3::uuid AND source = 'manual'`,
+      [adjustmentId, payoutId, orgId],
+    );
 
     await recomputeDriverPayoutAfterCustomFees(client, orgId, payoutId);
 
@@ -1803,9 +1823,13 @@ router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
     ]);
 
     await client.query("COMMIT");
+    const recurring_items = items.filter((i) => i.source === "recurring");
+    const manual_items = items.filter((i) => i.source === "manual");
     return res.json({
       ok: true,
       items,
+      recurring_items,
+      manual_items,
       base_raw_net: summary.base_raw_net.toFixed(2),
       total_deductions: summary.total_deductions.toFixed(2),
       total_additions: summary.total_additions.toFixed(2),
