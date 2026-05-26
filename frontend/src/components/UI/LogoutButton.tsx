@@ -21,7 +21,11 @@ function LogoutIcon() {
   );
 }
 
-export function LogoutButton() {
+export interface LogoutButtonProps {
+  collapsed?: boolean;
+}
+
+export function LogoutButton({ collapsed = false }: LogoutButtonProps) {
   const logout = useAuthStore((s) => s.logout);
   const [modalOpen, setModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,11 +54,14 @@ export function LogoutButton() {
       <button
         type="button"
         onClick={() => setModalOpen(true)}
-        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-mint/50 transition-colors w-full justify-center sm:justify-start"
+        className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-mint/50 transition-colors w-full ${
+          collapsed ? "justify-center" : "justify-start"
+        }`}
         aria-label="Log out"
+        title={collapsed ? "Log out" : undefined}
       >
         <LogoutIcon />
-        <span className="hidden sm:inline">Log out</span>
+        {!collapsed && <span>Log out</span>}
       </button>
       <LogoutConfirmationModal
         isOpen={modalOpen}

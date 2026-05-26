@@ -42,11 +42,12 @@ export async function insertEarningsPreviewStaging(
       : {}),
     ...(params.boltWeeklyExport ? { boltWeeklyExport: true } : {}),
   };
+  const totalRows = params.normalizedRows.length;
   const ins = await client.query<{ id: string }>(
     `INSERT INTO earnings_imports (
           organization_id, file_name, import_date, week_start, week_end, platform,
-          status, imported_by, detection_meta
-        ) VALUES ($1, $2, CURRENT_DATE, $3::date, $4::date, $5, 'preview', $6::uuid, $7::jsonb)
+          status, imported_by, detection_meta, total_rows, processed_rows
+        ) VALUES ($1, $2, CURRENT_DATE, $3::date, $4::date, $5, 'preview', $6::uuid, $7::jsonb, $8, 0)
         RETURNING id`,
     [
       params.orgId,
@@ -56,6 +57,7 @@ export async function insertEarningsPreviewStaging(
       params.platform,
       params.userId,
       JSON.stringify(detectionMeta),
+      totalRows,
     ],
   );
   const importId = ins.rows[0]?.id;

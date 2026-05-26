@@ -90,6 +90,31 @@ export const actionMenuPanel =
 export const actionMenuItem =
   "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left text-sm font-medium text-ink hover:bg-surface/90";
 
+export const dashboardPage =
+  "mx-auto w-full max-w-[1600px] flex-1 px-4 py-8 sm:px-6 lg:px-8 space-y-10";
+
+export const dashboardSectionTitle = "text-base font-semibold tracking-tight text-ink";
+
+export const kpiCard =
+  "flex min-h-[120px] flex-col rounded-2xl border border-border/80 bg-surface-card p-5 shadow-card " +
+  transitionDefault;
+
+export const kpiCardHover = kpiCard + " hover:-translate-y-0.5 hover:shadow-card-hover";
+
+export const chartCard =
+  "rounded-2xl border border-border/80 bg-surface-card p-5 shadow-card sm:p-6 " + transitionDefault;
+
+export const emptyStateWrap =
+  "flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface-elevated/80 px-6 py-12 text-center";
+
+export const sidebarNavItem =
+  "relative z-10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out min-h-[40px]";
+
+export const sidebarNavActive =
+  "bg-brand-mint text-ink shadow-sidebar-glow ring-1 ring-white/20";
+
+export const sidebarNavInactive = "text-white/75 hover:bg-white/10 hover:text-white";
+
 /** @deprecated Use imports from theme/classNames */
 export const EARNINGS_SURFACE_CARD = cardGlass;
 export const EARNINGS_INPUT = input;

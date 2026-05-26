@@ -317,14 +317,22 @@ export async function runEarningsCommitFromStaging(
     { gross: 0, fee: 0, net: 0, comm: 0, payout: 0, trips: 0 },
   );
 
+  const stagingCountRes = await client.query<{ c: string }>(
+    `SELECT COUNT(*)::text AS c FROM earnings_import_staging WHERE import_id = $1::uuid`,
+    [importId],
+  );
+  const stagingRowCount = parseInt(stagingCountRes.rows[0]?.c ?? "0", 10);
+
   await client.query(
     `UPDATE earnings_imports SET
         status = 'completed',
         record_count = $2,
+        processed_rows = $2,
+        total_rows = GREATEST(COALESCE(total_rows, 0), $5),
         total_gross = $3,
         total_trips = $4
        WHERE id = $1`,
-    [importId, toInsert.length, totals.gross, totals.trips],
+    [importId, toInsert.length, totals.gross, totals.trips, stagingRowCount],
   );
 
   const touchedDriverIds = [...new Set(toInsert.map((r) => r.driver_id))];

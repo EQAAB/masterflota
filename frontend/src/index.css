@@ -4,6 +4,9 @@
 
 :root {
   --fm-surface: #f6f7fb;
+  --fm-surface-elevated: #fafbfc;
+  --fm-surface-card: #ffffff;
+  --fm-brand-deeper: #003d38;
   --fm-brand-dark: #005f56;
   --fm-brand: #0b7a6e;
   --fm-brand-mint: #ddf5ee;
@@ -13,10 +16,12 @@
   --fm-success: #22c55e;
   --fm-warning: #f59e0b;
   --fm-danger: #ef4444;
+  --fm-accent-gold: #d4a574;
   --fm-radius-card: 20px;
   --fm-radius-btn: 14px;
   --fm-radius-input: 12px;
   --fm-shadow-soft: 0 10px 30px rgba(16, 24, 40, 0.06);
+  --fm-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
 }
 
 @layer base {
@@ -86,5 +91,35 @@
     .fm-action-menu-backdrop {
       animation: none !important;
     }
+  }
+
+  .sidebar-shell {
+    @apply relative flex flex-col shrink-0 text-white shadow-soft-lg transition-[width] duration-200 ease-out;
+    background-image: linear-gradient(180deg, #003d38 0%, #005f56 42%, #0b7a6e 100%);
+  }
+
+  .sidebar-shell::before {
+    content: "";
+    @apply pointer-events-none absolute inset-0 opacity-[0.35];
+    background-image: radial-gradient(ellipse 80% 50% at 0% 0%, rgba(221, 245, 238, 0.12), transparent 55%);
+  }
+
+  .sidebar-noise::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 opacity-[0.04];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .sidebar-glass-nav {
+    @apply relative flex-1 overflow-y-auto overflow-x-hidden p-2;
+  }
+
+  .sidebar-glass-nav::before {
+    content: "";
+    @apply pointer-events-none absolute inset-2 rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/10;
+  }
+
+  .fm-kpi-value {
+    @apply text-3xl font-semibold tracking-tight tabular-nums text-ink sm:text-4xl;
   }
 }

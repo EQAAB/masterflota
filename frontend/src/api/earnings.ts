@@ -34,8 +34,18 @@ export interface EarningsImportListItem {
   week_end: string;
   platform: string;
   record_count: number | null;
+  total_rows?: number | null;
+  processed_rows?: number | null;
   status: string;
   created_at: string;
+  reverted_at?: string | null;
+  reverted_by?: string | null;
+}
+
+export interface RevertEarningsImportResponse {
+  importId: string;
+  reversalRowCount: number;
+  driversRecalculated: number;
 }
 
 export interface EarningsImportsResponse {
@@ -198,6 +208,23 @@ export function getPayoutIntegrityRows() {
 
 export function getEarningsImports(page = 1, pageSize = 20) {
   return api.get<EarningsImportsResponse>("/earnings/imports", { params: { page, pageSize } });
+}
+
+export function revertEarningsImport(importId: string) {
+  return api.post<RevertEarningsImportResponse>(`/earnings/imports/${importId}/revert`);
+}
+
+export function deleteEarningsImport(importId: string) {
+  return api.delete(`/earnings/imports/${importId}`);
+}
+
+/** Committed earnings rows for an import (0 = safe to hard-delete). */
+export function importProcessedRows(row: EarningsImportListItem): number {
+  return row.processed_rows ?? row.record_count ?? 0;
+}
+
+export function importTotalRows(row: EarningsImportListItem): number {
+  return row.total_rows ?? row.record_count ?? 0;
 }
 
 export function getEarningsPayouts(params: {
