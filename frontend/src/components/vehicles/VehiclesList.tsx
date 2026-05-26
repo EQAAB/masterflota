@@ -1,0 +1,361 @@
+import { useCallback, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { getDrivers } from "../../api/drivers";
+import type { PaginationMeta, VehicleListItem, VehicleStatus } from "../../api/vehicles";
+import { updateVehicle } from "../../api/vehicles";
+import { assignDriverToVehicle } from "../../api/vehicleAssignments";
+import { useAuthStore } from "../../store/authStore";
+import type { SortableHeaderProps } from "../../hooks/useListSort";
+import type { useVehiclesListFilters } from "../../hooks/useVehiclesListFilters";
+import { exportVehiclesCsv } from "../../utils/exportVehiclesCsv";
+import { btnSecondary, btnPrimary, driversPage, input } from "../../theme/classNames";
+import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
+import { DriversPagination } from "../drivers/DriversPagination";
+import { buildVehicleActionMenuItems } from "./buildVehicleActionMenuItems";
+import { VehiclesFilterBar } from "./VehiclesFilterBar";
+import { VehiclesPageHeader } from "./VehiclesPageHeader";
+import { VehiclesTable } from "./VehiclesTable";
+
+const VEHICLE_STATUSES: { value: VehicleStatus; label: string }[] = [
+  { value: "available", label: "Available" },
+  { value: "rented", label: "Rented" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "sold", label: "Sold" },
+  { value: "scrapped", label: "Scrapped" },
+];
+
+type VehiclesListProps = {
+  vehicles: VehicleListItem[] | undefined;
+  pagination: PaginationMeta | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  getHeaderProps: (field: string) => SortableHeaderProps;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  filters: ReturnType<typeof useVehiclesListFilters>;
+  onDeleteRequest: (vehicle: VehicleListItem) => void;
+};
+
+export function VehiclesList({
+  vehicles,
+  pagination,
+  isLoading,
+  isError,
+  getHeaderProps,
+  page,
+  limit,
+  onPageChange,
+  onLimitChange,
+  filters,
+  onDeleteRequest,
+}: VehiclesListProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const userRole = useAuthStore((s) => s.user?.role);
+  const canDelete = userRole === "admin" || userRole === "accountant";
+
+  const rows = vehicles ?? [];
+  const totalCount = pagination?.total ?? 0;
+  const filteredCount = totalCount;
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    debouncedQuery,
+    statusFilter,
+    setStatusFilter,
+    subcontractorFilter,
+    setSubcontractorFilter,
+    platformFilter,
+    setPlatformFilter,
+    filtersExpanded,
+    setFiltersExpanded,
+    isFilterPending,
+    hasActiveFilters,
+    clearAllFilters,
+    clearSearch,
+  } = filters;
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [assignTarget, setAssignTarget] = useState<VehicleListItem | null>(null);
+  const [statusTarget, setStatusTarget] = useState<VehicleListItem | null>(null);
+  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [newStatus, setNewStatus] = useState<VehicleStatus>("available");
+
+  const showEmptyOrg =
+    !isLoading && !isError && totalCount === 0 && !hasActiveFilters && !isFilterPending;
+  const showNoMatchEmpty =
+    !isLoading && !isError && totalCount === 0 && (hasActiveFilters || debouncedQuery.trim().length > 0) && !isFilterPending;
+
+  const pageIds = useMemo(() => rows.map((v) => v.id), [rows]);
+  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const pageSomeSelected = pageIds.some((id) => selectedIds.has(id));
+
+  const closeActionMenu = useCallback(() => {
+    setOpenMenuRowId(null);
+    setMenuAnchorEl(null);
+  }, []);
+
+  const handleActionMenuToggle = useCallback(
+    (rowId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (openMenuRowId === rowId) {
+        closeActionMenu();
+        return;
+      }
+      setOpenMenuRowId(rowId);
+      setMenuAnchorEl(event.currentTarget);
+    },
+    [openMenuRowId, closeActionMenu],
+  );
+
+  const openMenuVehicle = openMenuRowId ? rows.find((v) => v.id === openMenuRowId) : undefined;
+
+  const openMenuItems = useMemo(() => {
+    if (!openMenuVehicle) return [];
+    return buildVehicleActionMenuItems({
+      canDelete,
+      onView: () => {
+        closeActionMenu();
+        navigate(`/vehicles/${openMenuVehicle.id}`);
+      },
+      onEdit: () => {
+        closeActionMenu();
+        navigate(`/vehicles/${openMenuVehicle.id}/edit`);
+      },
+      onAssignDriver: () => {
+        closeActionMenu();
+        setAssignTarget(openMenuVehicle);
+        setSelectedDriverId("");
+      },
+      onChangeStatus: () => {
+        closeActionMenu();
+        setStatusTarget(openMenuVehicle);
+        setNewStatus(openMenuVehicle.status);
+      },
+      onDelete: () => {
+        closeActionMenu();
+        onDeleteRequest(openMenuVehicle);
+      },
+    });
+  }, [openMenuVehicle, closeActionMenu, navigate, canDelete, onDeleteRequest]);
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const togglePageSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const { data: driversRes } = useQuery({
+    queryKey: ["drivers", "for-assign"],
+    queryFn: async () => {
+      const { data } = await getDrivers({ limit: 500, status: "active" });
+      return data;
+    },
+    enabled: assignTarget !== null,
+  });
+
+  const driversForAssign = driversRes ?? [];
+
+  const assignMutation = useMutation({
+    mutationFn: ({ vehicleId, driverId }: { vehicleId: string; driverId: string }) =>
+      assignDriverToVehicle(vehicleId, driverId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      setAssignTarget(null);
+      setSelectedDriverId("");
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ vehicleId, status }: { vehicleId: string; status: VehicleStatus }) =>
+      updateVehicle(vehicleId, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      setStatusTarget(null);
+    },
+  });
+
+  const handleExport = () => {
+    const toExport =
+      selectedIds.size > 0 ? rows.filter((v) => selectedIds.has(v.id)) : rows;
+    exportVehiclesCsv(toExport);
+  };
+
+  return (
+    <>
+      <VehiclesPageHeader onExport={handleExport} exportDisabled={rows.length === 0} />
+
+      <div className={driversPage}>
+        <VehiclesFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onClearSearch={clearSearch}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          subcontractorFilter={subcontractorFilter}
+          onSubcontractorChange={setSubcontractorFilter}
+          platformFilter={platformFilter}
+          onPlatformChange={setPlatformFilter}
+          filtersExpanded={filtersExpanded}
+          onToggleFilters={() => setFiltersExpanded((e) => !e)}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+          isFilterPending={isFilterPending}
+          debouncedQuery={debouncedQuery}
+          hasActiveFilters={hasActiveFilters}
+          onClearAllFilters={clearAllFilters}
+        />
+
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface-card shadow-card">
+          <VehiclesTable
+            vehicles={rows}
+            isLoading={isLoading}
+            isError={isError}
+            showEmptyOrg={showEmptyOrg}
+            showNoMatchEmpty={showNoMatchEmpty}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onTogglePageSelection={togglePageSelection}
+            pageAllSelected={pageAllSelected}
+            pageSomeSelected={pageSomeSelected}
+            getHeaderProps={getHeaderProps}
+            openMenuRowId={openMenuRowId}
+            onActionMenuToggle={handleActionMenuToggle}
+            embedded
+          />
+          {!isLoading && !isError && filteredCount > 0 && (
+            <DriversPagination
+              page={page}
+              pageSize={limit}
+              totalItems={filteredCount}
+              onPageChange={onPageChange}
+              onPageSizeChange={(size) => {
+                onLimitChange(size);
+                onPageChange(1);
+              }}
+              selectId="vehicle-page-size"
+            />
+          )}
+        </div>
+      </div>
+
+      <ActionMenuDropdown
+        open={openMenuRowId !== null && menuAnchorEl !== null}
+        anchorEl={menuAnchorEl}
+        items={openMenuItems}
+        align="right"
+        onClose={closeActionMenu}
+      />
+
+      {assignTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
+            <h3 className="text-lg font-semibold text-ink">Assign driver</h3>
+            <p className="mt-1 text-sm text-ink-muted">
+              Select a driver for {assignTarget.make} {assignTarget.model}.
+            </p>
+            <select
+              className={`${input} mt-4`}
+              value={selectedDriverId}
+              onChange={(e) => setSelectedDriverId(e.target.value)}
+            >
+              <option value="">Choose driver…</option>
+              {driversForAssign.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.first_name} {d.last_name}
+                  {d.current_vehicle_id && d.current_vehicle_id !== assignTarget.id ? " (reassign)" : ""}
+                </option>
+              ))}
+            </select>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                disabled={!selectedDriverId || assignMutation.isPending}
+                onClick={() =>
+                  assignMutation.mutate({ vehicleId: assignTarget.id, driverId: selectedDriverId })
+                }
+                className={`${btnPrimary} flex-1 justify-center`}
+              >
+                {assignMutation.isPending ? "Assigning…" : "Assign"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAssignTarget(null);
+                  setSelectedDriverId("");
+                }}
+                disabled={assignMutation.isPending}
+                className={`${btnSecondary} flex-1 justify-center`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {statusTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
+            <h3 className="text-lg font-semibold text-ink">Change status</h3>
+            <p className="mt-1 text-sm text-ink-muted">
+              Update status for {statusTarget.make} {statusTarget.model}.
+            </p>
+            <select
+              className={`${input} mt-4`}
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value as VehicleStatus)}
+            >
+              {VEHICLE_STATUSES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({ vehicleId: statusTarget.id, status: newStatus })
+                }
+                className={`${btnPrimary} flex-1 justify-center`}
+              >
+                {statusMutation.isPending ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusTarget(null)}
+                disabled={statusMutation.isPending}
+                className={`${btnSecondary} flex-1 justify-center`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -7,18 +7,29 @@ export interface KpiStatCardProps {
   subtitle?: string;
   trend?: { value: string; positive?: boolean };
   icon?: ReactNode;
+  iconClassName?: string;
   className?: string;
 }
 
-function IconCircle({ children }: { children: ReactNode }) {
+function IconCircle({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-mint/80 text-brand">
+    <div
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-mint/80 text-brand ${className ?? ""}`}
+    >
       {children}
     </div>
   );
 }
 
-export function KpiStatCard({ title, value, subtitle, trend, icon, className = "" }: KpiStatCardProps) {
+export function KpiStatCard({
+  title,
+  value,
+  subtitle,
+  trend,
+  icon,
+  iconClassName,
+  className = "",
+}: KpiStatCardProps) {
   const trendPositive = trend?.positive !== false;
   const trendClass = trendPositive ? "text-success" : trend?.positive === false ? "text-danger" : "text-warning";
 
@@ -35,7 +46,7 @@ export function KpiStatCard({ title, value, subtitle, trend, icon, className = "
             </span>
           )}
         </div>
-        {icon && <IconCircle>{icon}</IconCircle>}
+        {icon && <IconCircle className={iconClassName}>{icon}</IconCircle>}
       </div>
     </div>
   );
