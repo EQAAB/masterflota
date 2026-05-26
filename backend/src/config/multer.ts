@@ -14,6 +14,24 @@ const EARNINGS_MIMES = [
 ];
 const EARNINGS_MAX = 40 * 1024 * 1024;
 
+const CSV_EXT = [".csv"];
+const CSV_MIMES = ["text/csv", "application/vnd.ms-excel", "text/plain"];
+const CSV_MAX = 5 * 1024 * 1024;
+
+export const entityCsvUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: CSV_MAX },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const ok =
+      CSV_EXT.includes(ext) ||
+      CSV_MIMES.includes(file.mimetype) ||
+      (file.mimetype === "application/octet-stream" && CSV_EXT.includes(ext));
+    if (ok) cb(null, true);
+    else cb(new Error("CSV upload: allowed type is .csv"));
+  },
+});
+
 export const earningsUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: EARNINGS_MAX },

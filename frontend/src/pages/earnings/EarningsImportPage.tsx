@@ -15,32 +15,22 @@ import {
 import {
   deleteEarningsImport,
   getEarningsImports,
-  importProcessedRows,
-  importTotalRows,
   revertEarningsImport,
   syncEarningsVehicleRentals,
 } from "../../api/earnings";
-import { EarningsImportPreviewVirtualTable } from "../../components/earnings/EarningsImportPreviewVirtualTable";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
+import { EarningsImportFeatureCards } from "../../components/earnings/import/EarningsImportFeatureCards";
+import { EarningsImportGlovoSettings } from "../../components/earnings/import/EarningsImportGlovoSettings";
+import { EarningsImportHeader } from "../../components/earnings/import/EarningsImportHeader";
+import {
+  EarningsImportPreviewPanel,
+  PROVIDER_OPTIONS,
+} from "../../components/earnings/import/EarningsImportPreviewPanel";
+import { EarningsImportUploadCard } from "../../components/earnings/import/EarningsImportUploadCard";
+import { RecentImportsTable } from "../../components/earnings/import/RecentImportsTable";
+import { alertError, alertSuccess, driversPage } from "../../theme/classNames";
 import { useCsvValidation } from "../../hooks/useCsvValidation";
 import { useUnsavedImportNavigationGuard } from "../../hooks/useUnsavedImportNavigationGuard";
-
-const PROVIDER_OPTIONS = [
-  { value: "uber", label: "Uber" },
-  { value: "bolt", label: "Bolt" },
-  { value: "glovo", label: "Glovo Courier" },
-  { value: "bolt_courier", label: "Bolt Delivery" },
-  { value: "wolt_courier", label: "Wolt Courier" },
-] as const;
-
-const GLOVO_COMMISSION_BASE_OPTIONS = [
-  { value: "net_income", label: "Net income (after platform fee / Taxa)" },
-  { value: "gross_income", label: "Gross income (Venituri + Tips)" },
-  { value: "net_income_no_tips", label: "Net without tips" },
-  { value: "gross_income_no_tips", label: "Gross without tips" },
-  { value: "net_income_no_bonuses", label: "Net (no bonuses column yet)" },
-  { value: "gross_income_no_bonuses", label: "Gross (no bonuses column yet)" },
-] as const;
 
 function providerLabel(value: string): string {
   return PROVIDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -128,8 +118,8 @@ export function EarningsImportPage() {
   }, [orgImportSettingsQuery.data?.glovoCommissionBaseType]);
 
   const patchOrgImportSettingsMut = useMutation({
-    mutationFn: (glovoCommissionBaseType: string) =>
-      patchOrgImportSettings({ glovoCommissionBaseType }).then((r) => r.data),
+    mutationFn: (next: string) =>
+      patchOrgImportSettings({ glovoCommissionBaseType: next }).then((r) => r.data),
     onSuccess: (data) => {
       setGlovoCommissionBaseType(data.glovoCommissionBaseType);
       setLocalError(null);
@@ -247,8 +237,7 @@ export function EarningsImportPage() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragActive(false);
-      const f = e.dataTransfer.files?.[0];
-      handleFile(f);
+      handleFile(e.dataTransfer.files?.[0]);
     },
     [handleFile],
   );
@@ -260,42 +249,33 @@ export function EarningsImportPage() {
     syncMut.isPending ||
     revertMut.isPending ||
     deleteImportMut.isPending;
-  const confidencePct =
-    preview?.detectionConfidence != null ? Math.round(preview.detectionConfidence * 100) : null;
+
   const periodValid =
-    Boolean(periodStart && periodEnd && periodStart <= periodEnd && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform));
+    Boolean(periodStart && periodEnd && periodStart <= periodEnd) &&
+    PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
   if (user?.role !== "admin" && user?.role !== "accountant") {
     return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
   }
 
   return (
-    <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-border bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4">
-        <h1 className="text-lg font-semibold text-ink">Import earnings</h1>
-        <p className="text-sm text-ink-muted mt-1">
-          Drag a file onto the zone or browse. CSV, XLSX, ZIP, XML, or PDF.
-        </p>
-      </header>
+    <div className="flex flex-1 flex-col overflow-auto bg-surface-elevated">
+      <EarningsImportHeader />
 
-      <div className="flex-1 p-4 sm:p-6 space-y-8 max-w-6xl mx-auto w-full">
-        {localError && (
-          <div className="rounded-xl bg-red-50 text-red-800 text-sm px-4 py-3 border border-red-100">{localError}</div>
-        )}
+      <div className={driversPage}>
+        {localError && <div className={alertError}>{localError}</div>}
 
         {importSuccess && (
-          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.06)] px-4 py-3 text-sm text-emerald-900">
+          <div className={alertSuccess}>
             <p className="font-medium">Import complete</p>
-            <p className="mt-1 text-emerald-800/90">
-              {importSuccess.insertedRows} row(s) saved.
-            </p>
+            <p className="mt-1 opacity-90">{importSuccess.insertedRows} row(s) saved.</p>
           </div>
         )}
 
         {importSuccess?.warnings && importSuccess.warnings.length > 0 && (
-          <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2">
-            <p className="text-xs font-semibold text-amber-900 mb-1">Vehicle return check</p>
-            <ul className="text-xs text-amber-900 list-disc list-inside space-y-0.5">
+          <div className="rounded-[20px] border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-ink">
+            <p className="text-xs font-semibold text-warning">Vehicle return check</p>
+            <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-ink-muted">
               {importSuccess.warnings.map((w, i) => (
                 <li key={i}>{w}</li>
               ))}
@@ -304,44 +284,22 @@ export function EarningsImportPage() {
         )}
 
         {!preview && selectedPlatform === "glovo" && (
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 py-3 text-sm text-amber-950">
-            <p className="font-medium text-amber-900">Glovo: fleet commission base</p>
-            <p className="text-xs text-amber-900/80 mt-1">
-              Chooses the amount we multiply by each driver&apos;s commission rules (percentage, fixed, hybrid,
-              minimum). Driver payout is still{" "}
-              <span className="font-medium">net income (after fee) − commission − daily cash</span>. Applies to new
-              imports; each preview stores a snapshot of this setting.
-            </p>
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <label htmlFor="glovo-commission-base" className="sr-only">
-                Commission base type
-              </label>
-              <select
-                id="glovo-commission-base"
-                className="rounded-lg border border-amber-300/80 bg-white px-3 py-2 text-sm text-ink min-h-[40px] max-w-md disabled:opacity-60"
-                value={glovoCommissionBaseType}
-                disabled={busy || patchOrgImportSettingsMut.isPending || user?.role !== "admin"}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setGlovoCommissionBaseType(v);
-                  if (user?.role === "admin") patchOrgImportSettingsMut.mutate(v);
-                }}
-              >
-                {GLOVO_COMMISSION_BASE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              {user?.role !== "admin" && (
-                <span className="text-xs text-amber-900/90">Only admins can change this setting.</span>
-              )}
-            </div>
-          </div>
+          <EarningsImportGlovoSettings
+            value={glovoCommissionBaseType}
+            onChange={(v) => {
+              setGlovoCommissionBaseType(v);
+              if (user?.role === "admin") patchOrgImportSettingsMut.mutate(v);
+            }}
+            disabled={busy || patchOrgImportSettingsMut.isPending}
+            isAdmin={user?.role === "admin"}
+          />
         )}
 
-        {!preview && (
-          <div
+        {!preview ? (
+          <EarningsImportUploadCard
+            dragActive={dragActive}
+            isPending={previewMut.isPending}
+            fileInputRef={fileInputRef}
             onDragEnter={(e) => {
               e.preventDefault();
               setDragActive(true);
@@ -352,284 +310,40 @@ export function EarningsImportPage() {
             }}
             onDragLeave={() => setDragActive(false)}
             onDrop={onDrop}
-            className={`
-              rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors cursor-pointer
-              ${dragActive ? "border-sky-500 bg-brand-mint/80" : "border-border bg-white/60 hover:border-slate-400"}
-              shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-sm
-            `}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls,.zip,.xml,.pdf"
-              className="hidden"
-              onChange={(ev) => {
-                const f = ev.target.files?.[0];
-                ev.target.value = "";
-                handleFile(f);
-              }}
-            />
-            <p className="text-ink font-medium">Drop file here or click to browse</p>
-            <p className="text-xs text-ink-muted mt-2">Max size per server limits (earnings uploads)</p>
-            {previewMut.isPending && (
-              <div className="mt-4 max-w-xs mx-auto">
-                <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                  <div className="h-full w-1/2 bg-brand-mint0 rounded-full animate-pulse" style={{ width: "40%" }} />
-                </div>
-                <p className="text-xs text-ink-muted mt-2">Parsing…</p>
-              </div>
-            )}
-          </div>
+            onFileChange={handleFile}
+            onBrowseClick={() => fileInputRef.current?.click()}
+          />
+        ) : (
+          <EarningsImportPreviewPanel
+            preview={preview}
+            providerLabel={providerLabel}
+            selectedPlatform={selectedPlatform}
+            onPlatformChange={setSelectedPlatform}
+            periodStart={periodStart}
+            periodEnd={periodEnd}
+            onPeriodStartChange={setPeriodStart}
+            onPeriodEndChange={setPeriodEnd}
+            clientCsvRowCount={clientCsvRowCount}
+            debtSummaryLine={debtSummaryLine}
+            busy={busy}
+            periodValid={periodValid}
+            onConfirm={() => setCommitImportOpen(true)}
+            onCancel={() => cancelMut.mutate(preview.importId)}
+          />
         )}
 
-        {preview && (
-          <div className="rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-lg p-4 sm:p-6 space-y-4">
-            <div className="text-sm text-ink">
-              <span className="text-ink-muted">Detected:</span>{" "}
-              <span className="font-medium text-ink">
-                {providerLabel(preview.platform)}
-                {confidencePct != null ? ` (${confidencePct}%)` : ""}
-              </span>
-            </div>
-            {preview.platform === "glovo" && (
-              <p className="text-xs text-ink-muted">
-                Fleet commission calculated on:{" "}
-                <span className="font-mono text-ink">
-                  {preview.glovoCommissionBaseType ?? "net_income"}
-                </span>
-                . Cancel this preview, change the Glovo commission base above, then upload again to use a different
-                base.
-              </p>
-            )}
+        {!preview && <EarningsImportFeatureCards />}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="import-provider" className="block text-xs font-medium text-ink mb-1">
-                  Provider
-                </label>
-                <select
-                  id="import-provider"
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
-                  value={selectedPlatform}
-                  disabled={busy}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                >
-                  {PROVIDER_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="import-start" className="block text-xs font-medium text-ink mb-1">
-                    Period start
-                  </label>
-                  <input
-                    id="import-start"
-                    type="date"
-                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
-                    value={periodStart}
-                    disabled={busy}
-                    onChange={(e) => setPeriodStart(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="import-end" className="block text-xs font-medium text-ink mb-1">
-                    Period end
-                  </label>
-                  <input
-                    id="import-end"
-                    type="date"
-                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
-                    value={periodEnd}
-                    disabled={busy}
-                    onChange={(e) => setPeriodEnd(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-4 text-sm text-ink-muted">
-              <div>
-                <span className="text-ink-muted">File</span>{" "}
-                <span className="font-medium text-ink">{preview.fileName}</span>
-              </div>
-              <div>
-                <span className="text-ink-muted">Rows</span>{" "}
-                <span className="font-medium text-ink">{preview.totalRows.toLocaleString()}</span>
-                {clientCsvRowCount != null && (
-                  <span className="block text-[11px] font-normal text-ink-muted mt-0.5">
-                    CSV scan: ~{clientCsvRowCount.toLocaleString()} data rows (Papa Parse)
-                  </span>
-                )}
-              </div>
-              <div>
-                <span className="text-ink-muted">Match</span>{" "}
-                <span className="font-medium text-brand">
-                  {(preview.matchRate * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-
-            {debtSummaryLine && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50/95 px-3 py-2.5 text-sm text-rose-950 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-rose-800">Debt detection</p>
-                <p className="mt-1 text-sm font-medium text-rose-900">{debtSummaryLine}</p>
-                <p className="mt-1 text-[11px] text-rose-800/90">
-                  Preview shows the same signs as your file. Negative TVT rows become driver debt on import.
-                </p>
-              </div>
-            )}
-
-            {preview.warnings.length > 0 && (
-              <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2">
-                <p className="text-xs font-semibold text-amber-900 mb-1">Data quality</p>
-                <ul className="text-xs text-amber-900 list-disc list-inside space-y-0.5">
-                  {preview.warnings.map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div>
-              <p className="text-xs font-semibold text-ink mb-2">
-                Full data preview ({preview.totalRows.toLocaleString()} rows)
-              </p>
-              <EarningsImportPreviewVirtualTable
-                importId={preview.importId}
-                totalRows={preview.totalRows}
-                aggregates={preview.aggregates}
-                matchedPreviewCount={preview.matchedPreviewCount}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={busy || !periodValid}
-                onClick={() => setCommitImportOpen(true)}
-                className="rounded-lg bg-brand-gradient text-white text-sm font-medium px-4 py-2.5 min-h-[44px] hover:opacity-95 disabled:opacity-50"
-              >
-                {commitMut.isPending ? "Importing…" : "Confirm import (valid rows only)"}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => cancelMut.mutate(preview.importId)}
-                className="rounded-lg border border-border text-ink text-sm font-medium px-4 py-2.5 min-h-[44px] hover:bg-slate-50 disabled:opacity-50"
-              >
-                Cancel preview
-              </button>
-            </div>
-          </div>
-        )}
-
-        <section>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-sm font-semibold text-ink">Recent imports</h2>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => syncMut.mutate()}
-              className="rounded-lg border border-border bg-white/80 text-ink text-xs font-medium px-3 py-2 min-h-[36px] hover:bg-slate-50 disabled:opacity-50"
-            >
-              {syncMut.isPending ? "Re-syncing…" : "Re-sync vehicle rentals"}
-            </button>
-          </div>
-          <div className="overflow-x-auto rounded-2xl border border-border/80 bg-white/60 backdrop-blur-sm shadow-sm">
-            {importsQuery.isLoading ? (
-              <p className="p-4 text-sm text-ink-muted">Loading…</p>
-            ) : (
-              <table className="min-w-full text-sm text-left">
-                <thead className="bg-slate-50 text-ink-muted text-xs uppercase tracking-wide">
-                  <tr>
-                    <th className="px-3 py-2">File</th>
-                    <th className="px-3 py-2">Platform</th>
-                    <th className="px-3 py-2">Period</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Processed / total</th>
-                    <th className="px-3 py-2">Created</th>
-                    {user?.role === "admin" && <th className="px-3 py-2 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {(importsQuery.data?.items ?? []).map((row) => {
-                    const processed = importProcessedRows(row);
-                    const total = importTotalRows(row);
-                    const canDelete = processed === 0;
-                    const canRevert = row.status === "completed" && processed > 0;
-
-                    return (
-                    <tr key={row.id} className="text-ink">
-                      <td className="px-3 py-2 max-w-[180px] truncate">{row.file_name ?? "—"}</td>
-                      <td className="px-3 py-2">{row.platform}</td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs">
-                        {row.week_start?.slice(0, 10)} – {row.week_end?.slice(0, 10)}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                            row.status === "completed"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : row.status === "reverted"
-                                ? "bg-violet-100 text-violet-800"
-                                : row.status === "preview"
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-slate-100 text-ink"
-                          }`}
-                        >
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 tabular-nums text-xs">
-                        {processed} / {total}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-ink-muted whitespace-nowrap">
-                        {row.created_at?.slice(0, 19).replace("T", " ")}
-                      </td>
-                      {user?.role === "admin" && (
-                        <td className="px-3 py-2 text-right">
-                          <div className="flex flex-wrap justify-end gap-1.5">
-                            {canDelete && (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => setDeleteImportId(row.id)}
-                                className="rounded-lg border border-border bg-white px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
-                              >
-                                Delete
-                              </button>
-                            )}
-                            {canRevert && (
-                              <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => setRevertImportId(row.id)}
-                                className="rounded-lg border border-border bg-white px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
-                              >
-                                Revert
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
+        <RecentImportsTable
+          rows={importsQuery.data?.items ?? []}
+          isLoading={importsQuery.isLoading}
+          busy={busy}
+          isAdmin={user?.role === "admin"}
+          onResync={() => syncMut.mutate()}
+          resyncPending={syncMut.isPending}
+          onDelete={setDeleteImportId}
+          onRevert={setRevertImportId}
+        />
       </div>
 
       <ConfirmDialog
@@ -663,22 +377,15 @@ export function EarningsImportPage() {
                   <span className="font-semibold tabular-nums text-brand">
                     {(preview.aggregates.valid ?? 0).toLocaleString()}
                   </span>
-                  {typeof preview.aggregates.debtRows === "number" && preview.aggregates.debtRows > 0 && (
-                    <span className="block mt-1 text-rose-800 font-medium">
-                      Includes {preview.aggregates.debtRows.toLocaleString()} row
-                      {preview.aggregates.debtRows === 1 ? "" : "s"} with negative TVT (driver debt).
-                    </span>
-                  )}
                 </p>
               )}
               {debtSummaryLine && (
-                <p className="rounded-lg border border-rose-100 bg-rose-50/90 px-2 py-1.5 text-xs text-rose-900">
+                <p className="rounded-lg border border-danger/20 bg-danger/5 px-2 py-1.5 text-xs text-danger">
                   {debtSummaryLine}
                 </p>
               )}
-              <p className="text-xs text-ink-muted pt-1">
-                Only rows with a matched driver and money fields are written. This updates driver payout totals for the
-                selected period.
+              <p className="pt-1 text-xs text-ink-muted">
+                Only rows with a matched driver and money fields are written.
               </p>
             </div>
           ) : null
@@ -706,7 +413,6 @@ export function EarningsImportPage() {
         description={
           <p className="text-sm text-ink-muted">
             This import has no processed earnings rows. It will be permanently removed from import history.
-            No financial records exist for this import.
           </p>
         }
         confirmLabel="Delete import"
@@ -726,12 +432,10 @@ export function EarningsImportPage() {
         description={
           <div className="space-y-2 text-sm text-ink-muted">
             <p>
-              This creates offsetting negative earnings records and marks the import as reverted. Original data is
-              kept for audit; net effect on payouts is zero for this import.
+              This creates offsetting negative earnings records and marks the import as reverted.
             </p>
-            <p className="font-medium text-amber-800">
-              Revert is blocked if any driver payout or subcontractor settlement for this period is already marked
-              paid.
+            <p className="font-medium text-warning">
+              Revert is blocked if any payout for this period is already marked paid.
             </p>
           </div>
         }
@@ -752,9 +456,8 @@ export function EarningsImportPage() {
         title="Discard unsaved import?"
         description={
           <p>
-            You have a staged import preview. Leaving will{" "}
-            <span className="font-medium text-ink">delete it on the server</span> and you will need to upload the
-            file again.
+            You have a staged import preview. Leaving will delete it on the server and you will need to upload
+            again.
           </p>
         }
         confirmLabel="Leave page"

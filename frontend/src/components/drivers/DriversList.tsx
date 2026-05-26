@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DriverListItem } from "../../api/drivers";
 import { updateDriver } from "../../api/drivers";
+import {
+  formatCsvImportSummaryMessage,
+  importDriversCsv,
+} from "../../api/entityCsvImport";
 import { useDriversListFilters } from "../../hooks/useDriversListFilters";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import { exportDriversCsv } from "../../utils/exportDriversCsv";
@@ -42,6 +46,16 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
   const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<DriverListItem | null>(null);
+  const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(
+    null,
+  );
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!importMessage) return;
+    const t = window.setTimeout(() => setImportMessage(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [importMessage]);
 
   useEffect(() => {
     setPage(1);
@@ -140,12 +154,71 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: importDriversCsv,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      setImportMessage({
+        type: "success",
+        text: formatCsvImportSummaryMessage(res.data),
+      });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : null;
+      setImportMessage({
+        type: "error",
+        text: msg ?? "Driver CSV import failed",
+      });
+    },
+  });
+
+  const handleImportFile = useCallback(
+    (file: File | undefined) => {
+      if (!file) return;
+      importMutation.mutate(file);
+    },
+    [importMutation],
+  );
+
   return (
     <>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          handleImportFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
       <DriversPageHeader
         onExport={() => exportDriversCsv(filteredDrivers)}
+        onImport={() => importInputRef.current?.click()}
+        importBusy={importMutation.isPending}
         exportDisabled={filteredDrivers.length === 0}
       />
+
+      {importMessage && (
+        <div
+          className={`mx-auto max-w-[1600px] px-4 pt-3 sm:px-6 lg:px-8 ${
+            importMessage.type === "success" ? "text-brand" : "text-danger"
+          }`}
+        >
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              importMessage.type === "success"
+                ? "border-brand/20 bg-brand/5"
+                : "border-danger/20 bg-danger/5"
+            }`}
+          >
+            {importMessage.text}
+          </div>
+        </div>
+      )}
 
       <div className={driversPage}>
         <DriversFilterBar

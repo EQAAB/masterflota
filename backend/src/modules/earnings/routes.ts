@@ -5,7 +5,7 @@ import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
 import { buildEarningsColumnMap, isBoltWeeklyColumnMap } from "./earningsColumnMap";
 import type { EarningsColumnField } from "./normalizeRow";
-import { rowCellsToNormalized, type EarningsStagingPayload } from "./normalizeRow";
+import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows, type EarningsStagingPayload } from "./normalizeRow";
 import {
   detectPlatformWithMeta,
   isEarningsPlatform,
@@ -18,6 +18,7 @@ import {
   type DriverPayoutPlatform,
 } from "./payoutPlatform";
 import { extractDateFromFilename, weekBoundsFromDates } from "./filenameDate";
+import { totalLinesInFile } from "../../lib/filterParsedRows";
 import { parseEarningsFile } from "./parseFile";
 import { DriverMatchIndex, type DriverMatchRow } from "./matchDriver";
 import { runEarningsCommitFromStaging } from "./earningsCommit";
@@ -217,12 +218,19 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
     const colMap = buildEarningsColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
 
-    const normalizedRows = table.rows.map((cells) =>
+    const mappedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
         skipInferredPlatformFee: platform === "glovo",
         boltWeeklyExport: boltWeekly,
       }),
     );
+    const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
+      filterEmptyNormalizedEarningsRows(mappedRows);
+    const parseStats = {
+      ...table.parseStats,
+      emptyRowsSkipped: table.parseStats.emptyRowsSkipped + normalizedEmptySkipped,
+      dataRowsParsed: normalizedRows.length,
+    };
 
     const warnings = collectWarnings(colMap, normalizedRows, filenameDate, platform);
     const dates = normalizedRows.map((r) => r.tripDateIso).filter((d): d is string => !!d);
@@ -285,6 +293,7 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
           platform === "glovo" ? defaultAccountOpeningFee : undefined,
         defaultPlatformFee: platform === "glovo" ? defaultPlatformFee : undefined,
         boltWeeklyExport: boltWeekly,
+        parseStats,
       });
       await client.query("COMMIT");
     } catch (e) {
@@ -316,6 +325,9 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
         invalid: invalidRows,
         warnings: warningRows,
         debtRows: debtCandidateRows,
+        totalLinesInFile: totalLinesInFile(parseStats),
+        emptyLinesSkipped: parseStats.emptyLinesSkipped,
+        emptyRowsSkipped: parseStats.emptyRowsSkipped,
       },
     });
   } catch (err) {

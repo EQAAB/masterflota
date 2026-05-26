@@ -3,10 +3,19 @@ import * as XLSX from "xlsx";
 import AdmZip from "adm-zip";
 import { XMLParser } from "fast-xml-parser";
 import pdfParse from "pdf-parse";
+import { filterParsedTable, type ParseFilterStats } from "../../lib/filterParsedRows";
+import { parseDelimitedText as parseBasicDelimitedText, type ParsedTable } from "../../lib/parseCsvTable";
 
-export interface ParsedTable {
-  headers: string[];
-  rows: string[][];
+export type { ParseFilterStats } from "../../lib/filterParsedRows";
+export type { ParsedTable } from "../../lib/parseCsvTable";
+
+export interface ParsedEarningsFile extends ParsedTable {
+  parseStats: ParseFilterStats;
+}
+
+function finalizeParsedTable(table: ParsedTable, emptyLinesSkipped = 0): ParsedEarningsFile {
+  const { table: filtered, stats } = filterParsedTable(table, { emptyLinesSkipped });
+  return { ...filtered, parseStats: stats };
 }
 
 /**
@@ -79,39 +88,20 @@ function mergeEuropeanCommaDecimalFields(parts: string[], targetLen: number): st
   return cells;
 }
 
-function parseDelimitedText(text: string): ParsedTable {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return { headers: [], rows: [] };
-  const first = lines[0];
-  const delim = first.includes(";") && first.split(";").length > first.split(",").length ? ";" : ",";
-  const split = (line: string) => {
-    const out: string[] = [];
-    let cur = "";
-    let q = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        q = !q;
-      } else if (!q && ch === delim) {
-        out.push(cur.trim());
-        cur = "";
-      } else {
-        cur += ch;
-      }
-    }
-    out.push(cur.trim());
-    return out;
-  };
-  const headers = split(lines[0]).map((h) => h.replace(/^"|"$/g, ""));
-  const headerCount = headers.length;
-  const rows = lines.slice(1).map((line) => {
-    let cells = split(line).map((c) => c.replace(/^"|"$/g, ""));
+function parseDelimitedText(text: string): { table: ParsedTable; emptyLinesSkipped: number } {
+  const { table, emptyLinesSkipped } = parseBasicDelimitedText(text);
+  if (!table.headers.length) return { table, emptyLinesSkipped };
+  const first = text.split(/\r?\n/).find((l) => l.trim().length > 0) ?? "";
+  const delim: "," | ";" =
+    first.includes(";") && first.split(";").length > first.split(",").length ? ";" : ",";
+  const headerCount = table.headers.length;
+  const rows = table.rows.map((cells) => {
     if (delim === "," && headerCount > 0 && cells.length > headerCount) {
-      cells = mergeEuropeanCommaDecimalFields(cells, headerCount);
+      return mergeEuropeanCommaDecimalFields([...cells], headerCount);
     }
     return cells;
   });
-  return { headers, rows };
+  return { table: { headers: table.headers, rows }, emptyLinesSkipped };
 }
 
 function sheetToTable(sheet: XLSX.WorkSheet): ParsedTable {
@@ -121,8 +111,8 @@ function sheetToTable(sheet: XLSX.WorkSheet): ParsedTable {
     raw: false,
   }) as string[][];
   if (!matrix.length) return { headers: [], rows: [] };
-  const headers = (matrix[0] ?? []).map((c) => String(c ?? ""));
-  const rows = matrix.slice(1).map((r) => headers.map((_, i) => String(r[i] ?? "")));
+  const headers = (matrix[0] ?? []).map((c) => String(c ?? "").trim());
+  const rows = matrix.slice(1).map((r) => headers.map((_, i) => String(r[i] ?? "").trim()));
   return { headers, rows };
 }
 
@@ -233,7 +223,7 @@ function parsePdfBuffer(buf: Buffer): Promise<ParsedTable> {
   });
 }
 
-export async function parseEarningsFile(buffer: Buffer, originalName: string): Promise<ParsedTable> {
+export async function parseEarningsFile(buffer: Buffer, originalName: string): Promise<ParsedEarningsFile> {
   const ext = path.extname(originalName).toLowerCase();
 
   if (ext === ".zip") {
@@ -247,20 +237,20 @@ export async function parseEarningsFile(buffer: Buffer, originalName: string): P
 
   if (ext === ".csv") {
     const text = buffer.toString("utf8");
-    const t = parseDelimitedText(text);
-    if (t.headers.length) return t;
+    const { table, emptyLinesSkipped } = parseDelimitedText(text);
+    if (table.headers.length) return finalizeParsedTable(table, emptyLinesSkipped);
     throw new Error("CSV file has no header row");
   }
 
   if (ext === ".xlsx" || ext === ".xls") {
     const t = parseXlsxBuffer(buffer);
-    if (t.headers.length) return t;
+    if (t.headers.length) return finalizeParsedTable(t);
     throw new Error("Spreadsheet has no header row");
   }
 
   if (ext === ".xml") {
     const t = parseXmlBuffer(buffer);
-    if (t.headers.length && t.rows.length) return t;
+    if (t.headers.length && t.rows.length) return finalizeParsedTable(t);
     throw new Error(
       "Could not parse XML into tabular rows. Export as CSV or XLSX if possible.",
     );
@@ -268,15 +258,15 @@ export async function parseEarningsFile(buffer: Buffer, originalName: string): P
 
   if (ext === ".pdf") {
     const t = await parsePdfBuffer(buffer);
-    if (t.headers.length && t.rows.length) return t;
+    if (t.headers.length && t.rows.length) return finalizeParsedTable(t);
     throw new Error(
       "Could not extract a table from PDF. Try exporting CSV or XLSX from the platform.",
     );
   }
 
   if (ext === "") {
-    const t = parseDelimitedText(buffer.toString("utf8"));
-    if (t.headers.length) return t;
+    const { table, emptyLinesSkipped } = parseDelimitedText(buffer.toString("utf8"));
+    if (table.headers.length) return finalizeParsedTable(table, emptyLinesSkipped);
   }
 
   throw new Error(`Unsupported file type: ${ext || "unknown"}`);

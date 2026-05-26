@@ -1,3 +1,4 @@
+import { isEmptyCellValue } from "../../lib/isEmptyRow";
 import { roundMoney } from "./debtAllocation";
 
 export type CanonicalField =
@@ -266,4 +267,43 @@ export function rowCellsToNormalized(
   }
 
   return { tripDateIso, hints, amounts, rawSample };
+}
+
+/** Row has no mapped hints, amounts, or raw cell data (ignores filename-only trip date). */
+export function isNormalizedEarningsRowEmpty(row: NormalizedEarningsRow): boolean {
+  const hasHints = Object.values(row.hints).some((v) => !isEmptyCellValue(v));
+  if (hasHints) return false;
+
+  const hasRaw = Object.values(row.rawSample).some((v) => !isEmptyCellValue(v));
+  if (hasRaw) return false;
+
+  const amt = row.amounts;
+  return !(
+    amt.gross != null ||
+    amt.net != null ||
+    amt.transferTotal != null ||
+    amt.platformFee != null ||
+    amt.dailyCash != null ||
+    amt.accountOpeningFee != null ||
+    amt.tripCount != null ||
+    amt.tips != null ||
+    amt.boltAdjustedWithoutVat != null ||
+    amt.boltTipsWithoutVat != null
+  );
+}
+
+export function filterEmptyNormalizedEarningsRows(rows: NormalizedEarningsRow[]): {
+  rows: NormalizedEarningsRow[];
+  emptyRowsSkipped: number;
+} {
+  const kept: NormalizedEarningsRow[] = [];
+  let emptyRowsSkipped = 0;
+  for (const row of rows) {
+    if (isNormalizedEarningsRowEmpty(row)) {
+      emptyRowsSkipped += 1;
+    } else {
+      kept.push(row);
+    }
+  }
+  return { rows: kept, emptyRowsSkipped };
 }

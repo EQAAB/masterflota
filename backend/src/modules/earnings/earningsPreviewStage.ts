@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import type { EarningsPlatform } from "./detectPlatform";
+import type { ParseFilterStats } from "../../lib/filterParsedRows";
 import type { EarningsStagingPayload, NormalizedEarningsRow } from "./normalizeRow";
 
 export async function insertEarningsPreviewStaging(
@@ -23,6 +24,7 @@ export async function insertEarningsPreviewStaging(
     /** Snapshot for commit/preview: org default Taxa aplicatie (Glovo). */
     defaultPlatformFee?: number;
     boltWeeklyExport?: boolean;
+    parseStats?: ParseFilterStats;
   },
 ): Promise<string> {
   const detectionMeta = {
@@ -31,6 +33,7 @@ export async function insertEarningsPreviewStaging(
     filenameDate: params.filenameDate,
     headerCount: params.headerCount,
     rowCount: params.rowCount,
+    ...(params.parseStats ? { parseStats: params.parseStats } : {}),
     ...(params.platform === "glovo" && params.glovoCommissionBaseType
       ? { glovoCommissionBaseType: params.glovoCommissionBaseType }
       : {}),
