@@ -52,4 +52,39 @@
       transition: none !important;
     }
   }
+
+  .fm-action-menu-panel {
+    animation: fm-action-menu-in 180ms ease-out forwards;
+  }
+
+  .fm-action-menu-backdrop {
+    animation: fm-action-menu-backdrop-in 180ms ease-out forwards;
+  }
+
+  @keyframes fm-action-menu-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fm-action-menu-backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fm-action-menu-panel,
+    .fm-action-menu-backdrop {
+      animation: none !important;
+    }
+  }
 }
