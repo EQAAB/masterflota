@@ -1,7 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { PayoutListItem } from "../../../api/earnings";
-import { btnPrimary, btnSecondary } from "../../../theme/classNames";
+import { btnPrimary } from "../../../theme/classNames";
+import { ActionMenu } from "../../theme/ActionMenu";
+import {
+  ActionMenuIconDebt,
+  ActionMenuIconExport,
+  ActionMenuIconFees,
+  ActionMenuIconHold,
+  AdjustDebtIcon,
+  CustomFeesIcon,
+  ExportIcon,
+  ReleaseHoldIcon,
+} from "../../theme/actionMenuIcons";
 
 type PayoutRowActionsProps = {
   row: PayoutListItem;
@@ -9,7 +19,6 @@ type PayoutRowActionsProps = {
   isPaying: boolean;
   isPayingRow: boolean;
   isSelected: boolean;
-  isExpanded: boolean;
   canCustomFees: boolean;
   canDebtActions: boolean;
   canReleaseHold: boolean;
@@ -18,7 +27,6 @@ type PayoutRowActionsProps = {
   onOpenCustomFees?: () => void;
   onOpenDebtActions?: () => void;
   onOpenReleaseHold?: () => void;
-  onToggleExpand: () => void;
   align?: "left" | "right";
 };
 
@@ -28,7 +36,6 @@ export function PayoutRowActions({
   isPaying,
   isPayingRow,
   isSelected,
-  isExpanded,
   canCustomFees,
   canDebtActions,
   canReleaseHold,
@@ -37,31 +44,62 @@ export function PayoutRowActions({
   onOpenCustomFees,
   onOpenDebtActions,
   onOpenReleaseHold,
-  onToggleExpand,
   align = "left",
 }: PayoutRowActionsProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
+  const menuItems = [
+    {
+      id: "adjust-debt",
+      label: "Adjust debt",
+      icon: (
+        <ActionMenuIconDebt>
+          <AdjustDebtIcon />
+        </ActionMenuIconDebt>
+      ),
+      onSelect: () => onOpenDebtActions?.(),
+      hidden: !canDebtActions,
+    },
+    {
+      id: "custom-fees",
+      label: "Custom fees",
+      icon: (
+        <ActionMenuIconFees>
+          <CustomFeesIcon />
+        </ActionMenuIconFees>
+      ),
+      onSelect: () => onOpenCustomFees?.(),
+      hidden: !canCustomFees,
+    },
+    {
+      id: "release-hold",
+      label: "Release hold",
+      icon: (
+        <ActionMenuIconHold>
+          <ReleaseHoldIcon />
+        </ActionMenuIconHold>
+      ),
+      onSelect: () => onOpenReleaseHold?.(),
+      hidden: !canReleaseHold,
+    },
+    {
+      id: "export",
+      label: "Export",
+      icon: (
+        <ActionMenuIconExport>
+          <ExportIcon />
+        </ActionMenuIconExport>
+      ),
+      onSelect: () => {
+        navigate(`/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}`);
+      },
+    },
+  ];
 
-  const menuItemClass =
-    "block w-full text-left rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50";
+  const showMenu = menuItems.some((i) => !i.hidden);
 
   return (
-    <div
-      className={`flex flex-wrap items-center gap-2 ${align === "right" ? "justify-end" : ""}`}
-      ref={menuRef}
-    >
+    <div className={`flex flex-wrap items-center gap-2 ${align === "right" ? "justify-end" : ""}`}>
       <input
         type="checkbox"
         className="rounded border-border"
@@ -75,86 +113,14 @@ export function PayoutRowActions({
           {isPayingRow ? "Paying…" : "Pay now"}
         </button>
       )}
-      <div className="relative">
-        <button
-          type="button"
+      {showMenu && (
+        <ActionMenu
+          items={menuItems}
+          align={align}
           disabled={isPaying}
-          onClick={() => setMenuOpen((o) => !o)}
-          className={btnSecondary}
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-        >
-          More
-        </button>
-        {menuOpen && (
-          <div
-            role="menu"
-            className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-card border border-border bg-white py-1 shadow-soft-lg"
-          >
-            {canCustomFees && (
-              <button
-                type="button"
-                role="menuitem"
-                disabled={isPaying}
-                onClick={() => {
-                  setMenuOpen(false);
-                  onOpenCustomFees?.();
-                }}
-                className={`${menuItemClass} text-ink hover:bg-surface mx-1`}
-              >
-                Custom fees
-              </button>
-            )}
-            {canDebtActions && (
-              <button
-                type="button"
-                role="menuitem"
-                disabled={isPaying}
-                onClick={() => {
-                  setMenuOpen(false);
-                  onOpenDebtActions?.();
-                }}
-                className={`${menuItemClass} text-danger hover:bg-danger/5 mx-1`}
-              >
-                Adjust debt
-              </button>
-            )}
-            {canReleaseHold && (
-              <button
-                type="button"
-                role="menuitem"
-                disabled={isPaying}
-                onClick={() => {
-                  setMenuOpen(false);
-                  onOpenReleaseHold?.();
-                }}
-                className={`${menuItemClass} text-ink-muted hover:bg-surface mx-1`}
-              >
-                Release hold
-              </button>
-            )}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setMenuOpen(false);
-                onToggleExpand();
-              }}
-              className={`${menuItemClass} text-ink hover:bg-surface mx-1`}
-            >
-              {isExpanded ? "Hide details" : "Details"}
-            </button>
-            <Link
-              to={`/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}`}
-              role="menuitem"
-              onClick={() => setMenuOpen(false)}
-              className={`${menuItemClass} text-ink hover:bg-surface mx-1 no-underline`}
-            >
-              Export
-            </Link>
-          </div>
-        )}
-      </div>
+          aria-label={`Actions for ${row.first_name} ${row.last_name}`}
+        />
+      )}
     </div>
   );
 }
