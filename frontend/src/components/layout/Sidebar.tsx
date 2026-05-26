@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
 import { LogoutButton } from "../UI/LogoutButton";
+import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
 
 const earningsSubItems = [
   { to: "/earnings", label: "Overview" },
@@ -85,11 +86,7 @@ function ChevronDown({ className }: { className?: string }) {
 }
 
 function LogoMark() {
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 text-sm font-bold">
-      FM
-    </span>
-  );
+  return <FleetManagerLogoMark className="h-9 w-9" />;
 }
 
 function SidebarNavItem({
