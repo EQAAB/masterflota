@@ -95,9 +95,22 @@ export interface UpdateMaintenancePayload {
   notes?: string;
 }
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
 export interface GetVehiclesParams {
   search?: string;
   status?: string;
+  page?: number;
   limit?: number;
   offset?: number;
   sort_by?: string;
@@ -105,7 +118,7 @@ export interface GetVehiclesParams {
 }
 
 export function getVehicles(params?: GetVehiclesParams) {
-  return api.get<VehicleListItem[]>("/vehicles", { params });
+  return api.get<PaginatedResponse<VehicleListItem>>("/vehicles", { params });
 }
 
 export function searchVehicles(

@@ -89,7 +89,7 @@ export function DriverDetailPage() {
 
   const driver = driverRes?.data;
   const activities = activityRes?.data ?? [];
-  const vehiclesForAssign = (vehiclesRes?.data ?? []).filter(
+  const vehiclesForAssign = (vehiclesRes?.data?.data ?? []).filter(
     (v: VehicleListItem) => v.status !== "sold" && v.status !== "scrapped",
   );
 

@@ -8,6 +8,7 @@ type DriversPaginationProps = {
   totalItems: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  selectId?: string;
 };
 
 function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
@@ -28,6 +29,7 @@ export function DriversPagination({
   totalItems,
   onPageChange,
   onPageSizeChange,
+  selectId = "drivers-page-size",
 }: DriversPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -39,11 +41,11 @@ export function DriversPagination({
       className={`flex flex-col gap-3 border-t border-border/60 bg-surface-elevated/60 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 ${transitionDefault}`}
     >
       <div className="flex flex-wrap items-center gap-2.5 text-sm text-ink-muted">
-        <label htmlFor="drivers-page-size" className="text-xs font-medium sm:text-sm">
+        <label htmlFor={selectId} className="text-xs font-medium sm:text-sm">
           Rows per page
         </label>
         <select
-          id="drivers-page-size"
+          id={selectId}
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
           className={`${input} min-h-0 w-auto rounded-input py-1.5 text-sm shadow-sm`}
