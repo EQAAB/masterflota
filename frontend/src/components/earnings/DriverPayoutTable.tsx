@@ -15,6 +15,7 @@ import { formatCurrency } from "../../utils/currency";
 import { HighlightText } from "./payouts/HighlightText";
 import { PayoutExpandedDetails } from "./payouts/PayoutExpandedDetails";
 import { PayoutRowActions } from "./payouts/PayoutRowActions";
+import { PeriodExpandToggle } from "./payouts/PeriodExpandToggle";
 import { PayoutStatusBadge } from "./payouts/PayoutStatusBadge";
 import { PayoutTableSkeleton } from "./payouts/PayoutTableSkeleton";
 import { PayoutTableToolbar } from "./payouts/PayoutTableToolbar";
@@ -298,7 +299,15 @@ export function DriverPayoutTable({
                             </div>
                           </td>
                           <td className="px-4 py-3 text-xs text-ink-muted">
-                            <HighlightText text={periodLabel(row)} query={debouncedQuery} />
+                            <div className="flex items-start gap-2">
+                              <span className="min-w-0 flex-1">
+                                <HighlightText text={periodLabel(row)} query={debouncedQuery} />
+                              </span>
+                              <PeriodExpandToggle
+                                expanded={isExpanded}
+                                onToggle={() => toggleExpand(row.id)}
+                              />
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-ink">
                             {formatCurrency(toNum(row.total_gross_earnings))}
@@ -355,7 +364,6 @@ export function DriverPayoutTable({
                               isPaying={isPaying}
                               isPayingRow={isPayingRow}
                               isSelected={selectedIds.has(row.id)}
-                              isExpanded={isExpanded}
                               canCustomFees={flags.canCustomFees}
                               canDebtActions={flags.canDebtActions}
                               canReleaseHold={flags.canReleaseHold}
@@ -364,7 +372,6 @@ export function DriverPayoutTable({
                               onOpenCustomFees={() => onOpenCustomFees?.(row)}
                               onOpenDebtActions={() => onOpenDebtActions?.(row)}
                               onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
-                              onToggleExpand={() => toggleExpand(row.id)}
                               align="right"
                             />
                           </td>
@@ -426,9 +433,13 @@ export function DriverPayoutTable({
                       Previous debt: {formatCurrency(toNum(row.debt_applied_amount))}
                     </p>
                   )}
-                  <p className="mt-2 text-xs text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
-                    <span>
+                  <p className="mt-2 text-xs text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="inline-flex items-center gap-1.5">
                       <HighlightText text={periodLabel(row)} query={debouncedQuery} />
+                      <PeriodExpandToggle
+                        expanded={isExpanded}
+                        onToggle={() => toggleExpand(row.id)}
+                      />
                     </span>
                     <span title={payoutCommissionTitle(row)}>
                       Fleet {formatCurrency(toNum(row.company_commission))}
@@ -458,7 +469,6 @@ export function DriverPayoutTable({
                       isPaying={isPaying}
                       isPayingRow={isPayingRow}
                       isSelected={selectedIds.has(row.id)}
-                      isExpanded={isExpanded}
                       canCustomFees={flags.canCustomFees}
                       canDebtActions={flags.canDebtActions}
                       canReleaseHold={flags.canReleaseHold}
@@ -467,7 +477,6 @@ export function DriverPayoutTable({
                       onOpenCustomFees={() => onOpenCustomFees?.(row)}
                       onOpenDebtActions={() => onOpenDebtActions?.(row)}
                       onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
-                      onToggleExpand={() => toggleExpand(row.id)}
                     />
                   </div>
                   {isExpanded && (

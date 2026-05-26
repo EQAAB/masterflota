@@ -70,6 +70,15 @@ export const alertSuccess =
 export const alertInfo =
   "rounded-card border border-brand-mint bg-brand-mint/50 text-ink text-sm px-4 py-2.5";
 
+export const actionMenuTrigger =
+  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] border border-border bg-white text-ink-muted shadow-sm hover:bg-surface hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand/20";
+
+export const actionMenuPanel =
+  "rounded-menu border border-border/80 bg-white py-1.5 px-1.5 shadow-soft-lg ring-1 ring-black/[0.04]";
+
+export const actionMenuItem =
+  "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left text-sm font-medium text-ink hover:bg-surface/90";
+
 /** @deprecated Use imports from theme/classNames */
 export const EARNINGS_SURFACE_CARD = cardGlass;
 export const EARNINGS_INPUT = input;

@@ -37,6 +37,7 @@ export default {
         card: "20px",
         btn: "14px",
         input: "12px",
+        menu: "14px",
       },
       boxShadow: {
         soft: "0 10px 30px rgba(16, 24, 40, 0.06)",
