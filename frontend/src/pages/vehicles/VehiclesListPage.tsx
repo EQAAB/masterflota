@@ -1,22 +1,39 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getVehicles, deleteVehicle, type VehicleListItem } from "../../api/vehicles";
 import { useAuthStore } from "../../store/authStore";
 import { VehicleList } from "../../components/vehicles/VehicleList";
 import { useListSort } from "../../hooks/useListSort";
+import { useUrlPagination } from "../../hooks/useUrlPagination";
+import { useVehicleSearch } from "../../hooks/useVehicleSearch";
 
 export function VehiclesListPage() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<VehicleListItem | null>(null);
   const { sortParams, getHeaderProps } = useListSort();
+  const { page, limit, setPage, setLimit } = useUrlPagination();
+  const { searchQuery, setSearchQuery, debouncedQuery, clearSearch, isFilterPending } =
+    useVehicleSearch();
+
+  const skipPageReset = useRef(true);
+
+  useEffect(() => {
+    if (skipPageReset.current) {
+      skipPageReset.current = false;
+      return;
+    }
+    setPage(1);
+  }, [debouncedQuery, sortParams, setPage]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["vehicles", sortParams],
+    queryKey: ["vehicles", page, limit, sortParams, debouncedQuery],
     queryFn: async () => {
       const { data: res } = await getVehicles({
-        limit: 10_000,
+        page,
+        limit,
+        search: debouncedQuery.trim() || undefined,
         ...(sortParams ?? {}),
       });
       return res;
@@ -57,12 +74,21 @@ export function VehiclesListPage() {
       <main className="p-6">
         <div className="bg-white shadow-sm rounded-xl overflow-hidden">
           <VehicleList
-            vehicles={data}
+            vehicles={data?.data}
+            pagination={data?.pagination}
             isLoading={isLoading}
             isError={isError}
             userRole={user?.role}
             onDeleteRequest={setDeleteTarget}
             getHeaderProps={getHeaderProps}
+            page={page}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearchClear={clearSearch}
+            isSearchPending={isFilterPending}
           />
 
           {deleteTarget && (

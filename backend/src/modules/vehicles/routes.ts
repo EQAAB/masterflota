@@ -69,11 +69,12 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
 
-  const { search, status, limit, offset, sort_by, sort_order } = req.query as {
+  const { search, status, limit, offset, page, sort_by, sort_order } = req.query as {
     search?: string;
     status?: string;
     limit?: string;
     offset?: string;
+    page?: string;
     sort_by?: string;
     sort_order?: string;
   };
@@ -83,35 +84,66 @@ router.get("/", async (req, res) => {
     return res.status(sortResult.status).json({ message: sortResult.message });
   }
 
-  const params: unknown[] = [orgId];
+  const filterParams: unknown[] = [orgId];
   const conditions = ["v.organization_id = $1"];
 
   if (status) {
-    params.push(status);
-    conditions.push(`v.status = $${params.length}`);
+    filterParams.push(status);
+    conditions.push(`v.status = $${filterParams.length}`);
   }
   if (search) {
-    appendVehicleSearchCondition(conditions, params, search);
+    appendVehicleSearchCondition(conditions, filterParams, search);
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const limitNum = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 10_000) : 50;
-  const offsetNum = offset ? Math.max(0, parseInt(offset, 10)) : 0;
-  params.push(limitNum, offsetNum);
-  const limitIdx = params.length - 1;
-  const offsetIdx = params.length;
+  const limitNum = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 10_000) : 25;
+  const pageNum = page ? Math.max(1, parseInt(page, 10) || 1) : undefined;
+  const offsetNum =
+    pageNum !== undefined
+      ? (pageNum - 1) * limitNum
+      : offset
+        ? Math.max(0, parseInt(offset, 10))
+        : 0;
+  const resolvedPage = pageNum ?? Math.floor(offsetNum / limitNum) + 1;
+
+  const listParams = [...filterParams, limitNum, offsetNum];
+  const limitIdx = listParams.length - 1;
+  const offsetIdx = listParams.length;
 
   try {
-    const { rows } = await query(
-      `
-      ${VEHICLE_LIST_SELECT}
-      ${where}
-      ${sortResult.orderByClause}
-      LIMIT $${limitIdx} OFFSET $${offsetIdx}
-      `,
-      params,
-    );
-    return res.json(rows);
+    const [{ rows }, countResult] = await Promise.all([
+      query(
+        `
+        ${VEHICLE_LIST_SELECT}
+        ${where}
+        ${sortResult.orderByClause}
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `,
+        listParams,
+      ),
+      query(
+        `
+        SELECT COUNT(*)::int AS total
+        FROM vehicles v
+        LEFT JOIN drivers d ON v.current_driver_id = d.id
+        ${where}
+        `,
+        filterParams,
+      ),
+    ]);
+
+    const total = countResult.rows[0]?.total ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / limitNum));
+
+    return res.json({
+      data: rows,
+      pagination: {
+        page: resolvedPage,
+        limit: limitNum,
+        total,
+        totalPages,
+      },
+    });
   } catch (err) {
     console.error("List vehicles error", err);
     return res.status(500).json({ message: "Internal server error" });
