@@ -67,8 +67,6 @@ export function VehiclesList({
     debouncedQuery,
     statusFilter,
     setStatusFilter,
-    subcontractorFilter,
-    setSubcontractorFilter,
     platformFilter,
     setPlatformFilter,
     filtersExpanded,
@@ -213,8 +211,6 @@ export function VehiclesList({
           onClearSearch={clearSearch}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
-          subcontractorFilter={subcontractorFilter}
-          onSubcontractorChange={setSubcontractorFilter}
           platformFilter={platformFilter}
           onPlatformChange={setPlatformFilter}
           filtersExpanded={filtersExpanded}

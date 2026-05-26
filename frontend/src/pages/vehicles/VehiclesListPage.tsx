@@ -25,7 +25,6 @@ export function VehiclesListPage() {
   }, [
     filters.debouncedQuery,
     filters.statusFilter,
-    filters.subcontractorFilter,
     filters.platformFilter,
     sortParams,
     setPage,
@@ -39,7 +38,6 @@ export function VehiclesListPage() {
       sortParams,
       filters.debouncedQuery,
       filters.statusFilter,
-      filters.subcontractorFilter,
       filters.platformFilter,
     ],
     queryFn: async () => {
@@ -48,8 +46,6 @@ export function VehiclesListPage() {
         limit,
         search: filters.debouncedQuery.trim() || undefined,
         status: filters.statusFilter !== "all" ? filters.statusFilter : undefined,
-        subcontractor_id:
-          filters.subcontractorFilter !== "all" ? filters.subcontractorFilter : undefined,
         platform: filters.platformFilter !== "all" ? filters.platformFilter : undefined,
         ...(sortParams ?? {}),
       });

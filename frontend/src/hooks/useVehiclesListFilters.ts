@@ -9,7 +9,6 @@ export function useVehiclesListFilters(debounceMs: number = DEFAULT_DEBOUNCE_MS)
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<VehicleStatusFilter>("all");
-  const [subcontractorFilter, setSubcontractorFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<VehiclePlatformFilter>("all");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -20,16 +19,12 @@ export function useVehiclesListFilters(debounceMs: number = DEFAULT_DEBOUNCE_MS)
 
   const isFilterPending = searchQuery !== debouncedQuery;
   const hasActiveFilters =
-    searchQuery.trim().length > 0 ||
-    statusFilter !== "all" ||
-    subcontractorFilter !== "all" ||
-    platformFilter !== "all";
+    searchQuery.trim().length > 0 || statusFilter !== "all" || platformFilter !== "all";
 
   const clearAllFilters = () => {
     setSearchQuery("");
     setDebouncedQuery("");
     setStatusFilter("all");
-    setSubcontractorFilter("all");
     setPlatformFilter("all");
   };
 
@@ -39,8 +34,6 @@ export function useVehiclesListFilters(debounceMs: number = DEFAULT_DEBOUNCE_MS)
     debouncedQuery,
     statusFilter,
     setStatusFilter,
-    subcontractorFilter,
-    setSubcontractorFilter,
     platformFilter,
     setPlatformFilter,
     filtersExpanded,

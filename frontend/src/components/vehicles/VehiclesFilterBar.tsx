@@ -1,6 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
 import type { VehiclePlatformFilter } from "../../api/vehicles";
-import { getSubcontractors } from "../../api/subcontractors";
 import type { VehicleStatusFilter } from "../../hooks/useVehiclesListFilters";
 import { driversFilterCard, input, btnGhost } from "../../theme/classNames";
 
@@ -34,8 +32,6 @@ type VehiclesFilterBarProps = {
   onClearSearch: () => void;
   statusFilter: VehicleStatusFilter;
   onStatusChange: (value: VehicleStatusFilter) => void;
-  subcontractorFilter: string;
-  onSubcontractorChange: (value: string) => void;
   platformFilter: VehiclePlatformFilter;
   onPlatformChange: (value: VehiclePlatformFilter) => void;
   filtersExpanded: boolean;
@@ -54,8 +50,6 @@ export function VehiclesFilterBar({
   onClearSearch,
   statusFilter,
   onStatusChange,
-  subcontractorFilter,
-  onSubcontractorChange,
   platformFilter,
   onPlatformChange,
   filtersExpanded,
@@ -67,19 +61,11 @@ export function VehiclesFilterBar({
   hasActiveFilters,
   onClearAllFilters,
 }: VehiclesFilterBarProps) {
-  const subcontractorsQuery = useQuery({
-    queryKey: ["subcontractors", "list"],
-    queryFn: async () => {
-      const { data } = await getSubcontractors();
-      return data;
-    },
-  });
-
   const hasQuery = searchQuery.trim().length > 0;
 
   return (
     <div className={driversFilterCard}>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto] lg:items-center lg:gap-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(0,1fr))_auto] lg:items-center lg:gap-2">
         <div className="relative min-w-0 lg:col-span-1">
           <label htmlFor="vehicle-search" className="sr-only">
             Search vehicles
@@ -117,20 +103,6 @@ export function VehiclesFilterBar({
           <option value="maintenance">Maintenance</option>
           <option value="sold">Sold</option>
           <option value="scrapped">Scrapped</option>
-        </select>
-
-        <select
-          aria-label="Filter by subcontractor"
-          value={subcontractorFilter}
-          onChange={(e) => onSubcontractorChange(e.target.value)}
-          className={selectClass}
-        >
-          <option value="all">All subcontractors</option>
-          {(subcontractorsQuery.data ?? []).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.legal_name}
-            </option>
-          ))}
         </select>
 
         <select
