@@ -90,15 +90,15 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-border bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-lg font-semibold text-slate-900">Debt actions</h2>
-          <p className="text-sm text-slate-600 mt-0.5">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-lg font-semibold text-ink">Debt actions</h2>
+          <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {row.payment_period_start?.slice(0, 10)} – {row.payment_period_end?.slice(0, 10)}
           </p>
-          <p className="text-xs text-slate-500 mt-1 tabular-nums">
+          <p className="text-xs text-ink-muted mt-1 tabular-nums">
             Raw net: {formatCurrency(rawNet)} · Remaining debt: {formatCurrency(remaining)}
           </p>
         </div>
@@ -107,9 +107,9 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Note (optional)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Note (optional)</label>
             <textarea
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[72px]"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[72px]"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               disabled={busy}
@@ -118,11 +118,11 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Amount (RON, where needed)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Amount (RON, where needed)</label>
             <input
               type="number"
               step="0.01"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm tabular-nums"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               disabled={busy}
@@ -131,8 +131,8 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
           </div>
 
           {(reducePreviewRem !== null || (adjustPreviewRem !== null && showAdjustOnlyPreview)) && (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 space-y-1 tabular-nums">
-              <p className="font-medium text-slate-800">Preview (before you confirm)</p>
+            <div className="rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs text-ink space-y-1 tabular-nums">
+              <p className="font-medium text-ink">Preview (before you confirm)</p>
               {reducePreviewRem !== null && (
                 <p>
                   Forgive, cash, or positive manual adjust: remaining →{" "}
@@ -142,7 +142,7 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               {adjustPreviewRem !== null && showAdjustOnlyPreview && (
                 <p>
                   Manual adjust: remaining → <span className="font-semibold">{formatCurrency(adjustPreviewRem)}</span>{" "}
-                  <span className="text-slate-500">(negative amount increases what is owed)</span>
+                  <span className="text-ink-muted">(negative amount increases what is owed)</span>
                 </p>
               )}
             </div>
@@ -198,23 +198,23 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               type="button"
               disabled={busy}
               onClick={() => void submit("carry_forward")}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
             >
               Carry forward (re-run full allocation for driver)
             </button>
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-ink-muted">
             Carry forward rebuilds debt from raw payouts for this driver. Use after data fixes; may reset edge cases on
             forgiven rows.
           </p>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-4 py-3">
+        <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
             disabled={busy}
             onClick={handleClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm text-ink hover:bg-slate-50"
           >
             Cancel
           </button>

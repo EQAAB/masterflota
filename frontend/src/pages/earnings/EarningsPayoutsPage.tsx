@@ -15,6 +15,17 @@ import { DriverPayoutTable } from "../../components/earnings/DriverPayoutTable";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
+import {
+  alertError,
+  alertSuccess,
+  btnDangerOutline,
+  btnPrimary,
+  btnSecondary,
+  card,
+  input,
+  sectionLabel,
+} from "../../theme/classNames";
+import { FilterChip } from "../../components/theme/FilterBar";
 
 function errMessage(e: unknown): string {
   if (axios.isAxiosError(e)) {
@@ -24,6 +35,16 @@ function errMessage(e: unknown): string {
   }
   return e instanceof Error ? e.message : "Something went wrong";
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  processing: "Processing",
+  approved: "Approved",
+  paid: "Paid",
+  failed: "Failed",
+  hold: "Hold",
+  debt: "Debt",
+};
 
 export function EarningsPayoutsPage() {
   const user = useAuthStore((s) => s.user);
@@ -82,10 +103,21 @@ export function EarningsPayoutsPage() {
   });
 
   const items = query.data?.items ?? [];
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / (query.data?.pageSize ?? 25)));
+  const total = query.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / (query.data?.pageSize ?? 25)));
 
   const detailsQuery = useQuery({
-    queryKey: ["earnings", "payout-assignment-details", page, status, from, to, debouncedQ, driverIdFromUrl, showSubManaged],
+    queryKey: [
+      "earnings",
+      "payout-assignment-details",
+      page,
+      status,
+      from,
+      to,
+      debouncedQ,
+      driverIdFromUrl,
+      showSubManaged,
+    ],
     queryFn: () =>
       getPayoutsAssignmentDetails({
         page,
@@ -135,142 +167,218 @@ export function EarningsPayoutsPage() {
     });
   }
 
+  function clearDriverFilter() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("driverId");
+    next.delete("driver_id");
+    setSearchParams(next);
+    setPage(1);
+  }
+
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = [];
+  if (status) {
+    activeChips.push({
+      key: "status",
+      label: `Status: ${STATUS_LABELS[status] ?? status}`,
+      onRemove: () => {
+        setStatus("");
+        setPage(1);
+      },
+    });
+  }
+  if (from) {
+    activeChips.push({
+      key: "from",
+      label: `From ${from}`,
+      onRemove: () => {
+        setFrom("");
+        setPage(1);
+      },
+    });
+  }
+  if (to) {
+    activeChips.push({
+      key: "to",
+      label: `To ${to}`,
+      onRemove: () => {
+        setTo("");
+        setPage(1);
+      },
+    });
+  }
+  if (debouncedQ) {
+    activeChips.push({
+      key: "q",
+      label: `Search: ${debouncedQ}`,
+      onRemove: () => {
+        setQ("");
+        setDebouncedQ("");
+        setPage(1);
+      },
+    });
+  }
+  if (driverIdFromUrl) {
+    activeChips.push({
+      key: "driver",
+      label: "One driver",
+      onRemove: clearDriverFilter,
+    });
+  }
+  if (showSubManaged && !driverIdFromUrl) {
+    activeChips.push({
+      key: "sub",
+      label: "Sub-managed included",
+      onRemove: () => {
+        setShowSubManaged(false);
+        setPage(1);
+      },
+    });
+  }
+
   if (user?.role !== "admin" && user?.role !== "accountant") {
-    return <p className="p-6 text-slate-600">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">You do not have access.</p>;
   }
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-900">Payouts</h1>
-        <p className="text-sm text-slate-500 mt-1">
+      <header className="shrink-0 border-b border-border/80 bg-white/80 backdrop-blur-md px-4 sm:px-6 py-5">
+        <nav className="text-xs text-ink-muted mb-2">
+          <Link to="/earnings" className="hover:text-brand hover:underline">
+            Earnings
+          </Link>
+          <span className="mx-1.5 text-slate-300">/</span>
+          <span className="text-ink font-medium">Payouts</span>
+        </nav>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-ink">Payouts</h1>
+        <p className="text-sm text-ink-muted mt-1 max-w-2xl leading-relaxed">
           Direct driver payouts only. Sub-managed drivers are paid via{" "}
-          <Link to="/earnings/subcontractors/settlements" className="text-sky-700 hover:underline">
+          <Link
+            to="/earnings/subcontractors/settlements"
+            className="text-brand font-medium hover:underline"
+          >
             subcontractor settlements
           </Link>
           .
         </p>
       </header>
 
-      <div className="flex-1 p-4 sm:p-6 space-y-4">
-        {error && <div className="rounded-lg bg-red-50 text-red-800 text-sm px-3 py-2">{error}</div>}
+      <div className="flex-1 p-4 sm:p-6 max-w-[1600px] mx-auto w-full space-y-6">
+        {error && <div className={alertError}>{error}</div>}
 
-        {driverIdFromUrl && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-sm text-sky-900">
-            <span>Showing payouts for one driver (from vehicles or direct link).</span>
-            <button
-              type="button"
-              className="text-sky-700 font-medium hover:underline"
-              onClick={() => {
-                const next = new URLSearchParams(searchParams);
-                next.delete("driverId");
-                next.delete("driver_id");
-                setSearchParams(next);
-                setPage(1);
-              }}
-            >
-              Clear driver filter
-            </button>
-          </div>
-        )}
+        {releaseHoldMsg && <div className={alertSuccess}>{releaseHoldMsg}</div>}
 
         {debtSummaryQuery.data && (
-          <div className="rounded-2xl border border-rose-200/80 bg-rose-50/60 p-4 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-rose-900">Debt overview</h2>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-rose-950">
-                  {debtSummaryQuery.data.totalOutstanding.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}{" "}
-                  RON outstanding
-                </p>
-                <p className="text-xs text-rose-800 mt-1">
-                  {debtSummaryQuery.data.driversWithDebt} driver
-                  {debtSummaryQuery.data.driversWithDebt === 1 ? "" : "s"} with open debt
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={bulkDebtBusy}
-                  onClick={async () => {
-                    setBulkDebtBusy(true);
-                    setDebtActionMsg(null);
-                    try {
-                      const r = await postDebtsBulkCarryForward({
-                        from: from || undefined,
-                        to: to || undefined,
-                      });
-                      setDebtActionMsg(`Recomputed debt allocation for ${r.data.driversProcessed} driver(s).`);
-                      void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-                    } catch (e) {
-                      setDebtActionMsg(errMessage(e));
-                    } finally {
-                      setBulkDebtBusy(false);
-                    }
-                  }}
-                  className="rounded-lg border border-rose-400 bg-white px-3 py-2 text-xs font-medium text-rose-900 hover:bg-rose-100/80 disabled:opacity-50"
-                >
-                  {bulkDebtBusy ? "Working…" : "Bulk carry-forward (filtered period)"}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg bg-rose-700 px-3 py-2 text-xs font-medium text-white hover:bg-rose-800"
-                  onClick={() => {
-                    setPage(1);
-                    setStatus("debt");
-                  }}
-                >
-                  View debt payouts
-                </button>
-              </div>
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className={`${card} p-4 sm:p-5 border-rose-200/60`}>
+              <p className={sectionLabel}>Outstanding debt</p>
+              <p className="text-2xl font-bold tabular-nums text-rose-950 mt-1">
+                {debtSummaryQuery.data.totalOutstanding.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                <span className="text-lg font-semibold text-rose-800">RON</span>
+              </p>
+              <p className="text-xs text-rose-800/90 mt-1">
+                {debtSummaryQuery.data.driversWithDebt} driver
+                {debtSummaryQuery.data.driversWithDebt === 1 ? "" : "s"} with open debt
+              </p>
             </div>
-            {debtSummaryQuery.data.topDebtors.length > 0 && (
-              <ul className="mt-3 grid gap-1 text-xs text-rose-950 sm:grid-cols-2">
-                {debtSummaryQuery.data.topDebtors.map((d) => (
-                  <li key={d.driverId} className="flex justify-between gap-2 rounded-lg bg-white/70 px-2 py-1.5">
-                    <button
-                      type="button"
-                      className="text-left font-medium text-rose-900 hover:underline"
-                      onClick={() => {
-                        const next = new URLSearchParams(searchParams);
-                        next.set("driverId", d.driverId);
-                        setSearchParams(next);
-                        setPage(1);
-                      }}
-                    >
-                      {d.name}
-                    </button>
-                    <span className="tabular-nums font-semibold">
-                      {d.outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-                      RON
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {debtActionMsg && (
-              <p className="mt-2 text-xs text-rose-900 border-t border-rose-200/60 pt-2">{debtActionMsg}</p>
-            )}
+
+            <div className={`${card} p-4 sm:p-5 lg:col-span-1`}>
+              <p className={sectionLabel}>Top debtors</p>
+              {debtSummaryQuery.data.topDebtors.length === 0 ? (
+                <p className="text-sm text-ink-muted mt-2">No outstanding debtors.</p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {debtSummaryQuery.data.topDebtors.slice(0, 5).map((d) => (
+                    <li key={d.driverId} className="flex justify-between gap-2 text-xs">
+                      <button
+                        type="button"
+                        className="text-left font-medium text-ink hover:text-brand hover:underline truncate"
+                        onClick={() => {
+                          const next = new URLSearchParams(searchParams);
+                          next.set("driverId", d.driverId);
+                          setSearchParams(next);
+                          setPage(1);
+                        }}
+                      >
+                        {d.name}
+                      </button>
+                      <span className="tabular-nums font-semibold text-ink shrink-0">
+                        {d.outstanding.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        RON
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className={`${card} p-4 sm:p-5 flex flex-col gap-2 justify-center`}>
+              <p className={sectionLabel}>Debt actions</p>
+              <button
+                type="button"
+                disabled={bulkDebtBusy}
+                onClick={async () => {
+                  setBulkDebtBusy(true);
+                  setDebtActionMsg(null);
+                  try {
+                    const r = await postDebtsBulkCarryForward({
+                      from: from || undefined,
+                      to: to || undefined,
+                    });
+                    setDebtActionMsg(
+                      `Recomputed debt allocation for ${r.data.driversProcessed} driver(s).`,
+                    );
+                    void queryClient.invalidateQueries({ queryKey: ["earnings"] });
+                  } catch (e) {
+                    setDebtActionMsg(errMessage(e));
+                  } finally {
+                    setBulkDebtBusy(false);
+                  }
+                }}
+                className={btnDangerOutline}
+              >
+                {bulkDebtBusy ? "Working…" : "Bulk carry-forward (filtered period)"}
+              </button>
+              <button
+                type="button"
+                className={`${btnPrimary} bg-danger hover:opacity-95`}
+                onClick={() => {
+                  setPage(1);
+                  setStatus("debt");
+                }}
+              >
+                View debt payouts
+              </button>
+              {debtActionMsg && (
+                <p className="text-xs text-ink-muted mt-1 border-t border-border/80 pt-2">{debtActionMsg}</p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {status === "hold" && total > 0 && (
+          <div className={`${card} px-4 py-3 text-sm text-ink`}>
+            <span className="font-semibold text-ink">{total}</span> payout
+            {total === 1 ? "" : "s"} on hold. Use <span className="font-medium">Release hold</span> in the row menu
+            to return it to the payment workflow.
           </div>
         )}
 
-        {status === "hold" && (query.data?.total ?? 0) > 0 && (
-          <div className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <span className="font-semibold text-slate-900">{query.data?.total ?? 0}</span> payout
-            {(query.data?.total ?? 0) === 1 ? "" : "s"} on hold. Use <span className="font-medium">Release hold</span>{" "}
-            on a row to return it to the payment workflow.
+        <section className={`${card} p-4 sm:p-5 space-y-4`}>
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Filters</h2>
+            <p className="text-xs text-ink-muted mt-0.5">Applies across all pages of results.</p>
           </div>
-        )}
-
-        <div className="flex flex-col lg:flex-row flex-wrap gap-3 items-stretch lg:items-end">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Status</label>
+              <label className={sectionLabel}>Status</label>
               <select
-                className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm min-h-[44px]"
+                className={input}
                 value={status}
                 onChange={(e) => {
                   setPage(1);
@@ -288,10 +396,10 @@ export function EarningsPayoutsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">From</label>
+              <label className={sectionLabel}>From</label>
               <input
                 type="date"
-                className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm min-h-[44px]"
+                className={input}
                 value={from}
                 onChange={(e) => {
                   setPage(1);
@@ -300,10 +408,10 @@ export function EarningsPayoutsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">To</label>
+              <label className={sectionLabel}>To</label>
               <input
                 type="date"
-                className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm min-h-[44px]"
+                className={input}
                 value={to}
                 onChange={(e) => {
                   setPage(1);
@@ -311,41 +419,49 @@ export function EarningsPayoutsPage() {
                 }}
               />
             </div>
-            <div className="col-span-2 sm:col-span-1">
-              <label className="block text-xs text-slate-600 mb-1">Search</label>
+            <div>
+              <label className={sectionLabel}>Search</label>
               <input
                 type="search"
                 placeholder="Name, phone, platform ID"
-                className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm min-h-[44px]"
+                className={input}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-700 min-h-[44px] px-1">
-            <input
-              type="checkbox"
-              checked={showSubManaged}
-              disabled={!!driverIdFromUrl}
-              onChange={(e) => {
-                setShowSubManaged(e.target.checked);
-                setPage(1);
-              }}
-              className="rounded border-slate-300"
-            />
-            Show sub-managed (audit)
-          </label>
-          <button
-            type="button"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50 min-h-[44px]"
-            onClick={() => {
-              setPage(1);
-              void query.refetch();
-            }}
-          >
-            Apply filters
-          </button>
-        </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showSubManaged}
+                disabled={!!driverIdFromUrl}
+                onChange={(e) => {
+                  setShowSubManaged(e.target.checked);
+                  setPage(1);
+                }}
+                className="rounded border-border"
+              />
+              Show sub-managed (audit)
+            </label>
+            <button
+              type="button"
+              className="text-sm text-brand font-medium hover:underline disabled:opacity-50"
+              disabled={query.isFetching}
+              onClick={() => void query.refetch()}
+            >
+              {query.isFetching ? "Refreshing…" : "Refresh"}
+            </button>
+          </div>
+          {activeChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
+              <span className="text-xs text-ink-muted">Active:</span>
+              {activeChips.map((chip) => (
+                <FilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
+              ))}
+            </div>
+          )}
+        </section>
 
         <DriverPayoutTable
           rows={items}
@@ -369,12 +485,6 @@ export function EarningsPayoutsPage() {
           onOpenCustomFees={(row) => setCustomFeesModalRow(row)}
           onOpenReleaseHold={(row) => setReleaseHoldRow(row)}
         />
-
-        {releaseHoldMsg && (
-          <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-            {releaseHoldMsg}
-          </p>
-        )}
 
         <DebtActionsModal
           row={debtModalRow}
@@ -405,27 +515,33 @@ export function EarningsPayoutsPage() {
           }}
         />
 
-        <div className="flex justify-center gap-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-slate-600 py-2">
-            Page {page} / {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
+        <footer
+          className={`${card} flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 sm:px-5`}
+        >
+          <p className="text-sm text-ink-muted tabular-nums">
+            Page {page} of {totalPages}
+            <span className="text-slate-400 mx-2">·</span>
+            {total.toLocaleString()} total
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className={`${btnSecondary} disabled:opacity-40`}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-40 min-h-[44px]"
+            >
+              Next
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );

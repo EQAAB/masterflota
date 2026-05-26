@@ -110,7 +110,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
   const renderFeeLine = (item: DriverPayoutCustomFee, readOnly: boolean) => (
     <li key={item.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm bg-white">
       <div>
-        <span className="font-medium text-slate-900">{item.fee_name}</span>
+        <span className="font-medium text-ink">{item.fee_name}</span>
         <span
           className={`ml-2 text-xs font-medium ${
             item.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
@@ -121,11 +121,11 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
         {readOnly && (
           <span className="ml-2 text-xs text-violet-600">(recurring)</span>
         )}
-        <div className="text-slate-700 tabular-nums mt-0.5">
+        <div className="text-ink tabular-nums mt-0.5">
           {item.fee_type === "deduction" ? "−" : "+"}
           {formatCurrency(toNum(item.amount))}
         </div>
-        {item.notes && <p className="text-xs text-slate-500 mt-0.5">{item.notes}</p>}
+        {item.notes && <p className="text-xs text-ink-muted mt-0.5">{item.notes}</p>}
       </div>
       {!readOnly && !locked && (
         <button
@@ -148,12 +148,12 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg rounded-2xl border border-border bg-white shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-lg font-semibold text-slate-900">Custom fees</h2>
-          <p className="text-sm text-slate-600 mt-0.5">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-lg font-semibold text-ink">Custom fees</h2>
+          <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {row.payment_period_start?.slice(0, 10)} –{" "}
             {row.payment_period_end?.slice(0, 10)}
           </p>
@@ -162,13 +162,13 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
         <div className="px-4 py-3 space-y-4">
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
-          {q.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+          {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
           {q.isError && <p className="text-sm text-red-700">Failed to load custom fees.</p>}
 
           {data && (
-            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm space-y-1">
+            <div className="rounded-lg bg-slate-50 border border-border px-3 py-2 text-sm space-y-1">
               <div className="flex justify-between">
-                <span className="text-slate-600">Base payout</span>
+                <span className="text-ink-muted">Base payout</span>
                 <span className="tabular-nums font-medium">{formatCurrency(toNum(data.base_raw_net))}</span>
               </div>
               <div className="flex justify-between text-rose-800">
@@ -179,13 +179,13 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                 <span>Custom additions</span>
                 <span className="tabular-nums">+{formatCurrency(toNum(data.total_additions))}</span>
               </div>
-              <div className="flex justify-between border-t border-slate-200 pt-1">
-                <span className="text-slate-600">Adjusted raw net</span>
+              <div className="flex justify-between border-t border-border pt-1">
+                <span className="text-ink-muted">Adjusted raw net</span>
                 <span className="tabular-nums font-medium">{formatCurrency(toNum(data.raw_net_amount))}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Final net payout</span>
-                <span className="tabular-nums font-semibold text-slate-900">
+                <span className="text-ink-muted">Final net payout</span>
+                <span className="tabular-nums font-semibold text-ink">
                   {formatCurrency(toNum(data.net_driver_payout))}
                 </span>
               </div>
@@ -195,20 +195,20 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
           {recurringItems.length > 0 && (
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                   Recurring fees (auto)
                 </h3>
                 {row.driver_id && (
                   <Link
                     to={`/drivers/${row.driver_id}`}
-                    className="text-xs text-sky-700 hover:underline"
+                    className="text-xs text-brand hover:underline"
                     onClick={handleClose}
                   >
                     Manage on profile
                   </Link>
                 )}
               </div>
-              <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+              <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
                 {recurringItems.map((item) => renderFeeLine(item, true))}
               </ul>
             </div>
@@ -216,22 +216,22 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
 
           {manualItems.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">
                 Manual adjustments
               </h3>
-              <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+              <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
                 {manualItems.map((item) => renderFeeLine(item, false))}
               </ul>
             </div>
           )}
 
           {!locked && (
-            <div className="space-y-3 border-t border-slate-100 pt-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="space-y-3 border-t border-border pt-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 Add manual adjustment
               </h3>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fee name</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Fee name</label>
                 <input
                   type="text"
                   maxLength={100}
@@ -239,24 +239,24 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                   onChange={(e) => setFeeName(e.target.value)}
                   placeholder="e.g. Accommodation"
                   disabled={busy}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Type</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Type</label>
                   <select
                     value={feeType}
                     onChange={(e) => setFeeType(e.target.value as CustomFeeType)}
                     disabled={busy}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   >
                     <option value="deduction">Deduction</option>
                     <option value="addition">Addition</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Amount (RON)</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Amount (RON)</label>
                   <input
                     type="number"
                     min={0}
@@ -264,25 +264,25 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     disabled={busy}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm tabular-nums"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Notes (optional)</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Notes (optional)</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
                   disabled={busy}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </div>
               <button
                 type="button"
                 disabled={!canSubmit}
                 onClick={() => void submit()}
-                className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+                className="w-full rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
                 {busy ? "Saving…" : "Add manual fee"}
               </button>
@@ -296,12 +296,12 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
           )}
         </div>
 
-        <div className="flex justify-end border-t border-slate-100 px-4 py-3">
+        <div className="flex justify-end border-t border-border px-4 py-3">
           <button
             type="button"
             disabled={busy || !!deleteBusyId}
             onClick={handleClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm text-ink hover:bg-slate-50 disabled:opacity-50"
           >
             Close
           </button>

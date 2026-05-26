@@ -19,17 +19,17 @@ type DriverRecurringFeesPanelProps = {
 
 function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
   if (!items.length) {
-    return <p className="text-sm text-slate-500">No recurring fees configured.</p>;
+    return <p className="text-sm text-ink-muted">No recurring fees configured.</p>;
   }
   return (
-    <ul className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden text-sm">
+    <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden text-sm">
       {items.map((f) => (
         <li
           key={f.id}
           className={`px-3 py-2 flex flex-wrap justify-between gap-2 ${!f.is_active ? "bg-slate-50 opacity-70" : "bg-white"}`}
         >
           <div>
-            <span className="font-medium text-slate-900">{f.fee_name}</span>
+            <span className="font-medium text-ink">{f.fee_name}</span>
             <span
               className={`ml-2 text-xs font-medium ${
                 f.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
@@ -38,21 +38,21 @@ function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
               {f.fee_type === "deduction" ? "Deduction" : "Addition"}
             </span>
             {!f.is_active && (
-              <span className="ml-2 text-xs text-slate-500">(paused)</span>
+              <span className="ml-2 text-xs text-ink-muted">(paused)</span>
             )}
-            <span className="ml-2 text-xs text-slate-500">
+            <span className="ml-2 text-xs text-ink-muted">
               {recurringFeeFrequencyLabel(f.frequency ?? "weekly")}
             </span>
-            <div className="text-slate-700 tabular-nums mt-0.5">
+            <div className="text-ink tabular-nums mt-0.5">
               {f.fee_type === "deduction" ? "−" : "+"}
               {formatCurrency(Number(f.amount))}
             </div>
             {(f.start_date || f.end_date) && (
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-ink-muted mt-0.5">
                 {f.start_date ?? "…"} → {f.end_date ?? "…"}
               </p>
             )}
-            {f.notes && <p className="text-xs text-slate-500">{f.notes}</p>}
+            {f.notes && <p className="text-xs text-ink-muted">{f.notes}</p>}
           </div>
         </li>
       ))}
@@ -156,8 +156,8 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
     <section className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-800">Recurring fees</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="text-sm font-semibold text-ink">Recurring fees</h2>
+          <p className="text-xs text-ink-muted mt-0.5">
             Applied to weekly payouts when the period overlaps the fee dates (weekly every time;
             monthly only in the week that includes the 1st).
           </p>
@@ -166,14 +166,14 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
           <button
             type="button"
             onClick={openCreate}
-            className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
+            className="rounded-md bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white hover:opacity-95"
           >
             Add recurring fee
           </button>
         )}
       </div>
 
-      {q.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+      {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
       {q.isError && <p className="text-sm text-red-700">Failed to load recurring fees.</p>}
       {q.data && (
         <>
@@ -185,7 +185,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                   <button
                     type="button"
                     onClick={() => openEdit(f)}
-                    className="text-xs text-sky-700 hover:underline"
+                    className="text-xs text-brand hover:underline"
                   >
                     Edit {f.fee_name}
                   </button>
@@ -194,7 +194,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                     type="button"
                     onClick={() => toggleMut.mutate(f)}
                     disabled={toggleMut.isPending}
-                    className="text-xs text-slate-600 hover:underline disabled:opacity-50"
+                    className="text-xs text-ink-muted hover:underline disabled:opacity-50"
                   >
                     {f.is_active ? "Pause" : "Enable"}
                   </button>
@@ -226,17 +226,17 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
           onClick={() => !saveMut.isPending && setModalOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-xl p-4 space-y-3"
+            className="w-full max-w-md rounded-xl border border-border bg-white shadow-xl p-4 space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-semibold text-slate-900">
+            <h3 className="font-semibold text-ink">
               {editing ? "Edit recurring fee" : "Add recurring fee"}
             </h3>
             {err && <p className="text-sm text-red-700">{err}</p>}
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Fee name</label>
+              <label className="block text-xs text-ink-muted mb-1">Fee name</label>
               <input
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={feeName}
                 maxLength={100}
                 onChange={(e) => setFeeName(e.target.value)}
@@ -244,9 +244,9 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Type</label>
+                <label className="block text-xs text-ink-muted mb-1">Type</label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={feeType}
                   onChange={(e) => setFeeType(e.target.value as CustomFeeType)}
                 >
@@ -255,21 +255,21 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Amount (RON)</label>
+                <label className="block text-xs text-ink-muted mb-1">Amount (RON)</label>
                 <input
                   type="number"
                   min={0}
                   step="0.01"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Frequency</label>
+              <label className="block text-xs text-ink-muted mb-1">Frequency</label>
               <select
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as RecurringFeeFrequency)}
               >
@@ -277,7 +277,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                 <option value="monthly_first_week">Monthly (first week of month)</option>
               </select>
               {frequency === "monthly_first_week" && (
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-ink-muted mt-1">
                   Deducted only in the payout week that includes the 1st of the month (e.g.
                   accommodation rent).
                 </p>
@@ -285,25 +285,25 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Start date (optional)</label>
+                <label className="block text-xs text-ink-muted mb-1">Start date (optional)</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-600 mb-1">End date (optional)</label>
+                <label className="block text-xs text-ink-muted mb-1">End date (optional)</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={isActive}
@@ -312,10 +312,10 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
               Active (apply to matching payout weeks)
             </label>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Notes</label>
+              <label className="block text-xs text-ink-muted mb-1">Notes</label>
               <textarea
                 rows={2}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -323,7 +323,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+                className="rounded-md border border-border px-3 py-1.5 text-sm"
                 onClick={() => setModalOpen(false)}
                 disabled={saveMut.isPending}
               >
@@ -331,7 +331,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
               </button>
               <button
                 type="button"
-                className="rounded-md bg-violet-600 px-3 py-1.5 text-sm text-white hover:bg-violet-700 disabled:opacity-50"
+                className="rounded-md bg-brand-gradient px-3 py-1.5 text-sm text-white hover:opacity-95 disabled:opacity-50"
                 disabled={saveMut.isPending}
                 onClick={() => {
                   setErr(null);

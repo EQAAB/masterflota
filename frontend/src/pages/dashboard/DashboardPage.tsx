@@ -118,7 +118,7 @@ export function DashboardPage() {
       <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block h-8 w-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
-          <p className="text-sm text-slate-600">Loading dashboard...</p>
+          <p className="text-sm text-ink-muted">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ export function DashboardPage() {
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="text-center">
           <p className="text-red-600">Failed to load dashboard.</p>
-          <Link to="/drivers" className="mt-2 inline-block text-sm text-sky-600 hover:underline">
+          <Link to="/drivers" className="mt-2 inline-block text-sm text-brand hover:underline">
             Go to drivers
           </Link>
         </div>
@@ -139,15 +139,15 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="shrink-0 border-b border-slate-200 bg-white px-6 py-4">
+      <header className="shrink-0 border-b border-border bg-white px-6 py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">
+            <h1 className="text-xl font-semibold text-ink">
               Welcome{user ? `, ${user.firstName}` : ""}
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">{today}</p>
+            <p className="text-sm text-ink-muted mt-0.5">{today}</p>
           </div>
-          <Link to="/drivers" className="text-sm font-medium text-sky-600 hover:underline">
+          <Link to="/drivers" className="text-sm font-medium text-brand hover:underline">
             View all drivers →
           </Link>
         </div>
@@ -155,7 +155,7 @@ export function DashboardPage() {
 
       <div className="flex-1 overflow-auto p-6">
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Overview</h2>
+          <h2 className="text-sm font-semibold text-ink mb-4">Overview</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <Link to="/drivers" className="block rounded-xl hover:shadow-lg transition-shadow">
               <AnalyticsCard title="Total drivers" value={stats.totalDrivers} icon={<UsersIcon />} />
@@ -202,26 +202,26 @@ export function DashboardPage() {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Analytics</h2>
+          <h2 className="text-sm font-semibold text-ink mb-4">Analytics</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Driver status</h3>
+            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-ink mb-3">Driver status</h3>
               <DriverStatusChart data={statusData} />
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col justify-center min-h-[200px]">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Earnings</h3>
-              <p className="text-sm text-slate-600 mb-3">
+            <div className="rounded-xl border border-border bg-white p-4 shadow-sm flex flex-col justify-center min-h-[200px]">
+              <h3 className="text-sm font-semibold text-ink mb-3">Earnings</h3>
+              <p className="text-sm text-ink-muted mb-3">
                 Charts and import live under the <strong>Earnings</strong> section in the sidebar.
               </p>
               <Link
                 to="/earnings"
-                className="inline-flex text-sm font-medium text-sky-600 hover:underline w-fit"
+                className="inline-flex text-sm font-medium text-brand hover:underline w-fit"
               >
                 Open earnings overview
               </Link>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Document verification</h3>
+            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-ink mb-3">Document verification</h3>
               <DocumentStatsChart data={docsData} />
             </div>
             <ChartPlaceholder title="Revenue by platform" height={240} />
@@ -229,40 +229,40 @@ export function DashboardPage() {
         </section>
 
         <section>
-          <h2 className="text-sm font-semibold text-slate-700 mb-4">Recent activity</h2>
+          <h2 className="text-sm font-semibold text-ink mb-4">Recent activity</h2>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <ActivityTable
               title="Activity feed"
               rows={activityToRows(activities)}
               emptyMessage="No recent activity."
             />
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Recent assignments</h3>
+            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-ink mb-3">Recent assignments</h3>
               {assignmentsQuery.isLoading && (
-                <p className="text-sm text-slate-500">Loading…</p>
+                <p className="text-sm text-ink-muted">Loading…</p>
               )}
               {!assignmentsQuery.isLoading && recentAssignments.length === 0 && (
-                <p className="text-sm text-slate-500">No assignment history yet.</p>
+                <p className="text-sm text-ink-muted">No assignment history yet.</p>
               )}
               {recentAssignments.length > 0 && (
-                <ul className="divide-y divide-slate-100 text-sm">
+                <ul className="divide-y divide-border text-sm">
                   {recentAssignments.map((a) => (
                     <li key={a.id} className="py-2.5 flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <Link
                           to={`/drivers/${a.driver_id}`}
-                          className="font-medium text-sky-600 hover:underline"
+                          className="font-medium text-brand hover:underline"
                         >
                           {a.driver_name || "Driver"}
                         </Link>
                         <span className="text-slate-400 mx-1">→</span>
                         <Link
                           to={`/vehicles/${a.vehicle_id}`}
-                          className="text-sky-600 hover:underline"
+                          className="text-brand hover:underline"
                         >
                           {a.vehicle_name?.trim() || a.license_plate || "Vehicle"}
                         </Link>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-ink-muted mt-0.5">
                           Assigned {a.assigned_at.split("T")[0]}
                           {a.is_active ? (
                             <span className="ml-2 inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-emerald-800 font-medium">
@@ -274,7 +274,7 @@ export function DashboardPage() {
                         </p>
                       </div>
                       {a.weekly_rent_at_time != null && (
-                        <span className="text-xs text-slate-600 tabular-nums shrink-0">
+                        <span className="text-xs text-ink-muted tabular-nums shrink-0">
                           {formatCurrency(Number(a.weekly_rent_at_time))}/wk
                         </span>
                       )}

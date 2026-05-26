@@ -1,11 +1,34 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type { PayoutListItem, PayoutAssignmentDetail, PayoutRentEntry } from "../../api/earnings";
+import type { PayoutListItem, PayoutAssignmentDetail } from "../../api/earnings";
 import { usePayoutSearch } from "../../hooks/usePayoutSearch";
 import { ConfirmDialog } from "../UI/ConfirmDialog";
+import {
+  alertError,
+  btnPrimary,
+  btnSecondary,
+  card,
+  tableRow,
+  tableRowAlert,
+} from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
-import { commissionBaseTypeLabel } from "../../utils/commissionBaseLabels";
-import { earningsPlatformLabel } from "../../utils/earningsPlatformLabel";
+import { HighlightText } from "./payouts/HighlightText";
+import { PayoutExpandedDetails } from "./payouts/PayoutExpandedDetails";
+import { PayoutRowActions } from "./payouts/PayoutRowActions";
+import { PayoutStatusBadge } from "./payouts/PayoutStatusBadge";
+import { PayoutTableSkeleton } from "./payouts/PayoutTableSkeleton";
+import { PayoutTableToolbar } from "./payouts/PayoutTableToolbar";
+import {
+  findPayoutRow,
+  includesQuery,
+  isDebtStyleRow,
+  isPayablePayoutRow,
+  payoutCommissionTitle,
+  payoutGlovoBreakdownTitle,
+  periodLabel,
+  toNum,
+  vehicleRentDetailTitle,
+} from "./payouts/payoutRowUtils";
 
 type DriverPayoutTableProps = {
   rows: PayoutListItem[];
@@ -24,149 +47,45 @@ type DriverPayoutTableProps = {
   onOpenReleaseHold?: (row: PayoutListItem) => void;
 };
 
-const BADGE_BY_STATUS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  processing: "bg-violet-100 text-violet-800",
-  approved: "bg-blue-100 text-blue-800",
-  paid: "bg-emerald-100 text-emerald-800",
-  failed: "bg-rose-100 text-rose-800",
-  hold: "bg-slate-100 text-slate-700",
-  debt: "bg-red-100 text-red-800",
-};
-
-function periodLabel(row: PayoutListItem): string {
-  const start = row.payment_period_start?.slice(0, 10) ?? "—";
-  const end = row.payment_period_end?.slice(0, 10) ?? "—";
-  const plat = row.earnings_platform?.trim()
-    ? ` · ${earningsPlatformLabel(row.earnings_platform)}`
-    : "";
-  return `${start} – ${end}${plat}`;
-}
-
-function toNum(value: string | null | undefined): number {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeRentEntries(raw: PayoutListItem["rent_entries"]): PayoutRentEntry[] {
-  if (raw == null || !Array.isArray(raw)) return [];
-  return raw.filter(
-    (x): x is PayoutRentEntry =>
-      typeof x === "object" &&
-      x != null &&
-      typeof (x as PayoutRentEntry).entry_type === "string" &&
-      typeof (x as PayoutRentEntry).amount === "string",
-  );
-}
-
-function rentEntryTypeLabel(t: string): string {
-  switch (t) {
-    case "current_week":
-      return "This week";
-    case "overdue":
-      return "Overdue (prior week)";
-    case "adjustment":
-      return "Adjustment";
-    default:
-      return t;
-  }
-}
-
-function formatRatePctFromFraction(rNum: number): string {
-  if (!(rNum > 0)) return "—";
-  if (rNum <= 1) return `${(rNum * 100).toFixed(2).replace(/\.?0+$/, "")}%`;
-  return `${rNum}%`;
-}
-
-/** Tooltip for fleet commission column (audit: base × nominal rate vs charged). */
-function payoutCommissionTitle(row: PayoutListItem): string {
-  const comp = toNum(row.company_commission);
-  const base = toNum(row.commission_base);
-  const rNum = toNum(row.commission_rate);
-  const pct = formatRatePctFromFraction(rNum);
-  const nominal = base > 0 && rNum > 0 && rNum <= 1 ? base * rNum : 0;
-  const extra =
-    base > 0.001 && nominal > 0 && Math.abs(comp - nominal) > 0.02
-      ? `\nEffective on base: ${((comp / base) * 100).toFixed(2).replace(/\.?0+$/, "")}%`
-      : "";
-  return `Fleet commission: ${formatCurrency(comp)}\nBase: ${formatCurrency(base)} (${commissionBaseTypeLabel(row.commission_base_type)})\nNominal rate: ${pct}${extra}`;
-}
-
-/** Native tooltip: linear payout chain. */
-function boltPayoutCashDeductionLabel(row: PayoutListItem): string {
-  return row.earnings_platform === "bolt"
-    ? "Overdue courier cash debt"
-    : "Daily cash deduction";
-}
-
-function payoutGlovoBreakdownTitle(row: PayoutListItem): string | undefined {
-  const ni = row.net_income;
-  if (ni == null || ni === "") return undefined;
-  const rNum = toNum(row.commission_rate);
-  const pctLabel = formatRatePctFromFraction(rNum);
-  const baseLabel = commissionBaseTypeLabel(row.commission_base_type);
-  const cashLabel = boltPayoutCashDeductionLabel(row);
-  return [
-    `Base income: ${formatCurrency(toNum(row.income))}`,
-    `Tips: ${formatCurrency(toNum(row.tips))}`,
-    `Gross (Income + Tips): ${formatCurrency(toNum(row.total_gross_earnings))}`,
-    `Platform fees (Taxa): ${formatCurrency(toNum(row.total_platform_fees))}`,
-    `Net income: ${formatCurrency(toNum(row.net_income))}`,
-    `Commission base (${baseLabel}): ${formatCurrency(toNum(row.commission_base))}`,
-    `Nominal commission rate: ${pctLabel}`,
-    `Commission (fleet): ${formatCurrency(toNum(row.company_commission))}`,
-    `${cashLabel}: ${formatCurrency(Math.abs(toNum(row.total_daily_cash)))} (stored sum may be signed)`,
-    `Account opening fee deduction: ${formatCurrency(Math.abs(toNum(row.account_opening_fee)))}`,
-    `Vehicle rent (fleet week prorated): ${formatCurrency(toNum(row.vehicle_rental_fee))}`,
-    `Raw period roll-up (after opening fee and vehicle rent): ${formatCurrency(toNum(row.raw_net_amount))}`,
-    `Net payable: ${formatCurrency(toNum(row.net_driver_payout))}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-/** Tooltip for vehicle rent column (line items when present). */
-function vehicleRentDetailTitle(row: PayoutListItem): string | undefined {
-  const entries = normalizeRentEntries(row.rent_entries);
-  const total = toNum(row.vehicle_rental_fee);
-  if (!entries.length && total === 0) return undefined;
-  if (!entries.length) return `Vehicle rent: ${formatCurrency(total)}`;
-  return [
-    `Vehicle rent total: ${formatCurrency(total)}`,
-    ...entries.map((e) => {
-      const desc = e.description ? ` — ${e.description}` : "";
-      return `• ${rentEntryTypeLabel(e.entry_type)}: ${formatCurrency(Number(e.amount) || 0)}${desc}`;
-    }),
-  ].join("\n");
-}
-
-function includesQuery(value: string | null | undefined, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return false;
-  return String(value ?? "").toLowerCase().includes(q);
-}
-
-function findPayoutRow(allRows: PayoutListItem[], id: string): PayoutListItem | undefined {
-  return allRows.find((r) => r.id === id);
-}
-
-function HighlightText({ text, query }: { text: string; query: string }) {
-  const q = query.trim();
-  if (!q) return <>{text}</>;
-  const lowerText = text.toLowerCase();
-  const lowerQuery = q.toLowerCase();
-  const index = lowerText.indexOf(lowerQuery);
-  if (index === -1) return <>{text}</>;
-  const end = index + q.length;
-  return (
-    <>
-      {text.slice(0, index)}
-      <span className="rounded bg-yellow-200/90 px-1 text-slate-950 shadow-[0_0_10px_rgba(250,204,21,0.6)]">
-        {text.slice(index, end)}
-      </span>
-      {text.slice(end)}
-    </>
-  );
+function getRowFlags(
+  row: PayoutListItem,
+  onOpenDebtActions?: (row: PayoutListItem) => void,
+  onOpenCustomFees?: (row: PayoutListItem) => void,
+  onOpenReleaseHold?: (row: PayoutListItem) => void,
+) {
+  const isDebtStyle = isDebtStyleRow(row);
+  const debtBadgeAmount = Math.max(toNum(row.remaining_debt_amount), toNum(row.debt_amount));
+  const showDebtBadge = isDebtStyle && (debtBadgeAmount > 0 || row.payment_status === "debt");
+  const showPreviousDebtApplied =
+    toNum(row.debt_applied_amount) > 0 &&
+    !isDebtStyle &&
+    (row.payment_status === "pending" ||
+      row.payment_status === "paid" ||
+      row.payment_status === "approved");
+  const isPending = isPayablePayoutRow(row);
+  const canDebtActions =
+    !!onOpenDebtActions &&
+    (row.payment_status === "debt" ||
+      toNum(row.raw_net_amount) < 0 ||
+      toNum(row.remaining_debt_amount) > 0 ||
+      toNum(row.debt_amount) > 0);
+  const canCustomFees =
+    !!onOpenCustomFees && row.payment_status !== "paid" && row.payment_status !== "approved";
+  const canReleaseHold =
+    !!onOpenReleaseHold &&
+    row.payment_status === "hold" &&
+    !row.subcontractor_id &&
+    !row.subcontractor_payout_id;
+  return {
+    isDebtStyle,
+    debtBadgeAmount,
+    showDebtBadge,
+    showPreviousDebtApplied,
+    isPending,
+    canDebtActions,
+    canCustomFees,
+    canReleaseHold,
+  };
 }
 
 export function DriverPayoutTable({
@@ -204,23 +123,20 @@ export function DriverPayoutTable({
   } = usePayoutSearch(rows, detailsByPayoutId);
 
   const hasQuery = searchQuery.trim().length > 0 || statusFilter.length > 0;
-  const isPayableRow = useCallback((r: PayoutListItem) => {
-    if (r.subcontractor_id || r.subcontractor_payout_id) return false;
-    const debtLike = r.payment_status === "debt" || toNum(r.raw_net_amount) < 0;
-    return r.payment_status === "pending" && !debtLike;
-  }, []);
 
   const pendingIds = useMemo(
-    () => filteredRows.filter((r) => isPayableRow(r)).map((r) => r.id),
-    [filteredRows, isPayableRow],
+    () => filteredRows.filter((r) => isPayablePayoutRow(r)).map((r) => r.id),
+    [filteredRows],
   );
   const selectedPendingIds = pendingIds.filter((id) => selectedIds.has(id));
   const pendingTotal = filteredRows.reduce(
-    (sum, r) => (isPayableRow(r) ? sum + toNum(r.net_driver_payout) : sum),
+    (sum, r) => (isPayablePayoutRow(r) ? sum + toNum(r.net_driver_payout) : sum),
     0,
   );
   const paidCount = filteredRows.filter((r) => r.payment_status === "paid").length;
-  const platformIdMatchCount = filteredRows.filter((r) => includesQuery(r.platform_id, debouncedQuery)).length;
+  const platformIdMatchCount = filteredRows.filter((r) =>
+    includesQuery(r.platform_id, debouncedQuery),
+  ).length;
 
   const showNoRows = !isLoading && filteredRows.length === 0;
 
@@ -240,94 +156,52 @@ export function DriverPayoutTable({
     setPayConfirm(null);
   };
 
+  const toggleExpand = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const debtRowClass = tableRowAlert;
+  const normalRowClass = tableRow;
+
   return (
     <div className="space-y-4">
-      <div className="w-full rounded-2xl border border-white/60 bg-white/45 p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-md ring-1 ring-slate-900/[0.04] sm:p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <label htmlFor="payout-search" className="mb-1 block text-xs font-medium text-slate-600">
-              Search driver, phone, period, platform ID, vehicle rental, status
-            </label>
-            <div className="relative">
-              <input
-                id="payout-search"
-                type="search"
-                autoComplete="off"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="e.g. Bilal, 46bcf8, pending, 250"
-                className={`w-full rounded-xl border border-white/50 bg-white/55 py-2.5 pl-3 text-sm text-slate-900 shadow-inner outline-none ring-sky-500/30 placeholder:text-slate-400 focus:border-sky-300/80 focus:ring-2 ${hasQuery ? "pr-[4.5rem]" : "pr-3"}`}
-              />
-              {hasQuery && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-slate-600 hover:bg-white/70 hover:text-slate-900 sm:text-sm"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
-            <label htmlFor="payout-status" className="mb-1 block text-xs font-medium text-slate-600">
-              Status
-            </label>
-            <select
-              id="payout-status"
-              className="w-full rounded-xl border border-white/50 bg-white/55 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none ring-sky-500/30 focus:border-sky-300/80 focus:ring-2"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="approved">Approved</option>
-              <option value="paid">Paid</option>
-              <option value="failed">Failed</option>
-              <option value="hold">Hold</option>
-              <option value="debt">Debt</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200/70 bg-white/70 px-3 py-2">
-            <p className="text-xs text-slate-500">Showing</p>
-            <p className="text-sm font-semibold text-slate-900 tabular-nums">
-              {isFilterPending ? "Filtering…" : `${filteredCount.toLocaleString()} of ${totalCount.toLocaleString()}`}
-            </p>
-            {!isFilterPending && debouncedQuery.trim() && (
-              <p className="mt-1 text-xs text-slate-600">
-                Found {platformIdMatchCount.toLocaleString()} matching platform ID{platformIdMatchCount === 1 ? "" : "s"}
-              </p>
-            )}
-          </div>
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-3 py-2">
-            <p className="text-xs text-amber-700">Pending total</p>
-            <p className="text-sm font-semibold text-amber-900 tabular-nums">{formatCurrency(pendingTotal)}</p>
-          </div>
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-3 py-2">
-            <p className="text-xs text-emerald-700">Paid rows</p>
-            <p className="text-sm font-semibold text-emerald-900 tabular-nums">{paidCount.toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
+      <PayoutTableToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        hasQuery={hasQuery}
+        onClearSearch={clearSearch}
+        isFilterPending={isFilterPending}
+        filteredCount={filteredCount}
+        totalCount={totalCount}
+        debouncedQuery={debouncedQuery}
+        platformIdMatchCount={platformIdMatchCount}
+        pendingTotal={pendingTotal}
+        paidCount={paidCount}
+      />
 
       {selectedPendingIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-4 py-3">
-          <span className="text-sm text-sky-900">{selectedPendingIds.length} pending selected</span>
+        <div className="flex flex-wrap items-center gap-3 rounded-card border border-brand-mint bg-brand-mint px-4 py-3 shadow-soft">
+          <span className="text-sm font-medium text-ink">
+            {selectedPendingIds.length} pending selected
+          </span>
           <button
             type="button"
             disabled={isPaying}
             onClick={() => setPayConfirm({ kind: "many", ids: [...selectedPendingIds] })}
-            className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+            className={`${btnPrimary} disabled:opacity-50`}
           >
             {isPaying ? "Updating…" : "Pay selected"}
           </button>
           <button
             type="button"
-            className="rounded-lg border border-sky-300 px-3 py-2 text-sm text-sky-700 hover:bg-sky-100/60"
+            className={`${btnSecondary} text-brand`}
             onClick={() => onReplaceSelection([])}
           >
             Clear
@@ -338,7 +212,7 @@ export function DriverPayoutTable({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
           onClick={() => onReplaceSelection(pendingIds)}
           disabled={pendingIds.length === 0}
         >
@@ -346,588 +220,264 @@ export function DriverPayoutTable({
         </button>
       </div>
 
-      {errorMessage && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{errorMessage}</div>}
+      {errorMessage && (
+        <div className={alertError}>
+          {errorMessage}
+        </div>
+      )}
 
       {isLoading ? (
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-4 py-6 text-sm text-slate-500">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />
-          Loading payouts…
-        </div>
+        <PayoutTableSkeleton />
       ) : showNoRows ? (
-        <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-10 text-center text-sm text-slate-500">
-          No payouts match your filters. Try driver name, platform ID, period dates, rental amount, or status.
+        <div className={`${card} py-12 text-center`}>
+          <p className="text-sm font-medium text-ink">No payouts match your filters</p>
+          <p className="text-xs text-ink-muted mt-2 max-w-md mx-auto">
+            Try driver name, platform ID, period dates, rental amount, or status in the quick search above.
+          </p>
         </div>
       ) : (
         <>
-          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/70 backdrop-blur-sm shadow-sm md:block">
-            <table className="min-w-full text-sm text-left">
-              <thead className="bg-slate-50 text-xs text-slate-600">
-                <tr>
-                  <th className="px-3 py-2">Driver</th>
-                  <th className="px-3 py-2">Period</th>
-                  <th className="px-3 py-2 text-right">Gross</th>
-                  <th className="px-3 py-2 text-right">Fleet / Sub</th>
-                  <th className="px-3 py-2 text-right">Net Payout</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Vehicle Rental</th>
-                  <th className="px-3 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredRows.map((row) => {
-                  const detail = detailsByPayoutId.get(row.id);
-                  const isExpanded = expanded.has(row.id);
-                  const isDebtStyle = row.payment_status === "debt" || toNum(row.raw_net_amount) < 0;
-                  const debtBadgeAmount = Math.max(toNum(row.remaining_debt_amount), toNum(row.debt_amount));
-                  const showDebtBadge =
-                    isDebtStyle && (debtBadgeAmount > 0 || row.payment_status === "debt");
-                  const showPreviousDebtApplied =
-                    toNum(row.debt_applied_amount) > 0 &&
-                    !isDebtStyle &&
-                    (row.payment_status === "pending" ||
-                      row.payment_status === "paid" ||
-                      row.payment_status === "approved");
-                  const isPending = isPayableRow(row);
-                  const isPayingRow = payingRowId === row.id;
-                  const canDebtActions =
-                    onOpenDebtActions &&
-                    (row.payment_status === "debt" ||
-                      toNum(row.raw_net_amount) < 0 ||
-                      toNum(row.remaining_debt_amount) > 0 ||
-                      toNum(row.debt_amount) > 0);
-                  const canCustomFees =
-                    onOpenCustomFees &&
-                    row.payment_status !== "paid" &&
-                    row.payment_status !== "approved";
-                  const canReleaseHold =
-                    onOpenReleaseHold &&
-                    row.payment_status === "hold" &&
-                    !row.subcontractor_id &&
-                    !row.subcontractor_payout_id;
-                  return (
-                    <Fragment key={row.id}>
-                      <tr
-                        className={`align-top text-slate-800 ${isDebtStyle ? "bg-red-50 border-l-4 border-red-400" : ""}`}
-                      >
-                        <td className="px-3 py-3">
-                          <div className="font-medium">
-                            <HighlightText text={`${row.first_name} ${row.last_name}`} query={debouncedQuery} />
-                          </div>
-                          {(row.subcontractor_id || row.subcontractor_payout_id) && (
-                            <div className="mt-1 flex flex-wrap items-center gap-1">
-                              <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800">
-                                Via subcontractor
+          <div
+            className={`hidden md:block ${card} overflow-hidden p-0`}
+          >
+            <div className="overflow-x-auto shadow-[inset_-8px_0_8px_-8px_rgba(0,0,0,0.08)]">
+              <table className="min-w-full text-sm text-left">
+                <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  <tr>
+                    <th className="px-4 py-3">Driver</th>
+                    <th className="px-4 py-3">Period</th>
+                    <th className="px-4 py-3 text-right">Gross</th>
+                    <th className="px-4 py-3 text-right">Fleet / Sub</th>
+                    <th className="px-4 py-3 text-right">Net payout</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Vehicle</th>
+                    <th className="px-4 py-3 text-right min-w-[12rem]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredRows.map((row) => {
+                    const detail = detailsByPayoutId.get(row.id);
+                    const isExpanded = expanded.has(row.id);
+                    const flags = getRowFlags(row, onOpenDebtActions, onOpenCustomFees, onOpenReleaseHold);
+                    const isPayingRow = payingRowId === row.id;
+
+                    return (
+                      <Fragment key={row.id}>
+                        <tr className={`align-top text-ink ${flags.isDebtStyle ? debtRowClass : normalRowClass}`}>
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-ink">
+                              <HighlightText
+                                text={`${row.first_name} ${row.last_name}`}
+                                query={debouncedQuery}
+                              />
+                            </div>
+                            {(row.subcontractor_id || row.subcontractor_payout_id) && (
+                              <div className="mt-1 flex flex-wrap items-center gap-1">
+                                <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800">
+                                  Via subcontractor
+                                </span>
+                                {row.subcontractor_legal_name && (
+                                  <span className="text-[10px] text-violet-700">{row.subcontractor_legal_name}</span>
+                                )}
+                                <Link
+                                  to="/earnings/subcontractors/settlements"
+                                  className="text-[10px] text-brand hover:underline"
+                                >
+                                  Settlements
+                                </Link>
+                              </div>
+                            )}
+                            <div className="text-xs text-ink-muted mt-0.5">
+                              <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
+                            </div>
+                            <div className="mt-0.5 text-xs text-ink-muted">
+                              ID:{" "}
+                              <span className="font-mono text-ink-muted">
+                                <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
                               </span>
-                              {row.subcontractor_legal_name && (
-                                <span className="text-[10px] text-violet-700">{row.subcontractor_legal_name}</span>
-                              )}
-                              <Link
-                                to="/earnings/subcontractors/settlements"
-                                className="text-[10px] text-sky-700 hover:underline"
-                              >
-                                Settlements
-                              </Link>
                             </div>
-                          )}
-                          <div className="text-xs text-slate-500">
-                            <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
-                          </div>
-                          <div className="mt-1 text-xs text-slate-600">
-                            Platform ID:{" "}
-                            <span className="font-mono">
-                              <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 text-xs text-slate-700">
-                          <HighlightText text={periodLabel(row)} query={debouncedQuery} />
-                        </td>
-                        <td className="px-3 py-3 text-right tabular-nums text-slate-800">
-                          {formatCurrency(toNum(row.total_gross_earnings))}
-                        </td>
-                        <td
-                          className="px-3 py-3 text-right tabular-nums text-slate-800"
-                          title={payoutCommissionTitle(row)}
-                        >
-                          <div>{formatCurrency(toNum(row.company_commission))}</div>
-                        </td>
-                        <td className="px-3 py-3 text-right" title={payoutGlovoBreakdownTitle(row)}>
-                          <div className="text-lg font-bold tabular-nums text-slate-900">
-                            {formatCurrency(toNum(row.net_driver_payout))}
-                          </div>
-                          {showDebtBadge && (
-                            <div className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">
-                              DEBT {formatCurrency(-debtBadgeAmount)}
-                            </div>
-                          )}
-                          {isDebtStyle && !showDebtBadge && row.payment_status === "hold" && (
-                            <div className="mt-1 text-[11px] font-medium text-slate-600">Debt cleared (hold)</div>
-                          )}
-                          {showPreviousDebtApplied && (
-                            <div className="mt-1 text-[11px] font-medium text-amber-800">
-                              Previous debt applied: {formatCurrency(toNum(row.debt_applied_amount))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              BADGE_BY_STATUS[row.payment_status] ?? "bg-slate-100 text-slate-700"
-                            }`}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-ink-muted">
+                            <HighlightText text={periodLabel(row)} query={debouncedQuery} />
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums text-ink">
+                            {formatCurrency(toNum(row.total_gross_earnings))}
+                          </td>
+                          <td
+                            className="px-4 py-3 text-right tabular-nums text-ink"
+                            title={payoutCommissionTitle(row)}
                           >
-                            <HighlightText text={row.payment_status} query={debouncedQuery} />
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex flex-wrap items-center gap-1">
+                            {formatCurrency(toNum(row.company_commission))}
+                          </td>
+                          <td className="px-4 py-3 text-right" title={payoutGlovoBreakdownTitle(row)}>
+                            <div className="text-base font-semibold tabular-nums text-ink">
+                              {formatCurrency(toNum(row.net_driver_payout))}
+                            </div>
+                            {flags.showDebtBadge && (
+                              <div className="mt-1 inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-800">
+                                DEBT {formatCurrency(-flags.debtBadgeAmount)}
+                              </div>
+                            )}
+                            {flags.isDebtStyle && !flags.showDebtBadge && row.payment_status === "hold" && (
+                              <div className="mt-1 text-[10px] font-medium text-ink-muted">Debt cleared (hold)</div>
+                            )}
+                            {flags.showPreviousDebtApplied && (
+                              <div className="mt-1 text-[10px] font-medium text-amber-800">
+                                Prev. debt: {formatCurrency(toNum(row.debt_applied_amount))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
+                          </td>
+                          <td className="px-4 py-3">
                             <span
-                              className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800"
+                              className="inline-flex rounded-full bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 tabular-nums"
                               title={vehicleRentDetailTitle(row)}
                             >
                               <HighlightText
-                                text={toNum(row.vehicle_rental_fee) ? formatCurrency(toNum(row.vehicle_rental_fee)) : "—"}
+                                text={
+                                  toNum(row.vehicle_rental_fee)
+                                    ? formatCurrency(toNum(row.vehicle_rental_fee))
+                                    : "—"
+                                }
                                 query={debouncedQuery}
                               />
                             </span>
                             {detail?.license_plate && (
-                              <span className="text-[11px] text-slate-500">{detail.license_plate}</span>
+                              <span className="ml-1 text-[11px] text-ink-muted">{detail.license_plate}</span>
                             )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <input
-                              type="checkbox"
-                              className="rounded border-slate-300"
-                              checked={selectedIds.has(row.id)}
-                              onChange={() => onToggleSelection(row.id)}
-                              disabled={!isPending || isPaying}
-                              aria-label={`Select payout for ${row.first_name}`}
+                          </td>
+                          <td className="px-4 py-3">
+                            <PayoutRowActions
+                              row={row}
+                              isPending={flags.isPending}
+                              isPaying={isPaying}
+                              isPayingRow={isPayingRow}
+                              isSelected={selectedIds.has(row.id)}
+                              isExpanded={isExpanded}
+                              canCustomFees={flags.canCustomFees}
+                              canDebtActions={flags.canDebtActions}
+                              canReleaseHold={flags.canReleaseHold}
+                              onToggleSelection={() => onToggleSelection(row.id)}
+                              onPayNow={() => setPayConfirm({ kind: "one", payoutId: row.id })}
+                              onOpenCustomFees={() => onOpenCustomFees?.(row)}
+                              onOpenDebtActions={() => onOpenDebtActions?.(row)}
+                              onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
+                              onToggleExpand={() => toggleExpand(row.id)}
+                              align="right"
                             />
-                            {isPending && (
-                              <button
-                                type="button"
-                                disabled={isPaying}
-                                onClick={() => setPayConfirm({ kind: "one", payoutId: row.id })}
-                                className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-                              >
-                                {isPayingRow ? "Paying…" : "Pay Now"}
-                              </button>
-                            )}
-                            {canCustomFees && (
-                              <button
-                                type="button"
-                                disabled={isPaying}
-                                onClick={() => onOpenCustomFees?.(row)}
-                                className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-                              >
-                                Custom fees
-                              </button>
-                            )}
-                            {canDebtActions && (
-                              <button
-                                type="button"
-                                disabled={isPaying}
-                                onClick={() => onOpenDebtActions?.(row)}
-                                className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
-                              >
-                                Adjust debt
-                              </button>
-                            )}
-                            {canReleaseHold && (
-                              <button
-                                type="button"
-                                disabled={isPaying}
-                                onClick={() => onOpenReleaseHold?.(row)}
-                                className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-                              >
-                                Release hold
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpanded((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(row.id)) next.delete(row.id);
-                                  else next.add(row.id);
-                                  return next;
-                                })
-                              }
-                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                            >
-                              {isExpanded ? "Hide" : "Details"}
-                            </button>
-                            <Link
-                              to={`/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}`}
-                              className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                            >
-                              Export
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr className="bg-slate-50/80">
-                          <td colSpan={8} className="px-3 py-3 text-xs text-slate-700">
-                            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                              <div>
-                                <p className="font-semibold text-slate-800">Breakdown</p>
-                                <p className="mt-1">
-                                  Platform:{" "}
-                                  <span className="font-medium text-slate-900">
-                                    <HighlightText
-                                      text={earningsPlatformLabel(row.earnings_platform)}
-                                      query={debouncedQuery}
-                                    />
-                                  </span>
-                                </p>
-                                <p>
-                                  Account ID:{" "}
-                                  <span className="font-mono text-slate-800">
-                                    <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
-                                  </span>
-                                </p>
-                                <p className="mt-1 font-medium text-slate-800">Payout chain</p>
-                                <p>Base income: {formatCurrency(toNum(row.income))}</p>
-                                <p>Tips: {formatCurrency(toNum(row.tips))}</p>
-                                <p>Gross (Income + Tips): {formatCurrency(toNum(row.total_gross_earnings))}</p>
-                                <p>Platform fees (Taxa): {formatCurrency(toNum(row.total_platform_fees))}</p>
-                                <p>Net income: {formatCurrency(toNum(row.net_income))}</p>
-                                <div className="mt-2 rounded-lg border border-violet-200/80 bg-violet-50/80 px-3 py-2 text-[11px] text-violet-950">
-                                  <p className="font-semibold text-violet-900">Commission</p>
-                                  <p className="mt-1">
-                                    Base: {formatCurrency(toNum(row.commission_base))}{" "}
-                                    <span className="text-violet-700">
-                                      ({commissionBaseTypeLabel(row.commission_base_type)})
-                                    </span>
-                                  </p>
-                                  <p>Rate (driver): {formatRatePctFromFraction(toNum(row.commission_rate))}</p>
-                                  <p className="font-semibold">Charged: {formatCurrency(toNum(row.company_commission))}</p>
-                                  {(() => {
-                                    const b = toNum(row.commission_base);
-                                    const r = toNum(row.commission_rate);
-                                    const c = toNum(row.company_commission);
-                                    const nominal = b > 0 && r > 0 && r <= 1 ? b * r : 0;
-                                    if (b <= 0.001 || nominal <= 0 || Math.abs(c - nominal) <= 0.02) return null;
-                                    return (
-                                      <p className="mt-1 text-violet-800">
-                                        Effective rate on base:{" "}
-                                        {`${((c / b) * 100).toFixed(2).replace(/\.?0+$/, "")}%`} (fixed / hybrid / minimum)
-                                      </p>
-                                    );
-                                  })()}
-                                </div>
-                                <p className="mt-2">
-                                  {boltPayoutCashDeductionLabel(row)}:{" "}
-                                  {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
-                                </p>
-                                <p>
-                                  Account opening fee (deduction):{" "}
-                                  {formatCurrency(Math.abs(toNum(row.account_opening_fee)))}
-                                </p>
-                                <p>Raw net: {formatCurrency(toNum(row.raw_net_amount))}</p>
-                                <p>Debt applied: {formatCurrency(toNum(row.debt_applied_amount))}</p>
-                                <p className="font-semibold text-red-700">
-                                  Remaining debt: {formatCurrency(toNum(row.remaining_debt_amount))}
-                                </p>
-                                <p className="text-amber-800">
-                                  Vehicle rental: {formatCurrency(toNum(row.vehicle_rental_fee))}
-                                </p>
-                                {normalizeRentEntries(row.rent_entries).length > 0 && (
-                                  <ul className="mt-1 list-inside list-disc text-amber-900/90">
-                                    {normalizeRentEntries(row.rent_entries).map((e) => (
-                                      <li key={e.id}>
-                                        {rentEntryTypeLabel(e.entry_type)}: {formatCurrency(Number(e.amount) || 0)}
-                                        {e.description ? (
-                                          <span className="text-slate-600"> — {e.description}</span>
-                                        ) : null}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                                <p className="mt-1 font-semibold text-slate-900">
-                                  Net payout: {formatCurrency(toNum(row.net_driver_payout))}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-slate-800">Vehicle assignment</p>
-                                <p>Assigned: {detail?.has_vehicle_assigned ? "Yes" : "No"}</p>
-                                <p>Plate: {detail?.license_plate ?? "—"}</p>
-                                <p>
-                                  Weekly rent:{" "}
-                                  {detail?.weekly_rent ? formatCurrency(toNum(detail.weekly_rent)) : "—"}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="font-semibold text-slate-800">Payment status</p>
-                                <p>Status: {row.payment_status}</p>
-                                {row.hold_reason && <p>Hold reason: {row.hold_reason}</p>}
-                                {row.hold_released_at && (
-                                  <p>
-                                    Released: {row.hold_released_at.slice(0, 10)}
-                                    {row.hold_released_by_name ? ` by ${row.hold_released_by_name}` : ""}
-                                  </p>
-                                )}
-                                {row.hold_notes && <p>Release notes: {row.hold_notes}</p>}
-                                <p>Paid on: {row.payment_date?.slice(0, 10) ?? "—"}</p>
-                                <p>Payout ID: {row.id}</p>
-                              </div>
-                            </div>
                           </td>
                         </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {isExpanded && (
+                          <tr className="bg-slate-50/60">
+                            <td colSpan={8} className="px-4 py-4">
+                              <PayoutExpandedDetails row={row} detail={detail} debouncedQuery={debouncedQuery} />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="space-y-3 md:hidden">
             {filteredRows.map((row) => {
               const detail = detailsByPayoutId.get(row.id);
               const isExpanded = expanded.has(row.id);
-              const isDebtStyle = row.payment_status === "debt" || toNum(row.raw_net_amount) < 0;
-              const debtBadgeAmount = Math.max(toNum(row.remaining_debt_amount), toNum(row.debt_amount));
-              const showDebtBadge =
-                isDebtStyle && (debtBadgeAmount > 0 || row.payment_status === "debt");
-              const showPreviousDebtApplied =
-                toNum(row.debt_applied_amount) > 0 &&
-                !isDebtStyle &&
-                (row.payment_status === "pending" ||
-                  row.payment_status === "paid" ||
-                  row.payment_status === "approved");
-              const isPending = isPayableRow(row);
+              const flags = getRowFlags(row, onOpenDebtActions, onOpenCustomFees, onOpenReleaseHold);
               const isPayingRow = payingRowId === row.id;
-              const canDebtActions =
-                onOpenDebtActions &&
-                (row.payment_status === "debt" ||
-                  toNum(row.raw_net_amount) < 0 ||
-                  toNum(row.remaining_debt_amount) > 0 ||
-                  toNum(row.debt_amount) > 0);
-              const canCustomFees =
-                onOpenCustomFees &&
-                row.payment_status !== "paid" &&
-                row.payment_status !== "approved";
-              const canReleaseHold =
-                onOpenReleaseHold &&
-                row.payment_status === "hold" &&
-                !row.subcontractor_id &&
-                !row.subcontractor_payout_id;
+
               return (
                 <div
                   key={row.id}
-                  className={`rounded-2xl border p-4 shadow-sm ${
-                    isDebtStyle
-                      ? "border-red-200/90 bg-red-50 border-l-[4px] border-l-red-400"
-                      : "border-slate-200/80 bg-white/80"
-                  }`}
+                  className={`${card} ${flags.isDebtStyle ? "border-danger/20 " + debtRowClass : ""}`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-ink truncate">
                         <HighlightText text={`${row.first_name} ${row.last_name}`} query={debouncedQuery} />
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-ink-muted mt-0.5">
                         <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
                       </p>
-                      <p className="mt-1 text-xs text-slate-600">
-                        Platform ID:{" "}
-                        <span className="font-mono">
-                          <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
-                        </span>
-                      </p>
                     </div>
-                    <input
-                      type="checkbox"
-                      className="mt-1 rounded border-slate-300"
-                      checked={selectedIds.has(row.id)}
-                      onChange={() => onToggleSelection(row.id)}
-                      disabled={!isPending || isPaying}
-                      aria-label={`Select payout for ${row.first_name}`}
-                    />
+                    <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
                   </div>
-                  <p className="mt-2 flex flex-wrap justify-between gap-2 text-xs tabular-nums text-slate-700">
-                    <span>Gross {formatCurrency(toNum(row.total_gross_earnings))}</span>
+                  <div
+                    className="mt-3 flex items-baseline justify-between gap-2"
+                    title={payoutGlovoBreakdownTitle(row)}
+                  >
+                    <span className="text-xs text-ink-muted">Net payout</span>
+                    <p className="text-xl font-semibold tabular-nums text-ink">
+                      {formatCurrency(toNum(row.net_driver_payout))}
+                    </p>
+                  </div>
+                  {flags.showDebtBadge && (
+                    <p className="mt-1 text-xs font-semibold text-rose-800">
+                      DEBT {formatCurrency(-flags.debtBadgeAmount)}
+                    </p>
+                  )}
+                  {flags.showPreviousDebtApplied && (
+                    <p className="mt-1 text-xs font-medium text-amber-800">
+                      Previous debt: {formatCurrency(toNum(row.debt_applied_amount))}
+                    </p>
+                  )}
+                  <p className="mt-2 text-xs text-ink-muted flex flex-wrap gap-x-3 gap-y-1">
+                    <span>
+                      <HighlightText text={periodLabel(row)} query={debouncedQuery} />
+                    </span>
                     <span title={payoutCommissionTitle(row)}>
                       Fleet {formatCurrency(toNum(row.company_commission))}
                     </span>
-                  </p>
-                  <div className="mt-1 flex items-center justify-between gap-2" title={payoutGlovoBreakdownTitle(row)}>
-                    <p className="text-xl font-bold tabular-nums text-slate-900">
-                      {formatCurrency(toNum(row.net_driver_payout))}
-                    </p>
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        BADGE_BY_STATUS[row.payment_status] ?? "bg-slate-100 text-slate-700"
-                      }`}
+                      className="font-medium text-amber-900"
+                      title={vehicleRentDetailTitle(row)}
                     >
-                      <HighlightText text={row.payment_status} query={debouncedQuery} />
-                    </span>
-                  </div>
-                  {showDebtBadge && (
-                    <p className="mt-1 text-xs font-semibold text-red-800">
-                      DEBT {formatCurrency(-debtBadgeAmount)}
-                    </p>
-                  )}
-                  {isDebtStyle && !showDebtBadge && row.payment_status === "hold" && (
-                    <p className="mt-1 text-xs font-medium text-slate-600">Debt cleared (hold)</p>
-                  )}
-                  {showPreviousDebtApplied && (
-                    <p className="mt-1 text-xs font-medium text-amber-800">
-                      Previous debt applied: {formatCurrency(toNum(row.debt_applied_amount))}
-                    </p>
-                  )}
-                  <p
-                    className="mt-2 text-xs text-slate-600"
-                    title={
-                      [payoutGlovoBreakdownTitle(row), vehicleRentDetailTitle(row)].filter(Boolean).join("\n\n") ||
-                      undefined
-                    }
-                  >
-                    <HighlightText text={periodLabel(row)} query={debouncedQuery} /> | Vehicle:{" "}
-                    <span className="font-semibold text-amber-800">
+                      Rent{" "}
                       <HighlightText
-                        text={toNum(row.vehicle_rental_fee) ? formatCurrency(toNum(row.vehicle_rental_fee)) : "—"}
+                        text={
+                          toNum(row.vehicle_rental_fee)
+                            ? formatCurrency(toNum(row.vehicle_rental_fee))
+                            : "—"
+                        }
                         query={debouncedQuery}
                       />
                     </span>
                   </p>
                   {detail?.license_plate && (
-                    <p className="mt-1 text-[11px] text-slate-500">Assigned: {detail.license_plate}</p>
+                    <p className="mt-1 text-[11px] text-ink-muted">Plate: {detail.license_plate}</p>
                   )}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {isPending && (
-                      <button
-                        type="button"
-                        disabled={isPaying}
-                        onClick={() => setPayConfirm({ kind: "one", payoutId: row.id })}
-                        className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-medium text-white hover:bg-sky-700 disabled:opacity-50"
-                      >
-                        {isPayingRow ? "Paying…" : "Pay Now"}
-                      </button>
-                    )}
-                    {canCustomFees && (
-                      <button
-                        type="button"
-                        disabled={isPaying}
-                        onClick={() => onOpenCustomFees?.(row)}
-                        className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
-                      >
-                        Custom fees
-                      </button>
-                    )}
-                    {canDebtActions && (
-                      <button
-                        type="button"
-                        disabled={isPaying}
-                        onClick={() => onOpenDebtActions?.(row)}
-                        className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
-                      >
-                        Adjust debt
-                      </button>
-                    )}
-                    {canReleaseHold && (
-                      <button
-                        type="button"
-                        disabled={isPaying}
-                        onClick={() => onOpenReleaseHold?.(row)}
-                        className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-                      >
-                        Release hold
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpanded((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(row.id)) next.delete(row.id);
-                          else next.add(row.id);
-                          return next;
-                        })
-                      }
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      {isExpanded ? "Hide" : "Details"}
-                    </button>
-                    <Link
-                      to={`/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}`}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Export
-                    </Link>
+                  <div className="mt-4">
+                    <PayoutRowActions
+                      row={row}
+                      isPending={flags.isPending}
+                      isPaying={isPaying}
+                      isPayingRow={isPayingRow}
+                      isSelected={selectedIds.has(row.id)}
+                      isExpanded={isExpanded}
+                      canCustomFees={flags.canCustomFees}
+                      canDebtActions={flags.canDebtActions}
+                      canReleaseHold={flags.canReleaseHold}
+                      onToggleSelection={() => onToggleSelection(row.id)}
+                      onPayNow={() => setPayConfirm({ kind: "one", payoutId: row.id })}
+                      onOpenCustomFees={() => onOpenCustomFees?.(row)}
+                      onOpenDebtActions={() => onOpenDebtActions?.(row)}
+                      onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
+                      onToggleExpand={() => toggleExpand(row.id)}
+                    />
                   </div>
                   {isExpanded && (
-                    <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
-                      <p className="font-semibold text-slate-800">Breakdown</p>
-                      <p className="mt-1">
-                        Platform:{" "}
-                        <span className="font-medium text-slate-900">
-                          <HighlightText
-                            text={earningsPlatformLabel(row.earnings_platform)}
-                            query={debouncedQuery}
-                          />
-                        </span>
-                      </p>
-                      <p>
-                        Account ID:{" "}
-                        <span className="font-mono text-slate-800">
-                          <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
-                        </span>
-                      </p>
-                      <p className="mt-1 font-medium text-slate-800">Payout chain</p>
-                      <p>Base income: {formatCurrency(toNum(row.income))}</p>
-                      <p>Tips: {formatCurrency(toNum(row.tips))}</p>
-                      <p>Gross: {formatCurrency(toNum(row.total_gross_earnings))}</p>
-                      <p>Platform fees: {formatCurrency(toNum(row.total_platform_fees))}</p>
-                      <p>Net income: {formatCurrency(toNum(row.net_income))}</p>
-                      <div className="mt-2 rounded-lg border border-violet-200/80 bg-violet-50/80 px-3 py-2 text-[11px] text-violet-950">
-                        <p className="font-semibold text-violet-900">Commission</p>
-                        <p className="mt-1">
-                          Base: {formatCurrency(toNum(row.commission_base))}{" "}
-                          <span className="text-violet-700">
-                            ({commissionBaseTypeLabel(row.commission_base_type)})
-                          </span>
-                        </p>
-                        <p>Rate: {formatRatePctFromFraction(toNum(row.commission_rate))}</p>
-                        <p className="font-semibold">Charged: {formatCurrency(toNum(row.company_commission))}</p>
-                      </div>
-                      <p className="mt-2">
-                        {boltPayoutCashDeductionLabel(row)}:{" "}
-                        {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
-                      </p>
-                      <p>
-                        Account opening fee (deduction):{" "}
-                        {formatCurrency(Math.abs(toNum(row.account_opening_fee)))}
-                      </p>
-                      <p>Raw net: {formatCurrency(toNum(row.raw_net_amount))}</p>
-                      <p>Debt applied: {formatCurrency(toNum(row.debt_applied_amount))}</p>
-                      <p className="font-semibold text-red-700">
-                        Remaining debt: {formatCurrency(toNum(row.remaining_debt_amount))}
-                      </p>
-                      <p className="text-amber-800">Vehicle rental: {formatCurrency(toNum(row.vehicle_rental_fee))}</p>
-                      {normalizeRentEntries(row.rent_entries).length > 0 && (
-                        <ul className="mt-1 list-inside list-disc text-amber-900/90">
-                          {normalizeRentEntries(row.rent_entries).map((e) => (
-                            <li key={e.id}>
-                              {rentEntryTypeLabel(e.entry_type)}: {formatCurrency(Number(e.amount) || 0)}
-                              {e.description ? (
-                                <span className="text-slate-600"> — {e.description}</span>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <p className="mt-1 font-semibold text-slate-900">
-                        Net payout: {formatCurrency(toNum(row.net_driver_payout))}
-                      </p>
-                      {detail?.weekly_rent && (
-                        <p className="mt-1 text-slate-600">
-                          Weekly rent: {formatCurrency(toNum(detail.weekly_rent))}
-                        </p>
-                      )}
+                    <div className="mt-4 rounded-xl border border-border/80 bg-slate-50/80 p-3">
+                      <PayoutExpandedDetails
+                        row={row}
+                        detail={detail}
+                        debouncedQuery={debouncedQuery}
+                        compact
+                      />
                     </div>
                   )}
                 </div>
@@ -945,11 +495,11 @@ export function DriverPayoutTable({
           payConfirm?.kind === "one" && payConfirmRow ? (
             <p>
               You are about to record a payment of{" "}
-              <span className="font-semibold tabular-nums text-slate-900">
+              <span className="font-semibold tabular-nums text-ink">
                 {formatCurrency(toNum(payConfirmRow.net_driver_payout))}
               </span>{" "}
               for{" "}
-              <span className="font-semibold text-slate-900">
+              <span className="font-semibold text-ink">
                 {payConfirmRow.first_name} {payConfirmRow.last_name}
               </span>
               . This cannot be undone from here without admin support.
@@ -963,9 +513,9 @@ export function DriverPayoutTable({
             <div className="space-y-2">
               <p>
                 You are about to mark{" "}
-                <span className="font-semibold text-slate-900">{payConfirm.ids.length}</span> pending payout
+                <span className="font-semibold text-ink">{payConfirm.ids.length}</span> pending payout
                 {payConfirm.ids.length === 1 ? "" : "s"} as paid, for a combined total of{" "}
-                <span className="font-semibold tabular-nums text-slate-900">
+                <span className="font-semibold tabular-nums text-ink">
                   {formatCurrency(payConfirmBulkTotal)}
                 </span>
                 .

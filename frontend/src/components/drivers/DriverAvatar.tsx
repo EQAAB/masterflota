@@ -43,7 +43,7 @@ export function DriverAvatar({
 
   return (
     <div
-      className={`rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-medium shrink-0 ${sizeClass} ${className}`}
+      className={`rounded-full bg-brand-mint text-brand flex items-center justify-center font-medium shrink-0 ${sizeClass} ${className}`}
       aria-hidden
     >
       {getInitials(firstName, lastName)}

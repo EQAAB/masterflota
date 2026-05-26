@@ -26,7 +26,7 @@ export function DocumentStatsChart({ data }: { data: DocumentStatsItem[] }) {
   }));
   if (chartData.every((d) => d.total === 0)) {
     return (
-      <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
+      <div className="h-64 flex items-center justify-center text-ink-muted text-sm">
         No document data
       </div>
     );

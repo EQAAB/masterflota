@@ -23,7 +23,7 @@ function statusBadgeClass(status: string) {
     case "pending":
       return "bg-amber-100 text-amber-800";
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-slate-100 text-ink";
   }
 }
 
@@ -108,15 +108,15 @@ export function SubcontractorSettlementDetailPage() {
   }
 
   if (user?.role !== "admin" && user?.role !== "accountant") {
-    return <p className="p-6 text-slate-600">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">You do not have access.</p>;
   }
 
-  if (q.isLoading) return <p className="p-6 text-sm text-slate-500">Loading settlement…</p>;
+  if (q.isLoading) return <p className="p-6 text-sm text-ink-muted">Loading settlement…</p>;
   if (q.isError || !q.data) {
     return (
       <div className="p-6">
         <p className="text-sm text-red-700">Failed to load settlement detail.</p>
-        <Link to="/earnings/subcontractors/settlements" className="text-sm text-sky-700 hover:underline mt-2 inline-block">
+        <Link to="/earnings/subcontractors/settlements" className="text-sm text-brand hover:underline mt-2 inline-block">
           Back to settlements
         </Link>
       </div>
@@ -142,17 +142,17 @@ export function SubcontractorSettlementDetailPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-slate-200 bg-white/80 px-4 sm:px-6 py-4">
+      <header className="shrink-0 border-b border-border bg-white/80 px-4 sm:px-6 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <Link
               to="/earnings/subcontractors/settlements"
-              className="text-sm text-sky-700 hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               Subcontractor settlements
             </Link>
-            <h1 className="text-lg font-semibold text-slate-900 mt-1">{settlement.subcontractor_name}</h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <h1 className="text-lg font-semibold text-ink mt-1">{settlement.subcontractor_name}</h1>
+            <p className="text-sm text-ink-muted mt-0.5">
               {settlement.period_start} → {settlement.period_end}
             </p>
             <span
@@ -162,12 +162,12 @@ export function SubcontractorSettlementDetailPage() {
             </span>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-500 uppercase tracking-wide">Payable</p>
-            <p className="text-2xl font-semibold text-slate-900 tabular-nums">
+            <p className="text-xs text-ink-muted uppercase tracking-wide">Payable</p>
+            <p className="text-2xl font-semibold text-ink tabular-nums">
               {formatCurrency(Number(settlement.payable))}
             </p>
             {settlement.paid_amount != null && settlement.status === "paid" && (
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-ink-muted mt-1">
                 Paid {formatCurrency(Number(settlement.paid_amount))}
               </p>
             )}
@@ -178,7 +178,7 @@ export function SubcontractorSettlementDetailPage() {
             type="button"
             disabled={csvBusy}
             onClick={() => void exportCsv()}
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
           >
             {csvBusy ? "Exporting…" : "Export CSV"}
           </button>
@@ -186,7 +186,7 @@ export function SubcontractorSettlementDetailPage() {
             type="button"
             disabled={pdfBusy}
             onClick={() => void exportPdf()}
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
           >
             {pdfBusy ? "Exporting…" : "Export PDF"}
           </button>
@@ -201,7 +201,7 @@ export function SubcontractorSettlementDetailPage() {
             </button>
           )}
         </div>
-        {msg && <p className="text-sm text-slate-700 mt-2">{msg}</p>}
+        {msg && <p className="text-sm text-ink mt-2">{msg}</p>}
       </header>
 
       <div ref={printRef} className="p-4 sm:p-6 space-y-4">
@@ -239,16 +239,16 @@ export function SubcontractorSettlementDetailPage() {
             { label: "Custom additions", value: formatCurrency(Number(totals.custom_additions)) },
             { label: "Payable", value: formatCurrency(Number(totals.payable)) },
           ].map((c) => (
-            <div key={c.label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-              <p className="text-xs text-slate-500">{c.label}</p>
-              <p className="text-sm font-semibold text-slate-900 tabular-nums mt-1">{c.value}</p>
+            <div key={c.label} className="rounded-xl border border-border bg-white p-3 shadow-sm">
+              <p className="text-xs text-ink-muted">{c.label}</p>
+              <p className="text-sm font-semibold text-ink tabular-nums mt-1">{c.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600 text-left">
+            <thead className="bg-slate-50 text-ink-muted text-left">
               <tr>
                 <th className="px-3 py-2">Driver</th>
                 <th
@@ -268,10 +268,10 @@ export function SubcontractorSettlementDetailPage() {
                 <th className="px-3 py-2 text-right">Net</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {drivers.map((d) => (
                 <tr key={d.id}>
-                  <td className="px-3 py-2 font-medium text-slate-900">{d.name || "—"}</td>
+                  <td className="px-3 py-2 font-medium text-ink">{d.name || "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(Number(d.gross))}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(Number(d.tips))}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(Number(d.commission))}</td>
@@ -295,7 +295,7 @@ export function SubcontractorSettlementDetailPage() {
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-slate-50 font-semibold text-slate-900 border-t border-slate-200">
+            <tfoot className="bg-slate-50 font-semibold text-ink border-t border-border">
               <tr>
                 <td className="px-3 py-2">Total</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(footer.gross)}</td>
@@ -312,7 +312,7 @@ export function SubcontractorSettlementDetailPage() {
             </tfoot>
           </table>
           {drivers.length === 0 && (
-            <p className="text-sm text-slate-500 p-4">
+            <p className="text-sm text-ink-muted p-4">
               No driver payouts linked to this settlement. Run Refresh settlements on the list page.
             </p>
           )}

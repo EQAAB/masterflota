@@ -161,8 +161,8 @@ export function EarningsImportPreviewVirtualTable({
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-white/40 bg-white/60 px-3 py-2 text-sm shadow-sm backdrop-blur-sm">
-          <p className="text-xs font-medium text-slate-500">Rows loaded</p>
-          <p className="mt-0.5 font-semibold tabular-nums text-slate-900">
+          <p className="text-xs font-medium text-ink-muted">Rows loaded</p>
+          <p className="mt-0.5 font-semibold tabular-nums text-ink">
             {loading ? (
               <>
                 {loadedCount.toLocaleString()} / {totalRows.toLocaleString()}
@@ -171,7 +171,7 @@ export function EarningsImportPreviewVirtualTable({
               <>{totalRows.toLocaleString()}</>
             )}
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[11px] text-ink-muted">
             Showing {complete ? filteredRows.length.toLocaleString() : "—"} rows
             {searchQuery || statusFilter !== "all" ? " (filtered)" : ""}
           </p>
@@ -181,22 +181,22 @@ export function EarningsImportPreviewVirtualTable({
           <p className="mt-0.5 font-semibold tabular-nums text-emerald-900">{agg.valid.toLocaleString()}</p>
           <p className="mt-1 text-[11px] text-emerald-800/80">of {totalRows.toLocaleString()} total</p>
         </div>
-        <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-3 py-2 text-sm shadow-sm backdrop-blur-sm">
-          <p className="text-xs font-medium text-slate-600">Invalid / fees / debt TVT</p>
-          <p className="mt-0.5 font-semibold tabular-nums text-slate-900">
+        <div className="rounded-xl border border-border/80 bg-slate-50/60 px-3 py-2 text-sm shadow-sm backdrop-blur-sm">
+          <p className="text-xs font-medium text-ink-muted">Invalid / fees / debt TVT</p>
+          <p className="mt-0.5 font-semibold tabular-nums text-ink">
             <span className="text-red-700">{agg.invalid.toLocaleString()}</span>
             <span className="text-slate-400"> · </span>
             <span className="text-amber-800">{agg.warnings.toLocaleString()}</span>
             <span className="text-slate-400"> · </span>
             <span className="text-rose-700">{(agg.debtRows ?? 0).toLocaleString()}</span>
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">Invalid · Acct. fee · Negative transfer</p>
+          <p className="mt-1 text-[11px] text-ink-muted">Invalid · Acct. fee · Negative transfer</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="min-w-0 flex-1">
-          <label htmlFor="preview-search" className="mb-1 block text-xs font-medium text-slate-600">
+          <label htmlFor="preview-search" className="mb-1 block text-xs font-medium text-ink-muted">
             Search (row #, date, courier ID, phone, plate)
           </label>
           <input
@@ -206,11 +206,11 @@ export function EarningsImportPreviewVirtualTable({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={complete ? "Filter loaded rows…" : "Loading…"}
-            className="w-full rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm backdrop-blur-sm disabled:opacity-50"
+            className="w-full rounded-lg border border-border bg-white/80 px-3 py-2 text-sm backdrop-blur-sm disabled:opacity-50"
           />
         </div>
         <div>
-          <label htmlFor="preview-status" className="mb-1 block text-xs font-medium text-slate-600">
+          <label htmlFor="preview-status" className="mb-1 block text-xs font-medium text-ink-muted">
             Status
           </label>
           <select
@@ -218,7 +218,7 @@ export function EarningsImportPreviewVirtualTable({
             disabled={!complete}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="w-full min-w-[10rem] rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm backdrop-blur-sm sm:w-auto disabled:opacity-50"
+            className="w-full min-w-[10rem] rounded-lg border border-border bg-white/80 px-3 py-2 text-sm backdrop-blur-sm sm:w-auto disabled:opacity-50"
           >
             <option value="all">All rows</option>
             <option value="valid">Valid only</option>
@@ -232,15 +232,15 @@ export function EarningsImportPreviewVirtualTable({
       {loadError && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{loadError}</div>}
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-slate-600">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />
+        <div className="flex items-center gap-2 text-sm text-ink-muted">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-sky-600" />
           Loading preview… {loadedCount.toLocaleString()} / {totalRows.toLocaleString()} rows
         </div>
       )}
 
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-left text-sm font-medium text-slate-800 shadow-sm backdrop-blur-sm md:hidden"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-white/70 px-3 py-2.5 text-left text-sm font-medium text-ink shadow-sm backdrop-blur-sm md:hidden"
         onClick={() => setMobileTableOpen((o) => !o)}
         aria-expanded={mobileTableOpen}
       >
@@ -251,13 +251,13 @@ export function EarningsImportPreviewVirtualTable({
       </button>
 
       <div
-        className={`overflow-x-auto rounded-xl border border-slate-200/80 bg-white/50 shadow-inner backdrop-blur-sm ${
+        className={`overflow-x-auto rounded-xl border border-border/80 bg-white/50 shadow-inner backdrop-blur-sm ${
           mobileTableOpen ? "block" : "hidden"
         } md:block`}
       >
         <div className={scrollShellClass}>
           <table className="min-w-[1080px] w-full border-collapse text-left text-xs">
-            <thead className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/95 text-slate-600 shadow-[0_1px_0_rgb(226_232_240)] backdrop-blur-sm">
+            <thead className="sticky top-0 z-20 border-b border-border bg-slate-50/95 text-ink-muted shadow-[0_1px_0_rgb(226_232_240)] backdrop-blur-sm">
               <tr>
                 <th className="whitespace-nowrap px-2 py-2.5 font-medium">#</th>
                 <th className="whitespace-nowrap px-2 py-2.5 font-medium">Import</th>
@@ -286,16 +286,16 @@ export function EarningsImportPreviewVirtualTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
+            <tbody className="divide-y divide-border text-ink">
               {!complete ? (
                 <tr>
-                  <td colSpan={14} className="px-3 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={14} className="px-3 py-12 text-center text-sm text-ink-muted">
                     Preparing table…
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="px-3 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={14} className="px-3 py-12 text-center text-sm text-ink-muted">
                     No rows match filters.
                   </td>
                 </tr>
@@ -308,7 +308,7 @@ export function EarningsImportPreviewVirtualTable({
                       key={r.rowIndex}
                       className={`hover:bg-slate-50/80 ${debtRow ? "bg-rose-50/50 ring-1 ring-inset ring-amber-300/60" : ""}`}
                     >
-                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-slate-600">{r.rowIndex + 1}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 tabular-nums text-ink-muted">{r.rowIndex + 1}</td>
                       <td className="whitespace-nowrap px-2 py-1.5">
                         {ok ? (
                           <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
@@ -345,13 +345,13 @@ export function EarningsImportPreviewVirtualTable({
                       <td className={moneyCellClass(r.dailyCash)}>
                         {r.dailyCash != null ? formatCurrency(r.dailyCash) : "—"}
                       </td>
-                      <td className="whitespace-nowrap border-l border-amber-100 px-2 py-1.5 italic text-slate-600">
+                      <td className="whitespace-nowrap border-l border-amber-100 px-2 py-1.5 italic text-ink-muted">
                         {r.accountOpeningFee != null && r.accountOpeningFee > 0
                           ? `−${formatCurrency(r.accountOpeningFee)}`
                           : "—"}
                       </td>
                       <td
-                        className="max-w-[140px] truncate px-2 py-1.5 font-mono text-[11px] text-slate-600"
+                        className="max-w-[140px] truncate px-2 py-1.5 font-mono text-[11px] text-ink-muted"
                         title={
                           [r.hints?.courierId && `Courier UID: ${r.hints.courierId}`, r.hints?.phone, r.hints?.driverName]
                             .filter(Boolean)
@@ -360,7 +360,7 @@ export function EarningsImportPreviewVirtualTable({
                       >
                         {r.hints?.courierId || r.hints?.phone || r.hints?.plate || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">
+                      <td className="whitespace-nowrap px-2 py-1.5 text-ink-muted">
                         {MATCH_LABEL[r.matchMethod] ?? r.matchMethod}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5">
@@ -390,7 +390,7 @@ export function EarningsImportPreviewVirtualTable({
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-500 italic">
+      <p className="text-[11px] text-ink-muted italic">
         Native scroll (no virtualization). Rows with negative TVT are highlighted; they become driver debt on commit.
         Id curier / TVT / Taxa deschidere cont map to hints, transfer total, and account fee.
       </p>

@@ -82,7 +82,7 @@ function statusClass(status: string) {
     case "paid":
       return "bg-emerald-100 text-emerald-800";
     case "approved":
-      return "bg-sky-100 text-sky-800";
+      return "bg-brand-mint text-brand";
     case "processing":
       return "bg-violet-100 text-violet-800";
     case "failed":
@@ -93,7 +93,7 @@ function statusClass(status: string) {
       return "bg-red-100 text-red-800";
     case "pending":
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-slate-100 text-ink";
   }
 }
 
@@ -166,28 +166,28 @@ export function EarningsReportsPreviewTable({
     <section className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
-          <label htmlFor="reports-table-search" className="mb-1 block text-xs font-medium text-slate-600">
+          <label htmlFor="reports-table-search" className="mb-1 block text-xs font-medium text-ink-muted">
             Search preview rows
           </label>
           <input
             id="reports-table-search"
             type="search"
-            className="w-full rounded-lg border border-slate-300 bg-white/80 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-white/80 px-3 py-2 text-sm"
             placeholder="Driver, phone, platform ID, debt, period"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             disabled={loading}
           />
         </div>
-        <p className="text-xs text-slate-500">
-          Showing <span className="font-semibold text-slate-700">{visibleRows.length.toLocaleString()}</span> of{" "}
+        <p className="text-xs text-ink-muted">
+          Showing <span className="font-semibold text-ink">{visibleRows.length.toLocaleString()}</span> of{" "}
           {rows.length.toLocaleString()} rows
         </p>
       </div>
 
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-left text-sm font-medium text-slate-800 shadow-sm md:hidden"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-white/70 px-3 py-2.5 text-left text-sm font-medium text-ink shadow-sm md:hidden"
         onClick={() => setMobileOpen((v) => !v)}
       >
         <span>Live table preview</span>
@@ -196,25 +196,25 @@ export function EarningsReportsPreviewTable({
         </span>
       </button>
 
-      <div className={`${mobileOpen ? "block" : "hidden"} overflow-x-auto rounded-xl border border-slate-200/80 bg-white/50 md:block`}>
+      <div className={`${mobileOpen ? "block" : "hidden"} overflow-x-auto rounded-xl border border-border/80 bg-white/50 md:block`}>
         <div className={scrollShellClass}>
           <table className="min-w-[1880px] w-full border-collapse text-left text-xs">
-            <thead className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/95 text-slate-600 shadow-[0_1px_0_rgb(226_232_240)]">
+            <thead className="sticky top-0 z-20 border-b border-border bg-slate-50/95 text-ink-muted shadow-[0_1px_0_rgb(226_232_240)]">
               <tr>
                 <th className="px-3 py-2.5">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("driver")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("driver")}>
                     Driver{sortLabel("driver")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("period")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("period")}>
                     Period{sortLabel("period")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5 text-right">Income</th>
                 <th className="px-3 py-2.5 text-right">Tips</th>
                 <th className="px-3 py-2.5 text-right">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("revenue")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("revenue")}>
                     Total gross{sortLabel("revenue")}
                   </button>
                 </th>
@@ -224,7 +224,7 @@ export function EarningsReportsPreviewTable({
                 >
                   <button
                     type="button"
-                    className="font-medium hover:text-slate-900"
+                    className="font-medium hover:text-ink"
                     onClick={() => toggleSort("platformFees")}
                   >
                     Platform fees{sortLabel("platformFees")}
@@ -234,14 +234,14 @@ export function EarningsReportsPreviewTable({
                   className="px-3 py-2.5 text-right"
                   title="Daily cash advance (plata zilnica cash). Shown as deduction magnitude; stored total may be signed."
                 >
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("dailyCash")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("dailyCash")}>
                     Daily cash{sortLabel("dailyCash")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5 text-right">
                   <button
                     type="button"
-                    className="font-medium hover:text-slate-900"
+                    className="font-medium hover:text-ink"
                     onClick={() => toggleSort("commission")}
                   >
                     Commission{sortLabel("commission")}
@@ -260,37 +260,37 @@ export function EarningsReportsPreviewTable({
                   Base type
                 </th>
                 <th className="px-3 py-2.5 text-right">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("rental")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("rental")}>
                     Vehicle Rental{sortLabel("rental")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5 text-right">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("payout")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("payout")}>
                     Net Payout{sortLabel("payout")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5 text-right">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("debt")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("debt")}>
                     Remaining Debt{sortLabel("debt")}
                   </button>
                 </th>
                 <th className="px-3 py-2.5">
-                  <button type="button" className="font-medium hover:text-slate-900" onClick={() => toggleSort("status")}>
+                  <button type="button" className="font-medium hover:text-ink" onClick={() => toggleSort("status")}>
                     Status{sortLabel("status")}
                   </button>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800">
+            <tbody className="divide-y divide-border text-ink">
               {loading ? (
                 <tr>
-                  <td colSpan={16} className="px-3 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={16} className="px-3 py-10 text-center text-sm text-ink-muted">
                     Loading live preview...
                   </td>
                 </tr>
               ) : visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="px-3 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={16} className="px-3 py-10 text-center text-sm text-ink-muted">
                     No rows match the current filters.
                   </td>
                 </tr>
@@ -298,8 +298,8 @@ export function EarningsReportsPreviewTable({
                 visibleRows.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/80">
                     <td className="px-3 py-2">
-                      <p className="font-medium text-slate-900">{row.driver_name}</p>
-                      <p className="text-[11px] text-slate-500">{row.phone ?? "No phone"}</p>
+                      <p className="font-medium text-ink">{row.driver_name}</p>
+                      <p className="text-[11px] text-ink-muted">{row.phone ?? "No phone"}</p>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {row.period_start_label} - {row.period_end_label}
@@ -310,13 +310,13 @@ export function EarningsReportsPreviewTable({
                       {formatCurrency(asNumber(row.total_gross_earnings))}
                     </td>
                     <td
-                      className="px-3 py-2 text-right tabular-nums text-slate-700"
+                      className="px-3 py-2 text-right tabular-nums text-ink"
                       title="Platform fees (taxa aplicatie / platform charge)"
                     >
                       {formatCurrency(asNumber(row.total_platform_fees))}
                     </td>
                     <td
-                      className="px-3 py-2 text-right tabular-nums text-slate-700"
+                      className="px-3 py-2 text-right tabular-nums text-ink"
                       title="Daily cash deduction magnitude (stored sum may be signed)"
                     >
                       {formatCurrency(Math.abs(asNumber(row.total_daily_cash)))}
@@ -324,10 +324,10 @@ export function EarningsReportsPreviewTable({
                     <td className="px-3 py-2 text-right tabular-nums">
                       {formatCurrency(asNumber(row.company_commission))}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-slate-700">
+                    <td className="px-3 py-2 text-right tabular-nums text-ink">
                       {formatCurrency(asNumber(row.commission_base))}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-slate-700">
+                    <td className="px-3 py-2 text-right tabular-nums text-ink">
                       {(() => {
                         const r = asNumber(row.commission_rate);
                         if (!(r > 0)) return "—";
@@ -337,7 +337,7 @@ export function EarningsReportsPreviewTable({
                     <td className="px-3 py-2 text-right tabular-nums text-rose-700">
                       {formatCurrency(asNumber(row.account_opening_fee))}
                     </td>
-                    <td className="px-3 py-2 text-[11px] leading-snug text-slate-600 max-w-[140px]">
+                    <td className="px-3 py-2 text-[11px] leading-snug text-ink-muted max-w-[140px]">
                       {commissionBaseTypeLabel(row.commission_base_type)}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums" title={vehicleRentReportTitle(row)}>

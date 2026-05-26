@@ -33,20 +33,20 @@ export function DriversListPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="text-sm text-slate-600 hover:text-slate-900">Dashboard</Link>
-          <h1 className="text-xl font-semibold text-slate-900">Drivers</h1>
+          <Link to="/dashboard" className="text-sm text-ink-muted hover:text-ink">Dashboard</Link>
+          <h1 className="text-xl font-semibold text-ink">Drivers</h1>
         </div>
         <div className="flex items-center gap-4">
           <Link
             to="/drivers/new"
-            className="inline-flex items-center rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+            className="inline-flex items-center rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
           >
             Add driver
           </Link>
           {user && (
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-ink-muted">
               {user.firstName} {user.lastName} • {user.role}
             </span>
           )}
@@ -65,8 +65,8 @@ export function DriversListPage() {
           {deleteTarget && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
-                <h3 className="text-lg font-semibold text-slate-900">Delete driver?</h3>
-                <p className="text-sm text-slate-600 mt-2">
+                <h3 className="text-lg font-semibold text-ink">Delete driver?</h3>
+                <p className="text-sm text-ink-muted mt-2">
                   {deleteTarget.first_name} {deleteTarget.last_name} will be removed from the active
                   list (soft delete). You can no longer view or edit them from the list.
                 </p>
@@ -85,7 +85,7 @@ export function DriversListPage() {
                     type="button"
                     onClick={() => setDeleteTarget(null)}
                     disabled={deleteMutation.isPending}
-                    className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
                   >
                     Cancel
                   </button>

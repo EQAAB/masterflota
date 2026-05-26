@@ -58,25 +58,25 @@ export function CommissionPreview(props: CommissionPreviewProps) {
   );
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+    <div className="rounded-xl border border-border bg-slate-50/80 p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-slate-800">
+        <span className="text-sm font-semibold text-ink">
           Commission preview
         </span>
-        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
+        <span className="rounded-full bg-brand-mint px-2 py-0.5 text-xs font-medium text-brand">
           {TYPE_LABELS[commissionType]}
         </span>
       </div>
       {controlledEarnings == null && (
         <div className="mb-3">
-          <label className="block text-xs font-medium text-slate-600 mb-1">
+          <label className="block text-xs font-medium text-ink-muted mb-1">
             Example earnings ({getCurrencyCode()})
           </label>
           <input
             type="number"
             min={0}
             step={10}
-            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-md border border-border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             value={localEarnings}
             onChange={(e) =>
               setLocalEarnings(Math.max(0, Number(e.target.value) || 0))
@@ -85,21 +85,21 @@ export function CommissionPreview(props: CommissionPreviewProps) {
         </div>
       )}
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between text-slate-600">
+        <div className="flex justify-between text-ink-muted">
           <span>Gross earnings</span>
-          <span className="font-medium text-slate-900">
+          <span className="font-medium text-ink">
             {formatCurrency(earnings)}
           </span>
         </div>
-        <div className="flex justify-between text-slate-600">
+        <div className="flex justify-between text-ink-muted">
           <span>Company commission</span>
-          <span className="font-medium text-sky-700">
+          <span className="font-medium text-brand">
             {formatCurrency(companyCommission)}
           </span>
         </div>
-        <div className="flex justify-between text-slate-600 border-t border-slate-200 pt-2">
+        <div className="flex justify-between text-ink-muted border-t border-border pt-2">
           <span>Driver payout</span>
-          <span className="font-medium text-slate-900">
+          <span className="font-medium text-ink">
             {formatCurrency(driverPayout)}
           </span>
         </div>

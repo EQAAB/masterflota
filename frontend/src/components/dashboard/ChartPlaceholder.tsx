@@ -8,15 +8,15 @@ export function ChartPlaceholder({ title = "Chart", height = 280, className = ""
   return (
     <div
       className={`
-        rounded-xl border border-slate-200
+        rounded-xl border border-border
         bg-white
         overflow-hidden shadow-sm
         ${className}
       `}
     >
       {title && (
-        <div className="px-5 py-3 border-b border-slate-200">
-          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <div className="px-5 py-3 border-b border-border">
+          <h3 className="text-sm font-semibold text-ink">{title}</h3>
         </div>
       )}
       <div

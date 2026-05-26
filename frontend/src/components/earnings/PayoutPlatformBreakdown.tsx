@@ -25,21 +25,21 @@ export function PayoutPlatformBreakdown({ payoutId, enabled }: Props) {
 
   if (!enabled) return null;
   if (isLoading) {
-    return <p className="mt-2 text-[11px] text-slate-500">Loading platform split…</p>;
+    return <p className="mt-2 text-[11px] text-ink-muted">Loading platform split…</p>;
   }
   if (isError) {
     return <p className="mt-2 text-[11px] text-red-700">Could not load platform breakdown.</p>;
   }
   if (platforms.length === 0) {
-    return <p className="mt-2 text-[11px] text-slate-500">No per-platform earnings rows for this period.</p>;
+    return <p className="mt-2 text-[11px] text-ink-muted">No per-platform earnings rows for this period.</p>;
   }
 
   return (
     <div className="mt-3">
-      <p className="text-[11px] font-semibold text-slate-800">By platform</p>
+      <p className="text-[11px] font-semibold text-ink">By platform</p>
       <table className="mt-1 w-full max-w-md text-[11px]">
         <thead>
-          <tr className="text-left text-slate-600">
+          <tr className="text-left text-ink-muted">
             <th className="py-1 pr-3 font-medium">Platform</th>
             <th className="py-1 pr-3 font-medium">Gross</th>
             <th className="py-1 pr-3 font-medium">Fees</th>
@@ -48,7 +48,7 @@ export function PayoutPlatformBreakdown({ payoutId, enabled }: Props) {
         </thead>
         <tbody>
           {platforms.map((p) => (
-            <tr key={p.platform} className="text-slate-800">
+            <tr key={p.platform} className="text-ink">
               <td className="py-0.5 pr-3">{earningsPlatformLabel(p.platform)}</td>
               <td className="py-0.5 pr-3">{formatCurrency(toNum(p.gross))}</td>
               <td className="py-0.5 pr-3">{formatCurrency(toNum(p.fees))}</td>

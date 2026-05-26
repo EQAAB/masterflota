@@ -95,7 +95,7 @@ export function DriverSearchCombobox({
 
   return (
     <div ref={rootRef} className="relative">
-      <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 mb-1">
+      <label htmlFor={inputId} className="block text-sm font-medium text-ink mb-1">
         Driver *
       </label>
       <input
@@ -111,7 +111,7 @@ export function DriverSearchCombobox({
         aria-required
         aria-activedescendant={activeDescendantId}
         placeholder="Search by name, phone, or ID…"
-        className="w-full rounded-xl border border-white/50 bg-white/70 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none ring-sky-500/30 backdrop-blur-sm placeholder:text-slate-400 focus:border-sky-300/80 focus:ring-2"
+        className="w-full rounded-xl border border-white/50 bg-white/70 px-3 py-2.5 text-sm text-ink shadow-inner outline-none ring-brand/30 backdrop-blur-sm placeholder:text-slate-400 focus:border-brand/30/80 focus:ring-2"
         value={inputValue}
         onChange={(e) => handleInputChange(e.target.value)}
         onFocus={() => setOpen(true)}
@@ -133,14 +133,14 @@ export function DriverSearchCombobox({
           >
             <li
               role="presentation"
-              className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/95 px-3 py-2 text-center text-xs font-medium text-slate-500 backdrop-blur-sm md:hidden"
+              className="sticky top-0 z-10 border-b border-border/80 bg-white/95 px-3 py-2 text-center text-xs font-medium text-ink-muted backdrop-blur-sm md:hidden"
             >
               Select a driver
             </li>
             {isFetching && (
-              <li role="presentation" className="px-3 py-4 flex items-center justify-center gap-2 text-sm text-slate-500">
+              <li role="presentation" className="px-3 py-4 flex items-center justify-center gap-2 text-sm text-ink-muted">
                 <span
-                  className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600"
+                  className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-border border-t-sky-600"
                   aria-hidden
                 />
                 Loading drivers…
@@ -149,13 +149,13 @@ export function DriverSearchCombobox({
             {!isFetching && isError && (
               <li role="presentation" className="px-3 py-3 text-center text-sm text-red-600">
                 Could not load drivers.{" "}
-                <button type="button" className="font-medium text-sky-600 underline" onClick={() => refetch()}>
+                <button type="button" className="font-medium text-brand underline" onClick={() => refetch()}>
                   Retry
                 </button>
               </li>
             )}
             {!isFetching && !isError && results.length === 0 && (
-              <li role="presentation" className="px-3 py-4 text-center text-sm text-slate-500">
+              <li role="presentation" className="px-3 py-4 text-center text-sm text-ink-muted">
                 No drivers match your search.
               </li>
             )}
@@ -170,7 +170,7 @@ export function DriverSearchCombobox({
                     role="option"
                     aria-selected={value?.id === d.id}
                     className={`cursor-pointer px-3 py-2.5 text-sm ${
-                      active ? "bg-sky-100/90 text-slate-900" : "text-slate-800 hover:bg-white/60"
+                      active ? "bg-brand-mint/90 text-ink" : "text-ink hover:bg-white/60"
                     }`}
                     onMouseEnter={() => setHighlightedIndex(i)}
                     onMouseDown={(e) => {
@@ -181,7 +181,7 @@ export function DriverSearchCombobox({
                     <div className="font-medium">
                       {d.first_name} {d.last_name}
                     </div>
-                    <div className="text-xs text-slate-500 tabular-nums">{d.phone}</div>
+                    <div className="text-xs text-ink-muted tabular-nums">{d.phone}</div>
                   </li>
                 );
               })}

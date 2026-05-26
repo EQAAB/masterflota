@@ -31,20 +31,20 @@ export function CourierTable({ chatId, initialRawLines = EXAMPLE_COURIER_RAW_DAT
   const lineCount = useMemo(() => rawLines.filter((l) => l.trim()).length, [rawLines]);
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="space-y-4 rounded-xl border border-border bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-slate-800">Courier table</h2>
+        <h2 className="text-lg font-semibold text-ink">Courier table</h2>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200"
+            className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-ink hover:bg-slate-200"
             onClick={logTable}
           >
             console.table
           </button>
           <button
             type="button"
-            className="rounded-lg bg-sky-100 px-3 py-1.5 text-sm text-sky-800 hover:bg-sky-200"
+            className="rounded-lg bg-brand-mint px-3 py-1.5 text-sm text-brand hover:bg-brand-mint"
             onClick={reloadFromStorage}
           >
             Reload from storage
@@ -59,10 +59,10 @@ export function CourierTable({ chatId, initialRawLines = EXAMPLE_COURIER_RAW_DAT
         </div>
       </div>
 
-      <label className="block text-sm text-slate-600">
+      <label className="block text-sm text-ink-muted">
         Paste CSV lines (one row per line)
         <textarea
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
+          className="mt-1 w-full rounded-lg border border-border px-3 py-2 font-mono text-sm"
           rows={4}
           value={pasteText}
           onChange={(e) => setPasteText(e.target.value)}
@@ -71,7 +71,7 @@ export function CourierTable({ chatId, initialRawLines = EXAMPLE_COURIER_RAW_DAT
       </label>
       <button
         type="button"
-        className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95"
         onClick={() =>
           setRawLines(pasteText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))
         }
@@ -89,15 +89,15 @@ export function CourierTable({ chatId, initialRawLines = EXAMPLE_COURIER_RAW_DAT
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-ink-muted">
         Parsed rows: {rows.length} (raw lines with content: {lineCount}). Rows with &quot;Ajustari Totale&quot; are
         skipped. Set <code className="rounded bg-slate-100 px-1">VITE_BLACKBOX_TABLE_SYNC_URL</code> for remote
         sync; mirror key uses chatId.
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-700">
+          <thead className="bg-slate-50 text-ink">
             <tr>
               <th className="px-3 py-2">#</th>
               <th className="px-3 py-2">Date</th>
@@ -110,8 +110,8 @@ export function CourierTable({ chatId, initialRawLines = EXAMPLE_COURIER_RAW_DAT
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={`${r.date}-${r.driver}-${i}`} className="border-t border-slate-100">
-                <td className="px-3 py-2 text-slate-500">{i + 1}</td>
+              <tr key={`${r.date}-${r.driver}-${i}`} className="border-t border-border">
+                <td className="px-3 py-2 text-ink-muted">{i + 1}</td>
                 <td className="px-3 py-2">{r.date}</td>
                 <td className="px-3 py-2">{r.gross}</td>
                 <td className="px-3 py-2">{r.net}</td>

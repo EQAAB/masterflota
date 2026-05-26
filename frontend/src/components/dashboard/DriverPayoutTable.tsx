@@ -14,30 +14,30 @@ function toNum(v: string | null): number {
 export function DriverPayoutTable({ rows }: DriverPayoutTableProps) {
   if (!rows.length) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-900 mb-2">Driver payout integrity</h3>
-        <p className="text-sm text-slate-500">No sample rows found.</p>
+      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-ink mb-2">Driver payout integrity</h3>
+        <p className="text-sm text-ink-muted">No sample rows found.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900 mb-3">Driver payout integrity</h3>
-      <p className="text-[11px] text-slate-500 mb-3">
+    <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-ink mb-3">Driver payout integrity</h3>
+      <p className="text-[11px] text-ink-muted mb-3">
         Expected payout = net income (gross + tips ± taxa) minus fleet commission minus the absolute value of daily
         cash (deduction magnitude). Stored daily cash may be negative in CSV. Commission base is stored per row when
         present. TVT and account opening fee are shown for context only.
       </p>
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-xs">
-          <thead className="bg-slate-50 text-slate-600">
+          <thead className="bg-slate-50 text-ink-muted">
             <tr>
               <th className="px-2 py-2">Status</th>
               <th className="px-2 py-2">Date</th>
               <th className="px-2 py-2">Platform</th>
               <th className="px-2 py-2 border-l-2 border-amber-200">TVT</th>
-              <th className="px-2 py-2 italic text-slate-500" title="Tracked separately; already in TVT">
+              <th className="px-2 py-2 italic text-ink-muted" title="Tracked separately; already in TVT">
                 Acct. fee
               </th>
               <th className="px-2 py-2">Comm. base</th>
@@ -57,7 +57,7 @@ export function DriverPayoutTable({ rows }: DriverPayoutTableProps) {
               const delta = payout - expected;
               const ok = r.ok;
               return (
-                <tr key={r.id} className="border-t border-slate-100">
+                <tr key={r.id} className="border-t border-border">
                   <td className="px-2 py-2">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 font-medium ${
@@ -72,13 +72,13 @@ export function DriverPayoutTable({ rows }: DriverPayoutTableProps) {
                   <td className="px-2 py-2 border-l-2 border-amber-100">
                     {r.total_transfer_earnings != null ? formatCurrency(toNum(r.total_transfer_earnings)) : "—"}
                   </td>
-                  <td className="px-2 py-2 italic text-slate-600">
+                  <td className="px-2 py-2 italic text-ink-muted">
                     {r.account_opening_fee != null && toNum(r.account_opening_fee) > 0
                       ? `−${formatCurrency(toNum(r.account_opening_fee))}`
                       : "—"}
                   </td>
                   <td
-                    className="px-2 py-2 text-slate-600"
+                    className="px-2 py-2 text-ink-muted"
                     title={
                       r.commission_base != null && r.commission_base !== ""
                         ? "Amount fleet commission was calculated on (import snapshot)"
@@ -99,14 +99,14 @@ export function DriverPayoutTable({ rows }: DriverPayoutTableProps) {
                   >
                     {formatCurrency(toNum(r.company_commission))}
                   </td>
-                  <td className="px-2 py-2 text-slate-600">
+                  <td className="px-2 py-2 text-ink-muted">
                     {r.vehicle_rental_fee != null && toNum(r.vehicle_rental_fee) !== 0
                       ? formatCurrency(toNum(r.vehicle_rental_fee))
                       : "—"}
                   </td>
                   <td className="px-2 py-2">{formatCurrency(payout)}</td>
                   <td className="px-2 py-2">{formatCurrency(expected)}</td>
-                  <td className={`px-2 py-2 ${Math.abs(delta) > 0.009 ? "text-red-600 font-semibold" : "text-slate-600"}`}>
+                  <td className={`px-2 py-2 ${Math.abs(delta) > 0.009 ? "text-red-600 font-semibold" : "text-ink-muted"}`}>
                     {formatCurrency(delta)}
                   </td>
                 </tr>

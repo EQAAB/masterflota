@@ -16,19 +16,19 @@ export function AnalyticsCard(props: AnalyticsCardProps) {
   return (
     <div
       className={
-        "rounded-xl border border-slate-200 " +
+        "rounded-xl border border-border " +
         "bg-white p-5 shadow-sm transition-shadow hover:shadow-md " +
         className
       }
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 truncate">
+          <p className="text-sm font-medium text-ink-muted">{title}</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-ink truncate">
             {value}
           </p>
           {subtitle && (
-            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-ink-muted">{subtitle}</p>
           )}
           {trend && (
             <span
@@ -42,7 +42,7 @@ export function AnalyticsCard(props: AnalyticsCardProps) {
           )}
         </div>
         {icon && (
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+          <div className="shrink-0 w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-ink-muted">
             {icon}
           </div>
         )}
