@@ -52,12 +52,23 @@ export const tableWrap =
 export const tableHeader =
   "sticky top-0 z-10 bg-surface/95 backdrop-blur text-xs font-medium uppercase tracking-wide text-ink-muted";
 
-export const tableRow = "align-top text-ink hover:bg-surface/80 " + transitionDefault;
+export const tableRow = "align-top text-ink hover:bg-surface/80";
 
 export const tableRowAlert =
-  "align-top text-ink bg-danger/5 border-l-2 border-danger hover:bg-danger/10 " + transitionDefault;
+  "align-top text-ink bg-danger/5 shadow-[inset_3px_0_0_0_#ef4444] hover:bg-danger/10";
 
-export const tableCell = "px-4 py-3";
+export const tableRowExpandable = "cursor-pointer hover:bg-surface/60";
+
+/** Expanded payout row accent without layout-shifting borders */
+export const tableRowExpandedAccent = "shadow-[inset_3px_0_0_0_#0b7a6e] bg-surface/30";
+
+export const tableZebraEven = "even:bg-white";
+
+export const tableZebraOdd = "odd:bg-surface/30";
+
+export const tableCell = "px-3 py-2.5 lg:px-4 lg:py-3";
+
+export const tableCellCompact = "px-3 py-2.5";
 
 export const linkAccent = "text-brand font-medium hover:underline";
 

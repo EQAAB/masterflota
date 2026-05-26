@@ -41,4 +41,15 @@
   .fm-input {
     @apply w-full rounded-input border border-border bg-white px-3 py-2.5 text-sm text-ink shadow-sm outline-none placeholder:text-ink-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
   }
+
+  .fm-payout-expand {
+    contain: layout style;
+    transform: translateZ(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fm-payout-expand {
+      transition: none !important;
+    }
+  }
 }
