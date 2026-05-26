@@ -25,10 +25,16 @@ export function subcontractorAvatarClass(tone: SubcontractorAvatarTone): string 
 }
 
 export function subcontractorInitials(legalName: string): string {
-  const parts = legalName.trim().split(/\s+/).filter(Boolean);
+  const parts = legalName
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 0 && !/^&+$/.test(p));
   if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  }
+  const word = parts[0];
+  return word.length >= 2 ? word.slice(0, 2).toUpperCase() : word.toUpperCase();
 }
 
 export function formatSubcontractorDisplayId(

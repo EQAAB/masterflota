@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import type { ActionMenuItemConfig } from "../theme/ActionMenuDropdown";
 
-function MenuIconWrap({ children, tone }: { children: React.ReactNode; tone: "brand" | "muted" | "danger" }) {
+function MenuIconWrap({ children, tone }: { children: ReactNode; tone: "brand" | "muted" | "danger" }) {
   const toneClass =
     tone === "brand"
       ? "bg-brand/10 text-brand"
@@ -31,23 +32,7 @@ function EditIcon() {
   );
 }
 
-function AssignIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 11h-6m3-3l-3 3 3 3" />
-    </svg>
-  );
-}
-
-function ReportsIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6M5 5h14v14H5V5z" />
-    </svg>
-  );
-}
-
-function DisableIcon() {
+function SuspendIcon() {
   return (
     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -57,31 +42,27 @@ function DisableIcon() {
 
 type BuildSubcontractorActionMenuItemsArgs = {
   isActive: boolean;
-  onView: () => void;
+  onViewProfile: () => void;
   onEdit: () => void;
-  onAssignDrivers: () => void;
-  onViewReports: () => void;
-  onDisable: () => void;
+  onSuspend: () => void;
 };
 
 export function buildSubcontractorActionMenuItems({
   isActive,
-  onView,
+  onViewProfile,
   onEdit,
-  onAssignDrivers,
-  onViewReports,
-  onDisable,
+  onSuspend,
 }: BuildSubcontractorActionMenuItemsArgs): ActionMenuItemConfig[] {
   return [
     {
-      id: "view-subcontractor",
-      label: "View subcontractor",
+      id: "view-profile",
+      label: "View profile",
       icon: (
         <MenuIconWrap tone="brand">
           <ViewIcon />
         </MenuIconWrap>
       ),
-      onSelect: onView,
+      onSelect: onViewProfile,
     },
     {
       id: "edit-subcontractor",
@@ -94,34 +75,14 @@ export function buildSubcontractorActionMenuItems({
       onSelect: onEdit,
     },
     {
-      id: "assign-drivers",
-      label: "Assign drivers",
-      icon: (
-        <MenuIconWrap tone="brand">
-          <AssignIcon />
-        </MenuIconWrap>
-      ),
-      onSelect: onAssignDrivers,
-    },
-    {
-      id: "view-reports",
-      label: "View reports",
-      icon: (
-        <MenuIconWrap tone="muted">
-          <ReportsIcon />
-        </MenuIconWrap>
-      ),
-      onSelect: onViewReports,
-    },
-    {
-      id: "disable-subcontractor",
-      label: "Disable subcontractor",
+      id: "suspend-subcontractor",
+      label: "Suspend subcontractor",
       icon: (
         <MenuIconWrap tone="danger">
-          <DisableIcon />
+          <SuspendIcon />
         </MenuIconWrap>
       ),
-      onSelect: onDisable,
+      onSelect: onSuspend,
       hidden: !isActive,
     },
   ];

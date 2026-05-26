@@ -15,9 +15,9 @@ function CalendarIcon({ className }: { className?: string }) {
 
 export function SubcontractorJoinedCell({ createdAt }: { createdAt: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-ink-muted">
-      <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted/70" />
-      <span className="tabular-nums">{formatJoinedDate(createdAt)}</span>
+    <div className="flex min-w-0 items-center gap-2 whitespace-nowrap text-sm text-ink-muted">
+      <CalendarIcon className="h-4 w-4 shrink-0 text-ink-muted/80" />
+      <span className="truncate tabular-nums">{formatJoinedDate(createdAt)}</span>
     </div>
   );
 }
