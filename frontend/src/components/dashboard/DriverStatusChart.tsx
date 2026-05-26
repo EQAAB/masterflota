@@ -11,7 +11,7 @@ export function DriverStatusChart(props: { data: DriverStatusItem[] }) {
   const chartData = props.data.map((d) => ({ name: d.status, value: d.count }));
   const empty = chartData.every((d) => d.value === 0);
   if (empty) {
-    return <div className="h-64 flex items-center justify-center text-slate-500 text-sm">No driver data</div>;
+    return <div className="h-64 flex items-center justify-center text-ink-muted text-sm">No driver data</div>;
   }
   return (
     <ResponsiveContainer width="100%" height={260}>

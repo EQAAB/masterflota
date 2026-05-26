@@ -30,18 +30,18 @@ function formatDate(createdAt: string): string {
 export function RecentActivity({ activities }: { activities: DashboardActivityItem[] }) {
   if (!activities.length) {
     return (
-      <p className="text-sm text-slate-500">No recent activity.</p>
+      <p className="text-sm text-ink-muted">No recent activity.</p>
     );
   }
   return (
     <ul className="space-y-2">
       {activities.map((a) => (
-        <li key={a.id} className="flex flex-wrap items-baseline gap-2 text-sm border-b border-slate-100 pb-2 last:border-0">
-          <span className="font-medium text-slate-700">
+        <li key={a.id} className="flex flex-wrap items-baseline gap-2 text-sm border-b border-border pb-2 last:border-0">
+          <span className="font-medium text-ink">
             {ACTIVITY_LABELS[a.activity_type] ?? a.activity_type}
           </span>
           {a.activity_description && (
-            <span className="text-slate-600 truncate max-w-[200px]">{a.activity_description}</span>
+            <span className="text-ink-muted truncate max-w-[200px]">{a.activity_description}</span>
           )}
           <span className="text-xs text-slate-400 ml-auto shrink-0">{formatDate(a.created_at)}</span>
         </li>

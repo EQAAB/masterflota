@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import type { AuthUser } from "../../store/authStore";
+import { input, sectionLabel, btnPrimary, card, linkAccent, alertError } from "../../theme/classNames";
 
 interface LoginResponse {
   token: string;
@@ -34,46 +35,43 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-2xl font-semibold mb-6 text-slate-900">Fleet Manager Login</h1>
+    <div className="min-h-screen flex items-center justify-center bg-surface p-4">
+      <div className={`w-full max-w-md ${card} p-8 shadow-soft-lg`}>
+        <h1 className="text-2xl font-semibold mb-2 text-ink">Fleet Manager</h1>
+        <p className="text-sm text-ink-muted mb-6">Sign in to your organization</p>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label className={sectionLabel}>Email</label>
             <input
               type="email"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <label className={sectionLabel}>Password</label>
             <input
               type="password"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           {mutation.isError && (
-            <p className="text-sm text-red-600">
+            <p className={alertError}>
               {(mutation.error as Error).message || "Login failed. Check your credentials."}
             </p>
           )}
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="w-full inline-flex justify-center items-center rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-60"
-          >
+          <button type="submit" disabled={mutation.isPending} className={`w-full ${btnPrimary}`}>
             {mutation.isPending ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <p className="mt-4 text-xs text-slate-600 text-center">
+        <p className="mt-4 text-xs text-ink-muted text-center">
           New here?{" "}
-          <Link to="/register" className="font-medium text-sky-600 hover:underline">
+          <Link to="/register" className={linkAccent}>
             Create an organization
           </Link>
         </p>
@@ -81,4 +79,3 @@ export function LoginPage() {
     </div>
   );
 }
-

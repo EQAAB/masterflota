@@ -66,43 +66,43 @@ export function SubcontractorSettlementsPage() {
   }
 
   if (user?.role !== "admin" && user?.role !== "accountant") {
-    return <p className="p-6 text-slate-600">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">You do not have access.</p>;
   }
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-slate-200 bg-white/80 px-4 sm:px-6 py-4">
+      <header className="shrink-0 border-b border-border bg-white/80 px-4 sm:px-6 py-4">
         <div className="flex flex-wrap items-end gap-4 justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Subcontractor settlements</h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+            <h1 className="text-lg font-semibold text-ink">Subcontractor settlements</h1>
+            <p className="text-sm text-ink-muted mt-1 max-w-2xl">
               Totals are summed from driver payouts for the period. Payable is the sum of net driver payouts;
               fee columns match each deduction line on the driver payout. Gross incl. tips already includes the
               tips shown in the next column — do not add those columns together. Commission is the sum of{" "}
               <span className="font-mono text-xs">company_commission</span> on each linked driver payout.
             </p>
           </div>
-          <Link to="/earnings/payouts" className="text-sm text-sky-700 hover:underline">
+          <Link to="/earnings/payouts" className="text-sm text-brand hover:underline">
             Direct driver payouts
           </Link>
         </div>
       </header>
       <div className="p-4 sm:p-6 space-y-4">
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-white p-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600">Period start</label>
+            <label className="block text-xs font-medium text-ink-muted">Period start</label>
             <input
               type="date"
-              className="mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 rounded-md border border-border px-2 py-1.5 text-sm"
               value={periodStart}
               onChange={(e) => setPeriodStart(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600">Period end</label>
+            <label className="block text-xs font-medium text-ink-muted">Period end</label>
             <input
               type="date"
-              className="mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 rounded-md border border-border px-2 py-1.5 text-sm"
               value={periodEnd}
               onChange={(e) => setPeriodEnd(e.target.value)}
             />
@@ -114,7 +114,7 @@ export function SubcontractorSettlementsPage() {
               setMsg(null);
               refreshMut.mutate();
             }}
-            className="rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 disabled:opacity-50"
+            className="rounded-md border border-border bg-slate-50 px-3 py-2 text-sm font-medium text-ink hover:bg-slate-100 disabled:opacity-50"
           >
             {refreshMut.isPending ? "Refreshing…" : "Refresh settlements"}
           </button>
@@ -127,13 +127,13 @@ export function SubcontractorSettlementsPage() {
             {payMut.isPending ? "Paying…" : `Mark paid (${selected.size})`}
           </button>
         </div>
-        {msg && <p className="text-sm text-slate-700">{msg}</p>}
-        {q.isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+        {msg && <p className="text-sm text-ink">{msg}</p>}
+        {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
         {q.isError && <p className="text-sm text-red-700">Failed to load settlements.</p>}
         {q.data && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600 text-left">
+              <thead className="bg-slate-50 text-ink-muted text-left">
                 <tr>
                   <th className="px-2 py-2 w-8" />
                   <th className="px-3 py-2">Subcontractor</th>
@@ -158,7 +158,7 @@ export function SubcontractorSettlementsPage() {
                   <th className="px-3 py-2">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {q.data.rows.map((r) => {
                   const rowKey = r.id ?? r.subcontractor_id;
                   const canPay = !!r.id && r.payment_status !== "paid";
@@ -172,15 +172,15 @@ export function SubcontractorSettlementsPage() {
                             checked={selected.has(r.id)}
                             disabled={!canPay}
                             onChange={() => toggleOne(r.id!)}
-                            className="rounded border-slate-300"
+                            className="rounded border-border"
                           />
                         )}
                       </td>
-                      <td className="px-3 py-2 font-medium text-slate-900">
+                      <td className="px-3 py-2 font-medium text-ink">
                         {r.id ? (
                           <Link
                             to={`/earnings/subcontractors/settlements/${r.id}`}
-                            className="text-sky-700 hover:underline"
+                            className="text-brand hover:underline"
                           >
                             {r.legal_name}
                           </Link>
@@ -216,7 +216,7 @@ export function SubcontractorSettlementsPage() {
                       <td className="px-3 py-2 text-right tabular-nums">
                         {formatCurrency(Number(r.total_custom_additions ?? 0))}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-slate-900">
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-ink">
                         <span className="block">
                           {formatCurrency(payable)}
                           {r.payment_status === "paid" &&
@@ -228,14 +228,14 @@ export function SubcontractorSettlementsPage() {
                             )}
                         </span>
                       </td>
-                      <td className="px-3 py-2 capitalize text-slate-700">{r.payment_status ?? "—"}</td>
+                      <td className="px-3 py-2 capitalize text-ink">{r.payment_status ?? "—"}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
             {payableRows.length === 0 && q.data.rows.length > 0 && (
-              <p className="text-sm text-slate-500 p-4">
+              <p className="text-sm text-ink-muted p-4">
                 No settlements for this period yet. Import earnings or click Refresh settlements.
               </p>
             )}

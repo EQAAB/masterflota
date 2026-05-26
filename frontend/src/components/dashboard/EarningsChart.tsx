@@ -10,7 +10,7 @@ export function EarningsChart(props: { data: MonthlyEarningsItem[] }) {
   const { data } = props;
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
+      <div className="h-64 flex items-center justify-center text-ink-muted text-sm">
         No earnings data yet
       </div>
     );

@@ -45,7 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
   available: "bg-green-100 text-green-800",
   rented: "bg-blue-100 text-blue-800",
   maintenance: "bg-amber-100 text-amber-800",
-  sold: "bg-slate-100 text-slate-800",
+  sold: "bg-slate-100 text-ink",
   scrapped: "bg-red-100 text-red-800",
 };
 
@@ -53,7 +53,7 @@ const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
   in_progress: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-800",
-  cancelled: "bg-slate-100 text-slate-800",
+  cancelled: "bg-slate-100 text-ink",
 };
 
 export function VehicleDetailPage() {
@@ -124,8 +124,8 @@ export function VehicleDetailPage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-slate-600">Missing vehicle ID.</p>
-        <Link to="/vehicles" className="ml-2 text-sky-600 hover:underline">
+        <p className="text-ink-muted">Missing vehicle ID.</p>
+        <Link to="/vehicles" className="ml-2 text-brand hover:underline">
           Back to vehicles
         </Link>
       </div>
@@ -137,7 +137,7 @@ export function VehicleDetailPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-600">Loading vehicle...</p>
+          <p className="text-sm text-ink-muted">Loading vehicle...</p>
         </div>
       </div>
     );
@@ -148,7 +148,7 @@ export function VehicleDetailPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
           <p className="text-red-600">Failed to load vehicle.</p>
-          <Link to="/vehicles" className="mt-3 inline-block text-sm text-sky-600 hover:underline">
+          <Link to="/vehicles" className="mt-3 inline-block text-sm text-brand hover:underline">
             Back to vehicles
           </Link>
         </div>
@@ -160,24 +160,24 @@ export function VehicleDetailPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
+      <header className="bg-white border-b border-border px-6 py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <Link to="/vehicles" className="text-sm text-slate-600 hover:text-slate-900">
+            <Link to="/vehicles" className="text-sm text-ink-muted hover:text-ink">
               ← Back to vehicles
             </Link>
-            <h1 className="text-xl font-semibold text-slate-900 mt-1">
+            <h1 className="text-xl font-semibold text-ink mt-1">
               {v.year ? `${v.year} ` : ""}
               {v.make} {v.model}
             </h1>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
+            <p className="text-xs text-ink-muted font-mono mt-0.5">
               {v.license_plate} · {v.vehicle_type}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span
               className={`inline-flex rounded px-2 py-1 text-xs font-medium capitalize ${
-                STATUS_COLORS[v.status] ?? "bg-slate-100 text-slate-800"
+                STATUS_COLORS[v.status] ?? "bg-slate-100 text-ink"
               }`}
             >
               {v.status}
@@ -185,7 +185,7 @@ export function VehicleDetailPage() {
             {canEdit && (
               <Link
                 to={`/vehicles/${id}/edit`}
-                className="inline-flex items-center rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+                className="inline-flex items-center rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
               >
                 Edit vehicle
               </Link>
@@ -193,7 +193,7 @@ export function VehicleDetailPage() {
           </div>
         </div>
 
-        <nav className="flex gap-1 mt-4 border-b border-slate-200">
+        <nav className="flex gap-1 mt-4 border-b border-border">
           {(["profile", "maintenance", "documents"] as TabId[]).map((t) => (
             <button
               key={t}
@@ -201,8 +201,8 @@ export function VehicleDetailPage() {
               onClick={() => setTab(t)}
               className={`px-4 py-2 text-sm font-medium rounded-t-md capitalize ${
                 tab === t
-                  ? "bg-slate-100 text-slate-900 border border-b-0 border-slate-200 -mb-px"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-slate-100 text-ink border border-b-0 border-border -mb-px"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               {t}
@@ -215,22 +215,22 @@ export function VehicleDetailPage() {
         {tab === "profile" && (
           <div className="space-y-6">
             <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Vehicle details</h2>
+              <h2 className="text-sm font-semibold text-ink mb-3">Vehicle details</h2>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-slate-500">Make / Model</dt><dd className="font-medium">{v.make} {v.model}</dd></div>
-                <div><dt className="text-slate-500">Year</dt><dd>{v.year ?? "—"}</dd></div>
-                <div><dt className="text-slate-500">Color</dt><dd>{v.color ?? "—"}</dd></div>
-                <div><dt className="text-slate-500">License plate</dt><dd className="font-mono">{v.license_plate}</dd></div>
-                <div><dt className="text-slate-500">VIN</dt><dd>{v.vin ?? "—"}</dd></div>
-                <div><dt className="text-slate-500">Fuel / Transmission</dt><dd>{[v.fuel_type, v.transmission].filter(Boolean).join(" · ") || "—"}</dd></div>
-                <div><dt className="text-slate-500">Seating capacity</dt><dd>{v.seating_capacity ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">Make / Model</dt><dd className="font-medium">{v.make} {v.model}</dd></div>
+                <div><dt className="text-ink-muted">Year</dt><dd>{v.year ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">Color</dt><dd>{v.color ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">License plate</dt><dd className="font-mono">{v.license_plate}</dd></div>
+                <div><dt className="text-ink-muted">VIN</dt><dd>{v.vin ?? "—"}</dd></div>
+                <div><dt className="text-ink-muted">Fuel / Transmission</dt><dd>{[v.fuel_type, v.transmission].filter(Boolean).join(" · ") || "—"}</dd></div>
+                <div><dt className="text-ink-muted">Seating capacity</dt><dd>{v.seating_capacity ?? "—"}</dd></div>
                 <div>
-                  <dt className="text-slate-500">Current driver</dt>
+                  <dt className="text-ink-muted">Current driver</dt>
                   <dd>
                     {v.current_driver_id ? (
                       <Link
                         to={`/drivers/${v.current_driver_id}`}
-                        className="text-sky-600 hover:underline"
+                        className="text-brand hover:underline"
                       >
                         {driverDisplayName(v.driver_first_name, v.driver_last_name)}
                       </Link>
@@ -244,12 +244,12 @@ export function VehicleDetailPage() {
 
             {canEdit && (
               <section className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-slate-800 mb-3">Driver assignment</h2>
+                <h2 className="text-sm font-semibold text-ink mb-3">Driver assignment</h2>
                 {v.current_driver_id ? (
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
                       to={`/drivers/${v.current_driver_id}`}
-                      className="text-sm text-sky-600 hover:underline font-medium"
+                      className="text-sm text-brand hover:underline font-medium"
                     >
                       {driverDisplayName(v.driver_first_name, v.driver_last_name)}
                     </Link>
@@ -257,7 +257,7 @@ export function VehicleDetailPage() {
                       type="button"
                       onClick={() => unassignDriverMutation.mutate()}
                       disabled={unassignDriverMutation.isPending}
-                      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                      className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
                     >
                       {unassignDriverMutation.isPending ? "Unassigning…" : "Unassign driver"}
                     </button>
@@ -266,7 +266,7 @@ export function VehicleDetailPage() {
                   <button
                     type="button"
                     onClick={() => setAssignDriverOpen(true)}
-                    className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+                    className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
                   >
                     Assign driver
                   </button>
@@ -275,16 +275,16 @@ export function VehicleDetailPage() {
             )}
 
             <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Rental rates (RON)</h2>
+              <h2 className="text-sm font-semibold text-ink mb-3">Rental rates (RON)</h2>
               <dl className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                <div><dt className="text-slate-500">Daily</dt><dd className="font-medium">{formatCurrency(Number(v.daily_rent))}</dd></div>
+                <div><dt className="text-ink-muted">Daily</dt><dd className="font-medium">{formatCurrency(Number(v.daily_rent))}</dd></div>
                 <div>
-                  <dt className="text-slate-500" title="Deducted each payout week while assigned to a driver.">
+                  <dt className="text-ink-muted" title="Deducted each payout week while assigned to a driver.">
                     Weekly (payroll)
                   </dt>
                   <dd className="font-medium">{formatCurrency(Number(v.weekly_rent))}</dd>
                 </div>
-                <div><dt className="text-slate-500">Monthly</dt><dd className="font-medium">{formatCurrency(Number(v.monthly_rent))}</dd></div>
+                <div><dt className="text-ink-muted">Monthly</dt><dd className="font-medium">{formatCurrency(Number(v.monthly_rent))}</dd></div>
               </dl>
             </section>
 
@@ -293,17 +293,17 @@ export function VehicleDetailPage() {
             )}
 
             <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Expiry dates</h2>
+              <h2 className="text-sm font-semibold text-ink mb-3">Expiry dates</h2>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-slate-500">Insurance expiry</dt><dd>{formatDate(v.insurance_expiry)}</dd></div>
-                <div><dt className="text-slate-500">Registration expiry</dt><dd>{formatDate(v.registration_expiry)}</dd></div>
+                <div><dt className="text-ink-muted">Insurance expiry</dt><dd>{formatDate(v.insurance_expiry)}</dd></div>
+                <div><dt className="text-ink-muted">Registration expiry</dt><dd>{formatDate(v.registration_expiry)}</dd></div>
               </dl>
             </section>
 
             {v.notes && (
               <section className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-slate-800 mb-3">Notes</h2>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{v.notes}</p>
+                <h2 className="text-sm font-semibold text-ink mb-3">Notes</h2>
+                <p className="text-sm text-ink whitespace-pre-wrap">{v.notes}</p>
               </section>
             )}
           </div>
@@ -314,11 +314,11 @@ export function VehicleDetailPage() {
             {canEdit && (
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-slate-800">Maintenance</h2>
+                  <h2 className="text-sm font-semibold text-ink">Maintenance</h2>
                   <button
                     type="button"
                     onClick={() => setAddMaintenanceOpen(true)}
-                    className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+                    className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
                   >
                     Add maintenance
                   </button>
@@ -330,16 +330,16 @@ export function VehicleDetailPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Type</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Description</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Scheduled</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Cost</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Status</th>
+                    <th className="px-3 py-2 text-left font-medium text-ink">Type</th>
+                    <th className="px-3 py-2 text-left font-medium text-ink">Description</th>
+                    <th className="px-3 py-2 text-left font-medium text-ink">Scheduled</th>
+                    <th className="px-3 py-2 text-left font-medium text-ink">Cost</th>
+                    <th className="px-3 py-2 text-left font-medium text-ink">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {maintenanceList.map((m: VehicleMaintenance) => (
-                    <tr key={m.id} className="border-t border-slate-100">
+                    <tr key={m.id} className="border-t border-border">
                       <td className="px-3 py-2">{m.maintenance_type}</td>
                       <td className="px-3 py-2">{m.description ?? "—"}</td>
                       <td className="px-3 py-2">{formatDate(m.scheduled_date)}</td>
@@ -353,7 +353,7 @@ export function VehicleDetailPage() {
                   ))}
                   {maintenanceList.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
+                      <td colSpan={5} className="px-3 py-4 text-center text-ink-muted">
                         No maintenance records yet.
                       </td>
                     </tr>
@@ -368,12 +368,12 @@ export function VehicleDetailPage() {
           <div className="space-y-6">
             {canEdit && (
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-slate-800 mb-3">Upload new document</h2>
+                <h2 className="text-sm font-semibold text-ink mb-3">Upload new document</h2>
                 <VehicleDocumentUpload vehicleId={id} />
               </div>
             )}
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Documents</h2>
+              <h2 className="text-sm font-semibold text-ink mb-3">Documents</h2>
               <VehicleDocumentList vehicleId={id} />
             </div>
           </div>
@@ -383,10 +383,10 @@ export function VehicleDetailPage() {
       {assignDriverOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-slate-900">Assign driver</h3>
-            <p className="text-sm text-slate-600 mt-1">Select a driver for this vehicle.</p>
+            <h3 className="text-lg font-semibold text-ink">Assign driver</h3>
+            <p className="text-sm text-ink-muted mt-1">Select a driver for this vehicle.</p>
             <select
-              className="mt-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-4 w-full rounded-md border border-border px-3 py-2 text-sm"
               value={selectedDriverId}
               onChange={(e) => setSelectedDriverId(e.target.value)}
             >
@@ -403,7 +403,7 @@ export function VehicleDetailPage() {
                 type="button"
                 disabled={!selectedDriverId || assignDriverMutation.isPending}
                 onClick={() => assignDriverMutation.mutate(selectedDriverId)}
-                className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+                className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
                 {assignDriverMutation.isPending ? "Assigning…" : "Assign"}
               </button>
@@ -413,7 +413,7 @@ export function VehicleDetailPage() {
                   setAssignDriverOpen(false);
                   setSelectedDriverId("");
                 }}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -467,54 +467,54 @@ function AddMaintenanceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-slate-900">Add maintenance</h3>
+        <h3 className="text-lg font-semibold text-ink">Add maintenance</h3>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Type *</label>
+            <label className="block text-sm font-medium text-ink mb-1">Type *</label>
             <input
               type="text"
               required
               placeholder="e.g. Oil change, Tire rotation"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
               value={maintenanceType}
               onChange={(e) => setMaintenanceType(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-ink mb-1">Description</label>
             <textarea
               rows={2}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Scheduled date</label>
+              <label className="block text-sm font-medium text-ink mb-1">Scheduled date</label>
               <input
                 type="date"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Cost (RON)</label>
+              <label className="block text-sm font-medium text-ink mb-1">Cost (RON)</label>
               <input
                 type="number"
                 min={0}
                 step={0.01}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={cost === "" ? "" : cost}
                 onChange={(e) => setCost(e.target.value ? parseFloat(e.target.value) : "")}
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-ink mb-1">Status</label>
             <select
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as CreateMaintenancePayload["status"])}
             >
@@ -525,19 +525,19 @@ function AddMaintenanceModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Mechanic name</label>
+            <label className="block text-sm font-medium text-ink mb-1">Mechanic name</label>
             <input
               type="text"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
               value={mechanicName}
               onChange={(e) => setMechanicName(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
             <textarea
               rows={2}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -546,7 +546,7 @@ function AddMaintenanceModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+              className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
             >
               {isSubmitting ? "Creating..." : "Create maintenance"}
             </button>
@@ -554,7 +554,7 @@ function AddMaintenanceModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
             >
               Cancel
             </button>

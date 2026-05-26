@@ -14,7 +14,7 @@ const DOC_TYPE_COLORS: Record<string, string> = {
   registration: "bg-blue-100 text-blue-800",
   maintenance: "bg-amber-100 text-amber-800",
   inspection: "bg-emerald-100 text-emerald-800",
-  permit: "bg-slate-100 text-slate-800",
+  permit: "bg-slate-100 text-ink",
   other: "bg-gray-100 text-gray-800",
 };
 
@@ -81,21 +81,21 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
 
   return (
     <div className="space-y-3">
-      {isLoading && <p className="text-sm text-slate-500">Loading documents...</p>}
+      {isLoading && <p className="text-sm text-ink-muted">Loading documents...</p>}
       {isError && <p className="text-sm text-red-600">Failed to load documents.</p>}
       {!isLoading && !isError && docs.length === 0 && (
-        <p className="text-sm text-slate-500">No vehicle documents yet.</p>
+        <p className="text-sm text-ink-muted">No vehicle documents yet.</p>
       )}
       {!isLoading && !isError && docs.length > 0 && (
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">Type</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">Number</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">File</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">Issue / Expiry</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">Status</th>
-              <th className="px-3 py-2 text-left font-medium text-slate-700">Actions</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">Type</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">Number</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">File</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">Issue / Expiry</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">Status</th>
+              <th className="px-3 py-2 text-left font-medium text-ink">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +105,7 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
               const colorClass = DOC_TYPE_COLORS[type] ?? "bg-gray-100 text-gray-800";
               const expired = isExpired(doc.expiry_date);
               return (
-                <tr key={doc.id} className="border-t border-slate-100">
+                <tr key={doc.id} className="border-t border-border">
                   <td className="px-3 py-2">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClass}`}
@@ -114,7 +114,7 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className="font-mono text-xs text-slate-700">
+                    <span className="font-mono text-xs text-ink">
                       {doc.document_number || "—"}
                     </span>
                   </td>
@@ -123,20 +123,20 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
                       <button
                         type="button"
                         onClick={() => handleDownload(doc)}
-                        className="text-sky-600 hover:text-sky-800 text-sm font-medium"
+                        className="text-brand hover:text-brand-dark text-sm font-medium"
                       >
                         {doc.file_name}
                         {doc.file_size != null && (
-                          <span className="text-xs text-slate-500 ml-1">
+                          <span className="text-xs text-ink-muted ml-1">
                             ({formatSize(doc.file_size)})
                           </span>
                         )}
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-500">No file</span>
+                      <span className="text-xs text-ink-muted">No file</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-xs text-slate-600">
+                  <td className="px-3 py-2 text-xs text-ink-muted">
                     <div>Issue: {formatDate(doc.issue_date)}</div>
                     <div>
                       Expiry:{" "}
@@ -164,7 +164,7 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
                           verifyMutation.mutate({ docId: doc.id, verified: !doc.is_verified })
                         }
                         disabled={verifyMutation.isPending}
-                        className="text-sky-600 hover:text-sky-800 font-medium disabled:opacity-60"
+                        className="text-brand hover:text-brand-dark font-medium disabled:opacity-60"
                       >
                         {doc.is_verified ? "Mark as unverified" : "Mark as verified"}
                       </button>
@@ -187,8 +187,8 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-slate-900">Delete document?</h3>
-            <p className="text-sm text-slate-600 mt-2">
+            <h3 className="text-lg font-semibold text-ink">Delete document?</h3>
+            <p className="text-sm text-ink-muted mt-2">
               This will permanently delete the vehicle document and its file from the server.
             </p>
             <div className="flex gap-2 mt-4">
@@ -204,7 +204,7 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
                 type="button"
                 onClick={() => setDeleteConfirm(null)}
                 disabled={deleteMutation.isPending}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
                 Cancel
               </button>

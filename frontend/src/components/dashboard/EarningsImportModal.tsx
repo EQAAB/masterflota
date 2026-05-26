@@ -174,7 +174,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto my-8">
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h3 className="text-lg font-semibold text-slate-900">Import earnings</h3>
+          <h3 className="text-lg font-semibold text-ink">Import earnings</h3>
           <button
             type="button"
             disabled={busy}
@@ -185,21 +185,21 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                 onClose();
               }
             }}
-            className="text-slate-400 hover:text-slate-600 text-sm disabled:opacity-50"
+            className="text-slate-400 hover:text-ink-muted text-sm disabled:opacity-50"
           >
             Close
           </button>
         </div>
 
-        <p className="text-xs text-slate-600 mb-4">
+        <p className="text-xs text-ink-muted mb-4">
           Upload platform reports: CSV, XLSX, ZIP, XML, or PDF. After preview, adjust provider and pay period if
           needed, then confirm import.
         </p>
 
         {!preview && (
           <div className="flex flex-wrap items-center gap-3 mb-4">
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-              <span className="rounded-lg border border-slate-300 px-3 py-1.5 bg-slate-50 hover:bg-slate-100">
+            <label className="inline-flex items-center gap-2 text-sm text-ink cursor-pointer">
+              <span className="rounded-lg border border-border px-3 py-1.5 bg-slate-50 hover:bg-slate-100">
                 Choose file
               </span>
               <input
@@ -219,7 +219,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
               />
             </label>
             {previewMut.isPending && (
-              <span className="text-sm text-slate-500 flex items-center gap-2">
+              <span className="text-sm text-ink-muted flex items-center gap-2">
                 <span className="inline-block h-4 w-4 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
                 Parsing file…
               </span>
@@ -255,10 +255,10 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
         )}
 
         {preview && (
-          <div className="space-y-4 border-t border-slate-100 pt-4">
-            <div className="text-sm text-slate-700">
-              <span className="text-slate-500">Detected:</span>{" "}
-              <span className="font-medium text-slate-900">
+          <div className="space-y-4 border-t border-border pt-4">
+            <div className="text-sm text-ink">
+              <span className="text-ink-muted">Detected:</span>{" "}
+              <span className="font-medium text-ink">
                 {providerLabel(preview.platform)}
                 {confidencePct != null ? ` (${confidencePct}%)` : ""}
               </span>
@@ -266,12 +266,12 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="earnings-provider" className="block text-xs font-medium text-slate-700 mb-1">
+                <label htmlFor="earnings-provider" className="block text-xs font-medium text-ink mb-1">
                   Provider
                 </label>
                 <select
                   id="earnings-provider"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={selectedPlatform}
                   disabled={busy}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
@@ -285,26 +285,26 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
               </div>
               <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="earnings-period-start" className="block text-xs font-medium text-slate-700 mb-1">
+                  <label htmlFor="earnings-period-start" className="block text-xs font-medium text-ink mb-1">
                     Period start
                   </label>
                   <input
                     id="earnings-period-start"
                     type="date"
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm"
                     value={periodStart}
                     disabled={busy}
                     onChange={(e) => setPeriodStart(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label htmlFor="earnings-period-end" className="block text-xs font-medium text-slate-700 mb-1">
+                  <label htmlFor="earnings-period-end" className="block text-xs font-medium text-ink mb-1">
                     Period end
                   </label>
                   <input
                     id="earnings-period-end"
                     type="date"
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm"
                     value={periodEnd}
                     disabled={busy}
                     onChange={(e) => setPeriodEnd(e.target.value)}
@@ -313,18 +313,18 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+            <div className="flex flex-wrap gap-4 text-sm text-ink-muted">
               <div>
-                <span className="text-slate-500">File</span>{" "}
-                <span className="font-medium text-slate-900">{preview.fileName}</span>
+                <span className="text-ink-muted">File</span>{" "}
+                <span className="font-medium text-ink">{preview.fileName}</span>
               </div>
               <div>
-                <span className="text-slate-500">Rows</span>{" "}
-                <span className="font-medium text-slate-900">{preview.totalRows.toLocaleString()}</span>
+                <span className="text-ink-muted">Rows</span>{" "}
+                <span className="font-medium text-ink">{preview.totalRows.toLocaleString()}</span>
               </div>
               <div>
-                <span className="text-slate-500">Driver match rate</span>{" "}
-                <span className="font-medium text-sky-700">
+                <span className="text-ink-muted">Driver match rate</span>{" "}
+                <span className="font-medium text-brand">
                   {(preview.matchRate * 100).toFixed(1)}% ({preview.matchedPreviewCount} / {preview.totalRows})
                 </span>
               </div>
@@ -349,7 +349,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
             )}
 
             <div>
-              <p className="text-xs font-semibold text-slate-700 mb-2">
+              <p className="text-xs font-semibold text-ink mb-2">
                 Full data preview ({preview.totalRows.toLocaleString()} rows)
               </p>
               <EarningsImportPreviewVirtualTable
@@ -365,7 +365,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                 type="button"
                 disabled={busy || !periodValid}
                 onClick={() => setCommitImportOpen(true)}
-                className="rounded-lg bg-sky-600 text-white text-sm font-medium px-4 py-2 hover:bg-sky-700 disabled:opacity-50"
+                className="rounded-lg bg-brand-gradient text-white text-sm font-medium px-4 py-2 hover:opacity-95 disabled:opacity-50"
               >
                 {commitMut.isPending ? "Importing…" : "Confirm import (valid rows only)"}
               </button>
@@ -373,12 +373,12 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                 type="button"
                 disabled={busy}
                 onClick={() => cancelMut.mutate(preview.importId)}
-                className="rounded-lg border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-lg border border-border text-ink text-sm font-medium px-4 py-2 hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancel
               </button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-ink-muted">
               Rows without a date in the file use the period end as trip date. Only rows with a matched driver and a
               gross, net, or TVT amount are written. Transfer commission uses TVT when the column is present, otherwise
               net; cash commission uses daily cash when present. Totals roll into pending driver payments for the period
@@ -396,27 +396,27 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
           preview ? (
             <div className="space-y-2">
               <p>
-                <span className="text-slate-500">File:</span>{" "}
-                <span className="font-medium text-slate-900">{preview.fileName}</span>
+                <span className="text-ink-muted">File:</span>{" "}
+                <span className="font-medium text-ink">{preview.fileName}</span>
               </p>
               <p>
-                <span className="text-slate-500">Provider:</span>{" "}
-                <span className="font-medium text-slate-900">{providerLabel(selectedPlatform)}</span>
+                <span className="text-ink-muted">Provider:</span>{" "}
+                <span className="font-medium text-ink">{providerLabel(selectedPlatform)}</span>
               </p>
               <p>
-                <span className="text-slate-500">Pay period:</span>{" "}
-                <span className="font-medium text-slate-900">
+                <span className="text-ink-muted">Pay period:</span>{" "}
+                <span className="font-medium text-ink">
                   {periodStart} → {periodEnd}
                 </span>
               </p>
               <p>
-                <span className="text-slate-500">Rows:</span>{" "}
-                <span className="font-medium tabular-nums text-slate-900">{preview.totalRows.toLocaleString()}</span>
+                <span className="text-ink-muted">Rows:</span>{" "}
+                <span className="font-medium tabular-nums text-ink">{preview.totalRows.toLocaleString()}</span>
               </p>
               {preview.aggregates != null && (
                 <p>
-                  <span className="text-slate-500">Valid rows (estimate):</span>{" "}
-                  <span className="font-semibold tabular-nums text-sky-800">
+                  <span className="text-ink-muted">Valid rows (estimate):</span>{" "}
+                  <span className="font-semibold tabular-nums text-brand">
                     {(preview.aggregates.valid ?? 0).toLocaleString()}
                   </span>
                 </p>
@@ -452,7 +452,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
         description={
           <p>
             You have a staged import preview. Leaving will{" "}
-            <span className="font-medium text-slate-800">delete it on the server</span> and you will need to upload the
+            <span className="font-medium text-ink">delete it on the server</span> and you will need to upload the
             file again.
           </p>
         }

@@ -201,8 +201,8 @@ export function EditDriverPage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-slate-600">Missing driver ID.</p>
-        <Link to="/drivers" className="ml-2 text-sky-600 hover:underline">
+        <p className="text-ink-muted">Missing driver ID.</p>
+        <Link to="/drivers" className="ml-2 text-brand hover:underline">
           Back to drivers
         </Link>
       </div>
@@ -214,7 +214,7 @@ export function EditDriverPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-600">Loading driver...</p>
+          <p className="text-sm text-ink-muted">Loading driver...</p>
         </div>
       </div>
     );
@@ -225,7 +225,7 @@ export function EditDriverPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
           <p className="text-red-600">Failed to load driver.</p>
-          <Link to="/drivers" className="mt-3 inline-block text-sm text-sky-600 hover:underline">
+          <Link to="/drivers" className="mt-3 inline-block text-sm text-brand hover:underline">
             Back to drivers
           </Link>
         </div>
@@ -238,7 +238,7 @@ export function EditDriverPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
           <p className="text-green-600 font-medium">Driver updated successfully.</p>
-          <p className="text-sm text-slate-500 mt-1">Redirecting to drivers list...</p>
+          <p className="text-sm text-ink-muted mt-1">Redirecting to drivers list...</p>
         </div>
       </div>
     );
@@ -246,12 +246,12 @@ export function EditDriverPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-wrap gap-2">
+      <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Edit Driver</h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-mono">ID: {id}</p>
+          <h1 className="text-xl font-semibold text-ink">Edit Driver</h1>
+          <p className="text-xs text-ink-muted mt-0.5 font-mono">ID: {id}</p>
         </div>
-        <Link to="/drivers" className="text-sm text-slate-600 hover:text-slate-900">
+        <Link to="/drivers" className="text-sm text-ink-muted hover:text-ink">
           ← Back to drivers
         </Link>
       </header>
@@ -259,61 +259,61 @@ export function EditDriverPage() {
       <main className="p-6 max-w-4xl mx-auto">
         <form onSubmit={onSubmit} className="bg-white shadow-sm rounded-xl p-6 space-y-6">
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Personal info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Personal info</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">First name *</label>
+                <label className="block text-sm font-medium text-ink mb-1">First name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.firstName}
                   onChange={(e) => update("firstName", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Last name *</label>
+                <label className="block text-sm font-medium text-ink mb-1">Last name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.lastName}
                   onChange={(e) => update("lastName", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-ink mb-1">Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.email ?? ""}
                   onChange={(e) => update("email", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-ink mb-1">Phone *</label>
                 <input
                   type="tel"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.phone}
                   onChange={(e) => update("phone", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date of birth</label>
+                <label className="block text-sm font-medium text-ink mb-1">Date of birth</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.dateOfBirth ?? ""}
                   onChange={(e) => update("dateOfBirth", e.target.value)}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-ink mb-1">Address</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.address ?? ""}
                   onChange={(e) => update("address", e.target.value)}
                 />
@@ -322,31 +322,31 @@ export function EditDriverPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">License info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">License info</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">License number</label>
+                <label className="block text-sm font-medium text-ink mb-1">License number</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.licenseNumber ?? ""}
                   onChange={(e) => update("licenseNumber", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">License expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">License expiry</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.licenseExpiry ?? ""}
                   onChange={(e) => update("licenseExpiry", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">License class</label>
+                <label className="block text-sm font-medium text-ink mb-1">License class</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.licenseClass ?? ""}
                   onChange={(e) => update("licenseClass", e.target.value)}
                 />
@@ -355,21 +355,21 @@ export function EditDriverPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Employment</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Employment</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Hire date</label>
+                <label className="block text-sm font-medium text-ink mb-1">Hire date</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.hireDate ?? ""}
                   onChange={(e) => update("hireDate", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-ink mb-1">Status</label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.employmentStatus ?? "active"}
                   onChange={(e) => update("employmentStatus", e.target.value as "active" | "suspended" | "terminated")}
                 >
@@ -381,9 +381,9 @@ export function EditDriverPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Subcontractor (optional)</label>
+                <label className="block text-sm font-medium text-ink mb-1">Subcontractor (optional)</label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.subcontractorId ?? ""}
                   onChange={(e) => update("subcontractorId", e.target.value)}
                 >
@@ -396,7 +396,7 @@ export function EditDriverPage() {
                       </option>
                     ))}
                 </select>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-ink-muted">
                   Sub-managed: commission split from subcontractor record; vehicle rent billed to subcontractor.
                 </p>
               </div>
@@ -404,7 +404,7 @@ export function EditDriverPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Commission</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Commission</h2>
             <CommissionInput
               commissionType={form.commissionType ?? "percentage"}
               commissionRate={form.commissionRate ?? 10}
@@ -422,59 +422,59 @@ export function EditDriverPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Platform IDs</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Platform IDs</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.uberDriverId ?? ""}
                   onChange={(e) => update("uberDriverId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.boltDriverId ?? ""}
                   onChange={(e) => update("boltDriverId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.glovoCourierId ?? ""}
                   onChange={(e) => update("glovoCourierId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.boltCourierId ?? ""}
                   onChange={(e) => update("boltCourierId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.woltCourierId ?? ""}
                   onChange={(e) => update("woltCourierId", e.target.value)}
                 />
@@ -483,10 +483,10 @@ export function EditDriverPage() {
           </section>
 
           <section>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
             <textarea
               rows={3}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.notes ?? ""}
               onChange={(e) => update("notes", e.target.value)}
             />
@@ -503,7 +503,7 @@ export function EditDriverPage() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="inline-flex items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
             >
               {mutation.isPending ? (
                 <>
@@ -516,7 +516,7 @@ export function EditDriverPage() {
             </button>
             <Link
               to="/drivers"
-              className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50"
             >
               Cancel
             </Link>
@@ -525,14 +525,14 @@ export function EditDriverPage() {
 
         {id && (
           <section className="mt-8 bg-white shadow-sm rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Documents</h2>
+            <h2 className="text-lg font-semibold text-ink mb-4">Documents</h2>
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-slate-700 mb-2">Upload document</h3>
+                <h3 className="text-sm font-medium text-ink mb-2">Upload document</h3>
                 <DocumentUpload driverId={id} />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-slate-700 mb-2">Uploaded documents</h3>
+                <h3 className="text-sm font-medium text-ink mb-2">Uploaded documents</h3>
                 <DocumentList driverId={id} />
               </div>
             </div>

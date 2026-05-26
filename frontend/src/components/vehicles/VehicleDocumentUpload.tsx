@@ -119,9 +119,9 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Document type</label>
+          <label className="block text-sm font-medium text-ink mb-1">Document type</label>
           <select
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             value={documentType}
             onChange={(e) => setDocumentType(e.target.value as VehicleDocumentType)}
           >
@@ -133,34 +133,34 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-ink mb-1">
             Document number <span className="text-slate-400">(optional)</span>
           </label>
           <input
             type="text"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             value={documentNumber}
             onChange={(e) => setDocumentNumber(e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-ink mb-1">
             Issue date <span className="text-slate-400">(optional)</span>
           </label>
           <input
             type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             value={issueDate}
             onChange={(e) => setIssueDate(e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="block text-sm font-medium text-ink mb-1">
             Expiry date <span className="text-slate-400">(optional)</span>
           </label>
           <input
             type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
           />
@@ -168,12 +168,12 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="block text-sm font-medium text-ink mb-1">
           Notes <span className="text-slate-400">(optional)</span>
         </label>
         <textarea
           rows={2}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
@@ -181,7 +181,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
 
       <div
         className={`mt-2 flex flex-col items-center justify-center border-2 border-dashed rounded-xl px-4 py-6 text-center ${
-          dragOver ? "border-sky-400 bg-sky-50/50" : "border-slate-300 bg-slate-50/40"
+          dragOver ? "border-sky-400 bg-brand-mint/50" : "border-border bg-slate-50/40"
         }`}
         onDragOver={(e) => {
           e.preventDefault();
@@ -202,19 +202,19 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
           accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/jpg,image/png"
           onChange={onFileInputChange}
         />
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-ink">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="font-medium text-sky-600 hover:text-sky-800"
+            className="font-medium text-brand hover:text-brand-dark"
           >
             Click to upload
           </button>{" "}
           or drag and drop
         </p>
-        <p className="text-xs text-slate-500 mt-1">PDF, JPG, PNG up to 10MB</p>
+        <p className="text-xs text-ink-muted mt-1">PDF, JPG, PNG up to 10MB</p>
         {selectedFile && (
-          <p className="mt-3 text-xs text-slate-600">
+          <p className="mt-3 text-xs text-ink-muted">
             Selected: <span className="font-medium">{selectedFile.name}</span>
           </p>
         )}
@@ -224,11 +224,11 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
         <div className="mt-2">
           <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-sky-500 transition-all"
+              className="h-full bg-brand-mint0 transition-all"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
-          <p className="mt-1 text-xs text-slate-500">Uploading... {uploadProgress}%</p>
+          <p className="mt-1 text-xs text-ink-muted">Uploading... {uploadProgress}%</p>
         </div>
       )}
 
@@ -246,7 +246,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="inline-flex items-center rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
         >
           {mutation.isPending ? "Uploading..." : "Upload document"}
         </button>

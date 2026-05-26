@@ -19,56 +19,56 @@ export function VehicleDocumentDetail({ document }: VehicleDocumentDetailProps) 
   return (
     <div className="space-y-4 text-sm">
       <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-1">Document</h3>
+        <h3 className="text-sm font-semibold text-ink mb-1">Document</h3>
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <dt className="text-slate-500">Type</dt>
+            <dt className="text-ink-muted">Type</dt>
             <dd className="font-medium">{label}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Number</dt>
+            <dt className="text-ink-muted">Number</dt>
             <dd className="font-mono text-xs">{document.document_number || "—"}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Issue date</dt>
+            <dt className="text-ink-muted">Issue date</dt>
             <dd>{formatDate(document.issue_date)}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Expiry date</dt>
+            <dt className="text-ink-muted">Expiry date</dt>
             <dd>{formatDate(document.expiry_date)}</dd>
           </div>
         </dl>
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-1">File</h3>
+        <h3 className="text-sm font-semibold text-ink mb-1">File</h3>
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <dt className="text-slate-500">Name</dt>
+            <dt className="text-ink-muted">Name</dt>
             <dd>{document.file_name ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Path</dt>
+            <dt className="text-ink-muted">Path</dt>
             <dd className="font-mono text-xs break-all">{document.file_path ?? "—"}</dd>
           </div>
         </dl>
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-slate-800 mb-1">Status</h3>
+        <h3 className="text-sm font-semibold text-ink mb-1">Status</h3>
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <dt className="text-slate-500">Verified</dt>
+            <dt className="text-ink-muted">Verified</dt>
             <dd>{document.is_verified ? "Yes" : "No"}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Verified at</dt>
+            <dt className="text-ink-muted">Verified at</dt>
             <dd>{formatDate(document.verified_at)}</dd>
           </div>
         </dl>
       </div>
       {document.notes && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 mb-1">Notes</h3>
-          <p className="text-slate-700 whitespace-pre-wrap">{document.notes}</p>
+          <h3 className="text-sm font-semibold text-ink mb-1">Notes</h3>
+          <p className="text-ink whitespace-pre-wrap">{document.notes}</p>
         </div>
       )}
     </div>

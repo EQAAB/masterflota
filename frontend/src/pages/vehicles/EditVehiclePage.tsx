@@ -142,8 +142,8 @@ export function EditVehiclePage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-slate-600">Missing vehicle ID.</p>
-        <Link to="/vehicles" className="ml-2 text-sky-600 hover:underline">Back to vehicles</Link>
+        <p className="text-ink-muted">Missing vehicle ID.</p>
+        <Link to="/vehicles" className="ml-2 text-brand hover:underline">Back to vehicles</Link>
       </div>
     );
   }
@@ -153,7 +153,7 @@ export function EditVehiclePage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-600">Loading vehicle...</p>
+          <p className="text-sm text-ink-muted">Loading vehicle...</p>
         </div>
       </div>
     );
@@ -164,7 +164,7 @@ export function EditVehiclePage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
           <p className="text-red-600">Failed to load vehicle.</p>
-          <Link to="/vehicles" className="mt-3 inline-block text-sm text-sky-600 hover:underline">
+          <Link to="/vehicles" className="mt-3 inline-block text-sm text-brand hover:underline">
             Back to vehicles
           </Link>
         </div>
@@ -177,7 +177,7 @@ export function EditVehiclePage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
           <p className="text-green-600 font-medium">Vehicle updated successfully.</p>
-          <p className="text-sm text-slate-500 mt-1">Redirecting to vehicles list...</p>
+          <p className="text-sm text-ink-muted mt-1">Redirecting to vehicles list...</p>
         </div>
       </div>
     );
@@ -185,9 +185,9 @@ export function EditVehiclePage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Edit Vehicle</h1>
-        <Link to={`/vehicles/${id}`} className="text-sm text-slate-600 hover:text-slate-900">
+      <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-ink">Edit Vehicle</h1>
+        <Link to={`/vehicles/${id}`} className="text-sm text-ink-muted hover:text-ink">
           ← Back to vehicle
         </Link>
       </header>
@@ -199,45 +199,45 @@ export function EditVehiclePage() {
           )}
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Basic info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Basic info</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle type *</label>
+                <label className="block text-sm font-medium text-ink mb-1">Vehicle type *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.vehicleType}
                   onChange={(e) => update("vehicleType", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Make *</label>
+                <label className="block text-sm font-medium text-ink mb-1">Make *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.make}
                   onChange={(e) => update("make", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Model *</label>
+                <label className="block text-sm font-medium text-ink mb-1">Model *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.model}
                   onChange={(e) => update("model", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Year</label>
+                <label className="block text-sm font-medium text-ink mb-1">Year</label>
                 <input
                   type="number"
                   min={1900}
                   max={2100}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.year ?? ""}
                   onChange={(e) =>
                     update("year", e.target.value ? parseInt(e.target.value, 10) : undefined)
@@ -245,37 +245,37 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                <label className="block text-sm font-medium text-ink mb-1">Color</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.color ?? ""}
                   onChange={(e) => update("color", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">License plate *</label>
+                <label className="block text-sm font-medium text-ink mb-1">License plate *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand font-mono"
                   value={form.licensePlate}
                   onChange={(e) => update("licensePlate", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">VIN</label>
+                <label className="block text-sm font-medium text-ink mb-1">VIN</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.vin ?? ""}
                   onChange={(e) => update("vin", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Current driver</label>
+                <label className="block text-sm font-medium text-ink mb-1">Current driver</label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.currentDriverId}
                   onChange={(e) => update("currentDriverId", e.target.value)}
                 >
@@ -288,29 +288,29 @@ export function EditVehiclePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Fuel type</label>
+                <label className="block text-sm font-medium text-ink mb-1">Fuel type</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.fuelType ?? ""}
                   onChange={(e) => update("fuelType", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Transmission</label>
+                <label className="block text-sm font-medium text-ink mb-1">Transmission</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.transmission ?? ""}
                   onChange={(e) => update("transmission", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Seating capacity</label>
+                <label className="block text-sm font-medium text-ink mb-1">Seating capacity</label>
                 <input
                   type="number"
                   min={1}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.seatingCapacity ?? ""}
                   onChange={(e) =>
                     update(
@@ -324,39 +324,39 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Rental rates (RON)</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Rental rates (RON)</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Daily rent</label>
+                <label className="block text-sm font-medium text-ink mb-1">Daily rent</label>
                 <input
                   type="number"
                   min={0}
                   step={0.01}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.dailyRent ?? 0}
                   onChange={(e) => update("dailyRent", parseFloat(e.target.value) || 0)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1" title="Deducted from each weekly driver payout while this vehicle is assigned to the driver.">
+                <label className="block text-sm font-medium text-ink mb-1" title="Deducted from each weekly driver payout while this vehicle is assigned to the driver.">
                   Weekly rent (payroll deduction)
                 </label>
                 <input
                   type="number"
                   min={0}
                   step={0.01}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.weeklyRent ?? 0}
                   onChange={(e) => update("weeklyRent", parseFloat(e.target.value) || 0)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Monthly rent</label>
+                <label className="block text-sm font-medium text-ink mb-1">Monthly rent</label>
                 <input
                   type="number"
                   min={0}
                   step={0.01}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.monthlyRent ?? 0}
                   onChange={(e) => update("monthlyRent", parseFloat(e.target.value) || 0)}
                 />
@@ -365,30 +365,30 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">Dates & status</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">Dates & status</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Insurance expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">Insurance expiry</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.insuranceExpiry ?? ""}
                   onChange={(e) => update("insuranceExpiry", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Registration expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">Registration expiry</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.registrationExpiry ?? ""}
                   onChange={(e) => update("registrationExpiry", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-ink mb-1">Status</label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.status}
                   onChange={(e) => update("status", e.target.value)}
                 >
@@ -403,10 +403,10 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
             <textarea
               rows={3}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.notes ?? ""}
               onChange={(e) => update("notes", e.target.value)}
             />
@@ -416,13 +416,13 @@ export function EditVehiclePage() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+              className="rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
             >
               {mutation.isPending ? "Saving..." : "Save changes"}
             </button>
             <Link
               to={`/vehicles/${id}`}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50"
             >
               Cancel
             </Link>

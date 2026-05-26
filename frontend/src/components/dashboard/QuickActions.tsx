@@ -14,7 +14,7 @@ export function QuickActions({ actions }: { actions: QuickActionItem[] }) {
           <Link
             key={action.label}
             to={action.to}
-            className="inline-flex items-center rounded-md bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
+            className="inline-flex items-center rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
           >
             {action.label}
           </Link>
@@ -23,7 +23,7 @@ export function QuickActions({ actions }: { actions: QuickActionItem[] }) {
             key={action.label}
             type="button"
             onClick={action.onClick ?? (() => {})}
-            className="inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
           >
             {action.label}
           </button>

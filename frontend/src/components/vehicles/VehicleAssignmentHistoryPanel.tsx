@@ -131,12 +131,12 @@ export function VehicleAssignmentHistoryPanel({
   return (
     <section className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
         <button
           type="button"
           onClick={() => void exportCsv()}
           disabled={csvBusy || items.length === 0}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
         >
           {csvBusy ? "Exporting…" : "Export CSV"}
         </button>
@@ -144,29 +144,29 @@ export function VehicleAssignmentHistoryPanel({
 
       <div className="flex flex-wrap gap-3 mb-4 text-sm">
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500">From</span>
+          <span className="text-xs text-ink-muted">From</span>
           <input
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1"
+            className="rounded-md border border-border px-2 py-1"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500">To</span>
+          <span className="text-xs text-ink-muted">To</span>
           <input
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1"
+            className="rounded-md border border-border px-2 py-1"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-slate-500">Status</span>
+          <span className="text-xs text-ink-muted">Status</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as AssignmentHistoryStatus)}
-            className="rounded-md border border-slate-300 px-2 py-1"
+            className="rounded-md border border-border px-2 py-1"
           >
             <option value="all">All</option>
             <option value="active">Active</option>
@@ -174,30 +174,30 @@ export function VehicleAssignmentHistoryPanel({
           </select>
         </label>
         <label className="flex flex-col gap-1 min-w-[12rem] flex-1">
-          <span className="text-xs text-slate-500">Search</span>
+          <span className="text-xs text-ink-muted">Search</span>
           <input
             type="search"
             placeholder={mode === "driver" ? "Plate, make, model…" : "Driver name, phone…"}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1 w-full"
+            className="rounded-md border border-border px-2 py-1 w-full"
           />
         </label>
       </div>
 
-      {query.isLoading && <p className="text-sm text-slate-500">Loading history…</p>}
+      {query.isLoading && <p className="text-sm text-ink-muted">Loading history…</p>}
       {query.isError && (
         <p className="text-sm text-red-600">Failed to load assignment history.</p>
       )}
       {!query.isLoading && !query.isError && items.length === 0 && (
-        <p className="text-sm text-slate-500">No assignment history yet.</p>
+        <p className="text-sm text-ink-muted">No assignment history yet.</p>
       )}
 
       {items.length > 0 && (
         <div className="overflow-x-auto -mx-2">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+              <tr className="border-b border-border text-left text-xs text-ink-muted">
                 {mode === "driver" ? (
                   <>
                     <th className="px-2 py-2 font-medium">Vehicle</th>
@@ -222,13 +222,13 @@ export function VehicleAssignmentHistoryPanel({
             </thead>
             <tbody>
               {items.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100">
+                <tr key={row.id} className="border-b border-border">
                   {mode === "driver" ? (
                     <>
                       <td className="px-2 py-2">
                         <Link
                           to={`/vehicles/${row.vehicle_id}`}
-                          className="text-sky-600 hover:underline"
+                          className="text-brand hover:underline"
                         >
                           {row.vehicle_name?.trim() ||
                             `${row.make ?? ""} ${row.model ?? ""}`.trim() ||
@@ -242,7 +242,7 @@ export function VehicleAssignmentHistoryPanel({
                       <td className="px-2 py-2">
                         <Link
                           to={`/drivers/${row.driver_id}`}
-                          className="text-sky-600 hover:underline"
+                          className="text-brand hover:underline"
                         >
                           {row.driver_name || "Driver"}
                         </Link>
@@ -269,14 +269,14 @@ export function VehicleAssignmentHistoryPanel({
                   <td className="px-2 py-2 text-right tabular-nums">
                     {formatCurrency(Number(row.total_rent_paid ?? 0))}
                   </td>
-                  <td className="px-2 py-2 max-w-[10rem] truncate text-slate-600" title={row.notes ?? undefined}>
+                  <td className="px-2 py-2 max-w-[10rem] truncate text-ink-muted" title={row.notes ?? undefined}>
                     {row.notes || "—"}
                   </td>
                   {mode === "driver" && (
                     <td className="px-2 py-2 whitespace-nowrap">
                       <Link
                         to={payoutPeriodLink(row)}
-                        className="text-xs text-sky-600 hover:underline"
+                        className="text-xs text-brand hover:underline"
                       >
                         View payouts
                       </Link>

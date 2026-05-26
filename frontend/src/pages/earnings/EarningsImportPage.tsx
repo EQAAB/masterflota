@@ -230,14 +230,14 @@ export function EarningsImportPage() {
     Boolean(periodStart && periodEnd && periodStart <= periodEnd && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform));
 
   if (user?.role !== "admin" && user?.role !== "accountant") {
-    return <p className="p-6 text-slate-600">You do not have access to earnings import.</p>;
+    return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
   }
 
   return (
     <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-900">Import earnings</h1>
-        <p className="text-sm text-slate-500 mt-1">
+      <header className="shrink-0 border-b border-border bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4">
+        <h1 className="text-lg font-semibold text-ink">Import earnings</h1>
+        <p className="text-sm text-ink-muted mt-1">
           Drag a file onto the zone or browse. CSV, XLSX, ZIP, XML, or PDF.
         </p>
       </header>
@@ -282,7 +282,7 @@ export function EarningsImportPage() {
               </label>
               <select
                 id="glovo-commission-base"
-                className="rounded-lg border border-amber-300/80 bg-white px-3 py-2 text-sm text-slate-900 min-h-[40px] max-w-md disabled:opacity-60"
+                className="rounded-lg border border-amber-300/80 bg-white px-3 py-2 text-sm text-ink min-h-[40px] max-w-md disabled:opacity-60"
                 value={glovoCommissionBaseType}
                 disabled={busy || patchOrgImportSettingsMut.isPending || user?.role !== "admin"}
                 onChange={(e) => {
@@ -318,7 +318,7 @@ export function EarningsImportPage() {
             onDrop={onDrop}
             className={`
               rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors cursor-pointer
-              ${dragActive ? "border-sky-500 bg-sky-50/80" : "border-slate-300 bg-white/60 hover:border-slate-400"}
+              ${dragActive ? "border-sky-500 bg-brand-mint/80" : "border-border bg-white/60 hover:border-slate-400"}
               shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-sm
             `}
             role="button"
@@ -339,14 +339,14 @@ export function EarningsImportPage() {
                 handleFile(f);
               }}
             />
-            <p className="text-slate-700 font-medium">Drop file here or click to browse</p>
-            <p className="text-xs text-slate-500 mt-2">Max size per server limits (earnings uploads)</p>
+            <p className="text-ink font-medium">Drop file here or click to browse</p>
+            <p className="text-xs text-ink-muted mt-2">Max size per server limits (earnings uploads)</p>
             {previewMut.isPending && (
               <div className="mt-4 max-w-xs mx-auto">
                 <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-                  <div className="h-full w-1/2 bg-sky-500 rounded-full animate-pulse" style={{ width: "40%" }} />
+                  <div className="h-full w-1/2 bg-brand-mint0 rounded-full animate-pulse" style={{ width: "40%" }} />
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Parsing…</p>
+                <p className="text-xs text-ink-muted mt-2">Parsing…</p>
               </div>
             )}
           </div>
@@ -354,17 +354,17 @@ export function EarningsImportPage() {
 
         {preview && (
           <div className="rounded-2xl border border-white/30 bg-white/70 backdrop-blur-md shadow-lg p-4 sm:p-6 space-y-4">
-            <div className="text-sm text-slate-700">
-              <span className="text-slate-500">Detected:</span>{" "}
-              <span className="font-medium text-slate-900">
+            <div className="text-sm text-ink">
+              <span className="text-ink-muted">Detected:</span>{" "}
+              <span className="font-medium text-ink">
                 {providerLabel(preview.platform)}
                 {confidencePct != null ? ` (${confidencePct}%)` : ""}
               </span>
             </div>
             {preview.platform === "glovo" && (
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-ink-muted">
                 Fleet commission calculated on:{" "}
-                <span className="font-mono text-slate-800">
+                <span className="font-mono text-ink">
                   {preview.glovoCommissionBaseType ?? "net_income"}
                 </span>
                 . Cancel this preview, change the Glovo commission base above, then upload again to use a different
@@ -374,12 +374,12 @@ export function EarningsImportPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="import-provider" className="block text-xs font-medium text-slate-700 mb-1">
+                <label htmlFor="import-provider" className="block text-xs font-medium text-ink mb-1">
                   Provider
                 </label>
                 <select
                   id="import-provider"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[44px]"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
                   value={selectedPlatform}
                   disabled={busy}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
@@ -393,26 +393,26 @@ export function EarningsImportPage() {
               </div>
               <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="import-start" className="block text-xs font-medium text-slate-700 mb-1">
+                  <label htmlFor="import-start" className="block text-xs font-medium text-ink mb-1">
                     Period start
                   </label>
                   <input
                     id="import-start"
                     type="date"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[44px]"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
                     value={periodStart}
                     disabled={busy}
                     onChange={(e) => setPeriodStart(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label htmlFor="import-end" className="block text-xs font-medium text-slate-700 mb-1">
+                  <label htmlFor="import-end" className="block text-xs font-medium text-ink mb-1">
                     Period end
                   </label>
                   <input
                     id="import-end"
                     type="date"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[44px]"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[44px]"
                     value={periodEnd}
                     disabled={busy}
                     onChange={(e) => setPeriodEnd(e.target.value)}
@@ -421,23 +421,23 @@ export function EarningsImportPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+            <div className="flex flex-wrap gap-4 text-sm text-ink-muted">
               <div>
-                <span className="text-slate-500">File</span>{" "}
-                <span className="font-medium text-slate-900">{preview.fileName}</span>
+                <span className="text-ink-muted">File</span>{" "}
+                <span className="font-medium text-ink">{preview.fileName}</span>
               </div>
               <div>
-                <span className="text-slate-500">Rows</span>{" "}
-                <span className="font-medium text-slate-900">{preview.totalRows.toLocaleString()}</span>
+                <span className="text-ink-muted">Rows</span>{" "}
+                <span className="font-medium text-ink">{preview.totalRows.toLocaleString()}</span>
                 {clientCsvRowCount != null && (
-                  <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
+                  <span className="block text-[11px] font-normal text-ink-muted mt-0.5">
                     CSV scan: ~{clientCsvRowCount.toLocaleString()} data rows (Papa Parse)
                   </span>
                 )}
               </div>
               <div>
-                <span className="text-slate-500">Match</span>{" "}
-                <span className="font-medium text-sky-700">
+                <span className="text-ink-muted">Match</span>{" "}
+                <span className="font-medium text-brand">
                   {(preview.matchRate * 100).toFixed(1)}%
                 </span>
               </div>
@@ -465,7 +465,7 @@ export function EarningsImportPage() {
             )}
 
             <div>
-              <p className="text-xs font-semibold text-slate-700 mb-2">
+              <p className="text-xs font-semibold text-ink mb-2">
                 Full data preview ({preview.totalRows.toLocaleString()} rows)
               </p>
               <EarningsImportPreviewVirtualTable
@@ -481,7 +481,7 @@ export function EarningsImportPage() {
                 type="button"
                 disabled={busy || !periodValid}
                 onClick={() => setCommitImportOpen(true)}
-                className="rounded-lg bg-sky-600 text-white text-sm font-medium px-4 py-2.5 min-h-[44px] hover:bg-sky-700 disabled:opacity-50"
+                className="rounded-lg bg-brand-gradient text-white text-sm font-medium px-4 py-2.5 min-h-[44px] hover:opacity-95 disabled:opacity-50"
               >
                 {commitMut.isPending ? "Importing…" : "Confirm import (valid rows only)"}
               </button>
@@ -489,7 +489,7 @@ export function EarningsImportPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => cancelMut.mutate(preview.importId)}
-                className="rounded-lg border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2.5 min-h-[44px] hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-lg border border-border text-ink text-sm font-medium px-4 py-2.5 min-h-[44px] hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancel preview
               </button>
@@ -499,22 +499,22 @@ export function EarningsImportPage() {
 
         <section>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-sm font-semibold text-slate-800">Recent imports</h2>
+            <h2 className="text-sm font-semibold text-ink">Recent imports</h2>
             <button
               type="button"
               disabled={busy}
               onClick={() => syncMut.mutate()}
-              className="rounded-lg border border-slate-300 bg-white/80 text-slate-700 text-xs font-medium px-3 py-2 min-h-[36px] hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-lg border border-border bg-white/80 text-ink text-xs font-medium px-3 py-2 min-h-[36px] hover:bg-slate-50 disabled:opacity-50"
             >
               {syncMut.isPending ? "Re-syncing…" : "Re-sync vehicle rentals"}
             </button>
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/60 backdrop-blur-sm shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-border/80 bg-white/60 backdrop-blur-sm shadow-sm">
             {importsQuery.isLoading ? (
-              <p className="p-4 text-sm text-slate-500">Loading…</p>
+              <p className="p-4 text-sm text-ink-muted">Loading…</p>
             ) : (
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
+                <thead className="bg-slate-50 text-ink-muted text-xs uppercase tracking-wide">
                   <tr>
                     <th className="px-3 py-2">File</th>
                     <th className="px-3 py-2">Platform</th>
@@ -524,9 +524,9 @@ export function EarningsImportPage() {
                     <th className="px-3 py-2">Created</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {(importsQuery.data?.items ?? []).map((row) => (
-                    <tr key={row.id} className="text-slate-800">
+                    <tr key={row.id} className="text-ink">
                       <td className="px-3 py-2 max-w-[180px] truncate">{row.file_name ?? "—"}</td>
                       <td className="px-3 py-2">{row.platform}</td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs">
@@ -539,14 +539,14 @@ export function EarningsImportPage() {
                               ? "bg-emerald-100 text-emerald-800"
                               : row.status === "preview"
                                 ? "bg-amber-100 text-amber-800"
-                                : "bg-slate-100 text-slate-700"
+                                : "bg-slate-100 text-ink"
                           }`}
                         >
                           {row.status}
                         </span>
                       </td>
                       <td className="px-3 py-2">{row.record_count ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
+                      <td className="px-3 py-2 text-xs text-ink-muted whitespace-nowrap">
                         {row.created_at?.slice(0, 19).replace("T", " ")}
                       </td>
                     </tr>
@@ -566,27 +566,27 @@ export function EarningsImportPage() {
           preview ? (
             <div className="space-y-2">
               <p>
-                <span className="text-slate-500">File:</span>{" "}
-                <span className="font-medium text-slate-900">{preview.fileName}</span>
+                <span className="text-ink-muted">File:</span>{" "}
+                <span className="font-medium text-ink">{preview.fileName}</span>
               </p>
               <p>
-                <span className="text-slate-500">Provider:</span>{" "}
-                <span className="font-medium text-slate-900">{providerLabel(selectedPlatform)}</span>
+                <span className="text-ink-muted">Provider:</span>{" "}
+                <span className="font-medium text-ink">{providerLabel(selectedPlatform)}</span>
               </p>
               <p>
-                <span className="text-slate-500">Pay period:</span>{" "}
-                <span className="font-medium text-slate-900">
+                <span className="text-ink-muted">Pay period:</span>{" "}
+                <span className="font-medium text-ink">
                   {periodStart} → {periodEnd}
                 </span>
               </p>
               <p>
-                <span className="text-slate-500">Rows in file:</span>{" "}
-                <span className="font-medium tabular-nums text-slate-900">{preview.totalRows.toLocaleString()}</span>
+                <span className="text-ink-muted">Rows in file:</span>{" "}
+                <span className="font-medium tabular-nums text-ink">{preview.totalRows.toLocaleString()}</span>
               </p>
               {preview.aggregates != null && (
                 <p>
-                  <span className="text-slate-500">Estimated valid rows to insert:</span>{" "}
-                  <span className="font-semibold tabular-nums text-sky-800">
+                  <span className="text-ink-muted">Estimated valid rows to insert:</span>{" "}
+                  <span className="font-semibold tabular-nums text-brand">
                     {(preview.aggregates.valid ?? 0).toLocaleString()}
                   </span>
                   {typeof preview.aggregates.debtRows === "number" && preview.aggregates.debtRows > 0 && (
@@ -602,7 +602,7 @@ export function EarningsImportPage() {
                   {debtSummaryLine}
                 </p>
               )}
-              <p className="text-xs text-slate-500 pt-1">
+              <p className="text-xs text-ink-muted pt-1">
                 Only rows with a matched driver and money fields are written. This updates driver payout totals for the
                 selected period.
               </p>
@@ -633,7 +633,7 @@ export function EarningsImportPage() {
         description={
           <p>
             You have a staged import preview. Leaving will{" "}
-            <span className="font-medium text-slate-800">delete it on the server</span> and you will need to upload the
+            <span className="font-medium text-ink">delete it on the server</span> and you will need to upload the
             file again.
           </p>
         }

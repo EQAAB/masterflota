@@ -70,15 +70,15 @@ export function ConfirmDialog({
 
   const confirmClasses =
     confirmVariant === "danger"
-      ? "bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500/40"
-      : "bg-sky-600 text-white hover:bg-sky-700 focus-visible:ring-sky-500/40";
+      ? "bg-danger text-white hover:opacity-95 focus-visible:ring-danger/40"
+      : "bg-brand-gradient text-white hover:opacity-95 focus-visible:ring-brand/40";
 
   return (
     <div
       className={`fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center sm:p-6 ${rootClassName}`.trim()}
       role="presentation"
     >
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" aria-hidden />
+      <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -86,7 +86,7 @@ export function ConfirmDialog({
         aria-labelledby={titleId}
         aria-describedby={description || children ? descId : undefined}
         tabIndex={-1}
-        className="relative z-[101] w-full max-w-md rounded-2xl border border-white/60 bg-white/95 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md ring-1 ring-slate-900/[0.06] outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30 sm:p-6"
+        className="relative z-[101] w-full max-w-md rounded-card border border-border bg-white p-5 shadow-soft outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:p-6"
         onKeyDown={(e) => {
           if (e.key === "Tab" && panelRef.current) {
             const focusables = panelRef.current.querySelectorAll<HTMLElement>(
@@ -108,11 +108,11 @@ export function ConfirmDialog({
           }
         }}
       >
-        <h2 id={titleId} className="text-lg font-semibold text-slate-900">
+        <h2 id={titleId} className="text-lg font-semibold text-ink">
           {title}
         </h2>
         {(description || children) && (
-          <div id={descId} className="mt-2 space-y-3 text-sm text-slate-600">
+          <div id={descId} className="mt-2 space-y-3 text-sm text-ink-muted">
             {description && <div>{description}</div>}
             {children}
           </div>
@@ -122,7 +122,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isLoading}
             onClick={onClose}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-btn border border-border bg-white px-4 py-2.5 text-sm font-medium text-ink shadow-sm hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -130,7 +130,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isLoading}
             onClick={() => void handleConfirm()}
-            className={`inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${confirmClasses}`}
+            className={`inline-flex min-h-[44px] items-center justify-center rounded-btn px-4 py-2.5 text-sm font-semibold shadow-soft focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${confirmClasses}`}
           >
             {isLoading ? (
               <span className="inline-flex items-center gap-2">

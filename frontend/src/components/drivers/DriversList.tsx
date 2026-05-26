@@ -82,13 +82,13 @@ export function DriversList({
               placeholder="Search name, phone, ID, city…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full rounded-xl border border-white/50 bg-white/55 py-2.5 pl-10 text-sm text-slate-900 shadow-inner outline-none ring-sky-500/30 placeholder:text-slate-400 focus:border-sky-300/80 focus:ring-2 ${hasQuery ? "pr-[4.5rem]" : "pr-3"}`}
+              className={`w-full rounded-xl border border-white/50 bg-white/55 py-2.5 pl-10 text-sm text-ink shadow-inner outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand/30/80 focus:ring-2 ${hasQuery ? "pr-[4.5rem]" : "pr-3"}`}
             />
             {hasQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-slate-600 hover:bg-white/70 hover:text-slate-900 sm:text-sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-ink-muted hover:bg-white/70 hover:text-ink sm:text-sm"
               >
                 Clear
               </button>
@@ -96,17 +96,17 @@ export function DriversList({
           </div>
         </div>
         {!isLoading && !isError && totalCount > 0 && (
-          <p className="mt-2 text-xs text-slate-600 sm:text-sm">
+          <p className="mt-2 text-xs text-ink-muted sm:text-sm">
             {hasQuery && isFilterPending ? (
-              <span className="text-slate-500">Matching drivers…</span>
+              <span className="text-ink-muted">Matching drivers…</span>
             ) : debouncedQuery.trim() ? (
               <>
-                Found <span className="font-semibold tabular-nums text-slate-800">{filteredCount.toLocaleString()}</span>{" "}
+                Found <span className="font-semibold tabular-nums text-ink">{filteredCount.toLocaleString()}</span>{" "}
                 of <span className="tabular-nums">{totalCount.toLocaleString()}</span>
               </>
             ) : (
               <>
-                <span className="font-semibold tabular-nums text-slate-800">{totalCount.toLocaleString()}</span>{" "}
+                <span className="font-semibold tabular-nums text-ink">{totalCount.toLocaleString()}</span>{" "}
                 driver{totalCount === 1 ? "" : "s"}
               </>
             )}
@@ -117,35 +117,35 @@ export function DriversList({
       {isLoading && (
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <div
-            className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600"
+            className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-sky-600"
             role="status"
             aria-label="Loading drivers"
           />
-          <p className="text-sm text-slate-500">Loading drivers…</p>
+          <p className="text-sm text-ink-muted">Loading drivers…</p>
         </div>
       )}
 
       {isError && <p className="text-sm text-red-600">Failed to load drivers.</p>}
 
       {!isLoading && !isError && (
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-3 py-2 text-left font-medium text-slate-700 w-12">Photo</th>
+                <th className="px-3 py-2 text-left font-medium text-ink w-12">Photo</th>
                 <SortableTableHeader label="Name" {...getHeaderProps("last_name")} />
                 <SortableTableHeader label="Phone" {...getHeaderProps("phone")} />
                 <SortableTableHeader label="Status" {...getHeaderProps("employment_status")} />
                 <SortableTableHeader label="Subcontractor" {...getHeaderProps("subcontractor_id")} />
-                <th className="px-3 py-2 text-left font-medium text-slate-700">Commission</th>
+                <th className="px-3 py-2 text-left font-medium text-ink">Commission</th>
                 <SortableTableHeader label="Vehicle" {...getHeaderProps("current_vehicle_id")} />
-                <th className="px-3 py-2 text-left font-medium text-slate-700">Uber/Bolt</th>
-                <th className="px-3 py-2 text-left font-medium text-slate-700">Actions</th>
+                <th className="px-3 py-2 text-left font-medium text-ink">Uber/Bolt</th>
+                <th className="px-3 py-2 text-left font-medium text-ink">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredDrivers.map((driver) => (
-                <tr key={driver.id} className="border-t border-slate-100">
+                <tr key={driver.id} className="border-t border-border">
                   <td className="px-3 py-2">
                     <Link to={`/drivers/${driver.id}`} className="flex items-center gap-2">
                       <DriverAvatar
@@ -159,22 +159,22 @@ export function DriversList({
                   <td className="px-3 py-2">
                     <Link
                       to={`/drivers/${driver.id}`}
-                      className="font-medium text-sky-600 hover:text-sky-800"
+                      className="font-medium text-brand hover:text-brand-dark"
                     >
                       {driver.first_name} {driver.last_name}
                     </Link>
                   </td>
                   <td className="px-3 py-2">{driver.phone}</td>
                   <td className="px-3 py-2 capitalize">{driver.employment_status}</td>
-                  <td className="px-3 py-2 text-slate-600">
+                  <td className="px-3 py-2 text-ink-muted">
                     {driver.subcontractor_legal_name ?? "—"}
                   </td>
                   <td className="px-3 py-2">{driver.commission_rate}%</td>
-                  <td className="px-3 py-2 text-slate-600">
+                  <td className="px-3 py-2 text-ink-muted">
                     {driver.current_vehicle_id ? (
                       <Link
                         to={`/vehicles/${driver.current_vehicle_id}`}
-                        className="text-sky-600 hover:text-sky-800 text-sm"
+                        className="text-brand hover:text-brand-dark text-sm"
                       >
                         {driver.current_vehicle_make || driver.current_vehicle_model
                           ? `${driver.current_vehicle_make ?? ""} ${driver.current_vehicle_model ?? ""}`.trim()
@@ -184,7 +184,7 @@ export function DriversList({
                       "—"
                     )}
                   </td>
-                  <td className="px-3 py-2 text-xs text-slate-600">
+                  <td className="px-3 py-2 text-xs text-ink-muted">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]}: {driver.uber_driver_id || "-"} ·{" "}
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]}: {driver.bolt_driver_id || "-"} ·{" "}
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]}: {driver.glovo_courier_id || "-"} ·{" "}
@@ -194,7 +194,7 @@ export function DriversList({
                   <td className="px-3 py-2 flex items-center gap-3">
                     <Link
                       to={`/drivers/${driver.id}/edit`}
-                      className="text-sky-600 hover:text-sky-800 text-sm font-medium"
+                      className="text-brand hover:text-brand-dark text-sm font-medium"
                     >
                       Edit
                     </Link>
@@ -212,14 +212,14 @@ export function DriversList({
               ))}
               {showEmptyOrg && (
                 <tr>
-                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-ink-muted">
                     No drivers yet.
                   </td>
                 </tr>
               )}
               {showNoMatchEmpty && (
                 <tr>
-                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-slate-500">
+                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-ink-muted">
                     No drivers match your search. Try another name, phone number, or ID.
                   </td>
                 </tr>

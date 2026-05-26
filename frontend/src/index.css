@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-100 text-slate-900;
+:root {
+  --fm-surface: #f6f7fb;
+  --fm-brand-dark: #005f56;
+  --fm-brand: #0b7a6e;
+  --fm-brand-mint: #ddf5ee;
+  --fm-ink: #111827;
+  --fm-ink-muted: #6b7280;
+  --fm-border: #e5e7eb;
+  --fm-success: #22c55e;
+  --fm-warning: #f59e0b;
+  --fm-danger: #ef4444;
+  --fm-radius-card: 20px;
+  --fm-radius-btn: 14px;
+  --fm-radius-input: 12px;
+  --fm-shadow-soft: 0 10px 30px rgba(16, 24, 40, 0.06);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+  }
+}
+
+@layer components {
+  .fm-card {
+    @apply rounded-card border border-border bg-white shadow-soft transition-all duration-200 ease-out;
+  }
+
+  .fm-card-hover {
+    @apply fm-card hover:-translate-y-0.5 hover:shadow-soft-lg;
+  }
+
+  .fm-btn-primary {
+    @apply inline-flex items-center justify-center rounded-btn bg-brand-gradient px-4 py-2.5 text-sm font-medium text-white shadow-soft transition-all duration-200 ease-out hover:opacity-95 hover:shadow-soft-lg disabled:opacity-50;
+  }
+
+  .fm-input {
+    @apply w-full rounded-input border border-border bg-white px-3 py-2.5 text-sm text-ink shadow-sm outline-none placeholder:text-ink-muted focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
 }
