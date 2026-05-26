@@ -30,6 +30,14 @@ export interface VehicleListItem {
   driver_first_name?: string | null;
   driver_last_name?: string | null;
   driver_phone?: string | null;
+  driver_profile_photo_url?: string | null;
+  driver_bolt_driver_id?: string | null;
+  driver_glovo_courier_id?: string | null;
+  driver_uber_driver_id?: string | null;
+  driver_wolt_courier_id?: string | null;
+  driver_bolt_courier_id?: string | null;
+  driver_subcontractor_id?: string | null;
+  driver_subcontractor_name?: string | null;
 }
 
 export type Vehicle = VehicleListItem;
@@ -107,9 +115,13 @@ export interface PaginatedResponse<T> {
   pagination: PaginationMeta;
 }
 
+export type VehiclePlatformFilter = "all" | "bolt" | "glovo" | "bolt_glovo" | "uber" | "wolt";
+
 export interface GetVehiclesParams {
   search?: string;
   status?: string;
+  subcontractor_id?: string;
+  platform?: VehiclePlatformFilter;
   page?: number;
   limit?: number;
   offset?: number;

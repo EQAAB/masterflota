@@ -53,15 +53,57 @@ function appendVehicleSearchCondition(conditions: string[], params: unknown[], r
   )`);
 }
 
+const VEHICLE_LIST_FROM = `
+      FROM vehicles v
+      LEFT JOIN drivers d ON v.current_driver_id = d.id
+      LEFT JOIN subcontractors sc ON d.subcontractor_id = sc.id
+`;
+
 const VEHICLE_LIST_SELECT = `
       SELECT v.id, v.organization_id, v.vehicle_type, v.make, v.model, v.year, v.color,
              v.license_plate, v.vin, v.fuel_type, v.transmission, v.seating_capacity,
              v.daily_rent, v.weekly_rent, v.monthly_rent, v.insurance_expiry, v.registration_expiry,
              v.status, v.current_driver_id, v.notes, v.created_at, v.updated_at,
-             d.first_name AS driver_first_name, d.last_name AS driver_last_name, d.phone AS driver_phone
-      FROM vehicles v
-      LEFT JOIN drivers d ON v.current_driver_id = d.id
+             d.first_name AS driver_first_name, d.last_name AS driver_last_name, d.phone AS driver_phone,
+             d.profile_photo_url AS driver_profile_photo_url,
+             d.bolt_driver_id AS driver_bolt_driver_id,
+             d.glovo_courier_id AS driver_glovo_courier_id,
+             d.uber_driver_id AS driver_uber_driver_id,
+             d.wolt_courier_id AS driver_wolt_courier_id,
+             d.bolt_courier_id AS driver_bolt_courier_id,
+             d.subcontractor_id AS driver_subcontractor_id,
+             sc.legal_name AS driver_subcontractor_name
+      ${VEHICLE_LIST_FROM}
 `;
+
+function appendVehiclePlatformFilter(conditions: string[], platform: string) {
+  const p = platform.trim().toLowerCase();
+  if (!p || p === "all") return;
+  if (p === "bolt") {
+    conditions.push(
+      `(NULLIF(TRIM(COALESCE(d.bolt_driver_id, '')), '') IS NOT NULL OR NULLIF(TRIM(COALESCE(d.bolt_courier_id, '')), '') IS NOT NULL)`,
+    );
+    return;
+  }
+  if (p === "glovo") {
+    conditions.push(`NULLIF(TRIM(COALESCE(d.glovo_courier_id, '')), '') IS NOT NULL`);
+    return;
+  }
+  if (p === "bolt_glovo") {
+    conditions.push(
+      `(NULLIF(TRIM(COALESCE(d.bolt_driver_id, '')), '') IS NOT NULL OR NULLIF(TRIM(COALESCE(d.bolt_courier_id, '')), '') IS NOT NULL)`,
+    );
+    conditions.push(`NULLIF(TRIM(COALESCE(d.glovo_courier_id, '')), '') IS NOT NULL`);
+    return;
+  }
+  if (p === "uber") {
+    conditions.push(`NULLIF(TRIM(COALESCE(d.uber_driver_id, '')), '') IS NOT NULL`);
+    return;
+  }
+  if (p === "wolt") {
+    conditions.push(`NULLIF(TRIM(COALESCE(d.wolt_courier_id, '')), '') IS NOT NULL`);
+  }
+}
 
 router.get("/", async (req, res) => {
   const orgId = req.user?.orgId;
@@ -69,15 +111,18 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
 
-  const { search, status, limit, offset, page, sort_by, sort_order } = req.query as {
-    search?: string;
-    status?: string;
-    limit?: string;
-    offset?: string;
-    page?: string;
-    sort_by?: string;
-    sort_order?: string;
-  };
+  const { search, status, limit, offset, page, sort_by, sort_order, subcontractor_id, platform } =
+    req.query as {
+      search?: string;
+      status?: string;
+      limit?: string;
+      offset?: string;
+      page?: string;
+      sort_by?: string;
+      sort_order?: string;
+      subcontractor_id?: string;
+      platform?: string;
+    };
 
   const sortResult = resolveVehicleListOrder({ sort_by, sort_order });
   if (!sortResult.ok) {
@@ -93,6 +138,13 @@ router.get("/", async (req, res) => {
   }
   if (search) {
     appendVehicleSearchCondition(conditions, filterParams, search);
+  }
+  if (subcontractor_id && subcontractor_id !== "all" && UUID_RE.test(subcontractor_id)) {
+    filterParams.push(subcontractor_id);
+    conditions.push(`d.subcontractor_id = $${filterParams.length}`);
+  }
+  if (platform) {
+    appendVehiclePlatformFilter(conditions, platform);
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -124,8 +176,7 @@ router.get("/", async (req, res) => {
       query(
         `
         SELECT COUNT(*)::int AS total
-        FROM vehicles v
-        LEFT JOIN drivers d ON v.current_driver_id = d.id
+        ${VEHICLE_LIST_FROM}
         ${where}
         `,
         filterParams,
