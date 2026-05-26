@@ -115,6 +115,21 @@ export const sidebarNavActive =
 
 export const sidebarNavInactive = "text-white/75 hover:bg-white/10 hover:text-white";
 
+export const driversPage =
+  "mx-auto w-full max-w-[1600px] flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8";
+
+export const driversFilterCard =
+  "rounded-2xl border border-border/80 bg-surface-card p-4 shadow-card sm:p-5 " + transitionDefault;
+
+export const driversTableCard =
+  "overflow-hidden rounded-2xl border border-border/80 bg-surface-card shadow-card";
+
+export const driversTableRowOdd = "bg-white";
+
+export const driversTableRowEven = "bg-brand-mint/[0.04]";
+
+export const driversTableRowHover = "hover:bg-surface/80 " + transitionDefault;
+
 /** @deprecated Use imports from theme/classNames */
 export const EARNINGS_SURFACE_CARD = cardGlass;
 export const EARNINGS_INPUT = input;
