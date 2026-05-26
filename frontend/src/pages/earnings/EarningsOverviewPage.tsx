@@ -1,44 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuthStore } from "../../store/authStore";
 import { getEarningsOverview, getPayoutIntegrityRows } from "../../api/earnings";
-import { DriverPayoutTable } from "../../components/dashboard/DriverPayoutTable";
-import { formatCurrency } from "../../utils/currency";
-
-function DonutRing(props: {
-  pct: number;
-  label: string;
-  caption: string;
-  color: string;
-}) {
-  const p = Math.min(100, Math.max(0, props.pct));
-  const angle = (p / 100) * 360;
-  const bg =
-    p <= 0
-      ? "#e2e8f0"
-      : p >= 100
-        ? props.color
-        : `conic-gradient(${props.color} 0deg ${angle}deg, #e2e8f0 ${angle}deg 360deg)`;
-
-  return (
-    <div className="flex flex-col items-center">
-      <div
-        className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[10px] shadow-inner"
-        style={{ background: bg }}
-        aria-label={`${props.label}: ${p.toFixed(0)} percent`}
-      >
-        <div className="w-full h-full rounded-full bg-slate-50 flex items-center justify-center shadow-sm">
-          <div className="text-center px-1">
-            <div className="text-lg font-bold text-ink">{p.toFixed(0)}%</div>
-            <div className="text-[10px] text-ink-muted leading-tight">{props.label}</div>
-          </div>
-        </div>
-      </div>
-      <p className="text-xs text-ink-muted mt-2 text-center max-w-[140px]">{props.caption}</p>
-    </div>
-  );
-}
+import { useAuthStore } from "../../store/authStore";
+import { driversPage } from "../../theme/classNames";
+import { exportEarningsOverviewCsv } from "../../utils/exportEarningsOverviewCsv";
+import { CommissionGrossDonutCard } from "../../components/earnings/overview/CommissionGrossDonutCard";
+import { EarningsKpiCards } from "../../components/earnings/overview/EarningsKpiCards";
+import { EarningsOverviewFilters } from "../../components/earnings/overview/EarningsOverviewFilters";
+import { EarningsOverviewHeader } from "../../components/earnings/overview/EarningsOverviewHeader";
+import { EarningsOverviewSkeleton } from "../../components/earnings/overview/EarningsOverviewSkeleton";
+import { MonthlyGrossBarChart } from "../../components/earnings/overview/MonthlyGrossBarChart";
+import { PayoutIntegrityTable } from "../../components/earnings/overview/PayoutIntegrityTable";
+import { PendingPayoutsDonutCard } from "../../components/earnings/overview/PendingPayoutsDonutCard";
+import {
+  defaultDateRange,
+  filterIntegrityRows,
+  uniquePlatforms,
+} from "../../components/earnings/overview/useEarningsOverviewDerived";
 
 export function EarningsOverviewPage() {
   const user = useAuthStore((s) => s.user);
@@ -46,6 +25,11 @@ export function EarningsOverviewPage() {
   const [searchParams] = useSearchParams();
   const driverFilter =
     searchParams.get("driver_id")?.trim() || searchParams.get("driverId")?.trim() || "";
+
+  const [{ from: dateFrom, to: dateTo }, setDateRange] = useState(defaultDateRange);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "ok" | "broken">("all");
 
   useEffect(() => {
     if (!driverFilter) return;
@@ -57,113 +41,88 @@ export function EarningsOverviewPage() {
     queryFn: () => getEarningsOverview().then((r) => r.data),
     enabled: user?.role === "admin" || user?.role === "accountant",
   });
+
   const integrityQuery = useQuery({
     queryKey: ["earnings", "payout-integrity"],
     queryFn: () => getPayoutIntegrityRows().then((r) => r.data),
     enabled: user?.role === "admin" || user?.role === "accountant",
   });
 
+  const allIntegrityRows = integrityQuery.data ?? [];
+
+  const filteredIntegrityRows = useMemo(
+    () =>
+      filterIntegrityRows(allIntegrityRows, {
+        dateFrom,
+        dateTo,
+        platform: platformFilter,
+        statusFilter,
+      }),
+    [allIntegrityRows, dateFrom, dateTo, platformFilter, statusFilter],
+  );
+
+  const platforms = useMemo(() => uniquePlatforms(allIntegrityRows), [allIntegrityRows]);
+
   if (user?.role !== "admin" && user?.role !== "accountant") {
     return <p className="p-6 text-ink-muted">You do not have access to earnings.</p>;
   }
 
-  if (overviewQuery.isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <span className="inline-block h-8 w-8 rounded-full border-2 border-brand border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (overviewQuery.isError || !overviewQuery.data) {
-    return <p className="p-6 text-red-600">Could not load earnings overview.</p>;
-  }
-
-  const { kpis, monthly } = overviewQuery.data;
-  const totalGross = monthly.reduce((s, m) => s + m.totalEarnings, 0);
-  const totalComm = monthly.reduce((s, m) => s + m.totalCommission, 0);
-  const base = totalGross + totalComm;
-  const commPct = base > 0 ? (totalComm / base) * 100 : 0;
-
-  const pending = kpis.pendingPaymentsTotal;
-  const denom = pending + kpis.totalEarningsLast30Days;
-  const pendingSharePct = denom > 0 ? Math.min(100, (pending / denom) * 100) : 0;
-
-  const maxBar = Math.max(1, ...monthly.map((m) => m.totalEarnings));
-
-  const cardClass = "rounded-card border border-border bg-white shadow-soft p-4 sm:p-5";
+  const handleExport = () => {
+    if (!overviewQuery.data) return;
+    exportEarningsOverviewCsv({
+      kpis: overviewQuery.data.kpis,
+      integrityRows: filteredIntegrityRows,
+      dateFrom,
+      dateTo,
+    });
+  };
 
   return (
-    <div className="flex flex-col flex-1 overflow-auto">
-      <header className="shrink-0 border-b border-border bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4">
-        <h1 className="text-lg font-semibold text-ink">Earnings overview</h1>
-        <p className="text-sm text-ink-muted mt-1">KPIs and composition (CSS charts only).</p>
-      </header>
+    <div className="flex flex-1 flex-col overflow-auto">
+      <EarningsOverviewHeader
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateRangeChange={(from, to) => setDateRange({ from, to })}
+        onExport={handleExport}
+        exportDisabled={!overviewQuery.data}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen((o) => !o)}
+      />
 
-      <div className="flex-1 p-4 sm:p-6 space-y-8">
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className={cardClass}>
-            <p className="text-xs font-medium text-ink-muted uppercase tracking-wide">Pending payouts</p>
-            <p className="text-2xl font-semibold text-ink mt-1 tabular-nums">
-              {formatCurrency(kpis.pendingPaymentsTotal)}
-            </p>
-          </div>
-          <div className={cardClass}>
-            <p className="text-xs font-medium text-ink-muted uppercase tracking-wide">Gross (30 days)</p>
-            <p className="text-2xl font-semibold text-ink mt-1 tabular-nums">
-              {formatCurrency(kpis.totalEarningsLast30Days)}
-            </p>
-          </div>
-          <div className={cardClass}>
-            <p className="text-xs font-medium text-ink-muted uppercase tracking-wide">Avg paid payout (90d)</p>
-            <p className="text-2xl font-semibold text-ink mt-1 tabular-nums">
-              {formatCurrency(kpis.avgPayoutPaidLast90Days)}
-            </p>
-          </div>
-        </section>
+      {overviewQuery.isLoading ? (
+        <EarningsOverviewSkeleton />
+      ) : overviewQuery.isError || !overviewQuery.data ? (
+        <p className="p-6 text-danger">Could not load earnings overview.</p>
+      ) : (
+        <div className={driversPage}>
+          <EarningsKpiCards kpis={overviewQuery.data.kpis} monthly={overviewQuery.data.monthly} />
 
-        <section className={`${cardClass} flex flex-col sm:flex-row flex-wrap gap-8 justify-around items-center`}>
-          <DonutRing
-            pct={commPct}
-            label="Commission"
-            caption="Share of commission + gross (all months in chart)"
-            color="#0ea5e9"
+          <EarningsOverviewFilters
+            visible={filtersOpen}
+            platform={platformFilter}
+            onPlatformChange={setPlatformFilter}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            platforms={platforms}
           />
-          <DonutRing
-            pct={pendingSharePct}
-            label="Pending"
-            caption="Pending payouts vs pending + 30d gross (illustrative)"
-            color="#f59e0b"
-          />
-        </section>
 
-        <section className={cardClass}>
-          <h2 className="text-sm font-semibold text-ink mb-3">Monthly gross (bars)</h2>
-          <div className="flex items-end gap-1 sm:gap-2 h-40 border-b border-border pb-1 overflow-x-auto px-1">
-            {monthly.length === 0 ? (
-              <p className="text-sm text-ink-muted">No monthly data yet.</p>
-            ) : (
-              monthly.map((m) => {
-                const barPx = m.totalEarnings > 0 ? Math.max(6, (m.totalEarnings / maxBar) * 120) : 0;
-                return (
-                  <div key={m.month} className="flex flex-col items-center min-w-[36px] flex-1 h-full justify-end">
-                    <div
-                      className="w-full max-w-[48px] rounded-t-md bg-gradient-to-t from-sky-600 to-sky-400 mx-auto"
-                      style={{ height: barPx }}
-                      title={`${m.month}: ${formatCurrency(m.totalEarnings)}`}
-                    />
-                    <span className="text-[10px] text-ink-muted mt-1 truncate max-w-full">{m.month}</span>
-                  </div>
-                );
-              })
-            )}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <CommissionGrossDonutCard
+              kpis={overviewQuery.data.kpis}
+              monthly={overviewQuery.data.monthly}
+            />
+            <PendingPayoutsDonutCard kpis={overviewQuery.data.kpis} />
           </div>
-        </section>
 
-        <section>
-          <DriverPayoutTable rows={integrityQuery.data ?? []} />
-        </section>
-      </div>
+          <MonthlyGrossBarChart
+            monthly={overviewQuery.data.monthly}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+          />
+
+          <PayoutIntegrityTable rows={filteredIntegrityRows} isLoading={integrityQuery.isLoading} />
+        </div>
+      )}
     </div>
   );
 }

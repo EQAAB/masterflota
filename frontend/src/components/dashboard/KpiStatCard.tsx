@@ -8,6 +8,7 @@ export interface KpiStatCardProps {
   trend?: { value: string; positive?: boolean };
   icon?: ReactNode;
   iconClassName?: string;
+  sparkline?: ReactNode;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ export function KpiStatCard({
   trend,
   icon,
   iconClassName,
+  sparkline,
   className = "",
 }: KpiStatCardProps) {
   const trendPositive = trend?.positive !== false;
@@ -46,7 +48,10 @@ export function KpiStatCard({
             </span>
           )}
         </div>
-        {icon && <IconCircle className={iconClassName}>{icon}</IconCircle>}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {icon && <IconCircle className={iconClassName}>{icon}</IconCircle>}
+          {sparkline}
+        </div>
       </div>
     </div>
   );
