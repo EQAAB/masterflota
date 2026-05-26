@@ -89,7 +89,7 @@ function SidebarNavItem({
       to={to}
       title={collapsed ? label : undefined}
       className={`
-        flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out min-h-[44px]
+        flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out min-h-[44px] lg:min-h-[40px]
         ${isActive
           ? "bg-brand-mint text-ink shadow-soft"
           : "text-white/70 hover:text-white hover:bg-white/10"}
@@ -170,7 +170,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               to="/earnings"
               title="Earnings"
               className={`
-                flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px]
+                flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] lg:min-h-[40px]
                 ${earningsActive
                   ? "bg-brand-mint text-ink shadow-soft"
                   : "text-white/70 hover:text-white hover:bg-white/10"}
@@ -184,7 +184,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 type="button"
                 onClick={() => setEarningsOpen((o) => !o)}
                 className={`
-                  flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] text-left
+                  flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] lg:min-h-[40px] text-left
                   ${earningsActive
                     ? "bg-brand-mint text-ink shadow-soft"
                     : "text-white/70 hover:text-white hover:bg-white/10"}
@@ -213,7 +213,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             : "text-white/60 hover:text-white hover:bg-white/10"}
                         `}
                       >
-                        {label}
+                        <span className="truncate">{label}</span>
                       </Link>
                     );
                   })}

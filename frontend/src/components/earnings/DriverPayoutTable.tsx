@@ -8,14 +8,19 @@ import {
   btnPrimary,
   btnSecondary,
   card,
+  tableCell,
+  tableHeader,
   tableRow,
   tableRowAlert,
+  tableRowExpandable,
+  tableRowExpandedAccent,
 } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 import { HighlightText } from "./payouts/HighlightText";
+import { PayoutExpandPanel } from "./payouts/PayoutExpandPanel";
 import { PayoutExpandedDetails } from "./payouts/PayoutExpandedDetails";
+import { PayoutPeriodCell } from "./payouts/PayoutPeriodCell";
 import { PayoutRowActions } from "./payouts/PayoutRowActions";
-import { PeriodExpandToggle } from "./payouts/PeriodExpandToggle";
 import { PayoutStatusBadge } from "./payouts/PayoutStatusBadge";
 import { PayoutTableSkeleton } from "./payouts/PayoutTableSkeleton";
 import { PayoutTableToolbar } from "./payouts/PayoutTableToolbar";
@@ -26,7 +31,6 @@ import {
   isPayablePayoutRow,
   payoutCommissionTitle,
   payoutGlovoBreakdownTitle,
-  periodLabel,
   toNum,
   vehicleRentDetailTitle,
 } from "./payouts/payoutRowUtils";
@@ -169,6 +173,22 @@ export function DriverPayoutTable({
   const debtRowClass = tableRowAlert;
   const normalRowClass = tableRow;
 
+  const expandedDetailsProps = (
+    row: PayoutListItem,
+    detail: PayoutAssignmentDetail | undefined,
+    flags: ReturnType<typeof getRowFlags>,
+  ) => ({
+    row,
+    detail,
+    debouncedQuery,
+    canCustomFees: flags.canCustomFees,
+    canDebtActions: flags.canDebtActions,
+    canReleaseHold: flags.canReleaseHold,
+    onOpenCustomFees: flags.canCustomFees ? () => onOpenCustomFees?.(row) : undefined,
+    onOpenDebtActions: flags.canDebtActions ? () => onOpenDebtActions?.(row) : undefined,
+    onOpenReleaseHold: flags.canReleaseHold ? () => onOpenReleaseHold?.(row) : undefined,
+  });
+
   return (
     <div className="space-y-4">
       <PayoutTableToolbar
@@ -241,32 +261,58 @@ export function DriverPayoutTable({
           <div
             className={`hidden md:block ${card} overflow-hidden p-0`}
           >
-            <div className="overflow-x-auto shadow-[inset_-8px_0_8px_-8px_rgba(0,0,0,0.08)]">
-              <table className="min-w-full text-sm text-left">
-                <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-xs font-medium uppercase tracking-wide text-ink-muted">
+            <div className="overflow-x-auto [scrollbar-gutter:stable] shadow-[inset_-8px_0_8px_-8px_rgba(0,0,0,0.08)]">
+              <table className="min-w-[980px] w-full table-fixed text-sm text-left">
+                <colgroup>
+                  <col className="w-[24%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[18%]" />
+                </colgroup>
+                <thead className={tableHeader}>
                   <tr>
-                    <th className="px-4 py-3">Driver</th>
-                    <th className="px-4 py-3">Period</th>
-                    <th className="px-4 py-3 text-right">Gross</th>
-                    <th className="px-4 py-3 text-right">Fleet / Sub</th>
-                    <th className="px-4 py-3 text-right">Net payout</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Vehicle</th>
-                    <th className="px-4 py-3 text-right min-w-[12rem]">Actions</th>
+                    <th className={tableCell}>Driver</th>
+                    <th className={tableCell}>Period</th>
+                    <th className={`${tableCell} text-right`}>Gross</th>
+                    <th className={`${tableCell} text-right`}>Fleet / Sub</th>
+                    <th className={`${tableCell} text-right`}>Net payout</th>
+                    <th className={tableCell}>Status</th>
+                    <th className={tableCell}>Vehicle</th>
+                    <th className={`${tableCell} text-right`}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredRows.map((row) => {
+                <tbody>
+                  {filteredRows.map((row, rowIndex) => {
                     const detail = detailsByPayoutId.get(row.id);
                     const isExpanded = expanded.has(row.id);
                     const flags = getRowFlags(row, onOpenDebtActions, onOpenCustomFees, onOpenReleaseHold);
                     const isPayingRow = payingRowId === row.id;
+                    const stripeClass =
+                      rowIndex % 2 === 0 ? "bg-white" : "bg-surface/30";
 
                     return (
                       <Fragment key={row.id}>
-                        <tr className={`align-top text-ink ${flags.isDebtStyle ? debtRowClass : normalRowClass}`}>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-ink">
+                        <tr
+                          tabIndex={0}
+                          role="button"
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleExpand(row.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggleExpand(row.id);
+                            }
+                          }}
+                          className={`align-top text-ink border-b border-border ${tableRowExpandable} ${
+                            flags.isDebtStyle ? debtRowClass : `${normalRowClass} ${stripeClass}`
+                          } ${isExpanded && !flags.isDebtStyle ? tableRowExpandedAccent : ""}`}
+                        >
+                          <td className={`${tableCell} min-w-0`}>
+                            <div className="font-medium text-ink truncate">
                               <HighlightText
                                 text={`${row.first_name} ${row.last_name}`}
                                 query={debouncedQuery}
@@ -278,47 +324,45 @@ export function DriverPayoutTable({
                                   Via subcontractor
                                 </span>
                                 {row.subcontractor_legal_name && (
-                                  <span className="text-[10px] text-violet-700">{row.subcontractor_legal_name}</span>
+                                  <span className="text-[10px] text-violet-700 truncate max-w-[8rem]">
+                                    {row.subcontractor_legal_name}
+                                  </span>
                                 )}
                                 <Link
                                   to="/earnings/subcontractors/settlements"
                                   className="text-[10px] text-brand hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   Settlements
                                 </Link>
                               </div>
                             )}
-                            <div className="text-xs text-ink-muted mt-0.5">
+                            <div className="text-xs text-ink-muted mt-0.5 truncate">
                               <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
                             </div>
-                            <div className="mt-0.5 text-xs text-ink-muted">
+                            <div className="mt-0.5 text-xs text-ink-muted truncate">
                               ID:{" "}
                               <span className="font-mono text-ink-muted">
                                 <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-xs text-ink-muted">
-                            <div className="flex items-start gap-2">
-                              <span className="min-w-0 flex-1">
-                                <HighlightText text={periodLabel(row)} query={debouncedQuery} />
-                              </span>
-                              <PeriodExpandToggle
-                                expanded={isExpanded}
-                                onToggle={() => toggleExpand(row.id)}
-                              />
-                            </div>
+                          <td className={tableCell}>
+                            <PayoutPeriodCell row={row} query={debouncedQuery} />
                           </td>
-                          <td className="px-4 py-3 text-right tabular-nums text-ink">
+                          <td className={`${tableCell} text-right tabular-nums text-ink whitespace-nowrap`}>
                             {formatCurrency(toNum(row.total_gross_earnings))}
                           </td>
                           <td
-                            className="px-4 py-3 text-right tabular-nums text-ink"
+                            className={`${tableCell} text-right tabular-nums text-ink whitespace-nowrap`}
                             title={payoutCommissionTitle(row)}
                           >
                             {formatCurrency(toNum(row.company_commission))}
                           </td>
-                          <td className="px-4 py-3 text-right" title={payoutGlovoBreakdownTitle(row)}>
+                          <td
+                            className={`${tableCell} text-right whitespace-nowrap`}
+                            title={payoutGlovoBreakdownTitle(row)}
+                          >
                             <div className="text-base font-semibold tabular-nums text-ink">
                               {formatCurrency(toNum(row.net_driver_payout))}
                             </div>
@@ -336,10 +380,10 @@ export function DriverPayoutTable({
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className={tableCell}>
                             <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className={tableCell}>
                             <span
                               className="inline-flex rounded-full bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 tabular-nums"
                               title={vehicleRentDetailTitle(row)}
@@ -354,10 +398,12 @@ export function DriverPayoutTable({
                               />
                             </span>
                             {detail?.license_plate && (
-                              <span className="ml-1 text-[11px] text-ink-muted">{detail.license_plate}</span>
+                              <span className="ml-1 hidden text-[11px] text-ink-muted xl:inline">
+                                {detail.license_plate}
+                              </span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className={tableCell} onClick={(e) => e.stopPropagation()}>
                             <PayoutRowActions
                               row={row}
                               isPending={flags.isPending}
@@ -376,13 +422,22 @@ export function DriverPayoutTable({
                             />
                           </td>
                         </tr>
-                        {isExpanded && (
-                          <tr className="bg-slate-50/60">
-                            <td colSpan={8} className="px-4 py-4">
-                              <PayoutExpandedDetails row={row} detail={detail} debouncedQuery={debouncedQuery} />
-                            </td>
-                          </tr>
-                        )}
+                        <tr
+                          aria-hidden={!isExpanded}
+                          className={
+                            isExpanded
+                              ? "border-b border-border"
+                              : "h-0 border-0 [&>td]:h-0 [&>td]:p-0 [&>td]:leading-[0] [&>td]:border-0"
+                          }
+                        >
+                          <td colSpan={8} className="p-0 border-0 align-top">
+                            <PayoutExpandPanel open={isExpanded}>
+                              <PayoutExpandedDetails
+                                {...expandedDetailsProps(row, detail, flags)}
+                              />
+                            </PayoutExpandPanel>
+                          </td>
+                        </tr>
                       </Fragment>
                     );
                   })}
@@ -401,68 +456,75 @@ export function DriverPayoutTable({
               return (
                 <div
                   key={row.id}
-                  className={`${card} ${flags.isDebtStyle ? "border-danger/20 " + debtRowClass : ""}`}
+                  className={`${card} overflow-hidden p-0 ${flags.isDebtStyle ? "border-danger/20 " + debtRowClass : ""}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-ink truncate">
-                        <HighlightText text={`${row.first_name} ${row.last_name}`} query={debouncedQuery} />
-                      </p>
-                      <p className="text-xs text-ink-muted mt-0.5">
-                        <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
+                  <button
+                    type="button"
+                    className="w-full text-left p-4 sm:p-5 hover:bg-surface/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                    aria-expanded={isExpanded}
+                    onClick={() => toggleExpand(row.id)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-ink truncate">
+                          <HighlightText text={`${row.first_name} ${row.last_name}`} query={debouncedQuery} />
+                        </p>
+                        <p className="text-xs text-ink-muted mt-0.5">
+                          <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
+                        </p>
+                      </div>
+                      <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
+                    </div>
+                    <div
+                      className="mt-3 flex items-baseline justify-between gap-2"
+                      title={payoutGlovoBreakdownTitle(row)}
+                    >
+                      <span className="text-xs text-ink-muted">Net payout</span>
+                      <p className="text-xl font-semibold tabular-nums text-ink whitespace-nowrap">
+                        {formatCurrency(toNum(row.net_driver_payout))}
                       </p>
                     </div>
-                    <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
-                  </div>
+                    {flags.showDebtBadge && (
+                      <p className="mt-1 text-xs font-semibold text-rose-800">
+                        DEBT {formatCurrency(-flags.debtBadgeAmount)}
+                      </p>
+                    )}
+                    {flags.showPreviousDebtApplied && (
+                      <p className="mt-1 text-xs font-medium text-amber-800">
+                        Previous debt: {formatCurrency(toNum(row.debt_applied_amount))}
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <PayoutPeriodCell row={row} query={debouncedQuery} />
+                      <span className="text-xs text-ink-muted" title={payoutCommissionTitle(row)}>
+                        Fleet {formatCurrency(toNum(row.company_commission))}
+                      </span>
+                      <span
+                        className="text-xs font-medium text-amber-900"
+                        title={vehicleRentDetailTitle(row)}
+                      >
+                        Rent{" "}
+                        <HighlightText
+                          text={
+                            toNum(row.vehicle_rental_fee)
+                              ? formatCurrency(toNum(row.vehicle_rental_fee))
+                              : "—"
+                          }
+                          query={debouncedQuery}
+                        />
+                      </span>
+                    </div>
+                    {detail?.license_plate && (
+                      <p className="mt-1 text-[11px] text-ink-muted">Plate: {detail.license_plate}</p>
+                    )}
+                  </button>
+                  <PayoutExpandPanel open={isExpanded}>
+                    <PayoutExpandedDetails {...expandedDetailsProps(row, detail, flags)} compact />
+                  </PayoutExpandPanel>
                   <div
-                    className="mt-3 flex items-baseline justify-between gap-2"
-                    title={payoutGlovoBreakdownTitle(row)}
+                    className="border-t border-border/80 px-4 py-3 sm:px-5"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <span className="text-xs text-ink-muted">Net payout</span>
-                    <p className="text-xl font-semibold tabular-nums text-ink">
-                      {formatCurrency(toNum(row.net_driver_payout))}
-                    </p>
-                  </div>
-                  {flags.showDebtBadge && (
-                    <p className="mt-1 text-xs font-semibold text-rose-800">
-                      DEBT {formatCurrency(-flags.debtBadgeAmount)}
-                    </p>
-                  )}
-                  {flags.showPreviousDebtApplied && (
-                    <p className="mt-1 text-xs font-medium text-amber-800">
-                      Previous debt: {formatCurrency(toNum(row.debt_applied_amount))}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="inline-flex items-center gap-1.5">
-                      <HighlightText text={periodLabel(row)} query={debouncedQuery} />
-                      <PeriodExpandToggle
-                        expanded={isExpanded}
-                        onToggle={() => toggleExpand(row.id)}
-                      />
-                    </span>
-                    <span title={payoutCommissionTitle(row)}>
-                      Fleet {formatCurrency(toNum(row.company_commission))}
-                    </span>
-                    <span
-                      className="font-medium text-amber-900"
-                      title={vehicleRentDetailTitle(row)}
-                    >
-                      Rent{" "}
-                      <HighlightText
-                        text={
-                          toNum(row.vehicle_rental_fee)
-                            ? formatCurrency(toNum(row.vehicle_rental_fee))
-                            : "—"
-                        }
-                        query={debouncedQuery}
-                      />
-                    </span>
-                  </p>
-                  {detail?.license_plate && (
-                    <p className="mt-1 text-[11px] text-ink-muted">Plate: {detail.license_plate}</p>
-                  )}
-                  <div className="mt-4">
                     <PayoutRowActions
                       row={row}
                       isPending={flags.isPending}
@@ -479,16 +541,6 @@ export function DriverPayoutTable({
                       onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
                     />
                   </div>
-                  {isExpanded && (
-                    <div className="mt-4 rounded-xl border border-border/80 bg-slate-50/80 p-3">
-                      <PayoutExpandedDetails
-                        row={row}
-                        detail={detail}
-                        debouncedQuery={debouncedQuery}
-                        compact
-                      />
-                    </div>
-                  )}
                 </div>
               );
             })}

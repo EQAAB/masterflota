@@ -3,6 +3,50 @@ import { formatCurrency } from "../../../utils/currency";
 import { commissionBaseTypeLabel } from "../../../utils/commissionBaseLabels";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 
+const payoutPeriodDateFmt = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+});
+
+function parsePayoutPeriodDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export type PayoutPeriodDisplay = {
+  dateLine: string;
+  secondaryLine: string;
+};
+
+/** Human-readable period for table cells (search still uses `periodLabel`). */
+export function formatPayoutPeriodDisplay(row: PayoutListItem): PayoutPeriodDisplay {
+  const start = parsePayoutPeriodDate(row.payment_period_start);
+  const end = parsePayoutPeriodDate(row.payment_period_end);
+  const plat = row.earnings_platform?.trim()
+    ? earningsPlatformLabel(row.earnings_platform)
+    : "";
+
+  if (!start || !end) {
+    const secondaryParts: string[] = [];
+    if (start) secondaryParts.push(String(start.getFullYear()));
+    if (plat) secondaryParts.push(plat);
+    return {
+      dateLine: "—",
+      secondaryLine: secondaryParts.join(" · ") || plat || "—",
+    };
+  }
+
+  const dateLine = `${payoutPeriodDateFmt.format(start)} – ${payoutPeriodDateFmt.format(end)}`;
+  const secondaryParts: string[] = [String(start.getFullYear())];
+  if (plat) secondaryParts.push(plat);
+
+  return {
+    dateLine,
+    secondaryLine: secondaryParts.join(" · "),
+  };
+}
+
 export function periodLabel(row: PayoutListItem): string {
   const start = row.payment_period_start?.slice(0, 10) ?? "—";
   const end = row.payment_period_end?.slice(0, 10) ?? "—";
