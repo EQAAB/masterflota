@@ -1,233 +1,242 @@
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DriverListItem } from "../../api/drivers";
-import {
-  PLATFORM_IDS,
-  PLATFORM_ID_LABELS,
-} from "../../constants/platformIds";
-import { useDriverSearch } from "../../hooks/useDriverSearch";
+import { updateDriver } from "../../api/drivers";
+import { useDriversListFilters } from "../../hooks/useDriversListFilters";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
-import { SortableTableHeader } from "../UI/SortableTableHeader";
-import { DriverAvatar } from "./DriverAvatar";
+import { exportDriversCsv } from "../../utils/exportDriversCsv";
+import { btnSecondary, btnDangerOutline, driversPage } from "../../theme/classNames";
+import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
+import { buildDriverActionMenuItems } from "./buildDriverActionMenuItems";
+import { DriversFilterBar } from "./DriversFilterBar";
+import { DriversPageHeader } from "./DriversPageHeader";
+import { DriversPagination } from "./DriversPagination";
+import { DriversTable } from "./DriversTable";
 
 type DriversListProps = {
   drivers: DriverListItem[] | undefined;
   isLoading: boolean;
   isError: boolean;
-  userRole?: string;
-  onDeleteRequest: (driver: DriverListItem) => void;
   getHeaderProps: (field: string) => SortableHeaderProps;
 };
 
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
+export function DriversList({ drivers, isLoading, isError, getHeaderProps }: DriversListProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-export function DriversList({
-  drivers,
-  isLoading,
-  isError,
-  userRole,
-  onDeleteRequest,
-  getHeaderProps,
-}: DriversListProps) {
+  const filters = useDriversListFilters(drivers);
   const {
-    searchQuery,
-    setSearchQuery,
     filteredDrivers,
     totalCount,
     filteredCount,
-    clearSearch,
     isFilterPending,
     debouncedQuery,
-  } = useDriverSearch(drivers);
+    hasActiveFilters,
+    clearAllFilters,
+  } = filters;
 
-  const showDelete = userRole === "admin" || userRole === "accountant";
-  const hasQuery = searchQuery.trim().length > 0;
-  const showNoMatchEmpty = !isLoading && !isError && totalCount > 0 && filteredCount === 0 && !isFilterPending;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<DriverListItem | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.searchQuery,
+    filters.statusFilter,
+    filters.subcontractorFilter,
+    filters.platformFilter,
+    filters.debouncedQuery,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredDrivers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  const paginatedDrivers = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredDrivers.slice(start, start + pageSize);
+  }, [filteredDrivers, safePage, pageSize]);
+
+  const pageIds = useMemo(() => paginatedDrivers.map((d) => d.id), [paginatedDrivers]);
+  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const pageSomeSelected = pageIds.some((id) => selectedIds.has(id));
+
   const showEmptyOrg = !isLoading && !isError && totalCount === 0;
-  const colSpan = 9;
+  const showNoMatchEmpty =
+    !isLoading && !isError && totalCount > 0 && filteredCount === 0 && !isFilterPending;
+
+  const closeActionMenu = useCallback(() => {
+    setOpenMenuRowId(null);
+    setMenuAnchorEl(null);
+  }, []);
+
+  const handleActionMenuToggle = useCallback(
+    (rowId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (openMenuRowId === rowId) {
+        closeActionMenu();
+        return;
+      }
+      setOpenMenuRowId(rowId);
+      setMenuAnchorEl(event.currentTarget);
+    },
+    [openMenuRowId, closeActionMenu],
+  );
+
+  const openMenuDriver = openMenuRowId
+    ? filteredDrivers.find((d) => d.id === openMenuRowId)
+    : undefined;
+
+  const openMenuItems = useMemo(() => {
+    if (!openMenuDriver) return [];
+    const canSuspend = openMenuDriver.employment_status === "active";
+    return buildDriverActionMenuItems({
+      canSuspend,
+      onViewProfile: () => {
+        closeActionMenu();
+        navigate(`/drivers/${openMenuDriver.id}`);
+      },
+      onEdit: () => {
+        closeActionMenu();
+        navigate(`/drivers/${openMenuDriver.id}/edit`);
+      },
+      onSuspend: () => {
+        closeActionMenu();
+        setSuspendTarget(openMenuDriver);
+      },
+    });
+  }, [openMenuDriver, closeActionMenu, navigate]);
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const togglePageSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const suspendMutation = useMutation({
+    mutationFn: (id: string) => updateDriver(id, { employmentStatus: "suspended" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      setSuspendTarget(null);
+    },
+  });
 
   return (
-    <div className="space-y-4">
-      <div className="w-full rounded-2xl border border-white/60 bg-white/45 p-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-md ring-1 ring-slate-900/[0.04] sm:p-4">
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-3">
-          <div className="relative min-w-0 flex-1">
-            <label htmlFor="driver-search" className="sr-only">
-              Search drivers by name, phone, ID, or city
-            </label>
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-              <SearchIcon />
-            </span>
-            <input
-              id="driver-search"
-              type="search"
-              autoComplete="off"
-              placeholder="Search name, phone, ID, city…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full rounded-xl border border-white/50 bg-white/55 py-2.5 pl-10 text-sm text-ink shadow-inner outline-none ring-brand/30 placeholder:text-slate-400 focus:border-brand/30/80 focus:ring-2 ${hasQuery ? "pr-[4.5rem]" : "pr-3"}`}
+    <>
+      <DriversPageHeader
+        onExport={() => exportDriversCsv(filteredDrivers)}
+        exportDisabled={filteredDrivers.length === 0}
+      />
+
+      <div className={driversPage}>
+        <DriversFilterBar
+          searchQuery={filters.searchQuery}
+          onSearchChange={filters.setSearchQuery}
+          onClearSearch={filters.clearSearch}
+          statusFilter={filters.statusFilter}
+          onStatusChange={filters.setStatusFilter}
+          subcontractorFilter={filters.subcontractorFilter}
+          onSubcontractorChange={filters.setSubcontractorFilter}
+          platformFilter={filters.platformFilter}
+          onPlatformChange={filters.setPlatformFilter}
+          filtersExpanded={filters.filtersExpanded}
+          onToggleFilters={() => filters.setFiltersExpanded((e) => !e)}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+          isFilterPending={isFilterPending}
+          debouncedQuery={debouncedQuery}
+          hasActiveFilters={hasActiveFilters}
+          onClearAllFilters={clearAllFilters}
+        />
+
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface-card shadow-card">
+          <DriversTable
+            drivers={paginatedDrivers}
+            isLoading={isLoading}
+            isError={isError}
+            showEmptyOrg={showEmptyOrg}
+            showNoMatchEmpty={showNoMatchEmpty}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onTogglePageSelection={togglePageSelection}
+            pageAllSelected={pageAllSelected}
+            pageSomeSelected={pageSomeSelected}
+            getHeaderProps={getHeaderProps}
+            openMenuRowId={openMenuRowId}
+            onActionMenuToggle={handleActionMenuToggle}
+            embedded
+          />
+          {!isLoading && !isError && filteredCount > 0 && (
+            <DriversPagination
+              page={safePage}
+              pageSize={pageSize}
+              totalItems={filteredCount}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
             />
-            {hasQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-ink-muted hover:bg-white/70 hover:text-ink sm:text-sm"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          )}
         </div>
-        {!isLoading && !isError && totalCount > 0 && (
-          <p className="mt-2 text-xs text-ink-muted sm:text-sm">
-            {hasQuery && isFilterPending ? (
-              <span className="text-ink-muted">Matching drivers…</span>
-            ) : debouncedQuery.trim() ? (
-              <>
-                Found <span className="font-semibold tabular-nums text-ink">{filteredCount.toLocaleString()}</span>{" "}
-                of <span className="tabular-nums">{totalCount.toLocaleString()}</span>
-              </>
-            ) : (
-              <>
-                <span className="font-semibold tabular-nums text-ink">{totalCount.toLocaleString()}</span>{" "}
-                driver{totalCount === 1 ? "" : "s"}
-              </>
-            )}
-          </p>
-        )}
       </div>
 
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <div
-            className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-sky-600"
-            role="status"
-            aria-label="Loading drivers"
-          />
-          <p className="text-sm text-ink-muted">Loading drivers…</p>
+      <ActionMenuDropdown
+        open={openMenuRowId !== null && menuAnchorEl !== null}
+        anchorEl={menuAnchorEl}
+        items={openMenuItems}
+        align="right"
+        onClose={closeActionMenu}
+      />
+
+      {suspendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
+            <h3 className="text-lg font-semibold text-ink">Suspend driver?</h3>
+            <p className="mt-2 text-sm text-ink-muted">
+              {suspendTarget.first_name} {suspendTarget.last_name} will be marked as suspended and
+              removed from active fleet operations until reactivated.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => suspendMutation.mutate(suspendTarget.id)}
+                disabled={suspendMutation.isPending}
+                className={`${btnDangerOutline} flex-1 justify-center`}
+              >
+                {suspendMutation.isPending ? "Suspending…" : "Suspend"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuspendTarget(null)}
+                disabled={suspendMutation.isPending}
+                className={`${btnSecondary} flex-1 justify-center`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {isError && <p className="text-sm text-red-600">Failed to load drivers.</p>}
-
-      {!isLoading && !isError && (
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium text-ink w-12">Photo</th>
-                <SortableTableHeader label="Name" {...getHeaderProps("last_name")} />
-                <SortableTableHeader label="Phone" {...getHeaderProps("phone")} />
-                <SortableTableHeader label="Status" {...getHeaderProps("employment_status")} />
-                <SortableTableHeader label="Subcontractor" {...getHeaderProps("subcontractor_id")} />
-                <th className="px-3 py-2 text-left font-medium text-ink">Commission</th>
-                <SortableTableHeader label="Vehicle" {...getHeaderProps("current_vehicle_id")} />
-                <th className="px-3 py-2 text-left font-medium text-ink">Uber/Bolt</th>
-                <th className="px-3 py-2 text-left font-medium text-ink">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDrivers.map((driver) => (
-                <tr key={driver.id} className="border-t border-border">
-                  <td className="px-3 py-2">
-                    <Link to={`/drivers/${driver.id}`} className="flex items-center gap-2">
-                      <DriverAvatar
-                        profilePhotoUrl={driver.profile_photo_url}
-                        firstName={driver.first_name}
-                        lastName={driver.last_name}
-                        size="sm"
-                      />
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2">
-                    <Link
-                      to={`/drivers/${driver.id}`}
-                      className="font-medium text-brand hover:text-brand-dark"
-                    >
-                      {driver.first_name} {driver.last_name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2">{driver.phone}</td>
-                  <td className="px-3 py-2 capitalize">{driver.employment_status}</td>
-                  <td className="px-3 py-2 text-ink-muted">
-                    {driver.subcontractor_legal_name ?? "—"}
-                  </td>
-                  <td className="px-3 py-2">{driver.commission_rate}%</td>
-                  <td className="px-3 py-2 text-ink-muted">
-                    {driver.current_vehicle_id ? (
-                      <Link
-                        to={`/vehicles/${driver.current_vehicle_id}`}
-                        className="text-brand hover:text-brand-dark text-sm"
-                      >
-                        {driver.current_vehicle_make || driver.current_vehicle_model
-                          ? `${driver.current_vehicle_make ?? ""} ${driver.current_vehicle_model ?? ""}`.trim()
-                          : driver.current_vehicle_license_plate ?? "View vehicle"}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-ink-muted">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]}: {driver.uber_driver_id || "-"} ·{" "}
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]}: {driver.bolt_driver_id || "-"} ·{" "}
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]}: {driver.glovo_courier_id || "-"} ·{" "}
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]}: {driver.bolt_courier_id || "-"} ·{" "}
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]}: {driver.wolt_courier_id || "-"}
-                  </td>
-                  <td className="px-3 py-2 flex items-center gap-3">
-                    <Link
-                      to={`/drivers/${driver.id}/edit`}
-                      className="text-brand hover:text-brand-dark text-sm font-medium"
-                    >
-                      Edit
-                    </Link>
-                    {showDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteRequest(driver)}
-                        className="text-sm font-medium text-red-600 hover:text-red-800"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {showEmptyOrg && (
-                <tr>
-                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-ink-muted">
-                    No drivers yet.
-                  </td>
-                </tr>
-              )}
-              {showNoMatchEmpty && (
-                <tr>
-                  <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-ink-muted">
-                    No drivers match your search. Try another name, phone number, or ID.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
