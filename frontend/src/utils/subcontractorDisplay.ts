@@ -60,7 +60,7 @@ export function formatJoinedDate(createdAt: string | null | undefined): string {
 
 export function formatDriverCount(count: number | undefined | null): string {
   const n = count ?? 0;
-  return `${n} driver${n === 1 ? "" : "s"}`;
+  return `${n}${n === 1 ? "" : "s"}`;
 }
 
 export function formatKpiCount(value: number): string {
