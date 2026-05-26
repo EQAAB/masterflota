@@ -2,14 +2,17 @@ import { Router } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool } from "../../db/pool";
 import { readOrgGlovoCommissionBase } from "../earnings/orgImportSettings";
-import { earningsUpload } from "../../config/multer";
+import { earningsUpload, entityCsvUpload } from "../../config/multer";
 import { parseEarningsFile } from "../earnings/parseFile";
 import { buildColumnMap } from "../earnings/romanHeaderMap";
-import { rowCellsToNormalized } from "../earnings/normalizeRow";
+import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows } from "../earnings/normalizeRow";
 import { detectPlatformWithMeta, isEarningsPlatform, type EarningsPlatform } from "../earnings/detectPlatform";
 import { extractDateFromFilename } from "../earnings/filenameDate";
 import { insertEarningsPreviewStaging } from "../earnings/earningsPreviewStage";
 import { runEarningsCommitFromStaging } from "../earnings/earningsCommit";
+import { parseAndFilterEntityCsv } from "../../lib/parseEntityCsv";
+import { importDriversFromCsvTable } from "./driverCsvImport";
+import { importVehiclesFromCsvTable } from "./vehicleCsvImport";
 const router = Router();
 
 router.use(authenticateJWT);
@@ -51,11 +54,22 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
     const { confidence: detectionConfidence } = detectPlatformWithMeta(req.file.originalname, table.headers);
     const colMap = buildColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
-    const normalizedRows = table.rows.map((cells) =>
+    const mappedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
         skipInferredPlatformFee: platformEff === "glovo",
       }),
     );
+    const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
+      filterEmptyNormalizedEarningsRows(mappedRows);
+    const parseStats = {
+      ...table.parseStats,
+      emptyRowsSkipped: table.parseStats.emptyRowsSkipped + normalizedEmptySkipped,
+      dataRowsParsed: normalizedRows.length,
+    };
+
+    if (!normalizedRows.length) {
+      return res.status(400).json({ message: "No data rows found in file" });
+    }
 
     const glovoCommissionBaseType =
       platformEff === "glovo" ? await readOrgGlovoCommissionBase(orgId) : undefined;
@@ -75,6 +89,7 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
         rowCount: table.rows.length,
         normalizedRows,
         glovoCommissionBaseType,
+        parseStats,
       });
       const commitResult = await runEarningsCommitFromStaging(client, orgId, importId, platformEff, weekStart, weekEnd);
       await client.query("COMMIT");
@@ -96,6 +111,90 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
     const msg = err instanceof Error ? err.message : "Import failed";
     // eslint-disable-next-line no-console
     console.error("One-shot earnings CSV error", err);
+    return res.status(400).json({ message: msg });
+  }
+});
+
+router.post("/drivers-csv", entityCsvUpload.single("file"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+  if (!req.file?.buffer) {
+    return res.status(400).json({ message: "file is required" });
+  }
+
+  try {
+    const { table, stats } = parseAndFilterEntityCsv(req.file.buffer);
+    if (!table.headers.length) {
+      return res.status(400).json({ message: "CSV file has no header row" });
+    }
+    if (!table.rows.length) {
+      return res.status(400).json({ message: "No data rows found in file" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const summary = await importDriversFromCsvTable(client, orgId, table, stats);
+      await client.query("COMMIT");
+      return res.json(summary);
+    } catch (e) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Import failed";
+    // eslint-disable-next-line no-console
+    console.error("Driver CSV import error", err);
+    return res.status(400).json({ message: msg });
+  }
+});
+
+router.post("/vehicles-csv", entityCsvUpload.single("file"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+  if (!req.file?.buffer) {
+    return res.status(400).json({ message: "file is required" });
+  }
+
+  try {
+    const { table, stats } = parseAndFilterEntityCsv(req.file.buffer);
+    if (!table.headers.length) {
+      return res.status(400).json({ message: "CSV file has no header row" });
+    }
+    if (!table.rows.length) {
+      return res.status(400).json({ message: "No data rows found in file" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const summary = await importVehiclesFromCsvTable(client, orgId, table, stats);
+      await client.query("COMMIT");
+      return res.json(summary);
+    } catch (e) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        /* ignore */
+      }
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Import failed";
+    // eslint-disable-next-line no-console
+    console.error("Vehicle CSV import error", err);
     return res.status(400).json({ message: msg });
   }
 });

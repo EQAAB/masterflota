@@ -36,6 +36,12 @@ export interface EarningsPreviewAggregates {
   warnings: number;
   /** Rows with negative TVT (transfer total) — recorded as driver debt on commit. */
   debtRows?: number;
+  /** Physical data lines in file before all-empty row filter (header excluded). */
+  totalLinesInFile?: number;
+  /** Blank physical lines skipped during CSV parse. */
+  emptyLinesSkipped?: number;
+  /** Rows where every cell was empty/whitespace. */
+  emptyRowsSkipped?: number;
 }
 
 export interface EarningsPreviewResponse {

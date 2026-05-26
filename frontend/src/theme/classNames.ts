@@ -36,6 +36,11 @@ export const btnSecondary =
   transitionDefault +
   " hover:bg-surface disabled:opacity-50 min-h-[44px] sm:min-h-0";
 
+export const btnNavy =
+  "inline-flex items-center justify-center rounded-btn border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-soft " +
+  transitionDefault +
+  " hover:bg-slate-800 hover:border-slate-800 hover:shadow-soft-lg disabled:opacity-50 min-h-[44px] sm:min-h-0";
+
 export const btnGhost =
   "inline-flex items-center justify-center rounded-btn border border-transparent px-3 py-2 text-xs font-medium text-ink-muted " +
   transitionDefault +
