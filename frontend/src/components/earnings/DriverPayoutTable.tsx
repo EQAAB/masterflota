@@ -1,7 +1,8 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { PayoutListItem, PayoutAssignmentDetail } from "../../api/earnings";
 import { usePayoutSearch } from "../../hooks/usePayoutSearch";
+import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
 import { ConfirmDialog } from "../UI/ConfirmDialog";
 import {
   alertError,
@@ -20,6 +21,7 @@ import { HighlightText } from "./payouts/HighlightText";
 import { PayoutExpandPanel } from "./payouts/PayoutExpandPanel";
 import { PayoutExpandedDetails } from "./payouts/PayoutExpandedDetails";
 import { PayoutPeriodCell } from "./payouts/PayoutPeriodCell";
+import { buildPayoutActionMenuItems } from "./payouts/buildPayoutActionMenuItems";
 import { PayoutRowActions } from "./payouts/PayoutRowActions";
 import { PayoutStatusBadge } from "./payouts/PayoutStatusBadge";
 import { PayoutTableSkeleton } from "./payouts/PayoutTableSkeleton";
@@ -109,7 +111,10 @@ export function DriverPayoutTable({
   onOpenCustomFees,
   onOpenReleaseHold,
 }: DriverPayoutTableProps) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [payConfirm, setPayConfirm] = useState<
     null | { kind: "one"; payoutId: string } | { kind: "many"; ids: string[] }
   >(null);
@@ -169,6 +174,68 @@ export function DriverPayoutTable({
       return next;
     });
   }, []);
+
+  const closeActionMenu = useCallback(() => {
+    setOpenMenuRowId(null);
+    setMenuAnchorEl(null);
+  }, []);
+
+  const handleActionMenuToggle = useCallback(
+    (rowId: string, event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (openMenuRowId === rowId) {
+        closeActionMenu();
+        return;
+      }
+      setOpenMenuRowId(rowId);
+      setMenuAnchorEl(event.currentTarget);
+    },
+    [openMenuRowId, closeActionMenu],
+  );
+
+  const openMenuRow = openMenuRowId ? findPayoutRow(rows, openMenuRowId) : undefined;
+  const openMenuFlags = openMenuRow
+    ? getRowFlags(openMenuRow, onOpenDebtActions, onOpenCustomFees, onOpenReleaseHold)
+    : null;
+
+  const openMenuItems = useMemo(() => {
+    if (!openMenuRow || !openMenuFlags) return [];
+    return buildPayoutActionMenuItems({
+      canCustomFees: openMenuFlags.canCustomFees,
+      canDebtActions: openMenuFlags.canDebtActions,
+      canReleaseHold: openMenuFlags.canReleaseHold,
+      onOpenCustomFees: openMenuFlags.canCustomFees
+        ? () => {
+            closeActionMenu();
+            onOpenCustomFees?.(openMenuRow);
+          }
+        : undefined,
+      onOpenDebtActions: openMenuFlags.canDebtActions
+        ? () => {
+            closeActionMenu();
+            onOpenDebtActions?.(openMenuRow);
+          }
+        : undefined,
+      onOpenReleaseHold: openMenuFlags.canReleaseHold
+        ? () => {
+            closeActionMenu();
+            onOpenReleaseHold?.(openMenuRow);
+          }
+        : undefined,
+      onExport: () => {
+        closeActionMenu();
+        navigate(`/earnings/reports?driverId=${encodeURIComponent(openMenuRow.driver_id)}`);
+      },
+    });
+  }, [
+    openMenuRow,
+    openMenuFlags,
+    closeActionMenu,
+    onOpenCustomFees,
+    onOpenDebtActions,
+    onOpenReleaseHold,
+    navigate,
+  ]);
 
   const debtRowClass = tableRowAlert;
   const normalRowClass = tableRow;
@@ -410,14 +477,10 @@ export function DriverPayoutTable({
                               isPaying={isPaying}
                               isPayingRow={isPayingRow}
                               isSelected={selectedIds.has(row.id)}
-                              canCustomFees={flags.canCustomFees}
-                              canDebtActions={flags.canDebtActions}
-                              canReleaseHold={flags.canReleaseHold}
+                              isActionMenuOpen={openMenuRowId === row.id}
+                              onActionMenuToggle={(e) => handleActionMenuToggle(row.id, e)}
                               onToggleSelection={() => onToggleSelection(row.id)}
                               onPayNow={() => setPayConfirm({ kind: "one", payoutId: row.id })}
-                              onOpenCustomFees={() => onOpenCustomFees?.(row)}
-                              onOpenDebtActions={() => onOpenDebtActions?.(row)}
-                              onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
                               align="right"
                             />
                           </td>
@@ -531,14 +594,10 @@ export function DriverPayoutTable({
                       isPaying={isPaying}
                       isPayingRow={isPayingRow}
                       isSelected={selectedIds.has(row.id)}
-                      canCustomFees={flags.canCustomFees}
-                      canDebtActions={flags.canDebtActions}
-                      canReleaseHold={flags.canReleaseHold}
+                      isActionMenuOpen={openMenuRowId === row.id}
+                      onActionMenuToggle={(e) => handleActionMenuToggle(row.id, e)}
                       onToggleSelection={() => onToggleSelection(row.id)}
                       onPayNow={() => setPayConfirm({ kind: "one", payoutId: row.id })}
-                      onOpenCustomFees={() => onOpenCustomFees?.(row)}
-                      onOpenDebtActions={() => onOpenDebtActions?.(row)}
-                      onOpenReleaseHold={() => onOpenReleaseHold?.(row)}
                     />
                   </div>
                 </div>
@@ -547,6 +606,15 @@ export function DriverPayoutTable({
           </div>
         </>
       )}
+
+      <ActionMenuDropdown
+        open={openMenuRowId !== null && menuAnchorEl !== null}
+        anchorEl={menuAnchorEl}
+        items={openMenuItems}
+        align="right"
+        disabled={isPaying}
+        onClose={closeActionMenu}
+      />
 
       <ConfirmDialog
         open={payConfirm != null}

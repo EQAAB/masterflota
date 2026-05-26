@@ -1,17 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import type { PayoutListItem } from "../../../api/earnings";
-import { btnPrimary } from "../../../theme/classNames";
-import { ActionMenu } from "../../theme/ActionMenu";
-import {
-  ActionMenuIconDebt,
-  ActionMenuIconExport,
-  ActionMenuIconFees,
-  ActionMenuIconHold,
-  AdjustDebtIcon,
-  CustomFeesIcon,
-  ExportIcon,
-  ReleaseHoldIcon,
-} from "../../theme/actionMenuIcons";
+import { actionMenuTrigger, btnPrimary, transitionDefault } from "../../../theme/classNames";
+import { DotsVerticalIcon } from "../../theme/actionMenuIcons";
+import { payoutRowHasActionMenu } from "./buildPayoutActionMenuItems";
 
 type PayoutRowActionsProps = {
   row: PayoutListItem;
@@ -19,14 +9,10 @@ type PayoutRowActionsProps = {
   isPaying: boolean;
   isPayingRow: boolean;
   isSelected: boolean;
-  canCustomFees: boolean;
-  canDebtActions: boolean;
-  canReleaseHold: boolean;
+  isActionMenuOpen: boolean;
+  onActionMenuToggle: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onToggleSelection: () => void;
   onPayNow: () => void;
-  onOpenCustomFees?: () => void;
-  onOpenDebtActions?: () => void;
-  onOpenReleaseHold?: () => void;
   align?: "left" | "right";
 };
 
@@ -36,70 +22,20 @@ export function PayoutRowActions({
   isPaying,
   isPayingRow,
   isSelected,
-  canCustomFees,
-  canDebtActions,
-  canReleaseHold,
+  isActionMenuOpen,
+  onActionMenuToggle,
   onToggleSelection,
   onPayNow,
-  onOpenCustomFees,
-  onOpenDebtActions,
-  onOpenReleaseHold,
   align = "left",
 }: PayoutRowActionsProps) {
-  const navigate = useNavigate();
-
-  const menuItems = [
-    {
-      id: "adjust-debt",
-      label: "Adjust debt",
-      icon: (
-        <ActionMenuIconDebt>
-          <AdjustDebtIcon />
-        </ActionMenuIconDebt>
-      ),
-      onSelect: () => onOpenDebtActions?.(),
-      hidden: !canDebtActions,
-    },
-    {
-      id: "custom-fees",
-      label: "Custom fees",
-      icon: (
-        <ActionMenuIconFees>
-          <CustomFeesIcon />
-        </ActionMenuIconFees>
-      ),
-      onSelect: () => onOpenCustomFees?.(),
-      hidden: !canCustomFees,
-    },
-    {
-      id: "release-hold",
-      label: "Release hold",
-      icon: (
-        <ActionMenuIconHold>
-          <ReleaseHoldIcon />
-        </ActionMenuIconHold>
-      ),
-      onSelect: () => onOpenReleaseHold?.(),
-      hidden: !canReleaseHold,
-    },
-    {
-      id: "export",
-      label: "Export",
-      icon: (
-        <ActionMenuIconExport>
-          <ExportIcon />
-        </ActionMenuIconExport>
-      ),
-      onSelect: () => {
-        navigate(`/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}`);
-      },
-    },
-  ];
-
-  const showMenu = menuItems.some((i) => !i.hidden);
+  const showMenu = payoutRowHasActionMenu();
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${align === "right" ? "justify-end" : ""}`}>
+    <div
+      className={`flex flex-wrap items-center gap-2 ${align === "right" ? "justify-end" : ""}`}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
       <input
         type="checkbox"
         className="rounded border-border"
@@ -114,12 +50,20 @@ export function PayoutRowActions({
         </button>
       )}
       {showMenu && (
-        <ActionMenu
-          items={menuItems}
-          align={align}
+        <button
+          type="button"
           disabled={isPaying}
           aria-label={`Actions for ${row.first_name} ${row.last_name}`}
-        />
+          aria-expanded={isActionMenuOpen}
+          aria-haspopup="menu"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={onActionMenuToggle}
+          className={`${actionMenuTrigger} ${transitionDefault} disabled:opacity-50 ${
+            isActionMenuOpen ? "ring-2 ring-brand/25" : ""
+          }`}
+        >
+          <DotsVerticalIcon />
+        </button>
       )}
     </div>
   );
