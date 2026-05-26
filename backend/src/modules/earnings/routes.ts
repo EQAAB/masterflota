@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
@@ -21,6 +21,8 @@ import { extractDateFromFilename, weekBoundsFromDates } from "./filenameDate";
 import { parseEarningsFile } from "./parseFile";
 import { DriverMatchIndex, type DriverMatchRow } from "./matchDriver";
 import { runEarningsCommitFromStaging } from "./earningsCommit";
+import { deleteEarningsImportIfEmpty, DeleteEarningsImportError } from "./deleteEarningsImport";
+import { revertEarningsImport, RevertEarningsImportError } from "./revertEarningsImport";
 import {
   propagateDebtAfterManualEdit,
   recomputeDriverDebtAllocation,
@@ -511,27 +513,71 @@ router.post("/import/commit", async (req, res) => {
   }
 });
 
-router.delete("/import/:id", async (req, res) => {
+router.post("/imports/:id/revert", async (req, res) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Only admins can revert imports" });
+  }
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await revertEarningsImport(client, orgId, id, userId);
+    await client.query("COMMIT");
+    return res.json(result);
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    if (err instanceof RevertEarningsImportError) {
+      const status =
+        err.code === "NOT_FOUND"
+          ? 404
+          : err.code === "DRIVER_PAID" || err.code === "SUBCONTRACTOR_PAID"
+            ? 409
+            : 400;
+      return res.status(status).json({ message: err.message, code: err.code });
+    }
+    // eslint-disable-next-line no-console
+    console.error("Earnings import revert error", err);
+    return res.status(500).json({ message: "Revert failed" });
+  } finally {
+    client.release();
+  }
+});
+
+async function handleDeleteEarningsImport(req: Request, res: Response) {
   const orgId = req.user?.orgId;
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
+  if (!id) {
+    return res.status(400).json({ message: "Import id is required" });
+  }
   try {
-    const { rowCount } = await pool.query(
-      `DELETE FROM earnings_imports WHERE id = $1 AND organization_id = $2 AND status = 'preview'`,
-      [id, orgId],
-    );
-    if (!rowCount) {
-      return res.status(404).json({ message: "Preview import not found or already completed" });
-    }
+    await deleteEarningsImportIfEmpty(pool, orgId, id);
     return res.status(204).send();
   } catch (err) {
+    if (err instanceof DeleteEarningsImportError) {
+      const status =
+        err.code === "NOT_FOUND" ? 404 : err.code === "HAS_PROCESSED_ROWS" || err.code === "HAS_EARNINGS_RECORDS" ? 400 : 400;
+      return res.status(status).json({ message: err.message, code: err.code });
+    }
     // eslint-disable-next-line no-console
-    console.error("Earnings cancel error", err);
+    console.error("Earnings import delete error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
-});
+}
+
+router.delete("/import/:id", handleDeleteEarningsImport);
+router.delete("/imports/:id", handleDeleteEarningsImport);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -656,8 +702,9 @@ router.get("/imports", async (req, res) => {
         [orgId],
       ),
       pool.query(
-        `SELECT id::text, file_name, import_date::text, week_start::text, week_end::text, platform, record_count,
-                status, created_at::text
+        `SELECT id::text, file_name, import_date::text, week_start::text, week_end::text, platform,
+                record_count, total_rows, processed_rows,
+                status, created_at::text, reverted_at::text, reverted_by::text
          FROM earnings_imports
          WHERE organization_id = $1
          ORDER BY created_at DESC

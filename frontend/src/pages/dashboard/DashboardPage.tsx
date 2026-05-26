@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { useAuthStore } from "../../store/authStore";
 import {
   getDashboardStats,
   getDriverStatusDistribution,
@@ -9,11 +8,17 @@ import {
   getRecentAssignments,
 } from "../../api/dashboard";
 import type { DashboardActivityItem } from "../../api/dashboard";
-import { AnalyticsCard } from "../../components/dashboard/AnalyticsCard";
+import { KpiStatCard } from "../../components/dashboard/KpiStatCard";
 import { ChartPlaceholder } from "../../components/dashboard/ChartPlaceholder";
-import { ActivityTable, type ActivityRow } from "../../components/dashboard/ActivityTable";
+import type { ActivityRow } from "../../components/dashboard/ActivityTable";
+import { ActivityTimeline } from "../../components/dashboard/ActivityTimeline";
+import { AssignmentsFeed } from "../../components/dashboard/AssignmentsFeed";
 import { DriverStatusChart } from "../../components/dashboard/DriverStatusChart";
 import { DocumentStatsChart } from "../../components/dashboard/DocumentStatsChart";
+import { DashboardChartCard } from "../../components/dashboard/DashboardChartCard";
+import { DashboardTopBar } from "../../components/layout/DashboardTopBar";
+import { EmptyState } from "../../components/theme/EmptyState";
+import { dashboardPage, dashboardSectionTitle, kpiCardHover, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -56,35 +61,35 @@ function activityToRows(activities: DashboardActivityItem[]): ActivityRow[] {
 
 function UsersIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   );
 }
 
 function DocumentIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   );
 }
 
 function CurrencyIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
 }
 
 function VehicleIcon() {
   return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2}
+        strokeWidth={1.75}
         d="M3 13l2-5.5A2 2 0 017 6h10a2 2 0 011.87 1.3L21 13m-2 0h-2M5 13H3m2 0v4m12-4v4M7 17h2m6 0h2M7 17a2 2 0 01-2-2v-2m12 4a2 2 0 002-2v-2M7 17h6"
       />
     </svg>
@@ -92,9 +97,6 @@ function VehicleIcon() {
 }
 
 export function DashboardPage() {
-  const user = useAuthStore((s) => s.user);
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-
   const statsQuery = useQuery({ queryKey: ["dashboard", "stats"], queryFn: () => getDashboardStats() });
   const statusQuery = useQuery({ queryKey: ["dashboard", "status"], queryFn: () => getDriverStatusDistribution() });
   const docsQuery = useQuery({ queryKey: ["dashboard", "documents"], queryFn: () => getDocumentStats() });
@@ -115,10 +117,13 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <span className="inline-block h-8 w-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
-          <p className="text-sm text-ink-muted">Loading dashboard...</p>
+      <div className="flex flex-1 flex-col">
+        <DashboardTopBar />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+            <p className="text-sm text-ink-muted">Loading dashboard…</p>
+          </div>
         </div>
       </div>
     );
@@ -126,74 +131,64 @@ export function DashboardPage() {
 
   if (isError || !stats) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-red-600">Failed to load dashboard.</p>
-          <Link to="/drivers" className="mt-2 inline-block text-sm text-brand hover:underline">
-            Go to drivers
-          </Link>
+      <div className="flex flex-1 flex-col">
+        <DashboardTopBar />
+        <div className="flex flex-1 items-center justify-center p-6">
+          <EmptyState
+            title="Failed to load dashboard"
+            description="We couldn't fetch your fleet metrics. Check your connection and try again."
+            action={{ label: "Go to drivers", href: "/drivers" }}
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="shrink-0 border-b border-border bg-white px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">
-              Welcome{user ? `, ${user.firstName}` : ""}
-            </h1>
-            <p className="text-sm text-ink-muted mt-0.5">{today}</p>
-          </div>
-          <Link to="/drivers" className="text-sm font-medium text-brand hover:underline">
-            View all drivers →
-          </Link>
-        </div>
-      </header>
+    <div className="flex flex-1 flex-col">
+      <DashboardTopBar />
 
-      <div className="flex-1 overflow-auto p-6">
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-ink mb-4">Overview</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <Link to="/drivers" className="block rounded-xl hover:shadow-lg transition-shadow">
-              <AnalyticsCard title="Total drivers" value={stats.totalDrivers} icon={<UsersIcon />} />
+      <div className={dashboardPage}>
+        <section>
+          <h2 className={dashboardSectionTitle}>Overview</h2>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard title="Total drivers" value={stats.totalDrivers} icon={<UsersIcon />} />
             </Link>
-            <Link to="/drivers" className="block rounded-xl hover:shadow-lg transition-shadow">
-              <AnalyticsCard
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
                 title="Active drivers"
                 value={stats.activeDrivers}
                 trend={{ value: "vs last month", positive: true }}
                 icon={<UsersIcon />}
               />
             </Link>
-            <AnalyticsCard title="Pending documents" value={stats.pendingDocuments} icon={<DocumentIcon />} />
-            <AnalyticsCard
+            <KpiStatCard title="Pending documents" value={stats.pendingDocuments} icon={<DocumentIcon />} />
+            <KpiStatCard
               title="Expired documents"
               value={stats.expiredDocuments}
               trend={{ value: "needs attention", positive: false }}
               icon={<DocumentIcon />}
             />
-            <Link to="/vehicles" className="block rounded-xl hover:shadow-lg transition-shadow">
-              <AnalyticsCard title="Total vehicles" value={stats.totalVehicles ?? 0} icon={<VehicleIcon />} />
+            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
+              <KpiStatCard title="Total vehicles" value={stats.totalVehicles ?? 0} icon={<VehicleIcon />} />
             </Link>
-            <Link to="/vehicles" className="block rounded-xl hover:shadow-lg transition-shadow">
-              <AnalyticsCard title="Assigned vehicles" value={stats.assignedVehicles ?? 0} icon={<VehicleIcon />} />
+            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
+              <KpiStatCard title="Assigned vehicles" value={stats.assignedVehicles ?? 0} icon={<VehicleIcon />} />
             </Link>
-            <AnalyticsCard
+            <KpiStatCard
               title="Commission earned"
               value={formatCurrency(stats.totalCommissionEarned ?? 0)}
               icon={<CurrencyIcon />}
             />
-            <AnalyticsCard
+            <KpiStatCard
               title="Pending payments"
               value={formatCurrency(stats.pendingPayments ?? 0)}
               icon={<CurrencyIcon />}
             />
-            <Link to="/earnings/payouts" className="block rounded-xl hover:shadow-lg transition-shadow">
-              <AnalyticsCard
-                title="Vehicle rental fees (payouts)"
+            <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Vehicle rental fees"
                 value={formatCurrency(stats.totalVehicleRentalFees ?? 0)}
                 icon={<VehicleIcon />}
               />
@@ -201,88 +196,39 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="text-sm font-semibold text-ink mb-4">Analytics</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-ink mb-3">Driver status</h3>
+        <section>
+          <h2 className={dashboardSectionTitle}>Analytics</h2>
+          <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <DashboardChartCard title="Driver status">
               <DriverStatusChart data={statusData} />
-            </div>
-            <div className="rounded-xl border border-border bg-white p-4 shadow-sm flex flex-col justify-center min-h-[200px]">
-              <h3 className="text-sm font-semibold text-ink mb-3">Earnings</h3>
-              <p className="text-sm text-ink-muted mb-3">
-                Charts and import live under the <strong>Earnings</strong> section in the sidebar.
-              </p>
-              <Link
-                to="/earnings"
-                className="inline-flex text-sm font-medium text-brand hover:underline w-fit"
-              >
-                Open earnings overview
-              </Link>
-            </div>
-            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-ink mb-3">Document verification</h3>
+            </DashboardChartCard>
+            <DashboardChartCard
+              title="Earnings"
+              description="Charts and import live under the Earnings section in the sidebar."
+              action={{ label: "Open earnings overview", to: "/earnings" }}
+              minHeight={320}
+            >
+              <div className="flex flex-col items-start justify-center gap-3 py-4">
+                <p className="text-sm text-ink-muted">
+                  Import platform reports, review payouts, and run settlement reports from one place.
+                </p>
+                <Link to="/earnings/import" className={btnSecondary}>
+                  Import earnings
+                </Link>
+              </div>
+            </DashboardChartCard>
+            <DashboardChartCard title="Document verification">
               <DocumentStatsChart data={docsData} />
-            </div>
-            <ChartPlaceholder title="Revenue by platform" height={240} />
+            </DashboardChartCard>
+            <ChartPlaceholder />
           </div>
         </section>
 
         <section>
-          <h2 className="text-sm font-semibold text-ink mb-4">Recent activity</h2>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <ActivityTable
-              title="Activity feed"
-              rows={activityToRows(activities)}
-              emptyMessage="No recent activity."
-            />
-            <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-ink mb-3">Recent assignments</h3>
-              {assignmentsQuery.isLoading && (
-                <p className="text-sm text-ink-muted">Loading…</p>
-              )}
-              {!assignmentsQuery.isLoading && recentAssignments.length === 0 && (
-                <p className="text-sm text-ink-muted">No assignment history yet.</p>
-              )}
-              {recentAssignments.length > 0 && (
-                <ul className="divide-y divide-border text-sm">
-                  {recentAssignments.map((a) => (
-                    <li key={a.id} className="py-2.5 flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <Link
-                          to={`/drivers/${a.driver_id}`}
-                          className="font-medium text-brand hover:underline"
-                        >
-                          {a.driver_name || "Driver"}
-                        </Link>
-                        <span className="text-slate-400 mx-1">→</span>
-                        <Link
-                          to={`/vehicles/${a.vehicle_id}`}
-                          className="text-brand hover:underline"
-                        >
-                          {a.vehicle_name?.trim() || a.license_plate || "Vehicle"}
-                        </Link>
-                        <p className="text-xs text-ink-muted mt-0.5">
-                          Assigned {a.assigned_at.split("T")[0]}
-                          {a.is_active ? (
-                            <span className="ml-2 inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-emerald-800 font-medium">
-                              Active
-                            </span>
-                          ) : a.unassigned_at ? (
-                            <span className="ml-1">· Returned {a.unassigned_at.split("T")[0]}</span>
-                          ) : null}
-                        </p>
-                      </div>
-                      {a.weekly_rent_at_time != null && (
-                        <span className="text-xs text-ink-muted tabular-nums shrink-0">
-                          {formatCurrency(Number(a.weekly_rent_at_time))}/wk
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          <h2 className={dashboardSectionTitle}>Recent activity</h2>
+          <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <ActivityTimeline rows={activityToRows(activities)} />
+            <AssignmentsFeed items={recentAssignments} isLoading={assignmentsQuery.isLoading} />
           </div>
         </section>
       </div>

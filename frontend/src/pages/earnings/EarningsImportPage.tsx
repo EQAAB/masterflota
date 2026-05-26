@@ -12,8 +12,14 @@ import {
   type EarningsPreviewResponse,
   type EarningsCommitResponse,
 } from "../../api/earningsImport";
-import { syncEarningsVehicleRentals } from "../../api/earnings";
-import { getEarningsImports } from "../../api/earnings";
+import {
+  deleteEarningsImport,
+  getEarningsImports,
+  importProcessedRows,
+  importTotalRows,
+  revertEarningsImport,
+  syncEarningsVehicleRentals,
+} from "../../api/earnings";
 import { EarningsImportPreviewVirtualTable } from "../../components/earnings/EarningsImportPreviewVirtualTable";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { useCsvValidation } from "../../hooks/useCsvValidation";
@@ -79,6 +85,8 @@ export function EarningsImportPage() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [commitImportOpen, setCommitImportOpen] = useState(false);
+  const [revertImportId, setRevertImportId] = useState<string | null>(null);
+  const [deleteImportId, setDeleteImportId] = useState<string | null>(null);
   const [glovoCommissionBaseType, setGlovoCommissionBaseType] = useState<string>("net_income");
 
   const { setClientDebtScan, runClientDebtScan, debtSummaryLine } = useCsvValidation(preview);
@@ -187,6 +195,28 @@ export function EarningsImportPage() {
     onError: (e) => setLocalError(errMessage(e)),
   });
 
+  const revertMut = useMutation({
+    mutationFn: (importId: string) => revertEarningsImport(importId).then((r) => r.data),
+    onSuccess: () => {
+      setRevertImportId(null);
+      setLocalError(null);
+      void queryClient.invalidateQueries({ queryKey: ["earnings", "imports"] });
+      void queryClient.invalidateQueries({ queryKey: ["earnings"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+    },
+    onError: (e) => setLocalError(errMessage(e)),
+  });
+
+  const deleteImportMut = useMutation({
+    mutationFn: (importId: string) => deleteEarningsImport(importId),
+    onSuccess: () => {
+      setDeleteImportId(null);
+      setLocalError(null);
+      void queryClient.invalidateQueries({ queryKey: ["earnings", "imports"] });
+    },
+    onError: (e) => setLocalError(errMessage(e)),
+  });
+
   const handleFile = useCallback(
     (file: File | undefined) => {
       if (!file) return;
@@ -223,7 +253,13 @@ export function EarningsImportPage() {
     [handleFile],
   );
 
-  const busy = previewMut.isPending || commitMut.isPending || cancelMut.isPending || syncMut.isPending;
+  const busy =
+    previewMut.isPending ||
+    commitMut.isPending ||
+    cancelMut.isPending ||
+    syncMut.isPending ||
+    revertMut.isPending ||
+    deleteImportMut.isPending;
   const confidencePct =
     preview?.detectionConfidence != null ? Math.round(preview.detectionConfidence * 100) : null;
   const periodValid =
@@ -520,12 +556,19 @@ export function EarningsImportPage() {
                     <th className="px-3 py-2">Platform</th>
                     <th className="px-3 py-2">Period</th>
                     <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Rows</th>
+                    <th className="px-3 py-2">Processed / total</th>
                     <th className="px-3 py-2">Created</th>
+                    {user?.role === "admin" && <th className="px-3 py-2 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(importsQuery.data?.items ?? []).map((row) => (
+                  {(importsQuery.data?.items ?? []).map((row) => {
+                    const processed = importProcessedRows(row);
+                    const total = importTotalRows(row);
+                    const canDelete = processed === 0;
+                    const canRevert = row.status === "completed" && processed > 0;
+
+                    return (
                     <tr key={row.id} className="text-ink">
                       <td className="px-3 py-2 max-w-[180px] truncate">{row.file_name ?? "—"}</td>
                       <td className="px-3 py-2">{row.platform}</td>
@@ -537,20 +580,51 @@ export function EarningsImportPage() {
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                             row.status === "completed"
                               ? "bg-emerald-100 text-emerald-800"
-                              : row.status === "preview"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-slate-100 text-ink"
+                              : row.status === "reverted"
+                                ? "bg-violet-100 text-violet-800"
+                                : row.status === "preview"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-slate-100 text-ink"
                           }`}
                         >
                           {row.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2">{row.record_count ?? "—"}</td>
+                      <td className="px-3 py-2 tabular-nums text-xs">
+                        {processed} / {total}
+                      </td>
                       <td className="px-3 py-2 text-xs text-ink-muted whitespace-nowrap">
                         {row.created_at?.slice(0, 19).replace("T", " ")}
                       </td>
+                      {user?.role === "admin" && (
+                        <td className="px-3 py-2 text-right">
+                          <div className="flex flex-wrap justify-end gap-1.5">
+                            {canDelete && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => setDeleteImportId(row.id)}
+                                className="rounded-lg border border-border bg-white px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            )}
+                            {canRevert && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => setRevertImportId(row.id)}
+                                className="rounded-lg border border-border bg-white px-2.5 py-1 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
+                              >
+                                Revert
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -622,6 +696,52 @@ export function EarningsImportPage() {
             weekEnd: periodEnd,
           });
           setCommitImportOpen(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteImportId != null}
+        onClose={() => !deleteImportMut.isPending && setDeleteImportId(null)}
+        title="Delete this import?"
+        description={
+          <p className="text-sm text-ink-muted">
+            This import has no processed earnings rows. It will be permanently removed from import history.
+            No financial records exist for this import.
+          </p>
+        }
+        confirmLabel="Delete import"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        isLoading={deleteImportMut.isPending}
+        onConfirm={async () => {
+          if (!deleteImportId) return;
+          await deleteImportMut.mutateAsync(deleteImportId);
+        }}
+      />
+
+      <ConfirmDialog
+        open={revertImportId != null}
+        onClose={() => !revertMut.isPending && setRevertImportId(null)}
+        title="Revert this import?"
+        description={
+          <div className="space-y-2 text-sm text-ink-muted">
+            <p>
+              This creates offsetting negative earnings records and marks the import as reverted. Original data is
+              kept for audit; net effect on payouts is zero for this import.
+            </p>
+            <p className="font-medium text-amber-800">
+              Revert is blocked if any driver payout or subcontractor settlement for this period is already marked
+              paid.
+            </p>
+          </div>
+        }
+        confirmLabel="Revert import"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        isLoading={revertMut.isPending}
+        onConfirm={async () => {
+          if (!revertImportId) return;
+          await revertMut.mutateAsync(revertImportId);
         }}
       />
 

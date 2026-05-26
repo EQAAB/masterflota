@@ -163,8 +163,12 @@ CREATE TABLE IF NOT EXISTS earnings_imports (
     total_gross DECIMAL(12, 2),
     total_trips INTEGER,
     record_count INTEGER,
+    total_rows INTEGER NOT NULL DEFAULT 0,
+    processed_rows INTEGER NOT NULL DEFAULT 0,
     imported_by UUID REFERENCES users(id),
-    status VARCHAR(50) NOT NULL DEFAULT 'completed' CHECK (status IN ('preview', 'completed', 'failed')),
+    status VARCHAR(50) NOT NULL DEFAULT 'completed' CHECK (status IN ('preview', 'completed', 'failed', 'reverted')),
+    reverted_by UUID REFERENCES users(id),
+    reverted_at TIMESTAMPTZ,
     detection_meta JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -214,8 +218,18 @@ CREATE TABLE IF NOT EXISTS earnings_records (
         )
       ) STORED,
     commission_type VARCHAR(50),
+    is_reversal BOOLEAN NOT NULL DEFAULT false,
+    reversal_of_record_id UUID REFERENCES earnings_records(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_earnings_records_import_reversal
+    ON earnings_records (import_id)
+    WHERE is_reversal;
+
+CREATE INDEX IF NOT EXISTS idx_earnings_records_reversal_of
+    ON earnings_records (reversal_of_record_id)
+    WHERE reversal_of_record_id IS NOT NULL;
 
 -- Driver payouts (period rollups)
 CREATE TABLE IF NOT EXISTS driver_payouts (
