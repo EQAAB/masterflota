@@ -13,41 +13,22 @@ function PhoneIcon({ className }: { className?: string }) {
   );
 }
 
-function EmailIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.75}
-        d="M4 4h16v16H4V4zm0 0l8 8 8-8"
-      />
-    </svg>
-  );
-}
-
 export function SubcontractorContactCell({ subcontractor }: { subcontractor: Subcontractor }) {
   const phone = subcontractor.phone?.trim();
-  const email = subcontractor.email?.trim();
 
-  if (!phone && !email) {
-    return <span className="text-sm text-ink-muted">—</span>;
+  if (phone) {
+    return (
+      <div className="flex min-w-0 items-center gap-2 text-sm text-ink">
+        <PhoneIcon className="h-4 w-4 shrink-0 text-ink-muted/80" />
+        <span className="truncate tabular-nums">{phone}</span>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-1 text-sm text-ink-muted">
-      {phone && (
-        <div className="flex min-w-0 items-center gap-2">
-          <PhoneIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted/70" />
-          <span className="truncate tabular-nums">{phone}</span>
-        </div>
-      )}
-      {email && (
-        <div className="flex min-w-0 items-center gap-2">
-          <EmailIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted/70" />
-          <span className="truncate">{email}</span>
-        </div>
-      )}
+    <div className="flex min-w-0 items-center gap-2 text-sm text-ink-muted">
+      <PhoneIcon className="h-4 w-4 shrink-0 opacity-50" />
+      <span className="truncate">No phone available</span>
     </div>
   );
 }

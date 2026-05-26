@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import type { Subcontractor } from "../../api/subcontractors";
-import { getSubcontractor, updateSubcontractor } from "../../api/subcontractors";
+import { updateSubcontractor } from "../../api/subcontractors";
 import { useUrlPagination } from "../../hooks/useUrlPagination";
 import { useSubcontractorsListFilters } from "../../hooks/useSubcontractorsListFilters";
 import { exportSubcontractorsCsv } from "../../utils/exportSubcontractorsCsv";
-import { btnSecondary, btnDangerOutline, btnPrimary, driversPage } from "../../theme/classNames";
+import { btnSecondary, btnDangerOutline, driversPage } from "../../theme/classNames";
 import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
 import { DriversPagination } from "../drivers/DriversPagination";
 import { buildSubcontractorActionMenuItems } from "./buildSubcontractorActionMenuItems";
@@ -46,8 +46,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
 
   const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
-  const [disableTarget, setDisableTarget] = useState<Subcontractor | null>(null);
-  const [assignTarget, setAssignTarget] = useState<Subcontractor | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<Subcontractor | null>(null);
   const skipPageReset = useRef(true);
 
   useEffect(() => {
@@ -103,7 +102,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
     const isActive = openMenuSubcontractor.status === "active";
     return buildSubcontractorActionMenuItems({
       isActive,
-      onView: () => {
+      onViewProfile: () => {
         closeActionMenu();
         navigate(`/subcontractors/${openMenuSubcontractor.id}/edit`);
       },
@@ -111,28 +110,14 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
         closeActionMenu();
         navigate(`/subcontractors/${openMenuSubcontractor.id}/edit`);
       },
-      onAssignDrivers: () => {
+      onSuspend: () => {
         closeActionMenu();
-        setAssignTarget(openMenuSubcontractor);
-      },
-      onViewReports: () => {
-        closeActionMenu();
-        navigate("/earnings/subcontractors/settlements");
-      },
-      onDisable: () => {
-        closeActionMenu();
-        setDisableTarget(openMenuSubcontractor);
+        setSuspendTarget(openMenuSubcontractor);
       },
     });
   }, [openMenuSubcontractor, closeActionMenu, navigate]);
 
-  const { data: assignDetail } = useQuery({
-    queryKey: ["subcontractors", assignTarget?.id, "assign-drivers"],
-    queryFn: () => getSubcontractor(assignTarget!.id).then((r) => r.data),
-    enabled: assignTarget !== null,
-  });
-
-  const disableMutation = useMutation({
+  const suspendMutation = useMutation({
     mutationFn: (sub: Subcontractor) =>
       updateSubcontractor(sub.id, {
         legalName: sub.legal_name,
@@ -151,7 +136,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subcontractors"] });
-      setDisableTarget(null);
+      setSuspendTarget(null);
     },
   });
 
@@ -218,76 +203,26 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
         onClose={closeActionMenu}
       />
 
-      {assignTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Assign drivers</h3>
-            <p className="mt-1 text-sm text-ink-muted">
-              Drivers assigned to {assignTarget.legal_name}. Edit a driver to change subcontractor assignment.
-            </p>
-            <div className="mt-4 max-h-64 overflow-y-auto rounded-xl border border-border">
-              {assignDetail?.drivers?.length ? (
-                <ul className="divide-y divide-border">
-                  {assignDetail.drivers.map((d) => (
-                    <li key={d.id}>
-                      <Link
-                        to={`/drivers/${d.id}/edit`}
-                        className="flex items-center justify-between px-4 py-3 text-sm hover:bg-surface"
-                        onClick={() => setAssignTarget(null)}
-                      >
-                        <span className="font-medium text-ink">
-                          {d.first_name} {d.last_name}
-                        </span>
-                        <span className="text-xs capitalize text-ink-muted">{d.employment_status}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="px-4 py-6 text-center text-sm text-ink-muted">
-                  No drivers assigned yet.{" "}
-                  <Link to="/drivers/new" className="text-brand hover:underline" onClick={() => setAssignTarget(null)}>
-                    Add a driver
-                  </Link>
-                </p>
-              )}
-            </div>
-            <div className="mt-5 flex gap-2">
-              <Link
-                to="/drivers"
-                className={`${btnPrimary} flex-1 justify-center`}
-                onClick={() => setAssignTarget(null)}
-              >
-                Go to drivers
-              </Link>
-              <button type="button" onClick={() => setAssignTarget(null)} className={`${btnSecondary} flex-1 justify-center`}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {disableTarget && (
+      {suspendTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Disable subcontractor?</h3>
+            <h3 className="text-lg font-semibold text-ink">Suspend subcontractor?</h3>
             <p className="mt-2 text-sm text-ink-muted">
-              {disableTarget.legal_name} will be marked as inactive and hidden from active fleet operations.
+              {suspendTarget.legal_name} will be marked as inactive and hidden from active fleet operations.
             </p>
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
-                onClick={() => disableMutation.mutate(disableTarget)}
-                disabled={disableMutation.isPending}
+                onClick={() => suspendMutation.mutate(suspendTarget)}
+                disabled={suspendMutation.isPending}
                 className={`${btnDangerOutline} flex-1 justify-center`}
               >
-                {disableMutation.isPending ? "Disabling…" : "Disable"}
+                {suspendMutation.isPending ? "Suspending…" : "Suspend"}
               </button>
               <button
                 type="button"
-                onClick={() => setDisableTarget(null)}
-                disabled={disableMutation.isPending}
+                onClick={() => setSuspendTarget(null)}
+                disabled={suspendMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
                 Cancel

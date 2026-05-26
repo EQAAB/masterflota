@@ -1,20 +1,18 @@
 import type { Subcontractor } from "../../api/subcontractors";
-import {
-  driversTableCard,
-  driversTableRowEven,
-  driversTableRowHover,
-  driversTableRowOdd,
-  tableCell,
-  tableHeader,
-  transitionDefault,
-} from "../../theme/classNames";
+import { transitionDefault } from "../../theme/classNames";
 import { EmptyState } from "../theme/EmptyState";
 import { formatDriverCount } from "../../utils/subcontractorDisplay";
 import { SubcontractorContactCell } from "./SubcontractorContactCell";
+import { SubcontractorEmailCell } from "./SubcontractorEmailCell";
 import { SubcontractorJoinedCell } from "./SubcontractorJoinedCell";
 import { SubcontractorNameCell } from "./SubcontractorNameCell";
 import { SubcontractorRowActions } from "./SubcontractorRowActions";
 import { SubcontractorStatusBadge } from "./SubcontractorStatusBadge";
+
+const tableCell = "px-4 py-4 lg:px-5 lg:py-[1.125rem] align-middle";
+const tableHeaderCell = `${tableCell} text-left`;
+const headerLabel =
+  "text-[11px] font-semibold uppercase tracking-wider text-ink-muted";
 
 type SubcontractorsTableProps = {
   subcontractors: Subcontractor[];
@@ -39,7 +37,7 @@ export function SubcontractorsTable({
   onActionMenuToggle,
   embedded = false,
 }: SubcontractorsTableProps) {
-  const shell = embedded ? "" : driversTableCard;
+  const shell = embedded ? "" : "overflow-hidden rounded-2xl border border-border/80 bg-white shadow-sm";
 
   if (isLoading) {
     return (
@@ -94,61 +92,70 @@ export function SubcontractorsTable({
   return (
     <div className={shell}>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] table-fixed text-sm">
+        <table className="w-full min-w-[1080px] table-fixed text-sm">
           <colgroup>
             <col className="min-w-[240px]" />
+            <col className="min-w-[160px]" />
             <col className="min-w-[200px]" />
             <col className="w-[110px]" />
-            <col className="w-[120px]" />
-            <col className="w-[140px]" />
+            <col className="w-[100px]" />
+            <col className="w-[130px]" />
             <col className="w-[56px]" />
           </colgroup>
-          <thead className={tableHeader}>
+          <thead className="bg-[#F7F8FC]">
             <tr>
-              <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Subcontractor</span>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Subcontractor</span>
               </th>
-              <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Contact</span>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Contact</span>
               </th>
-              <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Status</span>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Email</span>
               </th>
-              <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Drivers</span>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Status</span>
               </th>
-              <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Joined On</span>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Drivers</span>
               </th>
-              <th className={`${tableCell} w-[56px] text-right`}>
+              <th className={tableHeaderCell}>
+                <span className={headerLabel}>Joined On</span>
+              </th>
+              <th className={`${tableHeaderCell} w-[56px] text-right`}>
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {subcontractors.map((sub, index) => {
-              const zebra = index % 2 === 0 ? driversTableRowOdd : driversTableRowEven;
+              const isEven = index % 2 === 1;
               return (
-                <tr key={sub.id} className={`${zebra} ${driversTableRowHover} ${transitionDefault}`}>
-                  <td className={`${tableCell} align-middle`}>
-                    <SubcontractorNameCell
-                      subcontractor={sub}
-                      displayIndex={idIndexMap.get(sub.id)}
-                    />
+                <tr
+                  key={sub.id}
+                  className={`${transitionDefault} ${
+                    isEven ? "bg-[#FAFBFD]" : "bg-white"
+                  } hover:bg-brand-mint/25`}
+                >
+                  <td className={tableCell}>
+                    <SubcontractorNameCell subcontractor={sub} displayIndex={idIndexMap.get(sub.id)} />
                   </td>
-                  <td className={`${tableCell} align-middle`}>
+                  <td className={tableCell}>
                     <SubcontractorContactCell subcontractor={sub} />
                   </td>
-                  <td className={`${tableCell} align-middle`}>
+                  <td className={tableCell}>
+                    <SubcontractorEmailCell subcontractor={sub} />
+                  </td>
+                  <td className={tableCell}>
                     <SubcontractorStatusBadge status={sub.status} />
                   </td>
-                  <td className={`${tableCell} align-middle font-medium text-ink`}>
+                  <td className={`${tableCell} font-bold text-ink`}>
                     {formatDriverCount(sub.driver_count)}
                   </td>
-                  <td className={`${tableCell} align-middle`}>
+                  <td className={tableCell}>
                     <SubcontractorJoinedCell createdAt={sub.created_at} />
                   </td>
-                  <td className={`${tableCell} align-middle text-right`}>
+                  <td className={`${tableCell} text-right`}>
                     <SubcontractorRowActions
                       isActionMenuOpen={openMenuRowId === sub.id}
                       onActionMenuToggle={(e) => onActionMenuToggle(sub.id, e)}
