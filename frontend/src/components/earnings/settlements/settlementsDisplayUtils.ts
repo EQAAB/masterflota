@@ -18,16 +18,32 @@ export function canMarkSettlementPaid(row: SubcontractorSettlementRow): boolean 
   return !!row.id && row.payment_status !== "paid";
 }
 
-export function settlementStatusDisplay(row: SubcontractorSettlementRow): { label: string; className: string } {
+export function settlementStatusDisplay(row: SubcontractorSettlementRow): {
+  label: string;
+  className: string;
+  dotClassName: string;
+} {
   const status = (row.payment_status ?? "pending").toLowerCase();
 
   if (status === "paid") {
-    return { label: "Paid", className: "bg-emerald-100 text-emerald-800" };
+    return {
+      label: "Paid",
+      className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+      dotClassName: "bg-emerald-500",
+    };
   }
   if (status === "pending" || !row.id) {
-    return { label: "Pending", className: "bg-amber-100 text-amber-800" };
+    return {
+      label: "Pending",
+      className: "bg-amber-50 text-amber-800 ring-1 ring-amber-100",
+      dotClassName: "bg-amber-500",
+    };
   }
-  return { label: "Debt / Issue", className: "bg-red-100 text-red-800" };
+  return {
+    label: "Debt",
+    className: "bg-red-50 text-red-700 ring-1 ring-red-100",
+    dotClassName: "bg-red-500",
+  };
 }
 
 export type SettlementKpiSummary = {
