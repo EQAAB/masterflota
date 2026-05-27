@@ -33,60 +33,44 @@ export function SettlementsInfoCard() {
 
   return (
     <div
-      className={`overflow-hidden rounded-[18px] border border-brand-mint/50 bg-gradient-to-r from-brand-mint/40 to-brand-mint/20 shadow-soft ${transitionDefault}`}
+      className={`overflow-hidden rounded-[16px] border border-brand-mint/55 bg-brand-mint/20 shadow-soft ring-1 ring-inset ring-white/50 ${transitionDefault}`}
     >
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors duration-150 hover:bg-brand-mint/30 sm:px-5"
+        className="flex h-12 w-full items-center justify-between gap-3 px-4 text-left transition-colors duration-150 hover:bg-brand-mint/30 sm:px-4"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
       >
         <span className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/70 text-brand shadow-sm">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 text-brand shadow-sm ring-1 ring-brand-mint/60">
             <InfoIcon className="h-4 w-4" />
           </span>
-          <span className="text-sm font-semibold text-ink">How settlements are calculated</span>
+          <span className="text-sm font-medium text-slate-800">How settlements are calculated</span>
         </span>
-        <ChevronIcon className="h-4 w-4 shrink-0 text-ink-muted" expanded={expanded} />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+          <ChevronIcon className="h-4 w-4 text-slate-500" expanded={expanded} />
+        </span>
       </button>
       <div
         className={`grid transition-[grid-template-rows] duration-200 ease-out ${expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-brand-mint/40 px-4 pb-4 pt-3 sm:px-5">
-            <ul className="space-y-2.5 text-sm leading-relaxed text-ink-muted">
-              <li className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-                <span>Totals are summed from driver payouts for the selected period.</span>
+          <div className="border-t border-brand-mint/40 px-4 pb-3 pt-2.5 sm:px-4">
+            <ul className="space-y-1.5 text-sm leading-relaxed text-slate-600">
+              <li>Totals are summed from driver payouts for the selected period.</li>
+              <li>
+                <span className="font-medium text-slate-800">Payable</span> is the sum of net driver payouts for each
+                subcontractor.
               </li>
-              <li className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-                <span>
-                  <span className="font-medium text-ink">Payable</span> is the sum of net driver payouts for each
-                  subcontractor.
-                </span>
+              <li>
+                <span className="font-medium text-slate-800">Gross incl. tips</span> already includes tips — do not add
+                those columns together.
               </li>
-              <li className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-                <span>
-                  <span className="font-medium text-ink">Gross incl. tips</span> already includes tips — do not add
-                  those columns together.
-                </span>
+              <li>
+                <span className="font-medium text-slate-800">Commission</span> is the sum of{" "}
+                <span className="font-mono text-xs">company_commission</span> on each linked driver payout.
               </li>
-              <li className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-                <span>
-                  <span className="font-medium text-ink">Commission</span> is the sum of{" "}
-                  <span className="font-mono text-xs">company_commission</span> on each linked driver payout.
-                </span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-                <span>
-                  Fee columns (vehicle rent, account fee, platform fee, daily cash, custom adjustments) mirror each
-                  deduction line on the driver payout — expand a row to view them.
-                </span>
-              </li>
+              <li>Fee columns mirror driver payout deductions — expand a row for details.</li>
             </ul>
           </div>
         </div>

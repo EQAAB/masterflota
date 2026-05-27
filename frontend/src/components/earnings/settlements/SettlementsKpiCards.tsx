@@ -68,30 +68,41 @@ function BanknotesIcon({ className }: { className?: string }) {
   );
 }
 
+const tnumStyle = { fontFeatureSettings: '"tnum"' } as const;
+
 function CompactKpiCard({
   title,
   value,
   icon,
   iconClassName,
+  emphasizeValue,
 }: {
   title: string;
   value: string;
   icon: ReactNode;
   iconClassName: string;
+  emphasizeValue?: boolean;
 }) {
   return (
     <div
-      className={`flex h-full min-h-[76px] flex-col justify-between rounded-[14px] border border-border/80 bg-white p-3.5 shadow-soft ${transitionDefault} hover:shadow-soft-lg`}
+      className={`flex min-h-[88px] items-center overflow-visible rounded-[16px] border border-border/70 bg-white px-4 py-3.5 shadow-soft ${transitionDefault} hover:-translate-y-px hover:shadow-md`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex w-full items-center gap-3 overflow-visible">
         <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}
         >
           {icon}
         </span>
-        <div className="min-w-0 flex-1 pt-0.5">
-          <p className="text-[11px] font-medium leading-tight text-ink-muted">{title}</p>
-          <p className="mt-1 truncate text-[15px] font-bold tabular-nums leading-none text-ink whitespace-nowrap">
+        <div className="flex min-w-0 flex-1 flex-col justify-center overflow-visible">
+          <p className="text-xs font-medium leading-tight text-slate-500">{title}</p>
+          <p
+            className={`mt-0.5 whitespace-nowrap tabular-nums leading-none text-slate-900 ${
+              emphasizeValue
+                ? "text-[30px] font-semibold"
+                : "text-2xl font-semibold"
+            }`}
+            style={tnumStyle}
+          >
             {value}
           </p>
         </div>
@@ -109,41 +120,42 @@ export function SettlementsKpiCards({ summary, loading }: SettlementsKpiCardsPro
   const dash = loading ? "…" : "—";
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <CompactKpiCard
         title="Subcontractors"
         value={summary ? summary.subcontractorCount.toLocaleString() : dash}
-        icon={<BuildingIcon className="h-4 w-4" />}
+        icon={<BuildingIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-brand-mint text-brand"
+        emphasizeValue
       />
       <CompactKpiCard
         title="Gross incl. tips"
         value={summary ? formatCurrency(summary.grossInclTips) : dash}
-        icon={<WalletIcon className="h-4 w-4" />}
+        icon={<WalletIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-emerald-100 text-emerald-700"
       />
       <CompactKpiCard
         title="Net driver payouts"
         value={summary ? formatCurrency(summary.netDriverPayouts) : dash}
-        icon={<BanknotesIcon className="h-4 w-4" />}
+        icon={<BanknotesIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-blue-100 text-blue-700"
       />
       <CompactKpiCard
         title="Total fees"
         value={summary ? formatCurrency(summary.totalFees) : dash}
-        icon={<ReceiptIcon className="h-4 w-4" />}
+        icon={<ReceiptIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-orange-100 text-orange-700"
       />
       <CompactKpiCard
         title="Total commission"
         value={summary ? formatCurrency(summary.totalCommission) : dash}
-        icon={<PercentIcon className="h-4 w-4" />}
+        icon={<PercentIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-indigo-100 text-indigo-700"
       />
       <CompactKpiCard
         title="Payable"
         value={summary ? formatCurrency(summary.payable) : dash}
-        icon={<WalletIcon className="h-4 w-4" />}
+        icon={<WalletIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-success/10 text-success"
       />
     </div>

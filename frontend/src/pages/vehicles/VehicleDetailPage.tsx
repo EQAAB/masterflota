@@ -6,7 +6,6 @@ import {
   getVehicleMaintenance,
   createVehicleMaintenance,
   type Vehicle,
-  type VehicleMaintenance,
   type CreateMaintenancePayload,
 } from "../../api/vehicles";
 import {
@@ -17,6 +16,7 @@ import { getDrivers, type DriverListItem } from "../../api/drivers";
 import { VehicleDocumentUpload } from "../../components/vehicles/VehicleDocumentUpload";
 import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
+import { VehicleMaintenancePanel } from "../../components/vehicles/VehicleMaintenancePanel";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/currency";
 
@@ -42,19 +42,23 @@ function driverDisplayName(
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  available: "bg-green-100 text-green-800",
-  rented: "bg-blue-100 text-blue-800",
-  maintenance: "bg-amber-100 text-amber-800",
-  sold: "bg-slate-100 text-ink",
-  scrapped: "bg-red-100 text-red-800",
+  available: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200/70",
+  rented: "bg-sky-100 text-sky-800 ring-1 ring-sky-200/70",
+  maintenance: "bg-amber-100 text-amber-800 ring-1 ring-amber-200/70",
+  sold: "bg-slate-100 text-ink ring-1 ring-slate-200/80",
+  scrapped: "bg-red-100 text-red-800 ring-1 ring-red-200/70",
 };
 
-const MAINTENANCE_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  in_progress: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-slate-100 text-ink",
-};
+const cardClass = "rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5";
+const sectionTitleClass = "mb-3 text-sm font-semibold text-slate-900";
+const labelClass = "text-[11px] font-semibold uppercase tracking-wide text-slate-500";
+const valueClass = "mt-1 text-sm text-slate-900";
+
+function initials(firstName?: string | null, lastName?: string | null): string {
+  const f = (firstName ?? "").trim().charAt(0);
+  const l = (lastName ?? "").trim().charAt(0);
+  return `${f}${l}`.toUpperCase() || "?";
+}
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -160,23 +164,23 @@ export function VehicleDetailPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-border px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="border-b border-border/70 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
             <Link to="/vehicles" className="text-sm text-ink-muted hover:text-ink">
               ← Back to vehicles
             </Link>
-            <h1 className="text-xl font-semibold text-ink mt-1">
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
               {v.year ? `${v.year} ` : ""}
               {v.make} {v.model}
             </h1>
-            <p className="text-xs text-ink-muted font-mono mt-0.5">
+            <p className="mt-1 text-xs font-medium text-slate-500">
               {v.license_plate} · {v.vehicle_type}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span
-              className={`inline-flex rounded px-2 py-1 text-xs font-medium capitalize ${
+              className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-medium capitalize ${
                 STATUS_COLORS[v.status] ?? "bg-slate-100 text-ink"
               }`}
             >
@@ -185,7 +189,7 @@ export function VehicleDetailPage() {
             {canEdit && (
               <Link
                 to={`/vehicles/${id}/edit`}
-                className="inline-flex items-center rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+                className="inline-flex h-10 items-center rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md"
               >
                 Edit vehicle
               </Link>
@@ -193,16 +197,16 @@ export function VehicleDetailPage() {
           </div>
         </div>
 
-        <nav className="flex gap-1 mt-4 border-b border-border">
+        <nav className="mx-auto mt-2 flex max-w-[1600px] gap-2 px-4 pb-3 sm:px-6 lg:px-8">
           {(["profile", "maintenance", "documents"] as TabId[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-md capitalize ${
+              className={`rounded-full px-4 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
                 tab === t
-                  ? "bg-slate-100 text-ink border border-b-0 border-border -mb-px"
-                  : "text-ink-muted hover:text-ink"
+                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-border/70"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
               }`}
             >
               {t}
@@ -211,22 +215,22 @@ export function VehicleDetailPage() {
         </nav>
       </header>
 
-      <main className="p-6 max-w-4xl mx-auto">
+      <main className={`mx-auto p-4 sm:p-6 ${tab === "maintenance" ? "max-w-6xl" : "max-w-5xl"}`}>
         {tab === "profile" && (
-          <div className="space-y-6">
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Vehicle details</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-ink-muted">Make / Model</dt><dd className="font-medium">{v.make} {v.model}</dd></div>
-                <div><dt className="text-ink-muted">Year</dt><dd>{v.year ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Color</dt><dd>{v.color ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">License plate</dt><dd className="font-mono">{v.license_plate}</dd></div>
-                <div><dt className="text-ink-muted">VIN</dt><dd>{v.vin ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Fuel / Transmission</dt><dd>{[v.fuel_type, v.transmission].filter(Boolean).join(" · ") || "—"}</dd></div>
-                <div><dt className="text-ink-muted">Seating capacity</dt><dd>{v.seating_capacity ?? "—"}</dd></div>
+          <div className="space-y-4">
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Vehicle details</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
+                <div><dt className={labelClass}>Make / Model</dt><dd className={`${valueClass} font-medium`}>{v.make} {v.model}</dd></div>
+                <div><dt className={labelClass}>Year</dt><dd className={valueClass}>{v.year ?? "—"}</dd></div>
+                <div><dt className={labelClass}>Color</dt><dd className={valueClass}>{v.color ?? "—"}</dd></div>
+                <div><dt className={labelClass}>License plate</dt><dd className={`${valueClass} font-mono`}>{v.license_plate}</dd></div>
+                <div><dt className={labelClass}>VIN</dt><dd className={valueClass}>{v.vin ?? "—"}</dd></div>
+                <div><dt className={labelClass}>Fuel / Transmission</dt><dd className={valueClass}>{[v.fuel_type, v.transmission].filter(Boolean).join(" · ") || "—"}</dd></div>
+                <div><dt className={labelClass}>Seating capacity</dt><dd className={valueClass}>{v.seating_capacity ?? "—"}</dd></div>
                 <div>
-                  <dt className="text-ink-muted">Current driver</dt>
-                  <dd>
+                  <dt className={labelClass}>Current driver</dt>
+                  <dd className={valueClass}>
                     {v.current_driver_id ? (
                       <Link
                         to={`/drivers/${v.current_driver_id}`}
@@ -243,21 +247,21 @@ export function VehicleDetailPage() {
             </section>
 
             {canEdit && (
-              <section className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-ink mb-3">Driver assignment</h2>
+              <section className={cardClass}>
+                <h2 className={sectionTitleClass}>Driver assignment</h2>
                 {v.current_driver_id ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Link
-                      to={`/drivers/${v.current_driver_id}`}
-                      className="text-sm text-brand hover:underline font-medium"
-                    >
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-slate-50/70 px-3 py-2.5">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-mint text-sm font-semibold text-brand">
+                      {initials(v.driver_first_name, v.driver_last_name)}
+                    </span>
+                    <Link to={`/drivers/${v.current_driver_id}`} className="text-sm font-medium text-brand hover:underline">
                       {driverDisplayName(v.driver_first_name, v.driver_last_name)}
                     </Link>
                     <button
                       type="button"
                       onClick={() => unassignDriverMutation.mutate()}
                       disabled={unassignDriverMutation.isPending}
-                      className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
+                      className="ml-auto inline-flex h-9 items-center rounded-full border border-border/80 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
                       {unassignDriverMutation.isPending ? "Unassigning…" : "Unassign driver"}
                     </button>
@@ -266,7 +270,7 @@ export function VehicleDetailPage() {
                   <button
                     type="button"
                     onClick={() => setAssignDriverOpen(true)}
-                    className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+                    className="inline-flex h-10 items-center rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white hover:opacity-95"
                   >
                     Assign driver
                   </button>
@@ -274,17 +278,21 @@ export function VehicleDetailPage() {
               </section>
             )}
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Rental rates (RON)</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                <div><dt className="text-ink-muted">Daily</dt><dd className="font-medium">{formatCurrency(Number(v.daily_rent))}</dd></div>
-                <div>
-                  <dt className="text-ink-muted" title="Deducted each payout week while assigned to a driver.">
-                    Weekly (payroll)
-                  </dt>
-                  <dd className="font-medium">{formatCurrency(Number(v.weekly_rent))}</dd>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Rental rates (RON)</h2>
+              <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                <div className="rounded-xl border border-border/70 bg-emerald-50/50 px-3 py-3">
+                  <dt className={labelClass}>Daily</dt>
+                  <dd className="mt-1.5 text-lg font-semibold text-slate-900">{formatCurrency(Number(v.daily_rent))}</dd>
                 </div>
-                <div><dt className="text-ink-muted">Monthly</dt><dd className="font-medium">{formatCurrency(Number(v.monthly_rent))}</dd></div>
+                <div className="rounded-xl border border-border/70 bg-sky-50/50 px-3 py-3">
+                  <dt className={labelClass} title="Deducted each payout week while assigned to a driver.">Weekly (payroll)</dt>
+                  <dd className="mt-1.5 text-lg font-semibold text-slate-900">{formatCurrency(Number(v.weekly_rent))}</dd>
+                </div>
+                <div className="rounded-xl border border-border/70 bg-violet-50/50 px-3 py-3">
+                  <dt className={labelClass}>Monthly</dt>
+                  <dd className="mt-1.5 text-lg font-semibold text-slate-900">{formatCurrency(Number(v.monthly_rent))}</dd>
+                </div>
               </dl>
             </section>
 
@@ -292,88 +300,47 @@ export function VehicleDetailPage() {
               <VehicleAssignmentHistoryPanel mode="vehicle" entityId={id} title="Driver history" />
             )}
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Expiry dates</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-ink-muted">Insurance expiry</dt><dd>{formatDate(v.insurance_expiry)}</dd></div>
-                <div><dt className="text-ink-muted">Registration expiry</dt><dd>{formatDate(v.registration_expiry)}</dd></div>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Expiry dates</h2>
+              <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                <div className="rounded-xl border border-border/70 bg-slate-50/60 px-3 py-3">
+                  <dt className={labelClass}>Insurance expiry</dt>
+                  <dd className="mt-1 text-sm font-medium text-slate-900">{formatDate(v.insurance_expiry)}</dd>
+                </div>
+                <div className="rounded-xl border border-border/70 bg-slate-50/60 px-3 py-3">
+                  <dt className={labelClass}>Registration expiry</dt>
+                  <dd className="mt-1 text-sm font-medium text-slate-900">{formatDate(v.registration_expiry)}</dd>
+                </div>
               </dl>
             </section>
 
             {v.notes && (
-              <section className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-ink mb-3">Notes</h2>
-                <p className="text-sm text-ink whitespace-pre-wrap">{v.notes}</p>
+              <section className={cardClass}>
+                <h2 className={sectionTitleClass}>Notes</h2>
+                <p className="whitespace-pre-wrap text-sm text-slate-700">{v.notes}</p>
               </section>
             )}
           </div>
         )}
 
         {tab === "maintenance" && (
-          <div className="space-y-6">
-            {canEdit && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-ink">Maintenance</h2>
-                  <button
-                    type="button"
-                    onClick={() => setAddMaintenanceOpen(true)}
-                    className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
-                  >
-                    Add maintenance
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-ink">Type</th>
-                    <th className="px-3 py-2 text-left font-medium text-ink">Description</th>
-                    <th className="px-3 py-2 text-left font-medium text-ink">Scheduled</th>
-                    <th className="px-3 py-2 text-left font-medium text-ink">Cost</th>
-                    <th className="px-3 py-2 text-left font-medium text-ink">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maintenanceList.map((m: VehicleMaintenance) => (
-                    <tr key={m.id} className="border-t border-border">
-                      <td className="px-3 py-2">{m.maintenance_type}</td>
-                      <td className="px-3 py-2">{m.description ?? "—"}</td>
-                      <td className="px-3 py-2">{formatDate(m.scheduled_date)}</td>
-                      <td className="px-3 py-2">{m.cost != null ? formatCurrency(Number(m.cost)) : "—"}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium capitalize ${MAINTENANCE_STATUS_COLORS[m.status] ?? ""}`}>
-                          {m.status.replace("_", " ")}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {maintenanceList.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-ink-muted">
-                        No maintenance records yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <VehicleMaintenancePanel
+            records={maintenanceList}
+            canEdit={canEdit}
+            onAdd={() => setAddMaintenanceOpen(true)}
+          />
         )}
 
         {tab === "documents" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {canEdit && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-ink mb-3">Upload new document</h2>
+              <div className={cardClass}>
+                <h2 className={sectionTitleClass}>Upload new document</h2>
                 <VehicleDocumentUpload vehicleId={id} />
               </div>
             )}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Documents</h2>
+            <div className={cardClass}>
+              <h2 className={sectionTitleClass}>Documents</h2>
               <VehicleDocumentList vehicleId={id} />
             </div>
           </div>

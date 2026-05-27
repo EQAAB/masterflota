@@ -28,20 +28,20 @@ export function settlementStatusDisplay(row: SubcontractorSettlementRow): {
   if (status === "paid") {
     return {
       label: "Paid",
-      className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+      className: "bg-emerald-100 text-emerald-800",
       dotClassName: "bg-emerald-500",
     };
   }
   if (status === "pending" || !row.id) {
     return {
       label: "Pending",
-      className: "bg-amber-50 text-amber-800 ring-1 ring-amber-100",
+      className: "bg-amber-100 text-amber-900",
       dotClassName: "bg-amber-500",
     };
   }
   return {
     label: "Debt",
-    className: "bg-red-50 text-red-700 ring-1 ring-red-100",
+    className: "bg-red-100 text-red-800",
     dotClassName: "bg-red-500",
   };
 }

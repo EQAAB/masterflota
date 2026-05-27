@@ -24,14 +24,14 @@ function ArrowIcon({ className }: { className?: string }) {
 
 export function ImportWhatsNextBanner() {
   return (
-    <div className="flex flex-col gap-4 border-t border-border/60 bg-gradient-to-r from-brand-mint/30 to-brand-mint/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6">
-      <div className="flex min-w-0 items-start gap-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+    <div className="flex flex-col gap-3 border-t border-border/60 bg-gradient-to-r from-brand-mint/25 to-brand-mint/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
           <InfoIcon />
         </span>
         <div>
           <h4 className="text-sm font-semibold text-ink">What happens next?</h4>
-          <p className="mt-1 max-w-xl text-sm leading-relaxed text-ink-muted">
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-600">
             We&apos;ll validate your file and process the data. You&apos;ll be notified once the import is complete.
           </p>
         </div>
@@ -39,7 +39,7 @@ export function ImportWhatsNextBanner() {
       <button
         type="button"
         onClick={scrollToRecentImports}
-        className={`${btnGhost} shrink-0 gap-2 border border-brand/20 bg-white/70 px-4 py-2.5 text-sm font-medium text-brand hover:bg-white ${transitionDefault}`}
+        className={`${btnGhost} h-10 shrink-0 gap-2 rounded-xl border border-brand/20 bg-white/75 px-3.5 text-sm font-medium text-brand hover:bg-white ${transitionDefault}`}
       >
         View import history
         <ArrowIcon className="h-4 w-4" />

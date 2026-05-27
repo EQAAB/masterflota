@@ -40,8 +40,8 @@ export function EarningsImportUploadCard({
   onBrowseClick,
 }: EarningsImportUploadCardProps) {
   return (
-    <div className="rounded-[18px] border border-[#E7ECEF] bg-white p-7 shadow-card sm:p-8">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
+    <div className="rounded-[18px] border border-[#E7ECEF] bg-white p-5 shadow-card sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
         <div
           className={`lg:w-[58%] ${transitionDefault}`}
           onDragEnter={onDragEnter}
@@ -50,22 +50,22 @@ export function EarningsImportUploadCard({
           onDrop={onDrop}
         >
           <div
-            className={`flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-5 py-6 sm:px-6 ${transitionDefault} ${
+            className={`flex h-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-5 py-5 sm:px-6 ${transitionDefault} ${
               dragActive
-                ? "border-brand/50 bg-brand-mint/10"
-                : "border-brand/25 bg-white hover:border-brand/40 hover:bg-brand-mint/5"
+                ? "border-brand/45 bg-brand-mint/10"
+                : "border-brand/20 bg-white hover:border-brand/35 hover:bg-brand-mint/5"
             }`}
           >
-            <div className="flex w-full flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
-              <div className="hidden sm:block">
+            <div className="flex w-full flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-5">
+              <div className="hidden rounded-full bg-brand-mint/45 p-2.5 sm:block">
                 <EarningsImportUploadIllustration />
               </div>
 
               <div className="min-w-0 flex-1 text-center sm:text-left">
-                <h2 className="text-xl font-semibold tracking-tight text-ink">
+                <h2 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
                   Drag &amp; drop your file here
                 </h2>
-                <p className="mt-1.5 text-sm text-ink-muted">
+                <p className="mt-1 text-sm text-ink-muted">
                   or click to{" "}
                   <button
                     type="button"
@@ -78,7 +78,7 @@ export function EarningsImportUploadCard({
                     browse
                   </button>
                 </p>
-                <p className="mt-3 text-sm text-ink-muted">
+                <p className="mt-2.5 text-sm text-ink-muted">
                   Supports CSV, XLSX, ZIP, XML and PDF files.
                 </p>
                 <p className="mt-0.5 text-xs text-ink-muted/90">Max file size 25MB per file</p>
@@ -102,14 +102,14 @@ export function EarningsImportUploadCard({
                     onBrowseClick();
                   }}
                   disabled={isPending}
-                  className={`mt-5 inline-flex items-center gap-2 rounded-xl border border-brand bg-white px-5 py-2.5 text-sm font-medium text-brand ${transitionDefault} hover:bg-brand-mint/20 disabled:opacity-50`}
+                  className={`mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-brand/80 bg-white px-4 text-sm font-medium text-brand ${transitionDefault} hover:border-brand hover:bg-brand-mint/20 disabled:opacity-50`}
                 >
                   <FolderUploadIcon className="h-4 w-4" />
                   {isPending ? "Parsing…" : "Browse files"}
                 </button>
 
                 {isPending && (
-                  <div className="mt-4 w-full max-w-xs sm:mx-0">
+                  <div className="mt-3.5 w-full max-w-xs sm:mx-0">
                     <div className="h-1.5 overflow-hidden rounded-full bg-border">
                       <div className="h-full w-2/5 animate-pulse rounded-full bg-brand" />
                     </div>

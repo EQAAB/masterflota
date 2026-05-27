@@ -22,11 +22,11 @@ function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
     return <p className="text-sm text-ink-muted">No recurring fees configured.</p>;
   }
   return (
-    <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden text-sm">
+    <ul className="overflow-hidden rounded-xl border border-border/70 text-sm">
       {items.map((f) => (
         <li
           key={f.id}
-          className={`px-3 py-2 flex flex-wrap justify-between gap-2 ${!f.is_active ? "bg-slate-50 opacity-70" : "bg-white"}`}
+          className={`flex flex-wrap justify-between gap-2 border-b border-border/60 px-3 py-2.5 last:border-0 ${!f.is_active ? "bg-slate-50 opacity-70" : "bg-white"}`}
         >
           <div>
             <span className="font-medium text-ink">{f.fee_name}</span>
@@ -153,8 +153,8 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
   });
 
   return (
-    <section className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+    <section className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-ink">Recurring fees</h2>
           <p className="text-xs text-ink-muted mt-0.5">
@@ -166,7 +166,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
           <button
             type="button"
             onClick={openCreate}
-            className="rounded-md bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white hover:opacity-95"
+            className="inline-flex h-9 items-center rounded-lg bg-brand-gradient px-3.5 text-sm font-medium text-white hover:opacity-95"
           >
             Add recurring fee
           </button>
@@ -226,7 +226,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
           onClick={() => !saveMut.isPending && setModalOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-border bg-white shadow-xl p-4 space-y-3"
+            className="w-full max-w-md space-y-3 rounded-[14px] border border-border bg-white p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold text-ink">

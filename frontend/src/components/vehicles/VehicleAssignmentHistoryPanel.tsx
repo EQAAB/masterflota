@@ -129,27 +129,27 @@ export function VehicleAssignmentHistoryPanel({
   if (!canView) return null;
 
   return (
-    <section className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+    <section className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
         <button
           type="button"
           onClick={() => void exportCsv()}
           disabled={csvBusy || items.length === 0}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
+          className="inline-flex h-9 items-center rounded-lg border border-border/80 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           {csvBusy ? "Exporting…" : "Export CSV"}
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-4 text-sm">
+      <div className="mb-3 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <label className="flex flex-col gap-1">
           <span className="text-xs text-ink-muted">From</span>
           <input
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-md border border-border px-2 py-1"
+            className="h-10 rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -158,7 +158,7 @@ export function VehicleAssignmentHistoryPanel({
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-md border border-border px-2 py-1"
+            className="h-10 rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -166,21 +166,21 @@ export function VehicleAssignmentHistoryPanel({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as AssignmentHistoryStatus)}
-            className="rounded-md border border-border px-2 py-1"
+            className="h-10 rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
           >
             <option value="all">All</option>
             <option value="active">Active</option>
             <option value="returned">Returned</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 min-w-[12rem] flex-1">
+        <label className="flex min-w-[12rem] flex-col gap-1 sm:col-span-2 lg:col-span-1">
           <span className="text-xs text-ink-muted">Search</span>
           <input
             type="search"
             placeholder={mode === "driver" ? "Plate, make, model…" : "Driver name, phone…"}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="rounded-md border border-border px-2 py-1 w-full"
+            className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
           />
         </label>
       </div>
@@ -194,38 +194,38 @@ export function VehicleAssignmentHistoryPanel({
       )}
 
       {items.length > 0 && (
-        <div className="overflow-x-auto -mx-2">
+        <div className="overflow-x-auto rounded-xl border border-border/70 bg-slate-50/40">
           <table className="min-w-full text-sm">
-            <thead>
+            <thead className="bg-[#F8FAFC]">
               <tr className="border-b border-border text-left text-xs text-ink-muted">
                 {mode === "driver" ? (
                   <>
-                    <th className="px-2 py-2 font-medium">Vehicle</th>
-                    <th className="px-2 py-2 font-medium">Plate</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Vehicle</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Plate</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-2 py-2 font-medium">Driver</th>
-                    <th className="px-2 py-2 font-medium">Phone</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Driver</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Phone</th>
                   </>
                 )}
-                <th className="px-2 py-2 font-medium">Assigned</th>
-                <th className="px-2 py-2 font-medium">Returned</th>
-                <th className="px-2 py-2 font-medium text-right">Days</th>
-                <th className="px-2 py-2 font-medium text-right">Weekly rent</th>
-                <th className="px-2 py-2 font-medium text-right">
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Assigned</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Returned</th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">Days</th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">Weekly rent</th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">
                   {mode === "driver" ? "Total rent paid" : "Total rent collected"}
                 </th>
-                <th className="px-2 py-2 font-medium">Notes</th>
-                {mode === "driver" && <th className="px-2 py-2 font-medium">Actions</th>}
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Notes</th>
+                {mode === "driver" && <th className="px-3 py-2 font-semibold uppercase tracking-wide">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {items.map((row) => (
-                <tr key={row.id} className="border-b border-border">
+                <tr key={row.id} className="border-b border-border/70 bg-white hover:bg-brand-mint/15">
                   {mode === "driver" ? (
                     <>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2.5">
                         <Link
                           to={`/vehicles/${row.vehicle_id}`}
                           className="text-brand hover:underline"
@@ -235,11 +235,11 @@ export function VehicleAssignmentHistoryPanel({
                             "Vehicle"}
                         </Link>
                       </td>
-                      <td className="px-2 py-2 font-mono text-xs">{row.license_plate ?? "—"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs">{row.license_plate ?? "—"}</td>
                     </>
                   ) : (
                     <>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2.5">
                         <Link
                           to={`/drivers/${row.driver_id}`}
                           className="text-brand hover:underline"
@@ -247,33 +247,33 @@ export function VehicleAssignmentHistoryPanel({
                           {row.driver_name || "Driver"}
                         </Link>
                       </td>
-                      <td className="px-2 py-2">{row.driver_phone ?? "—"}</td>
+                      <td className="px-3 py-2.5">{row.driver_phone ?? "—"}</td>
                     </>
                   )}
-                  <td className="px-2 py-2 whitespace-nowrap">{formatDisplayDate(row.assigned_at)}</td>
-                  <td className="px-2 py-2 whitespace-nowrap">
+                  <td className="px-3 py-2.5 whitespace-nowrap">{formatDisplayDate(row.assigned_at)}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
                     {row.is_active || !row.unassigned_at ? (
-                      <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                      <span className="inline-flex h-6 items-center rounded-full bg-emerald-100 px-2.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
                         Active
                       </span>
                     ) : (
                       formatDisplayDate(row.unassigned_at)
                     )}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums">{row.days_held}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">
+                  <td className="px-3 py-2.5 text-right tabular-nums">{row.days_held}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">
                     {row.weekly_rent_at_time != null
                       ? formatCurrency(Number(row.weekly_rent_at_time))
                       : "—"}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums">
+                  <td className="px-3 py-2.5 text-right tabular-nums">
                     {formatCurrency(Number(row.total_rent_paid ?? 0))}
                   </td>
-                  <td className="px-2 py-2 max-w-[10rem] truncate text-ink-muted" title={row.notes ?? undefined}>
+                  <td className="max-w-[10rem] truncate px-3 py-2.5 text-ink-muted" title={row.notes ?? undefined}>
                     {row.notes || "—"}
                   </td>
                   {mode === "driver" && (
-                    <td className="px-2 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       <Link
                         to={payoutPeriodLink(row)}
                         className="text-xs text-brand hover:underline"

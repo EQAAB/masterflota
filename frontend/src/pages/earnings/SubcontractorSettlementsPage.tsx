@@ -62,7 +62,7 @@ export function SubcontractorSettlementsPage() {
     <div className="flex flex-col flex-1 overflow-auto bg-surface-elevated">
       <SettlementsPageHeader />
 
-      <div className="mx-auto w-full max-w-[1600px] flex-1 space-y-4 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px] flex-1 space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
         <SettlementsInfoCard />
 
         <SettlementsFiltersCard
@@ -78,14 +78,17 @@ export function SubcontractorSettlementsPage() {
         />
 
         {msg && (
-          <div className="rounded-xl border border-brand-mint/60 bg-brand-mint/30 px-4 py-3 text-sm text-ink">
+          <div className="rounded-[14px] border border-brand-mint/50 bg-brand-mint/20 px-3 py-2.5 text-sm text-slate-800">
             {msg}
           </div>
         )}
 
-        <SettlementsKpiCards summary={query.data ? kpis : undefined} loading={query.isLoading} />
+        <section aria-label="Settlement summary">
+          <SettlementsKpiCards summary={query.data ? kpis : undefined} loading={query.isLoading} />
+        </section>
 
-        <SettlementsTable
+        <section aria-label="Settlement list" className="pt-0">
+          <SettlementsTable
           rows={rows}
           loading={query.isLoading}
           isError={query.isError}
@@ -95,6 +98,7 @@ export function SubcontractorSettlementsPage() {
           onActionMenuToggle={handleActionMenuToggle}
           onRefresh={handleRefresh}
         />
+        </section>
       </div>
 
       <ActionMenuDropdown

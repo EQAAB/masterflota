@@ -46,14 +46,17 @@ const FEATURES = [
 
 export function EarningsImportFeatureCards() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {FEATURES.map((f) => (
-        <div key={f.title} className={`${kpiCard} min-h-0 ${transitionDefault} hover:shadow-card-hover`}>
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${f.iconClass}`}>
+        <div
+          key={f.title}
+          className={`${kpiCard} min-h-0 !p-4 ${transitionDefault} hover:-translate-y-px hover:shadow-card-hover`}
+        >
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${f.iconClass}`}>
             {f.icon}
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-ink">{f.title}</h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{f.description}</p>
+          <h3 className="mt-3 text-sm font-semibold text-ink">{f.title}</h3>
+          <p className="mt-1 text-[13px] leading-relaxed text-ink-muted">{f.description}</p>
         </div>
       ))}
     </div>

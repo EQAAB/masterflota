@@ -113,9 +113,9 @@ const STATUS_STYLES = {
   muted: "bg-surface text-ink-muted ring-1 ring-border",
 } as const;
 
-const tableCell = "px-4 py-4 lg:px-5 lg:py-[1.125rem] align-middle";
+const tableCell = "px-3 py-3 lg:px-4 lg:py-3 align-middle";
 const tableHeaderCell = `${tableCell} text-left`;
-const headerLabel = "text-[11px] font-semibold uppercase tracking-wider text-ink-muted";
+const headerLabel = "text-[11px] font-semibold uppercase tracking-wide text-slate-600";
 
 type RecentImportsTableProps = {
   rows: EarningsImportListItem[];
@@ -168,14 +168,14 @@ export function RecentImportsTable({
   }, [openRow, closeMenu, onDelete, onRevert]);
 
   return (
-    <section id="recent-imports" className="scroll-mt-6 overflow-hidden rounded-[20px] border border-border/80 bg-white shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-5 sm:px-6">
+    <section id="recent-imports" className="scroll-mt-6 overflow-hidden rounded-[18px] border border-border/80 bg-white shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
         <h2 className="text-base font-semibold tracking-tight text-ink">Recent imports</h2>
         <button
           type="button"
           disabled={busy || resyncPending}
           onClick={onResync}
-          className={`${btnSecondary} gap-2 text-sm ${transitionDefault}`}
+          className={`${btnSecondary} h-10 gap-2 rounded-xl border-border/80 px-3.5 text-sm ${transitionDefault}`}
         >
           <RefreshIcon className="h-4 w-4 text-ink-muted" />
           {resyncPending ? "Re-syncing…" : "Re-sync vehicle rentals"}
@@ -200,7 +200,7 @@ export function RecentImportsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] table-fixed text-sm">
-            <thead className="bg-[#F7F8FC]">
+            <thead className="bg-[#F4F6FA]">
               <tr>
                 <th className={`${tableHeaderCell} min-w-[240px]`}><span className={headerLabel}>File</span></th>
                 <th className={`${tableHeaderCell} w-[120px]`}><span className={headerLabel}>Platform</span></th>
@@ -229,16 +229,16 @@ export function RecentImportsTable({
                 return (
                   <tr
                     key={row.id}
-                    className={`${transitionDefault} ${isEven ? "bg-[#FAFBFD]" : "bg-white"} hover:bg-brand-mint/25`}
+                    className={`${transitionDefault} ${isEven ? "bg-[#FAFBFD]" : "bg-white"} hover:bg-brand-mint/20`}
                   >
                     <td className={tableCell}>
-                      <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex min-w-0 items-center gap-2.5">
                         <CsvFileIcon />
                         <div className="min-w-0">
                           <p className="truncate font-medium text-ink" title={row.file_name ?? undefined}>
                             {row.file_name ?? "—"}
                           </p>
-                          <p className="mt-0.5 text-xs text-ink-muted">{formatFileSizeLabel(row.file_name)}</p>
+                          <p className="mt-0.5 text-[11px] text-ink-muted">{formatFileSizeLabel(row.file_name)}</p>
                         </div>
                       </div>
                     </td>
@@ -255,9 +255,7 @@ export function RecentImportsTable({
                       </div>
                     </td>
                     <td className={tableCell}>
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status.tone]}`}
-                      >
+                      <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium ${STATUS_STYLES[status.tone]}`}>
                         {status.tone === "success" && <CheckIcon className="h-3 w-3" />}
                         {status.label}
                       </span>
@@ -266,7 +264,7 @@ export function RecentImportsTable({
                       <p className="font-medium tabular-nums text-ink">
                         {processed} / {total}
                       </p>
-                      <p className="mt-0.5 text-xs text-ink-muted">{pct}%</p>
+                      <p className="mt-0.5 text-[11px] text-ink-muted">{pct}%</p>
                     </td>
                     <td className={tableCell}>
                       <div className="flex items-start gap-2 whitespace-nowrap">
@@ -278,7 +276,7 @@ export function RecentImportsTable({
                       </div>
                     </td>
                     {isAdmin && (
-                      <td className={`${tableCell} text-right`}>
+                      <td className={`${tableCell} text-right !pr-3`}>
                         {hasActions ? (
                           <button
                             type="button"
