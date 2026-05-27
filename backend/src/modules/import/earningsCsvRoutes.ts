@@ -4,7 +4,11 @@ import { pool } from "../../db/pool";
 import { readOrgGlovoCommissionBase } from "../earnings/orgImportSettings";
 import { earningsUpload, entityCsvUpload } from "../../config/multer";
 import { parseEarningsFile } from "../earnings/parseFile";
-import { buildColumnMap } from "../earnings/romanHeaderMap";
+import {
+  buildEarningsColumnMap,
+  isBoltWeeklyColumnMap,
+  isUberWeeklyColumnMap,
+} from "../earnings/earningsColumnMap";
 import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows } from "../earnings/normalizeRow";
 import { detectPlatformWithMeta, isEarningsPlatform, type EarningsPlatform } from "../earnings/detectPlatform";
 import { extractDateFromFilename } from "../earnings/filenameDate";
@@ -52,11 +56,15 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
     }
 
     const { confidence: detectionConfidence } = detectPlatformWithMeta(req.file.originalname, table.headers);
-    const colMap = buildColumnMap(table.headers);
+    const boltWeekly = isBoltWeeklyColumnMap(table.headers);
+    const uberTaxi = isUberWeeklyColumnMap(table.headers);
+    const colMap = buildEarningsColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
     const mappedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
-        skipInferredPlatformFee: platformEff === "glovo",
+        skipInferredPlatformFee: platformEff === "glovo" || uberTaxi,
+        boltWeeklyExport: boltWeekly,
+        uberTaxiExport: uberTaxi,
       }),
     );
     const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
@@ -89,6 +97,8 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
         rowCount: table.rows.length,
         normalizedRows,
         glovoCommissionBaseType,
+        boltWeeklyExport: boltWeekly,
+        uberTaxiExport: uberTaxi,
         parseStats,
       });
       const commitResult = await runEarningsCommitFromStaging(client, orgId, importId, platformEff, weekStart, weekEnd);

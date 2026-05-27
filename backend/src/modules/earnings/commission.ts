@@ -23,12 +23,14 @@ function round2(n: number): number {
 export function computeCompanyCommissionFromBase(
   driver: DriverCommissionRow,
   commissionBase: number,
+  opts?: { allowNegativeBase?: boolean },
 ): CompanyCommissionResult {
   const type = (driver.commission_type || "percentage") as CommissionType;
   const rate = Number(driver.commission_rate ?? 0);
   const fixedAmount = Number(driver.fixed_commission_amount ?? 0);
   const minimumCommission = Number(driver.minimum_commission ?? 0);
-  const safeBase = Math.max(0, commissionBase);
+  const allowNegative = opts?.allowNegativeBase === true;
+  const safeBase = allowNegative ? commissionBase : Math.max(0, commissionBase);
 
   let companyCommission = 0;
 
@@ -40,7 +42,7 @@ export function computeCompanyCommissionFromBase(
     companyCommission = round2((safeBase * rate) / 100 + fixedAmount);
   }
 
-  if (minimumCommission > 0 && companyCommission < minimumCommission) {
+  if (!allowNegative && minimumCommission > 0 && companyCommission < minimumCommission) {
     companyCommission = round2(minimumCommission);
   }
 

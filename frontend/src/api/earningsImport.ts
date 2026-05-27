@@ -6,6 +6,8 @@ export interface EarningsPreviewRow {
   tripDate: string | null;
   gross: number | null;
   net: number | null;
+  /** Uber parent Câștiguri primite (debt weeks). */
+  receivedTotal?: number | null;
   tips: number | null;
   /** Total Venituri de transferat (TVT) when column mapped */
   transferTotal: number | null;

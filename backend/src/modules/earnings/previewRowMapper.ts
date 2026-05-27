@@ -12,6 +12,8 @@ export type EarningsPreviewRowDto = {
   tripDate: string | null;
   gross: number | null;
   net: number | null;
+  /** Uber parent Câștiguri primite (debt weeks). */
+  receivedTotal: number | null;
   tips: number | null;
   transferTotal: number | null;
   platformFee: number | null;
@@ -75,6 +77,7 @@ export function stagingPayloadToPreviewRow(
     tripDate: p.tripDateIso,
     gross: p.amounts.gross,
     net: p.amounts.net,
+    receivedTotal: p.amounts.receivedTotal ?? null,
     tips: p.amounts.tips ?? null,
     transferTotal: p.amounts.transferTotal,
     platformFee,
