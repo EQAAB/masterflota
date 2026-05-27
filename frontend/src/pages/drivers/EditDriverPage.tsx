@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -17,12 +17,37 @@ import { CommissionInput } from "../../components/drivers/CommissionInput";
 import { getSubcontractors } from "../../api/subcontractors";
 import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
+import { PageHeader } from "../../components/theme/PageHeader";
 
 const EMPLOYMENT_STATUSES = [
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
   { value: "terminated", label: "Terminated" },
 ] as const;
+
+const inputClass =
+  "h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15";
+const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-[16px] border border-border/70 bg-white p-5 shadow-soft sm:p-6">
+      <div className="mb-4">
+        <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
+        {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -246,268 +271,303 @@ export function EditDriverPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-ink">Edit Driver</h1>
-          <p className="text-xs text-ink-muted mt-0.5 font-mono">ID: {id}</p>
+      <div className="border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <PageHeader
+            title="Edit driver"
+            description="Update personal details, employment settings, commissions, and platform identifiers."
+            breadcrumbs={[
+              { label: "Dashboard", to: "/dashboard" },
+              { label: "Drivers", to: "/drivers" },
+              { label: "Edit driver" },
+            ]}
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  form="edit-driver-form"
+                  disabled={mutation.isPending}
+                  className="inline-flex h-10 items-center rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:opacity-95 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:opacity-60"
+                >
+                  {mutation.isPending ? (
+                    <>
+                      <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save changes"
+                  )}
+                </button>
+                <Link
+                  to="/drivers"
+                  className="inline-flex h-10 items-center rounded-xl border border-border/80 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  Cancel
+                </Link>
+              </div>
+            }
+            className="border-0 bg-transparent px-0 py-4 sm:py-5 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-tight"
+          />
         </div>
-        <Link to="/drivers" className="text-sm text-ink-muted hover:text-ink">
-          ← Back to drivers
-        </Link>
-      </header>
+      </div>
 
-      <main className="p-6 max-w-4xl mx-auto">
-        <form onSubmit={onSubmit} className="bg-white shadow-sm rounded-xl p-6 space-y-6">
-          <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Personal info</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:px-8">
+        <form id="edit-driver-form" onSubmit={onSubmit} className="space-y-4">
+          <SectionCard title="Personal information" description="Basic identity and contact details.">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">First name *</label>
+                <label className={labelClass}>First name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.firstName}
                   onChange={(e) => update("firstName", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Last name *</label>
+                <label className={labelClass}>Last name *</label>
                 <input
                   type="text"
                   required
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.lastName}
                   onChange={(e) => update("lastName", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Email</label>
+                <label className={labelClass}>Email</label>
                 <input
                   type="email"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.email ?? ""}
                   onChange={(e) => update("email", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Phone *</label>
+                <label className={labelClass}>Phone *</label>
                 <input
                   type="tel"
                   required
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.phone}
                   onChange={(e) => update("phone", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Date of birth</label>
+                <label className={labelClass}>Date of birth</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.dateOfBirth ?? ""}
                   onChange={(e) => update("dateOfBirth", e.target.value)}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink mb-1">Address</label>
-                <input
-                  type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                <label className={labelClass}>Address</label>
+                <textarea
+                  rows={3}
+                  className="w-full resize-y rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
                   value={form.address ?? ""}
                   onChange={(e) => update("address", e.target.value)}
                 />
               </div>
             </div>
-          </section>
+          </SectionCard>
 
-          <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">License info</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SectionCard title="License information" description="Driver license data and validity.">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License number</label>
+                <label className={labelClass}>License number</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.licenseNumber ?? ""}
                   onChange={(e) => update("licenseNumber", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License expiry</label>
+                <label className={labelClass}>License expiry</label>
                 <input
                   type="date"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.licenseExpiry ?? ""}
                   onChange={(e) => update("licenseExpiry", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License class</label>
+                <label className={labelClass}>License class</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.licenseClass ?? ""}
                   onChange={(e) => update("licenseClass", e.target.value)}
                 />
               </div>
             </div>
-          </section>
+          </SectionCard>
 
-          <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Employment</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Hire date</label>
-                <input
-                  type="date"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-                  value={form.hireDate ?? ""}
-                  onChange={(e) => update("hireDate", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Status</label>
-                <select
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-                  value={form.employmentStatus ?? "active"}
-                  onChange={(e) => update("employmentStatus", e.target.value as "active" | "suspended" | "terminated")}
-                >
-                  {EMPLOYMENT_STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink mb-1">Subcontractor (optional)</label>
-                <select
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-                  value={form.subcontractorId ?? ""}
-                  onChange={(e) => update("subcontractorId", e.target.value)}
-                >
-                  <option value="">None (direct)</option>
-                  {(subsQ.data ?? [])
-                    .filter((s) => s.status === "active")
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.legal_name}
+          <SectionCard title="Employment & commission" description="Contract status and payout settings.">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <label className={labelClass}>Hire date</label>
+                  <input
+                    type="date"
+                    className={inputClass}
+                    value={form.hireDate ?? ""}
+                    onChange={(e) => update("hireDate", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Status</label>
+                  <select
+                    className={inputClass}
+                    value={form.employmentStatus ?? "active"}
+                    onChange={(e) =>
+                      update("employmentStatus", e.target.value as "active" | "suspended" | "terminated")
+                    }
+                  >
+                    {EMPLOYMENT_STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
                       </option>
                     ))}
-                </select>
-                <p className="mt-1 text-xs text-ink-muted">
-                  Sub-managed: commission split from subcontractor record; vehicle rent billed to subcontractor.
-                </p>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Subcontractor (optional)</label>
+                  <select
+                    className={inputClass}
+                    value={form.subcontractorId ?? ""}
+                    onChange={(e) => update("subcontractorId", e.target.value)}
+                  >
+                    <option value="">None (direct)</option>
+                    {(subsQ.data ?? [])
+                      .filter((s) => s.status === "active")
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.legal_name}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Sub-managed: commission split from subcontractor record; vehicle rent billed to subcontractor.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-[14px] border border-border/70 bg-slate-50/70 p-4">
+                <CommissionInput
+                  commissionType={form.commissionType ?? "percentage"}
+                  commissionRate={form.commissionRate ?? 10}
+                  fixedCommissionAmount={form.fixedCommissionAmount ?? 0}
+                  minimumCommission={form.minimumCommission ?? 0}
+                  onChange={(values) => {
+                    if (values.commissionType != null) update("commissionType", values.commissionType);
+                    if (values.commissionRate != null) update("commissionRate", values.commissionRate);
+                    if (values.fixedCommissionAmount != null)
+                      update("fixedCommissionAmount", values.fixedCommissionAmount);
+                    if (values.minimumCommission != null) update("minimumCommission", values.minimumCommission);
+                  }}
+                  errors={commissionErrors}
+                />
               </div>
             </div>
-          </section>
+          </SectionCard>
 
-          <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Commission</h2>
-            <CommissionInput
-              commissionType={form.commissionType ?? "percentage"}
-              commissionRate={form.commissionRate ?? 10}
-              fixedCommissionAmount={form.fixedCommissionAmount ?? 0}
-              minimumCommission={form.minimumCommission ?? 0}
-              onChange={(values) => {
-                if (values.commissionType != null) update("commissionType", values.commissionType);
-                if (values.commissionRate != null) update("commissionRate", values.commissionRate);
-                if (values.fixedCommissionAmount != null)
-                  update("fixedCommissionAmount", values.fixedCommissionAmount);
-                if (values.minimumCommission != null) update("minimumCommission", values.minimumCommission);
-              }}
-              errors={commissionErrors}
-            />
-          </section>
-
-          <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Platform IDs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SectionCard title="Platform IDs" description="Reference IDs used by connected partner platforms.">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID
-                </label>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.uberDriverId ?? ""}
                   onChange={(e) => update("uberDriverId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID
-                </label>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.boltDriverId ?? ""}
                   onChange={(e) => update("boltDriverId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID
-                </label>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.glovoCourierId ?? ""}
                   onChange={(e) => update("glovoCourierId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID
-                </label>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.boltCourierId ?? ""}
                   onChange={(e) => update("boltCourierId", e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
-                </label>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID</label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className={inputClass}
                   value={form.woltCourierId ?? ""}
                   onChange={(e) => update("woltCourierId", e.target.value)}
                 />
               </div>
             </div>
-          </section>
+          </SectionCard>
 
-          <section>
-            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+          <SectionCard title="Notes" description="Internal notes visible to your operations team.">
             <textarea
-              rows={3}
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              rows={4}
+              className="w-full resize-y rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
               value={form.notes ?? ""}
               onChange={(e) => update("notes", e.target.value)}
+              placeholder="Add context or special handling notes..."
             />
-          </section>
+          </SectionCard>
 
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
-          {mutation.isError && !formError && (
-            <p className="text-sm text-red-600">
-              {(mutation.error as Error).message || "Failed to update driver."}
-            </p>
+          {(formError || mutation.isError) && (
+            <div className="rounded-[14px] border border-red-200/80 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError || (mutation.error as Error).message || "Failed to update driver."}
+            </div>
           )}
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          {id && (
+            <SectionCard title="Documents" description="Upload and manage driver verification documents.">
+              <div className="space-y-6">
+                <div className="rounded-[14px] border border-border/70 bg-slate-50/60 p-4">
+                  <h3 className="mb-2 text-sm font-semibold text-slate-800">Upload document</h3>
+                  <p className="mb-3 text-xs text-slate-500">
+                    Attach licenses, contracts, IDs, and expiry-sensitive records.
+                  </p>
+                  <DocumentUpload driverId={id} />
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-800">Uploaded documents</h3>
+                  <DocumentList driverId={id} />
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
+          <div className="flex flex-wrap gap-3">
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="inline-flex items-center justify-center rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+              className="inline-flex h-11 items-center rounded-xl bg-brand-gradient px-5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:opacity-95 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:opacity-60"
             >
               {mutation.isPending ? (
                 <>
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   Saving...
                 </>
               ) : (
@@ -516,28 +576,12 @@ export function EditDriverPage() {
             </button>
             <Link
               to="/drivers"
-              className="inline-flex items-center justify-center rounded-md border border-border bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50"
+              className="inline-flex h-11 items-center rounded-xl border border-border/80 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
             >
               Cancel
             </Link>
           </div>
         </form>
-
-        {id && (
-          <section className="mt-8 bg-white shadow-sm rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-ink mb-4">Documents</h2>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-medium text-ink mb-2">Upload document</h3>
-                <DocumentUpload driverId={id} />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-ink mb-2">Uploaded documents</h3>
-                <DocumentList driverId={id} />
-              </div>
-            </div>
-          </section>
-        )}
       </main>
     </div>
   );
