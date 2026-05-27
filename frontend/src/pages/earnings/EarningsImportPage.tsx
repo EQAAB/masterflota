@@ -262,7 +262,7 @@ export function EarningsImportPage() {
     <div className="flex flex-1 flex-col overflow-auto bg-surface-elevated">
       <EarningsImportHeader />
 
-      <div className={driversPage}>
+      <div className={`${driversPage} !space-y-5 !py-5 sm:!py-6`}>
         {localError && <div className={alertError}>{localError}</div>}
 
         {importSuccess && (

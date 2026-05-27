@@ -1,5 +1,5 @@
 import type { SubcontractorSettlementRow } from "../../../api/earnings";
-import { actionMenuTrigger, transitionDefault } from "../../../theme/classNames";
+import { transitionDefault } from "../../../theme/classNames";
 import { DotsVerticalIcon } from "../../theme/actionMenuIcons";
 
 type SettlementRowActionsProps = {
@@ -16,25 +16,22 @@ export function SettlementRowActions({
   onActionMenuToggle,
 }: SettlementRowActionsProps) {
   return (
-    <div
-      className="flex items-center justify-center"
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={`Actions for ${row.legal_name}`}
+      aria-expanded={isActionMenuOpen}
+      aria-haspopup="menu"
       onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onActionMenuToggle(e);
+      }}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-white text-slate-500 shadow-sm ${transitionDefault} hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 hover:shadow disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand/20 ${
+        isActionMenuOpen ? "ring-2 ring-brand/25" : ""
+      }`}
     >
-      <button
-        type="button"
-        disabled={disabled}
-        aria-label={`Actions for ${row.legal_name}`}
-        aria-expanded={isActionMenuOpen}
-        aria-haspopup="menu"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={onActionMenuToggle}
-        className={`${actionMenuTrigger} ${transitionDefault} disabled:opacity-50 ${
-          isActionMenuOpen ? "ring-2 ring-brand/25" : ""
-        }`}
-      >
-        <DotsVerticalIcon />
-      </button>
-    </div>
+      <DotsVerticalIcon />
+    </button>
   );
 }

@@ -72,9 +72,9 @@ function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
 
   return (
     <div
-      className={`flex h-[118px] w-[118px] shrink-0 flex-col items-center justify-between rounded-2xl border border-[#E7ECEF] bg-white px-2 py-3 shadow-soft ${transitionDefault} hover:border-brand/30 hover:shadow-card`}
+      className={`flex h-[118px] w-[118px] shrink-0 flex-col items-center justify-between rounded-2xl border border-[#E7ECEF] bg-white px-2.5 py-3 shadow-soft ${transitionDefault} hover:border-brand/30 hover:shadow-card`}
     >
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1.5">
         <Logo />
         <p className="text-xs font-semibold text-ink">{config.label}</p>
         <p className="text-[10px] text-ink-muted">{config.category}</p>
@@ -135,7 +135,7 @@ export function EarningsImportTemplatesPanel() {
   }, []);
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-[#E7ECEF] bg-white p-4">
+    <div className="flex h-full flex-col rounded-2xl border border-[#E7ECEF] bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-ink">Download templates</h3>
@@ -147,7 +147,7 @@ export function EarningsImportTemplatesPanel() {
           <button
             type="button"
             onClick={() => setViewAllOpen((o) => !o)}
-            className={`${linkAccent} inline-flex items-center gap-0.5 text-xs font-medium ${transitionDefault}`}
+            className={`${linkAccent} inline-flex items-center gap-1 text-[11px] font-medium ${transitionDefault} hover:opacity-80`}
             aria-expanded={viewAllOpen}
             aria-haspopup="menu"
           >
@@ -176,17 +176,17 @@ export function EarningsImportTemplatesPanel() {
         </div>
       </div>
 
-      <div className="-mx-1 mt-3 flex flex-nowrap justify-between gap-2 overflow-x-auto px-1 pb-1 lg:gap-2.5">
+      <div className="-mx-1 mt-3 flex flex-nowrap justify-between gap-2.5 overflow-x-auto px-1 pb-2 [scrollbar-color:theme(colors.teal.500)_#E5E7EB] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-teal-500/70 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-200 [&::-webkit-scrollbar]:h-1.5">
         {FEATURED_IMPORT_TEMPLATES.map((config) => (
           <ImportTemplateMiniCard key={config.id} config={config} />
         ))}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 rounded-xl bg-brand-mint/25 px-3 py-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-brand-mint/45 bg-brand-mint/20 px-2.5 py-1.5 shadow-sm">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
           <InfoIcon className="h-3.5 w-3.5" />
         </span>
-        <p className="text-xs leading-snug text-ink-muted">
+        <p className="text-xs leading-snug text-slate-600">
           Using the right template helps prevent validation errors.
         </p>
       </div>

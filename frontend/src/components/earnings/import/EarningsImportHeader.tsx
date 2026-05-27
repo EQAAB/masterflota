@@ -17,15 +17,17 @@ function HistoryIcon({ className }: { className?: string }) {
 export function EarningsImportHeader() {
   return (
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-start justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8 sm:py-6">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
         <div className="min-w-0">
-          <h1 className={pageTitle}>Import earnings</h1>
-          <p className={pageSubtitle}>Upload your earnings files to keep data accurate and up to date.</p>
+          <h1 className={`${pageTitle} leading-tight`}>Import earnings</h1>
+          <p className={`${pageSubtitle} mt-1.5 max-w-2xl text-slate-500`}>
+            Upload your earnings files to keep data accurate and up to date.
+          </p>
         </div>
         <button
           type="button"
           onClick={scrollToRecentImports}
-          className={`${btnSecondary} gap-2 text-sm`}
+          className={`${btnSecondary} h-10 rounded-full border-border/80 bg-white px-4 shadow-sm hover:shadow-md gap-2 text-sm`}
         >
           <HistoryIcon className="h-4 w-4 text-ink-muted" />
           Import history

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { btnSecondary } from "../../../theme/classNames";
+import { transitionDefault } from "../../../theme/classNames";
 import { PageHeader } from "../../theme/PageHeader";
 
 function ArrowRightIcon({ className }: { className?: string }) {
@@ -9,6 +9,11 @@ function ArrowRightIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+const payoutsLinkClass =
+  `inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border/80 bg-white px-4 ` +
+  `text-sm font-medium text-slate-800 shadow-sm ${transitionDefault} ` +
+  `hover:border-slate-300 hover:bg-slate-50 hover:shadow-md`;
 
 export function SettlementsPageHeader() {
   return (
@@ -22,11 +27,11 @@ export function SettlementsPageHeader() {
             { label: "Earnings", to: "/earnings" },
             { label: "Subcontractor settlements" },
           ]}
-          className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
+          className="border-0 bg-transparent px-0 py-4 sm:py-5 [&_nav]:mb-1.5 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:leading-tight [&_h1]:tracking-tight [&_h1]:text-slate-900 [&_.text-sm.text-ink-muted]:mt-1.5 [&_.text-sm.text-ink-muted]:max-w-2xl [&_.text-sm.text-ink-muted]:text-sm [&_.text-sm.text-ink-muted]:font-normal [&_.text-sm.text-ink-muted]:leading-relaxed [&_.text-sm.text-ink-muted]:text-slate-500"
           actions={
-            <Link to="/earnings/payouts" className={`${btnSecondary} gap-2 whitespace-nowrap text-sm`}>
-              Direct driver payouts
-              <ArrowRightIcon className="h-4 w-4 shrink-0" />
+            <Link to="/earnings/payouts" className={payoutsLinkClass}>
+              <span>Direct driver payouts</span>
+              <ArrowRightIcon className="h-4 w-4 shrink-0 text-slate-500" />
             </Link>
           }
         />
