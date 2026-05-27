@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS drivers (
     bolt_driver_id VARCHAR(100),
     glovo_courier_id VARCHAR(100),
     bolt_courier_id VARCHAR(100),
+    bolt_taxi_driver_uuid UUID,
     wolt_courier_id VARCHAR(100),
     wolt_courier_verified BOOLEAN DEFAULT false,
     wolt_courier_verified_at TIMESTAMP,
@@ -130,6 +131,10 @@ CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(employment_status);
 CREATE INDEX IF NOT EXISTS idx_drivers_profile_photo ON drivers(profile_photo_url);
 CREATE INDEX IF NOT EXISTS idx_drivers_glovo_id ON drivers(glovo_courier_id);
 CREATE INDEX IF NOT EXISTS idx_drivers_bolt_courier_id ON drivers(bolt_courier_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_drivers_org_bolt_taxi_uuid
+    ON drivers (organization_id, bolt_taxi_driver_uuid)
+    WHERE bolt_taxi_driver_uuid IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_drivers_bolt_taxi_uuid ON drivers(bolt_taxi_driver_uuid);
 CREATE INDEX IF NOT EXISTS idx_drivers_wolt_courier_id ON drivers(wolt_courier_id);
 CREATE INDEX IF NOT EXISTS idx_driver_documents_driver ON driver_documents(driver_id);
 CREATE INDEX IF NOT EXISTS idx_driver_documents_organization ON driver_documents(organization_id);
@@ -159,7 +164,7 @@ CREATE TABLE IF NOT EXISTS earnings_imports (
     import_date DATE NOT NULL,
     week_start DATE NOT NULL,
     week_end DATE NOT NULL,
-    platform VARCHAR(50) NOT NULL CHECK (platform IN ('uber', 'bolt', 'glovo', 'bolt_courier', 'wolt_courier')),
+    platform VARCHAR(50) NOT NULL CHECK (platform IN ('uber', 'bolt', 'glovo', 'bolt_courier', 'wolt_courier', 'bolt_taxi')),
     total_gross DECIMAL(12, 2),
     total_trips INTEGER,
     record_count INTEGER,
@@ -218,6 +223,7 @@ CREATE TABLE IF NOT EXISTS earnings_records (
         )
       ) STORED,
     commission_type VARCHAR(50),
+    platform_metadata JSONB NOT NULL DEFAULT '{}',
     is_reversal BOOLEAN NOT NULL DEFAULT false,
     reversal_of_record_id UUID REFERENCES earnings_records(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -236,7 +242,7 @@ CREATE TABLE IF NOT EXISTS driver_payouts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE,
-    platform VARCHAR(20) NOT NULL DEFAULT 'glovo' CHECK (platform IN ('glovo', 'bolt', 'uber')),
+    platform VARCHAR(20) NOT NULL DEFAULT 'glovo' CHECK (platform IN ('glovo', 'bolt', 'uber', 'bolt_taxi')),
     platform_id VARCHAR(255),
     payment_period_start DATE NOT NULL,
     payment_period_end DATE NOT NULL,
@@ -843,7 +849,7 @@ DECLARE
   ni numeric;
   payout numeric;
 BEGIN
-  IF NEW.platform IN ('bolt', 'bolt_courier', 'uber') THEN
+  IF NEW.platform IN ('bolt', 'bolt_courier', 'uber', 'bolt_taxi') THEN
     NEW.driver_payout := COALESCE(NEW.driver_payout, 0);
     RETURN NEW;
   END IF;
@@ -862,7 +868,7 @@ BEGIN
   )::numeric, 2);
 
   NEW.driver_payout := payout;
-  NEW.net_earnings := payout;
+  NEW.net_earnings := ni;
   RETURN NEW;
 END;
 $$;

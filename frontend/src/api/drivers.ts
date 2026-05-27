@@ -15,6 +15,7 @@ export interface DriverListItem {
   bolt_driver_id: string | null;
   glovo_courier_id?: string | null;
   bolt_courier_id?: string | null;
+  bolt_taxi_driver_uuid?: string | null;
   wolt_courier_id?: string | null;
   current_vehicle_id?: string | null;
   current_vehicle_make?: string | null;
@@ -93,6 +94,7 @@ export interface CreateDriverPayload {
   boltDriverId?: string;
   glovoCourierId?: string;
   boltCourierId?: string;
+  boltTaxiDriverUuid?: string;
   woltCourierId?: string;
   notes?: string;
   subcontractorId?: string | null;

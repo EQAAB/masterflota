@@ -4,9 +4,10 @@ import { btnPrimary, btnSecondary, input, sectionLabel } from "../../../theme/cl
 
 const PROVIDER_OPTIONS = [
   { value: "uber", label: "Uber" },
-  { value: "bolt", label: "Bolt" },
+  { value: "bolt_taxi", label: "Bolt Taxi" },
   { value: "glovo", label: "Glovo Courier" },
   { value: "bolt_courier", label: "Bolt Delivery" },
+  { value: "bolt", label: "Bolt (legacy)" },
   { value: "wolt_courier", label: "Wolt Courier" },
 ] as const;
 

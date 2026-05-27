@@ -14,7 +14,7 @@ import {
   readOrgDefaultAccountOpeningFee,
   readOrgDefaultPlatformFee,
   resolveAccountOpeningFeeForEarningsRow,
-  resolvePlatformFeeForEarningsRow,
+  resolvePlatformFeeWithGrossNetInference,
 } from "./accountOpeningFee";
 
 export type EarningsCommitTotals = {
@@ -48,7 +48,8 @@ export function clampTripDateToPaymentWeek(
 
 async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
   const { rows: drivers } = await query<DriverMatchRow>(
-    `SELECT id, phone, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id, wolt_courier_id,
+    `SELECT id, phone, first_name, last_name, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id,
+            bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, wolt_courier_id,
             commission_type, commission_rate::text, fixed_commission_amount::text, minimum_commission::text
      FROM drivers WHERE organization_id = $1`,
     [orgId],
@@ -81,6 +82,7 @@ type InsertRow = {
   glovo_net_income: number;
   commission_base: number;
   commission_rate_frac: number;
+  platform_metadata: Record<string, string>;
 };
 
 /** Build rows and write earnings_records, driver_payouts rollup, finalize import (same transaction as caller). */
@@ -113,7 +115,8 @@ export async function runEarningsCommitFromStaging(
 
   const index = await loadMatchIndex(orgId);
   const driversRes = await client.query<DriverMatchRow & { id: string }>(
-    `SELECT d.id, d.phone, d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id, d.wolt_courier_id,
+    `SELECT d.id, d.phone, d.first_name, d.last_name, d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id,
+            d.bolt_courier_id, d.bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, d.wolt_courier_id,
             d.commission_type, d.commission_rate::text, d.fixed_commission_amount::text, d.minimum_commission::text,
             d.subcontractor_id::text
      FROM drivers d
@@ -216,8 +219,25 @@ export async function runEarningsCommitFromStaging(
         glovo_net_income: bolt.net_income,
         commission_base: 0,
         commission_rate_frac: 0,
+        platform_metadata: p.amounts.platformMetadata ?? {},
       });
       continue;
+    }
+
+    if (platformEff === "bolt_taxi") {
+      const courierUid = p.hints.courierId?.trim();
+      if (courierUid && !drv.bolt_taxi_driver_uuid) {
+        const uuidRe =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (uuidRe.test(courierUid)) {
+          await client.query(
+            `UPDATE drivers SET bolt_taxi_driver_uuid = $1::uuid
+             WHERE id = $2::uuid AND organization_id = $3::uuid AND bolt_taxi_driver_uuid IS NULL`,
+            [courierUid, driverId, orgId],
+          );
+          drv.bolt_taxi_driver_uuid = courierUid;
+        }
+      }
     }
 
     if (platformEff === "uber") {
@@ -271,15 +291,19 @@ export async function runEarningsCommitFromStaging(
         glovo_net_income: uber.net_income,
         commission_base: roundMoney(uber.commission_base),
         commission_rate_frac: uber.commission_rate,
+        platform_metadata: p.amounts.platformMetadata ?? {},
       });
       continue;
     }
 
     let g = gross;
     let n = net;
-    const resolvedPlatformFee = resolvePlatformFeeForEarningsRow({
+    const resolvedPlatformFee = resolvePlatformFeeWithGrossNetInference({
       platform: platformEff,
       csvFee: fee,
+      gross: g,
+      net: n,
+      tips: tipsVal,
       orgDefault: orgDefaultPlatformFee,
       driverId,
       defaultAppliedForDriver: defaultPlatformApplied,
@@ -287,15 +311,16 @@ export async function runEarningsCommitFromStaging(
     let f = resolvedPlatformFee;
     if (g === null && n !== null && f != null) g = n + Math.abs(f);
     if (n === null && g !== null && f != null) n = g - Math.abs(f);
-    if (f == null && g !== null && n != null && platformEff !== "glovo") {
-      f = Math.abs(g - n);
+    if (f == null && g !== null && n != null && platformEff !== "glovo" && platformEff !== "bolt_taxi") {
+      f = Math.abs(g + (tipsVal ?? 0) - n);
     }
     if (f != null) f = Math.abs(f);
 
+    const taxaForCalc = platformEff === "bolt_taxi" ? 0 : f;
     const calc = calculatePayout({
       income: g,
       tips: tipsVal,
-      taxa_aplicatie: f,
+      taxa_aplicatie: taxaForCalc,
       plata_zilnica_cash: p.amounts.dailyCash,
       transferTotal: transferTotalRaw,
       resolvedPlatformNet: n,
@@ -309,8 +334,8 @@ export async function runEarningsCommitFromStaging(
       trip_date: tripDateIso,
       trip_count: p.amounts.tripCount,
       gross: g,
-      fee: f,
-      net: calc.net_income,
+      fee: platformEff === "bolt_taxi" ? null : f,
+      net: n ?? calc.net_income,
       total_transfer_earnings: transferTotalRaw,
       daily_cash: p.amounts.dailyCash ?? null,
       account_opening_fee: accountOpeningRaw,
@@ -322,6 +347,7 @@ export async function runEarningsCommitFromStaging(
       glovo_net_income: calc.net_income,
       commission_base: roundMoney(calc.commission_base),
       commission_rate_frac: calc.commission_rate,
+      platform_metadata: p.amounts.platformMetadata ?? {},
     });
   }
 
@@ -333,7 +359,7 @@ export async function runEarningsCommitFromStaging(
     let p = 1;
     for (const r of slice) {
       ph.push(
-        `($${p++}::uuid, $${p++}::uuid, $${p++}, $${p++}::date, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++})`,
+        `($${p++}::uuid, $${p++}::uuid, $${p++}, $${p++}::date, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}::jsonb)`,
       );
       values.push(
         importId,
@@ -352,6 +378,7 @@ export async function runEarningsCommitFromStaging(
         r.tips,
         r.driver_payout,
         r.commission_type,
+        JSON.stringify(r.platform_metadata ?? {}),
       );
     }
     await client.query(
@@ -359,7 +386,8 @@ export async function runEarningsCommitFromStaging(
           import_id, driver_id, platform, trip_date, trip_count,
           gross_earnings, platform_fee, net_earnings,
           total_transfer_earnings, daily_cash, account_opening_fee,
-          company_commission, commission_base, tips, driver_payout, commission_type
+          company_commission, commission_base, tips, driver_payout, commission_type,
+          platform_metadata
         ) VALUES ${ph.join(",")}`,
       values,
     );

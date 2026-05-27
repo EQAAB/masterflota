@@ -60,6 +60,7 @@ function appendDriverSearchCondition(conditions: string[], params: unknown[], ra
     OR LOWER(COALESCE(d.bolt_driver_id, '')) LIKE LOWER($${idx})
     OR LOWER(COALESCE(d.glovo_courier_id, '')) LIKE LOWER($${idx})
     OR LOWER(COALESCE(d.bolt_courier_id, '')) LIKE LOWER($${idx})
+    OR LOWER(COALESCE(d.bolt_taxi_driver_uuid::text, '')) LIKE LOWER($${idx})
     OR LOWER(COALESCE(d.wolt_courier_id, '')) LIKE LOWER($${idx})
   )`);
 }
@@ -67,7 +68,8 @@ function appendDriverSearchCondition(conditions: string[], params: unknown[], ra
 const DRIVER_LIST_SELECT = `
       SELECT d.id, d.first_name, d.last_name, d.phone, d.email, d.address, d.license_number,
              d.employment_status, d.commission_rate, d.profile_photo_url,
-             d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id, d.wolt_courier_id,
+             d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id,
+             d.bolt_taxi_driver_uuid, d.wolt_courier_id,
              d.current_vehicle_id, d.subcontractor_id, d.created_at,
              s.legal_name AS subcontractor_legal_name,
              v.license_plate AS current_vehicle_license_plate, v.make AS current_vehicle_make, v.model AS current_vehicle_model
@@ -337,7 +339,8 @@ router.get("/:id", async (req, res) => {
              d.date_of_birth, d.address, d.license_number, d.license_expiry, d.license_class,
              d.hire_date, d.employment_status, d.commission_rate, d.base_commission_rate,
              d.commission_type, d.fixed_commission_amount, d.minimum_commission,
-             d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id, d.wolt_courier_id,
+             d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id,
+             d.bolt_taxi_driver_uuid, d.wolt_courier_id,
              d.wolt_courier_verified, d.wolt_courier_verified_at, d.notes, d.profile_photo_url,
              d.profile_photo_updated_at, d.created_at, d.updated_at,
              d.is_deleted, d.deleted_at, d.deleted_by,
@@ -483,6 +486,7 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
     boltDriverId,
     glovoCourierId,
     boltCourierId,
+    boltTaxiDriverUuid,
     woltCourierId,
     notes,
     subcontractorId,
@@ -543,6 +547,7 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
         bolt_driver_id,
         glovo_courier_id,
         bolt_courier_id,
+        bolt_taxi_driver_uuid,
         wolt_courier_id,
         subcontractor_id,
         notes
@@ -552,7 +557,7 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
         $8, $9, $10, $11, COALESCE($12, 'active'),
         COALESCE($13, 10.0), COALESCE($14, 10.0),
         COALESCE($15, 'percentage'), COALESCE($16, 0), COALESCE($17, 0),
-        $18, $19, $20, $21, $22, $23, $24
+        $18, $19, $20, $21, $22::uuid, $23, $24, $25
       )
       RETURNING *
       `,
@@ -578,6 +583,9 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
         boltDriverId,
         glovoCourierId,
         boltCourierId,
+        boltTaxiDriverUuid && UUID_RE.test(String(boltTaxiDriverUuid))
+          ? String(boltTaxiDriverUuid)
+          : null,
         woltCourierId,
         subcontractorUuid,
         notes,
@@ -621,6 +629,7 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
     boltDriverId,
     glovoCourierId,
     boltCourierId,
+    boltTaxiDriverUuid,
     woltCourierId,
     notes,
     subcontractorId,
@@ -678,10 +687,11 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
         wolt_courier_id = $19,
         glovo_courier_id = $20,
         bolt_courier_id = $21,
-        subcontractor_id = $22,
-        notes = $23,
+        bolt_taxi_driver_uuid = $22::uuid,
+        subcontractor_id = $23,
+        notes = $24,
         updated_at = NOW()
-      WHERE id = $24 AND organization_id = $25
+      WHERE id = $25 AND organization_id = $26
       RETURNING *
       `,
       [
@@ -706,6 +716,9 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
         woltCourierId,
         glovoCourierId,
         boltCourierId,
+        boltTaxiDriverUuid && UUID_RE.test(String(boltTaxiDriverUuid))
+          ? String(boltTaxiDriverUuid)
+          : null,
         subcontractorUuid,
         notes,
         id,

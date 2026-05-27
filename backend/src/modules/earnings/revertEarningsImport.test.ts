@@ -79,10 +79,13 @@ function mockClient(handlers: {
             {
               id: driverId,
               phone: null,
+              first_name: "Test",
+              last_name: "Driver",
               uber_driver_id: null,
               bolt_driver_id: null,
               glovo_courier_id: "g1",
               bolt_courier_id: null,
+              bolt_taxi_driver_uuid: null,
               wolt_courier_id: null,
               commission_type: "percentage",
               commission_rate: "0.25",

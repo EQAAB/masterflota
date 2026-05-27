@@ -3,7 +3,12 @@ import { Router, type Request, type Response } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
-import { buildEarningsColumnMap, isBoltWeeklyColumnMap, isUberWeeklyColumnMap } from "./earningsColumnMap";
+import {
+  buildEarningsColumnMap,
+  isBoltTaxiWeeklyColumnMap,
+  isBoltWeeklyColumnMap,
+  isUberWeeklyColumnMap,
+} from "./earningsColumnMap";
 import type { EarningsColumnField } from "./normalizeRow";
 import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows, type EarningsStagingPayload } from "./normalizeRow";
 import {
@@ -181,7 +186,8 @@ function collectWarnings(
 
 async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
   const { rows: drivers } = await query<DriverMatchRow>(
-    `SELECT id, phone, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id, wolt_courier_id,
+    `SELECT id, phone, first_name, last_name, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id,
+            bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, wolt_courier_id,
             commission_type, commission_rate::text, fixed_commission_amount::text, minimum_commission::text
      FROM drivers WHERE organization_id = $1`,
     [orgId],
@@ -216,15 +222,18 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
       table.headers,
     );
     const boltWeekly = isBoltWeeklyColumnMap(table.headers);
+    const boltTaxi = isBoltTaxiWeeklyColumnMap(table.headers);
     const uberTaxi = isUberWeeklyColumnMap(table.headers);
     const colMap = buildEarningsColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
 
     const mappedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
-        skipInferredPlatformFee: platform === "glovo" || uberTaxi,
+        skipInferredPlatformFee: platform === "glovo" || uberTaxi || boltTaxi,
         boltWeeklyExport: boltWeekly,
+        boltTaxiExport: boltTaxi,
         uberTaxiExport: uberTaxi,
+        headers: boltTaxi ? table.headers : undefined,
       }),
     );
     const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
@@ -305,6 +314,7 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
           platform === "glovo" ? defaultAccountOpeningFee : undefined,
         defaultPlatformFee: platform === "glovo" ? defaultPlatformFee : undefined,
         boltWeeklyExport: boltWeekly,
+        boltTaxiExport: boltTaxi,
         uberTaxiExport: uberTaxi,
         parseStats,
       });

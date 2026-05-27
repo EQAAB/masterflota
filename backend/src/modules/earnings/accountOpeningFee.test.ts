@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  inferPlatformFeeFromGrossNet,
   resolveAccountOpeningFeeForEarningsRow,
   resolvePlatformFeeForEarningsRow,
+  resolvePlatformFeeWithGrossNetInference,
 } from "./accountOpeningFee";
 
 describe("resolveAccountOpeningFeeForEarningsRow", () => {
@@ -103,5 +105,34 @@ describe("resolvePlatformFeeForEarningsRow", () => {
     };
     expect(resolvePlatformFeeForEarningsRow(opts)).toBe(12.5);
     expect(resolvePlatformFeeForEarningsRow(opts)).toBeNull();
+  });
+});
+
+describe("inferPlatformFeeFromGrossNet", () => {
+  it("infers fee from income + tips − net", () => {
+    expect(inferPlatformFeeFromGrossNet(670.88, 661.89, 0)).toBeCloseTo(8.99, 2);
+    expect(inferPlatformFeeFromGrossNet(100, 90, 5)).toBe(15);
+  });
+
+  it("returns null when gross or net missing", () => {
+    expect(inferPlatformFeeFromGrossNet(null, 100, 0)).toBeNull();
+    expect(inferPlatformFeeFromGrossNet(100, 100, 0)).toBeNull();
+  });
+});
+
+describe("resolvePlatformFeeWithGrossNetInference", () => {
+  it("falls back to gross−net for Glovo when Taxa aplicatie is absent", () => {
+    const set = new Set<string>();
+    const fee = resolvePlatformFeeWithGrossNetInference({
+      platform: "glovo",
+      csvFee: null,
+      gross: 400,
+      net: 360,
+      tips: 0,
+      orgDefault: 0,
+      driverId: "d1",
+      defaultAppliedForDriver: set,
+    });
+    expect(fee).toBe(40);
   });
 });

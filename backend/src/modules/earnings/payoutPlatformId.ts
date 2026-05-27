@@ -11,6 +11,8 @@ export function payoutPlatformIdForDriver(drv: DriverMatchRow, platform: Earning
       return drv.glovo_courier_id ?? null;
     case "bolt_courier":
       return drv.bolt_courier_id ?? null;
+    case "bolt_taxi":
+      return drv.bolt_taxi_driver_uuid ?? null;
     case "wolt_courier":
       return drv.wolt_courier_id ?? null;
     default:

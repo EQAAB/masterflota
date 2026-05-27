@@ -16,9 +16,10 @@ import { useUnsavedImportNavigationGuard } from "../../hooks/useUnsavedImportNav
 
 const PROVIDER_OPTIONS = [
   { value: "uber", label: "Uber" },
-  { value: "bolt", label: "Bolt" },
+  { value: "bolt_taxi", label: "Bolt Taxi" },
   { value: "glovo", label: "Glovo Courier" },
   { value: "bolt_courier", label: "Bolt Delivery" },
+  { value: "bolt", label: "Bolt (legacy)" },
   { value: "wolt_courier", label: "Wolt Courier" },
 ] as const;
 
@@ -97,10 +98,10 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   }, [open]);
 
   useEffect(() => {
-    if (preview) {
+    if (preview?.platform) {
       setSelectedPlatform(preview.platform);
     }
-  }, [preview?.importId]);
+  }, [preview?.platform, preview?.importId]);
 
   const orgImportSettingsQuery = useQuery({
     queryKey: ["earnings", "org-import-settings"],

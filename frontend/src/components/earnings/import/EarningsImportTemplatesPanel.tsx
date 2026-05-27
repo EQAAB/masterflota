@@ -51,7 +51,7 @@ const LOGO_BY_PLATFORM: Record<
   glovo: GlovoPlatformLogo,
   bolt_courier: BoltPlatformLogo,
   uber: UberPlatformLogo,
-  bolt: BoltPlatformLogo,
+  bolt_taxi: BoltPlatformLogo,
   wolt_courier: WoltPlatformLogo,
 };
 
@@ -60,6 +60,7 @@ function platformDisplayLabel(config: ImportTemplateConfig): string {
   if (config.id === "bolt_courier") return "Bolt Delivery";
   if (config.id === "wolt_courier") return "Wolt Courier";
   if (config.id === "uber") return "Uber";
+  if (config.id === "bolt_taxi") return "Bolt Taxi";
   return "Bolt";
 }
 

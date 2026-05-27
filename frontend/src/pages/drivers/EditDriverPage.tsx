@@ -93,6 +93,7 @@ function driverToForm(
     boltDriverId: d.bolt_driver_id ?? "",
     glovoCourierId: d.glovo_courier_id ?? "",
     boltCourierId: d.bolt_courier_id ?? "",
+    boltTaxiDriverUuid: d.bolt_taxi_driver_uuid ?? "",
     woltCourierId: d.wolt_courier_id ?? "",
     notes: d.notes ?? "",
     subcontractorId: d.subcontractor_id ?? "",
@@ -201,6 +202,7 @@ export function EditDriverPage() {
       boltDriverId: form.boltDriverId?.trim() || undefined,
       glovoCourierId: form.glovoCourierId?.trim() || undefined,
       boltCourierId: form.boltCourierId?.trim() || undefined,
+      boltTaxiDriverUuid: form.boltTaxiDriverUuid?.trim() || undefined,
       woltCourierId: form.woltCourierId?.trim() || undefined,
       notes: form.notes?.trim() || undefined,
       subcontractorId: form.subcontractorId?.trim() ? form.subcontractorId.trim() : null,
@@ -216,6 +218,7 @@ export function EditDriverPage() {
       | "minimumCommission"
       | "glovoCourierId"
       | "boltCourierId"
+      | "boltTaxiDriverUuid"
       | "woltCourierId"
       | "subcontractorId",
     value: string | number | undefined
@@ -511,6 +514,16 @@ export function EditDriverPage() {
                   className={inputClass}
                   value={form.boltCourierId ?? ""}
                   onChange={(e) => update("boltCourierId", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={form.boltTaxiDriverUuid ?? ""}
+                  onChange={(e) => update("boltTaxiDriverUuid", e.target.value)}
+                  placeholder="00000000-0000-0000-0000-000000000000"
                 />
               </div>
               <div>

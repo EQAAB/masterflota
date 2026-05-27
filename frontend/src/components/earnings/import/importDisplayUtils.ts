@@ -68,6 +68,7 @@ export function earningsPlatformToBadgeKey(platform: string): PlatformBadgeKey |
   const p = platform.toLowerCase();
   if (p === "uber") return "uber";
   if (p === "glovo") return "glovo";
+  if (p === "bolt_taxi") return "bolt_taxi";
   if (p === "bolt" || p === "bolt_courier") return "bolt";
   if (p === "wolt_courier") return "wolt";
   return null;
@@ -98,7 +99,26 @@ const UBER_TAXI_TEMPLATE_HEADERS = [
   "Câștiguri primite : Sold cursă : Plăți : Numerar încasat",
 ];
 
-export type ImportTemplatePlatform = "uber" | "bolt" | "glovo" | "bolt_courier" | "wolt_courier";
+/** Bolt Taxi weekly export column headers (production shape). */
+const BOLT_TAXI_TEMPLATE_HEADERS = [
+  "Driver",
+  "Email",
+  "Phone",
+  "Driver identifier",
+  "Gross earnings (total) LEI",
+  "Net earnings LEI",
+  "Collected cash LEI",
+  "Gross earnings (in-app)",
+  "Rider tips",
+  "Commission fees",
+];
+
+export type ImportTemplatePlatform =
+  | "uber"
+  | "bolt_taxi"
+  | "glovo"
+  | "bolt_courier"
+  | "wolt_courier";
 
 export type ImportTemplateConfig = {
   id: ImportTemplatePlatform;
@@ -112,7 +132,7 @@ export const IMPORT_TEMPLATE_PLATFORMS: ImportTemplateConfig[] = [
   { id: "glovo", label: "Glovo", category: "Courier", filenameSlug: "glovo-courier", featured: true },
   { id: "bolt_courier", label: "Bolt", category: "Courier", filenameSlug: "bolt-courier", featured: true },
   { id: "uber", label: "Uber", category: "Taxi", filenameSlug: "uber-taxi", featured: true },
-  { id: "bolt", label: "Bolt", category: "Taxi", filenameSlug: "bolt-taxi", featured: true },
+  { id: "bolt_taxi", label: "Bolt Taxi", category: "Taxi", filenameSlug: "bolt-taxi", featured: true },
   { id: "wolt_courier", label: "Wolt", category: "Courier", filenameSlug: "wolt-courier" },
 ];
 
@@ -132,7 +152,12 @@ function triggerCsvDownload(filename: string, headers: string[]): void {
 export function downloadPlatformImportTemplate(platformId: ImportTemplatePlatform): void {
   const config = IMPORT_TEMPLATE_PLATFORMS.find((p) => p.id === platformId);
   const slug = config?.filenameSlug ?? platformId;
-  const headers = platformId === "uber" ? UBER_TAXI_TEMPLATE_HEADERS : TEMPLATE_HEADERS;
+  const headers =
+    platformId === "uber"
+      ? UBER_TAXI_TEMPLATE_HEADERS
+      : platformId === "bolt_taxi"
+        ? BOLT_TAXI_TEMPLATE_HEADERS
+        : TEMPLATE_HEADERS;
   triggerCsvDownload(`${slug}-import-template.csv`, headers);
 }
 
