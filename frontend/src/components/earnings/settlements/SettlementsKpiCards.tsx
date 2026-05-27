@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { SettlementKpiSummary } from "./settlementsDisplayUtils";
 import { formatCurrency } from "../../../utils/currency";
+import { transitionDefault } from "../../../theme/classNames";
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
@@ -79,16 +80,20 @@ function CompactKpiCard({
   iconClassName: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-border bg-white p-3 shadow-soft">
-      <div className="flex items-start gap-2.5">
+    <div
+      className={`flex h-full min-h-[76px] flex-col justify-between rounded-[14px] border border-border/80 bg-white p-3.5 shadow-soft ${transitionDefault} hover:shadow-soft-lg`}
+    >
+      <div className="flex items-start gap-3">
         <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}
         >
           {icon}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium text-ink-muted leading-tight">{title}</p>
-          <p className="mt-0.5 truncate text-base font-bold tabular-nums text-ink">{value}</p>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-[11px] font-medium leading-tight text-ink-muted">{title}</p>
+          <p className="mt-1 truncate text-[15px] font-bold tabular-nums leading-none text-ink whitespace-nowrap">
+            {value}
+          </p>
         </div>
       </div>
     </div>
@@ -108,37 +113,37 @@ export function SettlementsKpiCards({ summary, loading }: SettlementsKpiCardsPro
       <CompactKpiCard
         title="Subcontractors"
         value={summary ? summary.subcontractorCount.toLocaleString() : dash}
-        icon={<BuildingIcon className="h-3.5 w-3.5" />}
+        icon={<BuildingIcon className="h-4 w-4" />}
         iconClassName="bg-brand-mint text-brand"
       />
       <CompactKpiCard
         title="Gross incl. tips"
         value={summary ? formatCurrency(summary.grossInclTips) : dash}
-        icon={<WalletIcon className="h-3.5 w-3.5" />}
+        icon={<WalletIcon className="h-4 w-4" />}
         iconClassName="bg-emerald-100 text-emerald-700"
       />
       <CompactKpiCard
         title="Net driver payouts"
         value={summary ? formatCurrency(summary.netDriverPayouts) : dash}
-        icon={<BanknotesIcon className="h-3.5 w-3.5" />}
+        icon={<BanknotesIcon className="h-4 w-4" />}
         iconClassName="bg-blue-100 text-blue-700"
       />
       <CompactKpiCard
         title="Total fees"
         value={summary ? formatCurrency(summary.totalFees) : dash}
-        icon={<ReceiptIcon className="h-3.5 w-3.5" />}
+        icon={<ReceiptIcon className="h-4 w-4" />}
         iconClassName="bg-orange-100 text-orange-700"
       />
       <CompactKpiCard
         title="Total commission"
         value={summary ? formatCurrency(summary.totalCommission) : dash}
-        icon={<PercentIcon className="h-3.5 w-3.5" />}
+        icon={<PercentIcon className="h-4 w-4" />}
         iconClassName="bg-indigo-100 text-indigo-700"
       />
       <CompactKpiCard
         title="Payable"
         value={summary ? formatCurrency(summary.payable) : dash}
-        icon={<WalletIcon className="h-3.5 w-3.5" />}
+        icon={<WalletIcon className="h-4 w-4" />}
         iconClassName="bg-success/10 text-success"
       />
     </div>
