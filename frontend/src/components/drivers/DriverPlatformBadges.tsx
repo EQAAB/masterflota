@@ -3,7 +3,9 @@ import { PlatformBadge, type PlatformBadgeKey } from "./platformLogos";
 
 function linkedPlatforms(driver: DriverListItem): PlatformBadgeKey[] {
   const out: PlatformBadgeKey[] = [];
-  if (driver.bolt_driver_id?.trim() || driver.bolt_courier_id?.trim()) out.push("bolt");
+  if (driver.bolt_taxi_driver_uuid?.trim()) out.push("bolt_taxi");
+  if (driver.bolt_courier_id?.trim()) out.push("bolt");
+  else if (driver.bolt_driver_id?.trim()) out.push("bolt");
   if (driver.glovo_courier_id?.trim()) out.push("glovo");
   if (driver.uber_driver_id?.trim()) out.push("uber");
   if (driver.wolt_courier_id?.trim()) out.push("wolt");

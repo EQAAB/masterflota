@@ -93,8 +93,8 @@ export function EarningsImportPage() {
   }, []);
 
   useEffect(() => {
-    if (preview) setSelectedPlatform(preview.platform);
-  }, [preview?.importId]);
+    if (preview?.platform) setSelectedPlatform(preview.platform);
+  }, [preview?.platform, preview?.importId]);
 
   useEffect(() => {
     if (!preview) setCommitImportOpen(false);

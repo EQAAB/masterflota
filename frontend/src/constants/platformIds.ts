@@ -2,9 +2,10 @@
 export const PLATFORM_IDS = {
   UBER: "uber",
   BOLT: "bolt",
+  BOLT_TAXI: "bolt_taxi",
   GLOVO: "glovo",
   BOLT_COURIER: "bolt_courier",
-  WOLT: "wolt", // NEW PLATFORM
+  WOLT: "wolt",
 } as const;
 
 export type PlatformId = (typeof PLATFORM_IDS)[keyof typeof PLATFORM_IDS];
@@ -12,37 +13,41 @@ export type PlatformId = (typeof PLATFORM_IDS)[keyof typeof PLATFORM_IDS];
 // Platform ID labels for display
 export const PLATFORM_ID_LABELS: Record<PlatformId, string> = {
   [PLATFORM_IDS.UBER]: "Uber",
-  [PLATFORM_IDS.BOLT]: "Bolt",
+  [PLATFORM_IDS.BOLT]: "Bolt (legacy)",
+  [PLATFORM_IDS.BOLT_TAXI]: "Bolt Taxi",
   [PLATFORM_IDS.GLOVO]: "Glovo",
   [PLATFORM_IDS.BOLT_COURIER]: "Bolt Delivery",
-  [PLATFORM_IDS.WOLT]: "Wolt", // NEW PLATFORM
+  [PLATFORM_IDS.WOLT]: "Wolt",
 };
 
 // Platform ID icons
 export const PLATFORM_ID_ICONS: Record<PlatformId, string> = {
   [PLATFORM_IDS.UBER]: "🚗",
   [PLATFORM_IDS.BOLT]: "⚡",
+  [PLATFORM_IDS.BOLT_TAXI]: "🚕",
   [PLATFORM_IDS.GLOVO]: "🛵",
   [PLATFORM_IDS.BOLT_COURIER]: "📦",
-  [PLATFORM_IDS.WOLT]: "🛵", // NEW PLATFORM
+  [PLATFORM_IDS.WOLT]: "🛵",
 };
 
 // Platform ID colors for badges
 export const PLATFORM_ID_COLORS: Record<PlatformId, string> = {
   [PLATFORM_IDS.UBER]: "bg-black text-white",
   [PLATFORM_IDS.BOLT]: "bg-blue-600 text-white",
+  [PLATFORM_IDS.BOLT_TAXI]: "bg-emerald-600 text-white",
   [PLATFORM_IDS.GLOVO]: "bg-green-600 text-white",
   [PLATFORM_IDS.BOLT_COURIER]: "bg-blue-500 text-white",
-  [PLATFORM_IDS.WOLT]: "bg-orange-600 text-white", // NEW PLATFORM
+  [PLATFORM_IDS.WOLT]: "bg-orange-600 text-white",
 };
 
 // Platform ID required fields
 export const PLATFORM_ID_REQUIRED_FIELDS: Record<PlatformId, string[]> = {
   [PLATFORM_IDS.UBER]: ["uber_driver_id"],
   [PLATFORM_IDS.BOLT]: ["bolt_driver_id"],
+  [PLATFORM_IDS.BOLT_TAXI]: ["bolt_taxi_driver_uuid"],
   [PLATFORM_IDS.GLOVO]: ["glovo_courier_id"],
   [PLATFORM_IDS.BOLT_COURIER]: ["bolt_courier_id"],
-  [PLATFORM_IDS.WOLT]: ["wolt_courier_id"], // NEW PLATFORM
+  [PLATFORM_IDS.WOLT]: ["wolt_courier_id"],
 };
 
 // Get all platform IDs

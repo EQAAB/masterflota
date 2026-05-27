@@ -410,6 +410,12 @@ export function DriverDetailPage() {
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
+                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-sm text-slate-900">{d.bolt_taxi_driver_uuid ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.wolt_courier_id ?? "—"}</dd>

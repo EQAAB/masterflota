@@ -5,10 +5,11 @@ import { PLATFORM_ID_LABELS, PLATFORM_IDS } from "../../constants/platformIds";
 
 const LOGO_BOX = "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm";
 
-export type PlatformBadgeKey = "bolt" | "glovo" | "uber" | "wolt";
+export type PlatformBadgeKey = "bolt" | "bolt_taxi" | "glovo" | "uber" | "wolt";
 
 const PLATFORM_LABELS: Record<PlatformBadgeKey, string> = {
-  bolt: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT],
+  bolt: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER],
+  bolt_taxi: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI],
   glovo: PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO],
   uber: PLATFORM_ID_LABELS[PLATFORM_IDS.UBER],
   wolt: PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT],
@@ -61,6 +62,7 @@ export function WoltPlatformLogo({ className = "" }: { className?: string }) {
 
 const LOGO_BY_PLATFORM: Record<PlatformBadgeKey, ComponentType<{ className?: string }>> = {
   bolt: BoltPlatformLogo,
+  bolt_taxi: BoltPlatformLogo,
   glovo: GlovoPlatformLogo,
   uber: UberPlatformLogo,
   wolt: WoltPlatformLogo,

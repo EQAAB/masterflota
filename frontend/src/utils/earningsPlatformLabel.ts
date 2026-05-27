@@ -2,6 +2,7 @@
 const EARNINGS_PLATFORM_LABELS: Record<string, string> = {
   uber: "Uber",
   bolt: "Bolt Delivery",
+  bolt_taxi: "Bolt Taxi",
   glovo: "Glovo Courier",
   bolt_courier: "Bolt Delivery",
   wolt_courier: "Wolt Courier",

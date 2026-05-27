@@ -58,6 +58,7 @@ export function AddDriverPage() {
     boltDriverId: "",
     glovoCourierId: "",
     boltCourierId: "",
+    boltTaxiDriverUuid: "",
     woltCourierId: "",
     notes: "",
     subcontractorId: "",
@@ -129,6 +130,7 @@ export function AddDriverPage() {
       boltDriverId: form.boltDriverId?.trim() || undefined,
       glovoCourierId: form.glovoCourierId?.trim() || undefined,
       boltCourierId: form.boltCourierId?.trim() || undefined,
+      boltTaxiDriverUuid: form.boltTaxiDriverUuid?.trim() || undefined,
       woltCourierId: form.woltCourierId?.trim() || undefined,
       notes: form.notes?.trim() || undefined,
       subcontractorId: form.subcontractorId?.trim() ? form.subcontractorId.trim() : undefined,
@@ -144,6 +146,7 @@ export function AddDriverPage() {
       | "minimumCommission"
       | "glovoCourierId"
       | "boltCourierId"
+      | "boltTaxiDriverUuid"
       | "woltCourierId"
       | "subcontractorId",
     value: string | number | undefined,
@@ -389,6 +392,18 @@ export function AddDriverPage() {
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.boltCourierId ?? ""}
                   onChange={(e) => update("boltCourierId", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">
+                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  value={form.boltTaxiDriverUuid ?? ""}
+                  onChange={(e) => update("boltTaxiDriverUuid", e.target.value)}
+                  placeholder="00000000-0000-0000-0000-000000000000"
                 />
               </div>
               <div>

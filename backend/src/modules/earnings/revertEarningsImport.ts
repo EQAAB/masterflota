@@ -205,7 +205,8 @@ export async function revertEarningsImport(
 
   const driverIds = [...new Set(originals.map((r) => r.driver_id))];
   const driversRes = await client.query<DriverMatchRow & { id: string }>(
-    `SELECT d.id, d.phone, d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id, d.wolt_courier_id,
+    `SELECT d.id, d.phone, d.first_name, d.last_name, d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id,
+            d.bolt_courier_id, d.bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, d.wolt_courier_id,
             d.commission_type, d.commission_rate::text, d.fixed_commission_amount::text, d.minimum_commission::text
      FROM drivers d
      WHERE d.organization_id = $1::uuid AND d.id = ANY($2::uuid[])`,

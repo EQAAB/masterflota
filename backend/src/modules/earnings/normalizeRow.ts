@@ -1,5 +1,6 @@
 import { isEmptyCellValue } from "../../lib/isEmptyRow";
 import { roundMoney } from "./debtAllocation";
+import { normalizeHeaderKey } from "./romanHeaderMap";
 import { resolveUberPlatformNet } from "./mapUberTaxiAmounts";
 
 export type CanonicalField =
@@ -43,6 +44,8 @@ export interface NormalizedAmounts {
   receivedTotal?: number | null;
   /** Uber: raw CSV Câștigurile tale before {@link resolveUberPlatformNet}. */
   castigurileTale?: number | null;
+  /** Bolt Taxi: unmapped CSV columns (ignored fee breakdowns, etc.). */
+  platformMetadata?: Record<string, string>;
 }
 
 export interface NormalizedEarningsRow {
@@ -118,6 +121,10 @@ export interface RowNormalizeOptions {
   boltWeeklyExport?: boolean;
   /** Uber Romania taxi export: gross = net − service_fee; cash stored as magnitude. */
   uberTaxiExport?: boolean;
+  /** Bolt Taxi weekly export: net from CSV; metadata for unmapped columns. */
+  boltTaxiExport?: boolean;
+  /** Original header row (for platform_metadata on Bolt Taxi). */
+  headers?: string[];
 }
 
 /** Bolt weekly CSV component columns (manual tip sum). */
@@ -133,6 +140,8 @@ export type EarningsColumnField =
   | "first_name"
   | "last_name"
   | "received_total"
+  | "driver_name"
+  | "email"
   | BoltComponentField;
 
 export function rowCellsToNormalized(
@@ -218,6 +227,12 @@ export function rowCellsToNormalized(
       case "last_name":
         lastName = raw;
         break;
+      case "driver_name":
+        hints.driverName = cleanHint(raw);
+        break;
+      case "email":
+        if (raw) rawSample.email = raw;
+        break;
       case "adjusted_with_vat":
         boltAdjustedWithVat = parseRoNumber(raw);
         break;
@@ -260,6 +275,22 @@ export function rowCellsToNormalized(
         : null;
     amounts.dailyCash =
       boltOverdueCashDebt !== null ? roundMoney(Math.abs(boltOverdueCashDebt)) : null;
+  } else if (opts?.boltTaxiExport) {
+    if (amounts.dailyCash !== null) {
+      amounts.dailyCash = roundMoney(Math.abs(amounts.dailyCash));
+    }
+    if (opts.headers?.length) {
+      const mappedIdx = new Set(colMap.keys());
+      const meta: Record<string, string> = {};
+      opts.headers.forEach((h, idx) => {
+        if (mappedIdx.has(idx)) return;
+        const raw = String(cells[idx] ?? "").trim();
+        if (!raw) return;
+        const key = normalizeHeaderKey(h);
+        if (key) meta[key] = raw;
+      });
+      if (Object.keys(meta).length) amounts.platformMetadata = meta;
+    }
   } else if (opts?.uberTaxiExport) {
     if (amounts.dailyCash !== null) {
       amounts.dailyCash = roundMoney(Math.abs(amounts.dailyCash));
@@ -318,7 +349,8 @@ export function isNormalizedEarningsRowEmpty(row: NormalizedEarningsRow): boolea
     amt.tips != null ||
     amt.boltAdjustedWithoutVat != null ||
     amt.boltTipsWithoutVat != null ||
-    amt.receivedTotal != null
+    amt.receivedTotal != null ||
+    (amt.platformMetadata != null && Object.keys(amt.platformMetadata).length > 0)
   );
 }
 

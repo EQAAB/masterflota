@@ -98,7 +98,7 @@ export async function recomputeDriverPayoutRollup(
             SUM(COALESCE(er.tips, 0))::text AS tips,
             SUM(
               CASE
-                WHEN er.platform IN ('glovo', 'uber') THEN ABS(COALESCE(er.platform_fee, 0))
+                WHEN er.platform IN ('glovo', 'uber', 'bolt_taxi') THEN ABS(COALESCE(er.platform_fee, 0))
                 ELSE 0
               END
             )::text AS platform_fee,
@@ -158,7 +158,7 @@ export async function recomputeDriverPayoutRollup(
   if (payoutPlatform === "bolt") {
     accountOpening = 0;
     feeAbs = 0;
-  } else if (payoutPlatform === "uber") {
+  } else if (payoutPlatform === "uber" || payoutPlatform === "bolt_taxi") {
     accountOpening = 0;
     feeAbs = roundMoney(totals.feeAbs);
   }

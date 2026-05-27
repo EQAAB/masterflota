@@ -1,6 +1,7 @@
 import {
+  inferPlatformFeeFromGrossNet,
   resolveAccountOpeningFeeForEarningsRow,
-  resolvePlatformFeeForEarningsRow,
+  resolvePlatformFeeWithGrossNetInference,
 } from "./accountOpeningFee";
 import type { EarningsPlatform } from "./detectPlatform";
 import type { DriverMatchIndex } from "./matchDriver";
@@ -57,21 +58,27 @@ export function stagingPayloadToPreviewRow(
           driverId,
           defaultAppliedForDriver: defaultOpeningApplied,
         })
-      : platform === "bolt_courier" || platform === "bolt"
+      : platform === "bolt_courier" || platform === "bolt" || platform === "bolt_taxi"
         ? 0
         : p.amounts.accountOpeningFee;
   const platformFee =
     driverId != null
-      ? resolvePlatformFeeForEarningsRow({
+      ? resolvePlatformFeeWithGrossNetInference({
           platform,
           csvFee: p.amounts.platformFee,
+          gross: p.amounts.gross,
+          net: p.amounts.net,
+          tips: p.amounts.tips,
           orgDefault: opts?.orgDefaultPlatformFee ?? 0,
           driverId,
           defaultAppliedForDriver: defaultPlatformApplied,
         })
-      : platform === "bolt_courier" || platform === "bolt"
-        ? 0
-        : p.amounts.platformFee;
+      : platform === "glovo"
+        ? (inferPlatformFeeFromGrossNet(p.amounts.gross, p.amounts.net, p.amounts.tips) ??
+          p.amounts.platformFee)
+        : platform === "bolt_courier" || platform === "bolt" || platform === "bolt_taxi"
+          ? 0
+          : p.amounts.platformFee;
   return {
     rowIndex,
     tripDate: p.tripDateIso,

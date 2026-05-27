@@ -1,4 +1,5 @@
 import { query } from "../../db/pool";
+import { roundMoney } from "./debtAllocation";
 import type { EarningsPlatform } from "./detectPlatform";
 
 function parseOrgFee(value: unknown): number {
@@ -28,7 +29,7 @@ export async function readOrgDefaultPlatformFee(orgId: string): Promise<number> 
 }
 
 export function isBoltEarningsPlatform(platform: EarningsPlatform): boolean {
-  return platform === "bolt_courier" || platform === "bolt";
+  return platform === "bolt_courier" || platform === "bolt" || platform === "bolt_taxi";
 }
 
 /**
@@ -107,4 +108,42 @@ export function resolvePlatformFeeForEarningsRow(params: {
   }
 
   return null;
+}
+
+/**
+ * When Taxa aplicatie is missing but gross (income) and net (profit) columns exist,
+ * infer fee as (income + tips) − net. Used for Glovo rows where preview skips inferred fee.
+ */
+export function inferPlatformFeeFromGrossNet(
+  gross: number | null | undefined,
+  net: number | null | undefined,
+  tips: number | null | undefined,
+): number | null {
+  if (gross == null || net == null) return null;
+  const fee = roundMoney(Math.abs(gross + (tips ?? 0) - net));
+  return fee > 0 ? fee : null;
+}
+
+/** Resolve platform fee from CSV/org default, then gross−net when still missing (Glovo). */
+export function resolvePlatformFeeWithGrossNetInference(params: {
+  platform: EarningsPlatform;
+  csvFee: number | null | undefined;
+  gross: number | null;
+  net: number | null;
+  tips: number | null | undefined;
+  orgDefault: number;
+  driverId: string;
+  defaultAppliedForDriver: Set<string>;
+}): number | null {
+  let fee = resolvePlatformFeeForEarningsRow({
+    platform: params.platform,
+    csvFee: params.csvFee,
+    orgDefault: params.orgDefault,
+    driverId: params.driverId,
+    defaultAppliedForDriver: params.defaultAppliedForDriver,
+  });
+  if (fee == null && params.platform === "glovo") {
+    fee = inferPlatformFeeFromGrossNet(params.gross, params.net, params.tips);
+  }
+  return fee;
 }

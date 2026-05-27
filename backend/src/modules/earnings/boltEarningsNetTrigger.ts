@@ -1,7 +1,7 @@
 import { roundMoney } from "./debtAllocation";
 
 /** Platforms where net_earnings is set by import (not the Glovo row trigger). */
-export const BOLT_EARNINGS_PLATFORMS = new Set(["bolt", "bolt_courier"]);
+export const BOLT_EARNINGS_PLATFORMS = new Set(["bolt", "bolt_courier", "bolt_taxi"]);
 
 export function shouldSkipEarningsPayoutAfterCashTrigger(platform: string): boolean {
   return BOLT_EARNINGS_PLATFORMS.has(platform);

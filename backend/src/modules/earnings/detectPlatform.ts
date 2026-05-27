@@ -1,6 +1,6 @@
 import { normalizeHeaderKey } from "./romanHeaderMap";
 
-export type EarningsPlatform = "uber" | "bolt" | "glovo" | "bolt_courier" | "wolt_courier";
+export type EarningsPlatform = "uber" | "bolt" | "glovo" | "bolt_courier" | "wolt_courier" | "bolt_taxi";
 
 export const EARNINGS_PLATFORMS: EarningsPlatform[] = [
   "uber",
@@ -8,6 +8,7 @@ export const EARNINGS_PLATFORMS: EarningsPlatform[] = [
   "glovo",
   "bolt_courier",
   "wolt_courier",
+  "bolt_taxi",
 ];
 
 export function isEarningsPlatform(s: string): s is EarningsPlatform {
@@ -21,6 +22,7 @@ function zeroScores(): Record<EarningsPlatform, number> {
     glovo: 0,
     bolt_courier: 0,
     wolt_courier: 0,
+    bolt_taxi: 0,
   };
 }
 
@@ -65,9 +67,21 @@ export function isBoltCourierWeeklyExport(norm: string[]): boolean {
   );
 }
 
+/** Bolt Taxi weekly export (Tier A): Driver identifier + net/gross/cash LEI columns. */
+export function isBoltTaxiWeeklyExport(norm: string[]): boolean {
+  if (isGlovoRomaniaCourierExport(norm) || isBoltCourierWeeklyExport(norm)) return false;
+  const hasDriverId = norm.some((h) => h.includes("driver identifier"));
+  const hasNet = norm.some((h) => h.includes("net earnings"));
+  const hasGrossTotal = norm.some((h) => h.includes("gross earnings") && h.includes("total"));
+  const hasCash = norm.some((h) => h.includes("collected cash"));
+  const hasDriverCol = norm.includes("driver");
+  return hasDriverId && hasNet && hasGrossTotal && hasCash && hasDriverCol;
+}
+
 /** Uber Romania taxi weekly export (Tier A): Romanian headers with nested segments. */
 export function isUberRomaniaTaxiExport(norm: string[]): boolean {
-  if (isGlovoRomaniaCourierExport(norm) || isBoltCourierWeeklyExport(norm)) return false;
+  if (isGlovoRomaniaCourierExport(norm) || isBoltCourierWeeklyExport(norm) || isBoltTaxiWeeklyExport(norm))
+    return false;
   const hasUuid = norm.some((h) => h.includes("uuid") && h.includes("soferului"));
   const hasNet = norm.some((h) => h.includes("castigurile tale") && !h.includes("taxa de servicii"));
   const hasFee = norm.some((h) => h.includes("taxa de servicii"));
@@ -81,6 +95,7 @@ function scoreFilename(name: string): Partial<Record<EarningsPlatform, number>> 
   if (n.includes("uber")) s.uber = (s.uber ?? 0) + 3;
   if (n.includes("taxify") || /\bbolt\b/.test(n) || n.includes("bolt driver")) {
     if (n.includes("courier") || n.includes("food") || n.includes("liv")) s.bolt_courier = (s.bolt_courier ?? 0) + 3;
+    else if (n.includes("taxi")) s.bolt_taxi = (s.bolt_taxi ?? 0) + 3;
     else s.bolt = (s.bolt ?? 0) + 3;
   }
   if (n.includes("glovo")) s.glovo = (s.glovo ?? 0) + 3;
@@ -113,6 +128,11 @@ export function detectPlatformWithMeta(
     const scores = zeroScores();
     scores.bolt_courier = 1000;
     return { platform: "bolt_courier", scores, confidence: 1 };
+  }
+  if (isBoltTaxiWeeklyExport(norm)) {
+    const scores = zeroScores();
+    scores.bolt_taxi = 1000;
+    return { platform: "bolt_taxi", scores, confidence: 1 };
   }
   if (isUberRomaniaTaxiExport(norm)) {
     const scores = zeroScores();
