@@ -113,6 +113,12 @@ export function resolveFleetCommissionBase(input: CalculatePayoutInput): number 
     case "net_income_no_bonuses":
     case "net_income":
     default:
+      if (
+        input.resolvedPlatformNet != null &&
+        (t === "net_income" || t === "net_income_no_bonuses")
+      ) {
+        return input.resolvedPlatformNet;
+      }
       return platformNet;
   }
 }
@@ -132,11 +138,15 @@ export function calculatePayout(input: CalculatePayoutInput): CalculatePayoutRes
   const v = num(input.income);
   const tips = num(input.tips);
   const gross_income = v + tips;
-  const net_income = netIncomeFromGrossAndTaxa(gross_income, input.taxa_aplicatie);
+  const derivedNet = netIncomeFromGrossAndTaxa(gross_income, input.taxa_aplicatie);
+  const net_income =
+    input.resolvedPlatformNet != null ? input.resolvedPlatformNet : derivedNet;
   const dailyCashDeduction = Math.abs(num(input.plata_zilnica_cash));
   const commission_base = resolveFleetCommissionBase(input);
 
-  const comm = computeCompanyCommissionFromBase(input.driver, commission_base);
+  const comm = computeCompanyCommissionFromBase(input.driver, commission_base, {
+    allowNegativeBase: commission_base < 0,
+  });
   const driver_payout = roundMoney(net_income - comm.company_commission - dailyCashDeduction);
 
   return {

@@ -3,7 +3,7 @@ import { Router, type Request, type Response } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
-import { buildEarningsColumnMap, isBoltWeeklyColumnMap } from "./earningsColumnMap";
+import { buildEarningsColumnMap, isBoltWeeklyColumnMap, isUberWeeklyColumnMap } from "./earningsColumnMap";
 import type { EarningsColumnField } from "./normalizeRow";
 import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows, type EarningsStagingPayload } from "./normalizeRow";
 import {
@@ -38,6 +38,7 @@ import {
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
+import { isUberDebtPreviewRow } from "./mapUberTaxiAmounts";
 import { readOrgDefaultAccountOpeningFee, readOrgDefaultPlatformFee } from "./accountOpeningFee";
 import { readOrgGlovoCommissionBase, writeOrgGlovoCommissionBase } from "./orgImportSettings";
 import { refreshVehicleRentForPeriod } from "./refreshVehicleRentForPeriod";
@@ -215,13 +216,15 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
       table.headers,
     );
     const boltWeekly = isBoltWeeklyColumnMap(table.headers);
+    const uberTaxi = isUberWeeklyColumnMap(table.headers);
     const colMap = buildEarningsColumnMap(table.headers);
     const filenameDate = extractDateFromFilename(req.file.originalname);
 
     const mappedRows = table.rows.map((cells) =>
       rowCellsToNormalized(cells, colMap, filenameDate, {
-        skipInferredPlatformFee: platform === "glovo",
+        skipInferredPlatformFee: platform === "glovo" || uberTaxi,
         boltWeeklyExport: boltWeekly,
+        uberTaxiExport: uberTaxi,
       }),
     );
     const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
@@ -255,11 +258,20 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
       const { driverId } = index.match(platform, r.hints);
       const hasDate = !!r.tripDateIso;
       const hasMoney =
-        r.amounts.gross != null || r.amounts.net != null || r.amounts.transferTotal != null;
+        r.amounts.gross != null ||
+        r.amounts.net != null ||
+        r.amounts.transferTotal != null ||
+        r.amounts.receivedTotal != null;
       if (driverId && hasDate && hasMoney) validForCommit += 1;
       else invalidRows += 1;
       if (r.amounts.accountOpeningFee != null && r.amounts.accountOpeningFee > 0) warningRows += 1;
       if ((r.amounts.transferTotal ?? 0) < 0) {
+        debtCandidateRows += 1;
+      }
+      if (
+        platform === "uber" &&
+        isUberDebtPreviewRow(r.amounts.castigurileTale ?? r.amounts.net, r.amounts.receivedTotal ?? null)
+      ) {
         debtCandidateRows += 1;
       }
     }
@@ -293,6 +305,7 @@ router.post("/import/preview", earningsUpload.single("file"), async (req, res) =
           platform === "glovo" ? defaultAccountOpeningFee : undefined,
         defaultPlatformFee: platform === "glovo" ? defaultPlatformFee : undefined,
         boltWeeklyExport: boltWeekly,
+        uberTaxiExport: uberTaxi,
         parseStats,
       });
       await client.query("COMMIT");

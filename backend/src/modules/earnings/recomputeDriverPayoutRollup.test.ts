@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeCompanyCommissionFromBase } from "./commission";
+import { computeCompanyCommissionFromBase, type DriverCommissionRow } from "./commission";
 import { roundMoney } from "./debtAllocation";
 import {
   aggregateEarningsPeriodTotals,
@@ -7,7 +7,6 @@ import {
   computeRawNetAmountForDebt,
 } from "./recomputeDriverPayoutRollup";
 import { payoutPlatformFromEarnings } from "./payoutPlatform";
-import type { DriverCommissionRow } from "./commission";
 
 const driverPct10: DriverCommissionRow = {
   commission_type: "percentage",
@@ -55,6 +54,7 @@ describe("per-platform weekly commission", () => {
   it("maps bolt_courier earnings to payout platform bolt", () => {
     expect(payoutPlatformFromEarnings("bolt_courier")).toBe("bolt");
     expect(payoutPlatformFromEarnings("glovo")).toBe("glovo");
+    expect(payoutPlatformFromEarnings("uber")).toBe("uber");
   });
 
   it("sums account opening only from glovo-shaped row aggregates", () => {
@@ -100,7 +100,7 @@ describe("payout before rent and debt raw_net", () => {
   });
 });
 
-describe("fees on bolt payout platform", () => {
+describe("fees on bolt and uber payout platforms", () => {
   it("bolt rollup forces account opening and platform fees to zero", () => {
     const boltOnlySum = aggregateEarningsPeriodTotals([
       {
@@ -123,5 +123,70 @@ describe("fees on bolt payout platform", () => {
     }
     expect(accountOpening).toBe(0);
     expect(feeAbs).toBe(0);
+  });
+
+  it("uber rollup zeroes account opening but keeps platform fee sum for reporting", () => {
+    const uberSum = aggregateEarningsPeriodTotals([
+      {
+        gross_earnings: "120",
+        tips: "0",
+        platform_fee: "20",
+        daily_cash: "15",
+        account_opening_fee: "10",
+        net_earnings: "100",
+      },
+    ]);
+    const payoutPlatform = payoutPlatformFromEarnings("uber");
+    let accountOpening = Math.abs(uberSum.accountOpening);
+    let feeAbs = uberSum.feeAbs;
+    if (payoutPlatform === "bolt") {
+      accountOpening = 0;
+      feeAbs = 0;
+    } else if (payoutPlatform === "uber") {
+      accountOpening = 0;
+      feeAbs = roundMoney(uberSum.feeAbs);
+    }
+    expect(accountOpening).toBe(0);
+    expect(feeAbs).toBe(20);
+    expect(uberSum.dailyCash).toBe(15);
+  });
+});
+
+describe("uber debt payout week", () => {
+  const driverPct12: DriverCommissionRow = {
+    commission_type: "percentage",
+    commission_rate: "12",
+    fixed_commission_amount: null,
+    minimum_commission: null,
+  };
+
+  it("uses universal formula on negative platform net sum", () => {
+    const totals = aggregateEarningsPeriodTotals([
+      {
+        gross_earnings: "-1448.48",
+        tips: "0",
+        platform_fee: "0",
+        daily_cash: "0",
+        account_opening_fee: null,
+        net_earnings: "-1448.48",
+      },
+    ]);
+    const platformNet = roundMoney(totals.platformNet);
+    expect(platformNet).toBe(-1448.48);
+    const comm = computeCompanyCommissionFromBase(driverPct12, platformNet, {
+      allowNegativeBase: true,
+    });
+    expect(comm.company_commission).toBeCloseTo(-173.82, 2);
+    const payout = computePayoutBeforeRent({
+      platformNet,
+      companyCommission: comm.company_commission,
+      cashDeduction: 0,
+      accountOpeningFee: 0,
+    });
+    expect(payout).toBeCloseTo(-1274.66, 2);
+    expect(computeRawNetAmountForDebt({ payoutBeforeRent: payout, vehicleRent: 0 })).toBeCloseTo(
+      -1274.66,
+      2,
+    );
   });
 });

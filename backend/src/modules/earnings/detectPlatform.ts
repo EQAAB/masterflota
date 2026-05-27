@@ -65,6 +65,16 @@ export function isBoltCourierWeeklyExport(norm: string[]): boolean {
   );
 }
 
+/** Uber Romania taxi weekly export (Tier A): Romanian headers with nested segments. */
+export function isUberRomaniaTaxiExport(norm: string[]): boolean {
+  if (isGlovoRomaniaCourierExport(norm) || isBoltCourierWeeklyExport(norm)) return false;
+  const hasUuid = norm.some((h) => h.includes("uuid") && h.includes("soferului"));
+  const hasNet = norm.some((h) => h.includes("castigurile tale") && !h.includes("taxa de servicii"));
+  const hasFee = norm.some((h) => h.includes("taxa de servicii"));
+  const hasCash = norm.some((h) => h.includes("numerar incasat"));
+  return hasUuid && hasNet && hasFee && hasCash;
+}
+
 function scoreFilename(name: string): Partial<Record<EarningsPlatform, number>> {
   const n = name.toLowerCase();
   const s: Partial<Record<EarningsPlatform, number>> = {};
@@ -81,7 +91,7 @@ function scoreFilename(name: string): Partial<Record<EarningsPlatform, number>> 
 function scoreHeaders(norm: string[]): Partial<Record<EarningsPlatform, number>> {
   const joined = norm.join(" ");
   const s: Partial<Record<EarningsPlatform, number>> = {};
-  if (joined.includes("uber") || joined.includes("uuid")) s.uber = (s.uber ?? 0) + 1;
+  if (joined.includes("uber")) s.uber = (s.uber ?? 0) + 1;
   if (joined.includes("bolt") || joined.includes("taxify")) s.bolt = (s.bolt ?? 0) + 1;
   if (joined.includes("glovo")) s.glovo = (s.glovo ?? 0) + 2;
   if (joined.includes("wolt")) s.wolt_courier = (s.wolt_courier ?? 0) + 2;
@@ -103,6 +113,11 @@ export function detectPlatformWithMeta(
     const scores = zeroScores();
     scores.bolt_courier = 1000;
     return { platform: "bolt_courier", scores, confidence: 1 };
+  }
+  if (isUberRomaniaTaxiExport(norm)) {
+    const scores = zeroScores();
+    scores.uber = 1000;
+    return { platform: "uber", scores, confidence: 1 };
   }
 
   const f = scoreFilename(fileName);

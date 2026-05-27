@@ -87,6 +87,17 @@ const TEMPLATE_HEADERS = [
   "daily_cash",
 ];
 
+/** Uber Romania taxi weekly export column headers (production shape). */
+const UBER_TAXI_TEMPLATE_HEADERS = [
+  "Identificatorul universal unic (UUID) al șoferului",
+  "Prenumele șoferului",
+  "Numele de familie al șoferului",
+  "Câștiguri primite",
+  "Câștiguri primite : Câștigurile tale",
+  "Câștiguri primite:Câștigurile tale:Taxă de servicii",
+  "Câștiguri primite : Sold cursă : Plăți : Numerar încasat",
+];
+
 export type ImportTemplatePlatform = "uber" | "bolt" | "glovo" | "bolt_courier" | "wolt_courier";
 
 export type ImportTemplateConfig = {
@@ -107,8 +118,8 @@ export const IMPORT_TEMPLATE_PLATFORMS: ImportTemplateConfig[] = [
 
 export const FEATURED_IMPORT_TEMPLATES = IMPORT_TEMPLATE_PLATFORMS.filter((p) => p.featured);
 
-function triggerCsvDownload(filename: string): void {
-  const csv = [TEMPLATE_HEADERS.join(",")].join("\n");
+function triggerCsvDownload(filename: string, headers: string[]): void {
+  const csv = [headers.join(",")].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -121,7 +132,8 @@ function triggerCsvDownload(filename: string): void {
 export function downloadPlatformImportTemplate(platformId: ImportTemplatePlatform): void {
   const config = IMPORT_TEMPLATE_PLATFORMS.find((p) => p.id === platformId);
   const slug = config?.filenameSlug ?? platformId;
-  triggerCsvDownload(`${slug}-import-template.csv`);
+  const headers = platformId === "uber" ? UBER_TAXI_TEMPLATE_HEADERS : TEMPLATE_HEADERS;
+  triggerCsvDownload(`${slug}-import-template.csv`, headers);
 }
 
 /** @deprecated Use downloadPlatformImportTemplate */

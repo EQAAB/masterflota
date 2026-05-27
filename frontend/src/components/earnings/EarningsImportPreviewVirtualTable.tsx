@@ -23,7 +23,10 @@ function rowHasFeeWarning(r: EarningsPreviewRow): boolean {
 
 function rowHasDebtSignal(r: EarningsPreviewRow): boolean {
   if (r.negativeTransferTotal) return true;
-  return r.transferTotal != null && r.transferTotal < 0;
+  if (r.transferTotal != null && r.transferTotal < 0) return true;
+  if (r.net != null && r.net < 0) return true;
+  const tale = r.net ?? 0;
+  return tale <= 0 && r.receivedTotal != null && r.receivedTotal < 0;
 }
 
 /** Excel-aligned: negatives stay negative in UI (red, bold). */

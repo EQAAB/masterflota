@@ -7,8 +7,9 @@ import type { EarningsStagingPayload } from "./normalizeRow";
 import { roundMoney } from "./debtAllocation";
 import { calculatePayout, parseCommissionBaseType } from "./calculatePayout";
 import { payoutPlatformIdForDriver } from "./payoutPlatformId";
-import { isBoltWeeklyImportMeta, recomputeDriverPayoutRollup } from "./recomputeDriverPayoutRollup";
+import { isBoltWeeklyImportMeta, recomputeDriverPayoutsForPaymentWeek } from "./recomputeDriverPayoutRollup";
 import { mapBoltWeeklyAmounts } from "./mapBoltWeeklyAmounts";
+import { mapUberTaxiAmounts } from "./mapUberTaxiAmounts";
 import {
   readOrgDefaultAccountOpeningFee,
   readOrgDefaultPlatformFee,
@@ -33,6 +34,17 @@ export type EarningsCommitResult = {
   totals: EarningsCommitTotals;
   warnings: string[];
 };
+
+/** Keep trip_date inside the payment week (Uber exports often lack a date column; filename fallback can drift). */
+export function clampTripDateToPaymentWeek(
+  tripDate: string,
+  weekStart: string,
+  weekEnd: string,
+): string {
+  if (tripDate < weekStart) return weekStart;
+  if (tripDate > weekEnd) return weekEnd;
+  return tripDate;
+}
 
 async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
   const { rows: drivers } = await query<DriverMatchRow>(
@@ -139,7 +151,10 @@ export async function runEarningsCommitFromStaging(
       skippedNoDriver += 1;
       continue;
     }
-    const tripDateIso = p.tripDateIso ?? weekEndEff;
+    let tripDateIso = p.tripDateIso ?? weekEndEff;
+    if (tripDateIso) {
+      tripDateIso = clampTripDateToPaymentWeek(tripDateIso, weekStartEff, weekEndEff);
+    }
     if (!tripDateIso) {
       skippedNoDate += 1;
       continue;
@@ -205,6 +220,61 @@ export async function runEarningsCommitFromStaging(
       continue;
     }
 
+    if (platformEff === "uber") {
+      const courierUid = p.hints.courierId?.trim();
+      if (courierUid && !drv.uber_driver_id) {
+        await client.query(
+          `UPDATE drivers SET uber_driver_id = $1
+           WHERE id = $2::uuid AND organization_id = $3::uuid AND (uber_driver_id IS NULL OR TRIM(uber_driver_id) = '')`,
+          [courierUid, driverId, orgId],
+        );
+        drv.uber_driver_id = courierUid;
+      }
+    }
+
+    const tipsVal = p.amounts.tips ?? null;
+    const accountOpeningRaw = resolveAccountOpeningFeeForEarningsRow({
+      platform: platformEff,
+      csvFee: p.amounts.accountOpeningFee,
+      orgDefault: orgDefaultOpeningFee,
+      driverId,
+      defaultAppliedForDriver: defaultOpeningApplied,
+    });
+
+    if (platformEff === "uber") {
+      const uber = mapUberTaxiAmounts({
+        castigurileTale: p.amounts.castigurileTale ?? net,
+        receivedTotal: p.amounts.receivedTotal ?? null,
+        platformFee: fee ?? p.amounts.platformFee ?? null,
+        dailyCash: p.amounts.dailyCash,
+        tips: tipsVal,
+        gross,
+        driver: drv,
+        commission_base_type: commissionBaseType,
+      });
+      toInsert.push({
+        driver_id: driverId,
+        platform_id: payoutPlatformIdForDriver(drv, platformEff),
+        trip_date: tripDateIso,
+        trip_count: p.amounts.tripCount,
+        gross: uber.gross,
+        fee: uber.platform_fee,
+        net: uber.net,
+        total_transfer_earnings: transferTotalRaw,
+        daily_cash: p.amounts.dailyCash ?? null,
+        account_opening_fee: accountOpeningRaw,
+        company_commission: uber.company_commission,
+        tips: tipsVal,
+        driver_payout: uber.driver_payout,
+        commission_type: uber.commission_type,
+        glovo_gross_income: uber.gross_income,
+        glovo_net_income: uber.net_income,
+        commission_base: roundMoney(uber.commission_base),
+        commission_rate_frac: uber.commission_rate,
+      });
+      continue;
+    }
+
     let g = gross;
     let n = net;
     const resolvedPlatformFee = resolvePlatformFeeForEarningsRow({
@@ -217,12 +287,11 @@ export async function runEarningsCommitFromStaging(
     let f = resolvedPlatformFee;
     if (g === null && n !== null && f != null) g = n + Math.abs(f);
     if (n === null && g !== null && f != null) n = g - Math.abs(f);
-    if (f == null && g !== null && n !== null && platformEff !== "glovo") {
+    if (f == null && g !== null && n != null && platformEff !== "glovo") {
       f = Math.abs(g - n);
     }
     if (f != null) f = Math.abs(f);
 
-    const tipsVal = p.amounts.tips ?? null;
     const calc = calculatePayout({
       income: g,
       tips: tipsVal,
@@ -232,14 +301,6 @@ export async function runEarningsCommitFromStaging(
       resolvedPlatformNet: n,
       driver: drv,
       commission_base_type: commissionBaseType,
-    });
-
-    const accountOpeningRaw = resolveAccountOpeningFeeForEarningsRow({
-      platform: platformEff,
-      csvFee: p.amounts.accountOpeningFee,
-      orgDefault: orgDefaultOpeningFee,
-      driverId,
-      defaultAppliedForDriver: defaultOpeningApplied,
     });
 
     toInsert.push({
@@ -336,18 +397,14 @@ export async function runEarningsCommitFromStaging(
   );
 
   const touchedDriverIds = [...new Set(toInsert.map((r) => r.driver_id))];
-  for (const driverId of touchedDriverIds) {
-    const drv = driverById.get(driverId);
-    if (!drv) continue;
-    await recomputeDriverPayoutRollup(
-      client,
-      orgId,
-      { ...drv, id: driverId },
-      weekStartEff,
-      weekEndEff,
-      platformEff,
-    );
-  }
+  await recomputeDriverPayoutsForPaymentWeek(
+    client,
+    orgId,
+    driverById,
+    weekStartEff,
+    weekEndEff,
+    platformEff,
+  );
 
   const driverIds = touchedDriverIds;
   const warnings: string[] = [];

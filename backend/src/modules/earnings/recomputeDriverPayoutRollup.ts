@@ -98,7 +98,7 @@ export async function recomputeDriverPayoutRollup(
             SUM(COALESCE(er.tips, 0))::text AS tips,
             SUM(
               CASE
-                WHEN er.platform = 'glovo' THEN ABS(COALESCE(er.platform_fee, 0))
+                WHEN er.platform IN ('glovo', 'uber') THEN ABS(COALESCE(er.platform_fee, 0))
                 ELSE 0
               END
             )::text AS platform_fee,
@@ -114,8 +114,10 @@ export async function recomputeDriverPayoutRollup(
        INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
       WHERE er.driver_id = $2::uuid
         AND er.platform = $3
-        AND er.trip_date >= $4::date
-        AND er.trip_date <= $5::date`,
+        AND (
+          (er.trip_date >= $4::date AND er.trip_date <= $5::date)
+          OR (ei.week_start = $4::date AND ei.week_end = $5::date)
+        )`,
     [orgId, driver.id, earningsPlatform, periodStart, periodEnd],
   );
 
@@ -125,7 +127,10 @@ export async function recomputeDriverPayoutRollup(
        INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
       WHERE er.driver_id = $2::uuid
         AND er.platform = $3
-        AND er.trip_date >= $4::date AND er.trip_date <= $5::date`,
+        AND (
+          (er.trip_date >= $4::date AND er.trip_date <= $5::date)
+          OR (ei.week_start = $4::date AND ei.week_end = $5::date)
+        )`,
     [orgId, driver.id, earningsPlatform, periodStart, periodEnd],
   );
   if (parseInt(countRes.rows[0]?.c ?? "0", 10) === 0) return null;
@@ -141,15 +146,21 @@ export async function recomputeDriverPayoutRollup(
 
   const totals = aggregateEarningsPeriodTotals([sumRow]);
   const platformNet = roundMoney(totals.platformNet);
-  const comm = computeCompanyCommissionFromBase(driver, platformNet);
   const grossIncome = roundMoney(totals.income + totals.tips);
+  const comm = computeCompanyCommissionFromBase(driver, platformNet, {
+    allowNegativeBase: platformNet < 0,
+  });
   const commissionRate = driverCommissionRateAsFraction(driver);
   const platformId = payoutPlatformIdForDriver(driver, earningsPlatform);
   let accountOpening = roundMoney(Math.abs(totals.accountOpening));
+  /** Bolt: fees are VAT gap, not platform service fee. Uber: store fee sum for reporting; payout math uses platform net only. */
   let feeAbs = roundMoney(totals.feeAbs);
   if (payoutPlatform === "bolt") {
     accountOpening = 0;
     feeAbs = 0;
+  } else if (payoutPlatform === "uber") {
+    accountOpening = 0;
+    feeAbs = roundMoney(totals.feeAbs);
   }
   const payoutBeforeRent = computePayoutBeforeRent({
     platformNet,
@@ -166,8 +177,10 @@ export async function recomputeDriverPayoutRollup(
        INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
       WHERE er.driver_id = $2::uuid
         AND er.platform = 'glovo'
-        AND er.trip_date >= $3::date
-        AND er.trip_date <= $4::date`,
+        AND (
+          (er.trip_date >= $3::date AND er.trip_date <= $4::date)
+          OR (ei.week_start = $3::date AND ei.week_end = $4::date)
+        )`,
     [orgId, driver.id, periodStart, periodEnd],
   );
   const hasGlovoEarnings = parseInt(glovoInPeriod.rows[0]?.c ?? "0", 10) > 0;
@@ -220,7 +233,8 @@ export async function recomputeDriverPayoutRollup(
         net_income = EXCLUDED.net_income,
         commission_base = EXCLUDED.commission_base,
         commission_rate = EXCLUDED.commission_rate,
-        commission_base_type = EXCLUDED.commission_base_type
+        commission_base_type = EXCLUDED.commission_base_type,
+        net_driver_payout = EXCLUDED.net_driver_payout
       RETURNING id::text`,
     [
       orgId,
@@ -266,4 +280,48 @@ export function isBoltWeeklyImportMeta(meta: unknown): boolean {
     typeof meta === "object" &&
     (meta as Record<string, unknown>).boltWeeklyExport === true
   );
+}
+
+const EARNINGS_IN_PERIOD_SQL = `
+  SELECT DISTINCT er.driver_id::text AS driver_id
+    FROM earnings_records er
+    INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
+   WHERE er.platform = $2
+     AND (
+       (er.trip_date >= $3::date AND er.trip_date <= $4::date)
+       OR (ei.week_start = $3::date AND ei.week_end = $4::date)
+     )`;
+
+/**
+ * Rebuild driver_payouts for every driver with earnings in the payment week (e.g. after fixing rollup SQL).
+ */
+export async function recomputeDriverPayoutsForPaymentWeek(
+  client: PoolClient,
+  orgId: string,
+  driverById: Map<string, DriverMatchRow & { id: string }>,
+  periodStart: string,
+  periodEnd: string,
+  earningsPlatform: EarningsPlatform,
+): Promise<number> {
+  const { rows } = await client.query<{ driver_id: string }>(EARNINGS_IN_PERIOD_SQL, [
+    orgId,
+    earningsPlatform,
+    periodStart,
+    periodEnd,
+  ]);
+  let count = 0;
+  for (const { driver_id: driverId } of rows) {
+    const drv = driverById.get(driverId);
+    if (!drv) continue;
+    const id = await recomputeDriverPayoutRollup(
+      client,
+      orgId,
+      { ...drv, id: driverId },
+      periodStart,
+      periodEnd,
+      earningsPlatform,
+    );
+    if (id) count += 1;
+  }
+  return count;
 }

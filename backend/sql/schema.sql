@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS driver_payouts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     driver_id UUID REFERENCES drivers(id) ON DELETE CASCADE,
-    platform VARCHAR(20) NOT NULL DEFAULT 'glovo' CHECK (platform IN ('glovo', 'bolt')),
+    platform VARCHAR(20) NOT NULL DEFAULT 'glovo' CHECK (platform IN ('glovo', 'bolt', 'uber')),
     platform_id VARCHAR(255),
     payment_period_start DATE NOT NULL,
     payment_period_end DATE NOT NULL,
@@ -843,7 +843,7 @@ DECLARE
   ni numeric;
   payout numeric;
 BEGIN
-  IF NEW.platform IN ('bolt', 'bolt_courier') THEN
+  IF NEW.platform IN ('bolt', 'bolt_courier', 'uber') THEN
     NEW.driver_payout := COALESCE(NEW.driver_payout, 0);
     RETURN NEW;
   END IF;

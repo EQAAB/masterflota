@@ -10,7 +10,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import { parseFile } from "fast-csv";
-import { buildColumnMap } from "../src/modules/earnings/romanHeaderMap";
+import {
+  buildEarningsColumnMap,
+  isBoltWeeklyColumnMap,
+  isUberWeeklyColumnMap,
+} from "../src/modules/earnings/earningsColumnMap";
 import { rowCellsToNormalized } from "../src/modules/earnings/normalizeRow";
 import { detectPlatformWithMeta, isEarningsPlatform, type EarningsPlatform } from "../src/modules/earnings/detectPlatform";
 import { extractDateFromFilename } from "../src/modules/earnings/filenameDate";
@@ -50,8 +54,10 @@ async function main() {
   const headers = table[0] ?? [];
   const dataRows = table.slice(1);
   const { platform: detected } = detectPlatformWithMeta(path.basename(abs), headers);
-  const colMap = buildColumnMap(headers);
+  const colMap = buildEarningsColumnMap(headers);
   const filenameDate = extractDateFromFilename(path.basename(abs));
+  const boltWeekly = isBoltWeeklyColumnMap(headers);
+  const uberTaxi = isUberWeeklyColumnMap(headers);
 
   if (postIdx >= 0) {
     const base = argv[postIdx + 1];
@@ -92,13 +98,18 @@ async function main() {
   const platformEff = detected;
   const normalized = dataRows.map((cells) =>
     rowCellsToNormalized(cells, colMap, filenameDate, {
-      skipInferredPlatformFee: platformEff === "glovo",
+      skipInferredPlatformFee: platformEff === "glovo" || uberTaxi,
+      boltWeeklyExport: boltWeekly,
+      uberTaxiExport: uberTaxi,
     }),
   );
   const sample = normalized.slice(0, 5).map((r, i) => ({
     row: i + 1,
     tripDate: r.tripDateIso,
     courierId: r.hints.courierId,
+    gross: r.amounts.gross,
+    net: r.amounts.net,
+    platformFee: r.amounts.platformFee,
     transferTotal: r.amounts.transferTotal,
     accountOpeningFee: r.amounts.accountOpeningFee,
     dailyCash: r.amounts.dailyCash,

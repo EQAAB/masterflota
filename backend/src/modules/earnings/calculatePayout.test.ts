@@ -32,7 +32,7 @@ describe("netIncomeFromGrossAndTaxa", () => {
 });
 
 describe("resolveFleetCommissionBase", () => {
-  it("uses platform net for net_income (ignores TVT)", () => {
+  it("prefers resolvedPlatformNet for net_income commission base", () => {
     const b = resolveFleetCommissionBase({
       income: 100,
       tips: 5,
@@ -40,6 +40,20 @@ describe("resolveFleetCommissionBase", () => {
       plata_zilnica_cash: 0,
       transferTotal: 999,
       resolvedPlatformNet: 50,
+      driver: driverPct10,
+      commission_base_type: "net_income",
+    });
+    expect(b).toBe(50);
+  });
+
+  it("uses gross-derived net for net_income when resolvedPlatformNet is null (ignores TVT)", () => {
+    const b = resolveFleetCommissionBase({
+      income: 100,
+      tips: 5,
+      taxa_aplicatie: 3,
+      plata_zilnica_cash: 0,
+      transferTotal: 999,
+      resolvedPlatformNet: null,
       driver: driverPct10,
       commission_base_type: "net_income",
     });
@@ -62,6 +76,21 @@ describe("resolveFleetCommissionBase", () => {
 });
 
 describe("calculatePayout", () => {
+  it("prefers resolvedPlatformNet for net_income commission base when provided", () => {
+    const r = calculatePayout({
+      income: 1800.32,
+      tips: 0,
+      taxa_aplicatie: 447.09,
+      plata_zilnica_cash: 0,
+      transferTotal: null,
+      resolvedPlatformNet: 1353.23,
+      driver: driverPct10,
+      commission_base_type: "net_income",
+    });
+    expect(r.commission_base).toBe(1353.23);
+    expect(r.company_commission).toBeCloseTo(135.32, 2);
+  });
+
   it("uses net_income for commission and subtracts daily cash", () => {
     const r = calculatePayout({
       income: 100,
@@ -129,20 +158,20 @@ describe("calculatePayout", () => {
     expect(r.driver_payout).toBeCloseTo(-110, 5);
   });
 
-  it("never produces negative company commission for negative net base", () => {
+  it("applies signed commission on negative net (Uber debt / universal formula)", () => {
     const r = calculatePayout({
       income: 100,
       tips: 0,
       taxa_aplicatie: 130,
       plata_zilnica_cash: 0,
       transferTotal: null,
-      resolvedPlatformNet: null,
+      resolvedPlatformNet: -30,
       driver: driverPct10,
       commission_base_type: "net_income",
     });
     expect(r.net_income).toBe(-30);
-    expect(r.company_commission).toBe(0);
-    expect(r.driver_payout).toBe(-30);
+    expect(r.company_commission).toBeCloseTo(-3, 5);
+    expect(r.driver_payout).toBeCloseTo(-27, 5);
   });
 
   it("matches Excel-style row: net 13.09, 10% on net, daily cash -96.16", () => {

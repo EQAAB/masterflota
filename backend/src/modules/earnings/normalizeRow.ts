@@ -1,5 +1,6 @@
 import { isEmptyCellValue } from "../../lib/isEmptyRow";
 import { roundMoney } from "./debtAllocation";
+import { resolveUberPlatformNet } from "./mapUberTaxiAmounts";
 
 export type CanonicalField =
   | "plate"
@@ -38,6 +39,10 @@ export interface NormalizedAmounts {
   /** Bolt weekly: component columns before manual sum (commit uses all four). */
   boltAdjustedWithoutVat?: number | null;
   boltTipsWithoutVat?: number | null;
+  /** Uber: parent Câștiguri primite total (debt weeks when Câștigurile tale is 0). */
+  receivedTotal?: number | null;
+  /** Uber: raw CSV Câștigurile tale before {@link resolveUberPlatformNet}. */
+  castigurileTale?: number | null;
 }
 
 export interface NormalizedEarningsRow {
@@ -111,6 +116,8 @@ export interface RowNormalizeOptions {
   skipInferredPlatformFee?: boolean;
   /** Bolt Tier-A weekly export: do not infer platform fee from gross−net (VAT gap). */
   boltWeeklyExport?: boolean;
+  /** Uber Romania taxi export: gross = net − service_fee; cash stored as magnitude. */
+  uberTaxiExport?: boolean;
 }
 
 /** Bolt weekly CSV component columns (manual tip sum). */
@@ -125,6 +132,7 @@ export type EarningsColumnField =
   | CanonicalField
   | "first_name"
   | "last_name"
+  | "received_total"
   | BoltComponentField;
 
 export function rowCellsToNormalized(
@@ -175,6 +183,9 @@ export function rowCellsToNormalized(
         break;
       case "net":
         amounts.net = parseRoNumber(raw);
+        break;
+      case "received_total":
+        amounts.receivedTotal = parseRoNumber(raw);
         break;
       case "transfer_total": {
         const v = parseRoNumber(raw);
@@ -249,6 +260,24 @@ export function rowCellsToNormalized(
         : null;
     amounts.dailyCash =
       boltOverdueCashDebt !== null ? roundMoney(Math.abs(boltOverdueCashDebt)) : null;
+  } else if (opts?.uberTaxiExport) {
+    if (amounts.dailyCash !== null) {
+      amounts.dailyCash = roundMoney(Math.abs(amounts.dailyCash));
+    }
+    let received = amounts.receivedTotal;
+    const castigurileTale = amounts.net;
+    amounts.castigurileTale = castigurileTale;
+    if (received == null && (castigurileTale ?? 0) <= 0 && amounts.platformFee != null && amounts.platformFee < 0) {
+      received = amounts.platformFee;
+      amounts.receivedTotal = received;
+    }
+    const platformNet = resolveUberPlatformNet(castigurileTale, received ?? null);
+    amounts.net = platformNet;
+    if (amounts.platformFee != null) {
+      amounts.gross = roundMoney(platformNet - amounts.platformFee);
+    } else if (platformNet !== 0) {
+      amounts.gross = platformNet;
+    }
   } else {
     if (amounts.gross === null && amounts.net !== null && amounts.platformFee !== null) {
       amounts.gross = amounts.net + amounts.platformFee;
@@ -288,7 +317,8 @@ export function isNormalizedEarningsRowEmpty(row: NormalizedEarningsRow): boolea
     amt.tripCount != null ||
     amt.tips != null ||
     amt.boltAdjustedWithoutVat != null ||
-    amt.boltTipsWithoutVat != null
+    amt.boltTipsWithoutVat != null ||
+    amt.receivedTotal != null
   );
 }
 

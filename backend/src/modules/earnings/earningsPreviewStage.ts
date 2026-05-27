@@ -24,6 +24,7 @@ export async function insertEarningsPreviewStaging(
     /** Snapshot for commit/preview: org default Taxa aplicatie (Glovo). */
     defaultPlatformFee?: number;
     boltWeeklyExport?: boolean;
+    uberTaxiExport?: boolean;
     parseStats?: ParseFilterStats;
   },
 ): Promise<string> {
@@ -44,6 +45,7 @@ export async function insertEarningsPreviewStaging(
       ? { defaultPlatformFee: params.defaultPlatformFee }
       : {}),
     ...(params.boltWeeklyExport ? { boltWeeklyExport: true } : {}),
+    ...(params.uberTaxiExport ? { uberTaxiExport: true } : {}),
   };
   const totalRows = params.normalizedRows.length;
   const ins = await client.query<{ id: string }>(
