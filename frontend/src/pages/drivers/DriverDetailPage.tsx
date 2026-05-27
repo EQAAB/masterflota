@@ -37,9 +37,9 @@ function formatDate(value: string | null | undefined): string {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-800",
-  suspended: "bg-amber-100 text-amber-800",
-  terminated: "bg-red-100 text-red-800",
+  active: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200/70",
+  suspended: "bg-amber-100 text-amber-800 ring-1 ring-amber-200/70",
+  terminated: "bg-red-100 text-red-800 ring-1 ring-red-200/70",
 };
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -55,6 +55,63 @@ const ACTIVITY_LABELS: Record<string, string> = {
   recurring_fee_update: "Recurring fee updated",
   recurring_fee_delete: "Recurring fee removed",
 };
+
+const cardClass = "bg-white rounded-[16px] border border-border/70 shadow-soft p-4 sm:p-5";
+const sectionTitleClass = "text-sm font-semibold text-ink mb-3";
+
+type ActivityTone = "add" | "remove" | "update" | "status" | "default";
+
+function relativeDateLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return formatDate(value);
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startInput = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startToday.getTime() - startInput.getTime()) / 86400000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return formatDate(value);
+}
+
+function activityTone(type: string): ActivityTone {
+  if (type.includes("create") || type.includes("upload")) return "add";
+  if (type.includes("delete") || type.includes("remove")) return "remove";
+  if (type.includes("status")) return "status";
+  if (type.includes("update") || type.includes("verify")) return "update";
+  return "default";
+}
+
+function ActivityIcon({ type }: { type: string }) {
+  const tone = activityTone(type);
+  const toneClass =
+    tone === "add"
+      ? "bg-emerald-100 text-emerald-700"
+      : tone === "remove"
+        ? "bg-rose-100 text-rose-700"
+        : tone === "status"
+          ? "bg-violet-100 text-violet-700"
+          : tone === "update"
+            ? "bg-sky-100 text-sky-700"
+            : "bg-slate-100 text-slate-600";
+
+  const IconPath =
+    tone === "add"
+      ? "M12 4.5v15m7.5-7.5h-15"
+      : tone === "remove"
+        ? "M5 12h14"
+        : tone === "status"
+          ? "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          : "M12 6v6l4 2";
+
+  return (
+    <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${toneClass}`}>
+      <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d={IconPath} />
+      </svg>
+    </span>
+  );
+}
 
 export function DriverDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -178,16 +235,19 @@ export function DriverDetailPage() {
 
   return (
     <div className="min-h-full bg-slate-100">
-      <header className="bg-white border-b border-border px-6 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="border-b border-border/70 bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
-              <DriverAvatar
-                profilePhotoUrl={d.profile_photo_url}
-                firstName={d.first_name}
-                lastName={d.last_name}
-                size="lg"
-              />
+              <div className="inline-flex rounded-2xl bg-brand-mint/35 p-1.5 shadow-sm">
+                <DriverAvatar
+                  profilePhotoUrl={d.profile_photo_url}
+                  firstName={d.first_name}
+                  lastName={d.last_name}
+                  size="lg"
+                  className="h-24 w-24 text-xl shadow-sm"
+                />
+              </div>
               {canEdit && (
                 <div className="mt-2">
                   <input
@@ -211,23 +271,25 @@ export function DriverDetailPage() {
                 </div>
               )}
             </div>
-            <div>
+            <div className="pt-0.5">
               <div className="flex items-center gap-3">
                 <Link to="/drivers" className="text-sm text-ink-muted hover:text-ink">
                   ← Back to drivers
                 </Link>
               </div>
-              <h1 className="text-xl font-semibold text-ink mt-1">
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
                 {d.first_name} {d.last_name}
               </h1>
-              <p className="text-xs text-ink-muted font-mono mt-0.5">ID: {id}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                Driver ID: <span className="font-mono">{id}</span>
+              </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {canEdit && (
               <Link
                 to={`/drivers/${id}/edit`}
-                className="inline-flex items-center rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+                className="inline-flex h-10 items-center rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md"
               >
                 Edit driver
               </Link>
@@ -236,7 +298,7 @@ export function DriverDetailPage() {
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(true)}
-                className="inline-flex items-center rounded-md border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                className="inline-flex h-10 items-center rounded-xl border border-red-200 bg-white px-4 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50"
               >
                 Delete driver
               </button>
@@ -244,16 +306,16 @@ export function DriverDetailPage() {
           </div>
         </div>
 
-        <nav className="flex gap-1 mt-4 border-b border-border">
+        <nav className="mx-auto mt-2 flex max-w-[1600px] gap-2 px-4 pb-3 sm:px-6 lg:px-8">
           {(["profile", "documents", "activity"] as TabId[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-md capitalize ${
+              className={`rounded-full px-4 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
                 tab === t
-                  ? "bg-slate-100 text-ink border border-b-0 border-border -mb-px"
-                  : "text-ink-muted hover:text-ink"
+                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-border/70"
+                  : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
               }`}
             >
               {t}
@@ -262,46 +324,46 @@ export function DriverDetailPage() {
         </nav>
       </header>
 
-      <main className="p-6 max-w-4xl mx-auto">
+      <main className={`mx-auto p-4 sm:p-6 ${tab === "activity" ? "max-w-5xl" : "max-w-4xl"}`}>
         {tab === "profile" && (
-          <div className="space-y-6">
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Personal information</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-ink-muted">First name</dt><dd className="font-medium">{d.first_name ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Last name</dt><dd className="font-medium">{d.last_name ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Email</dt><dd>{d.email ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Phone</dt><dd>{d.phone ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">Date of birth</dt><dd>{formatDate(d.date_of_birth)}</dd></div>
-                <div className="md:col-span-2"><dt className="text-ink-muted">Address</dt><dd>{d.address ?? "—"}</dd></div>
+          <div className="space-y-4">
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Personal information</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
+                <div><dt className="text-xs font-medium text-slate-500">First name</dt><dd className="mt-0.5 font-medium text-slate-900">{d.first_name ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Last name</dt><dd className="mt-0.5 font-medium text-slate-900">{d.last_name ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Email</dt><dd className="mt-0.5 text-slate-900">{d.email ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Phone</dt><dd className="mt-0.5 text-slate-900">{d.phone ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Date of birth</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.date_of_birth)}</dd></div>
+                <div className="md:col-span-2"><dt className="text-xs font-medium text-slate-500">Address</dt><dd className="mt-0.5 text-slate-900">{d.address ?? "—"}</dd></div>
               </dl>
             </section>
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">License information</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-ink-muted">License number</dt><dd>{d.license_number ?? "—"}</dd></div>
-                <div><dt className="text-ink-muted">License expiry</dt><dd>{formatDate(d.license_expiry)}</dd></div>
-                <div><dt className="text-ink-muted">License class</dt><dd>{d.license_class ?? "—"}</dd></div>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>License information</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
+                <div><dt className="text-xs font-medium text-slate-500">License number</dt><dd className="mt-0.5 text-slate-900">{d.license_number ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">License expiry</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.license_expiry)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">License class</dt><dd className="mt-0.5 text-slate-900">{d.license_class ?? "—"}</dd></div>
               </dl>
             </section>
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Employment</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div><dt className="text-ink-muted">Hire date</dt><dd>{formatDate(d.hire_date)}</dd></div>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Employment</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
+                <div><dt className="text-xs font-medium text-slate-500">Hire date</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.hire_date)}</dd></div>
                 <div>
-                  <dt className="text-ink-muted">Status</dt>
-                  <dd>
-                    <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[d.employment_status] ?? "bg-slate-100 text-ink"}`}>
+                  <dt className="text-xs font-medium text-slate-500">Status</dt>
+                  <dd className="mt-1">
+                    <span className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-medium capitalize ${STATUS_COLORS[d.employment_status] ?? "bg-slate-100 text-ink ring-1 ring-slate-200/70"}`}>
                       {d.employment_status}
                     </span>
                   </dd>
                 </div>
-                <div><dt className="text-ink-muted">Commission rate</dt><dd>{d.commission_rate ?? "—"}%</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Commission rate</dt><dd className="mt-0.5 text-slate-900">{d.commission_rate ?? "—"}%</dd></div>
                 <div className="md:col-span-2">
-                  <dt className="text-ink-muted">Subcontractor</dt>
-                  <dd>
+                  <dt className="text-xs font-medium text-slate-500">Subcontractor</dt>
+                  <dd className="mt-0.5 text-slate-900">
                     {d.subcontractor_id && d.subcontractor_legal_name ? (
                       <>
                         <Link
@@ -319,46 +381,46 @@ export function DriverDetailPage() {
               </dl>
             </section>
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Platform IDs</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Platform IDs</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
                 <div>
-                  <dt className="text-ink-muted">
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID
                   </dt>
-                  <dd>{d.uber_driver_id ?? "—"}</dd>
+                  <dd className="mt-0.5 text-slate-900">{d.uber_driver_id ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID
                   </dt>
-                  <dd>{d.bolt_driver_id ?? "—"}</dd>
+                  <dd className="mt-0.5 text-slate-900">{d.bolt_driver_id ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID
                   </dt>
-                  <dd>{d.glovo_courier_id ?? "—"}</dd>
+                  <dd className="mt-0.5 text-slate-900">{d.glovo_courier_id ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID
                   </dt>
-                  <dd>{d.bolt_courier_id ?? "—"}</dd>
+                  <dd className="mt-0.5 text-slate-900">{d.bolt_courier_id ?? "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">
+                  <dt className="text-xs font-medium text-slate-500">
                     {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
                   </dt>
-                  <dd>{d.wolt_courier_id ?? "—"}</dd>
+                  <dd className="mt-0.5 text-slate-900">{d.wolt_courier_id ?? "—"}</dd>
                 </div>
               </dl>
             </section>
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Current vehicle</h2>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Current vehicle</h2>
               {d.current_vehicle_id ? (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <Link
                     to={`/vehicles/${d.current_vehicle_id}`}
                     className="font-medium text-brand hover:text-brand-dark"
@@ -372,20 +434,20 @@ export function DriverDetailPage() {
                       type="button"
                       onClick={() => unassignMutation.mutate()}
                       disabled={unassignMutation.isPending}
-                      className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
+                      className="inline-flex h-8 items-center rounded-lg border border-border/80 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
                       Unassign vehicle
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <p className="text-sm text-ink-muted">No vehicle assigned.</p>
                   {canEdit && (
                     <button
                       type="button"
                       onClick={() => setAssignOpen(true)}
-                      className="rounded-md bg-brand-gradient px-2 py-1 text-xs font-medium text-white hover:opacity-95"
+                      className="inline-flex h-8 items-center rounded-lg bg-brand-gradient px-3 text-xs font-medium text-white hover:opacity-95"
                     >
                       Assign vehicle
                     </button>
@@ -398,11 +460,11 @@ export function DriverDetailPage() {
               <VehicleAssignmentHistoryPanel mode="driver" entityId={id} title="Vehicle history" />
             )}
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Notes</h2>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Notes</h2>
               {!notesEdit ? (
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-ink whitespace-pre-wrap">{d.notes || "No notes."}</p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-700">{d.notes || "No notes."}</p>
                   {canEdit && (
                     <button
                       type="button"
@@ -417,26 +479,26 @@ export function DriverDetailPage() {
                   )}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <textarea
                     rows={3}
-                    className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                    className="w-full rounded-xl border border-border/80 px-3 py-2.5 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
                     value={notesValue}
                     onChange={(e) => setNotesValue(e.target.value)}
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2.5">
                     <button
                       type="button"
                       onClick={() => notesMutation.mutate(notesValue.trim() || null)}
                       disabled={notesMutation.isPending}
-                      className="rounded-md bg-brand-gradient px-3 py-1.5 text-sm text-white hover:opacity-95 disabled:opacity-60"
+                      className="inline-flex h-9 items-center rounded-lg bg-brand-gradient px-3.5 text-sm text-white hover:opacity-95 disabled:opacity-60"
                     >
                       Save
                     </button>
                     <button
                       type="button"
                       onClick={() => { setNotesEdit(false); setNotesValue(d.notes ?? ""); }}
-                      className="rounded-md border border-border px-3 py-1.5 text-sm text-ink hover:bg-slate-50"
+                      className="inline-flex h-9 items-center rounded-lg border border-border/80 px-3.5 text-sm text-slate-700 hover:bg-slate-50"
                     >
                       Cancel
                     </button>
@@ -447,9 +509,9 @@ export function DriverDetailPage() {
 
             {id && <DriverRecurringFeesPanel driverId={id} canEdit={canEdit} />}
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Payout history</h2>
-              <p className="text-sm text-ink-muted mb-2">
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Payout history</h2>
+              <p className="mb-2 text-sm text-slate-600">
                 View weekly payouts and one-off adjustments for this driver.
               </p>
               <Link
@@ -460,49 +522,76 @@ export function DriverDetailPage() {
               </Link>
             </section>
 
-            <section className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Metadata</h2>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-ink-muted">
-                <div><dt className="text-ink-muted">Created</dt><dd>{formatDate(d.created_at)}</dd></div>
-                <div><dt className="text-ink-muted">Last updated</dt><dd>{formatDate(d.updated_at)}</dd></div>
+            <section className={cardClass}>
+              <h2 className={sectionTitleClass}>Metadata</h2>
+              <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
+                <div><dt className="text-xs font-medium text-slate-500">Created</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.created_at)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">Last updated</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.updated_at)}</dd></div>
               </dl>
             </section>
           </div>
         )}
 
         {tab === "documents" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {canEdit && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-ink mb-3">Upload new document</h2>
+              <div className={cardClass}>
+                <h2 className={sectionTitleClass}>Upload new document</h2>
                 <DocumentUpload driverId={id} />
               </div>
             )}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-sm font-semibold text-ink mb-3">Documents</h2>
+            <div className={cardClass}>
+              <h2 className={sectionTitleClass}>Documents</h2>
               <DocumentList driverId={id} />
             </div>
           </div>
         )}
 
         {tab === "activity" && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-ink mb-3">Activity history</h2>
+          <div className={`${cardClass} min-h-[360px]`}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">Activity history</h2>
+              <span className="inline-flex h-7 items-center rounded-full bg-slate-100 px-3 text-xs font-medium text-slate-600 ring-1 ring-slate-200/80">
+                {activities.length} event{activities.length === 1 ? "" : "s"}
+              </span>
+            </div>
             {loadingActivity ? (
               <p className="text-sm text-ink-muted">Loading...</p>
             ) : activities.length === 0 ? (
-              <p className="text-sm text-ink-muted">No activity yet.</p>
+              <div className="rounded-[14px] border border-dashed border-border/80 bg-brand-mint/10 px-5 py-10 text-center">
+                <p className="text-sm font-medium text-slate-800">No activity yet</p>
+                <p className="mt-1 text-sm text-slate-500">Driver updates and actions will appear here.</p>
+              </div>
             ) : (
-              <ul className="space-y-3">
-                {activities.map((a: DriverActivity) => (
-                  <li key={a.id} className="flex flex-wrap items-baseline gap-2 border-b border-border pb-2 last:border-0">
-                    <span className="text-sm font-medium text-ink">
-                      {ACTIVITY_LABELS[a.activity_type] ?? a.activity_type}
-                    </span>
-                    {a.activity_description && (
-                      <span className="text-sm text-ink-muted">{a.activity_description}</span>
-                    )}
-                    <span className="text-xs text-slate-400 ml-auto">{formatDate(a.created_at)}</span>
+              <ul className="space-y-2">
+                {activities.map((a: DriverActivity, index: number) => (
+                  <li
+                    key={a.id}
+                    className="group rounded-[12px] border border-transparent px-2.5 py-2 transition-all duration-200 hover:border-border/70 hover:bg-slate-50/80"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="relative flex shrink-0 flex-col items-center">
+                        <ActivityIcon type={a.activity_type} />
+                        {index < activities.length - 1 && (
+                          <span className="mt-1 h-8 w-px bg-slate-200" aria-hidden />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <div className="flex flex-wrap items-start gap-2">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {ACTIVITY_LABELS[a.activity_type] ?? a.activity_type}
+                          </p>
+                          <span className="ml-auto inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200/80">
+                            {relativeDateLabel(a.created_at)}
+                          </span>
+                        </div>
+                        {a.activity_description && (
+                          <p className="mt-1 text-sm text-slate-600">{a.activity_description}</p>
+                        )}
+                        <p className="mt-1 text-xs text-slate-400">{formatDate(a.created_at)}</p>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

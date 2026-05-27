@@ -20,6 +20,19 @@ const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
 const ALLOWED_EXT = [".pdf", ".jpg", ".jpeg", ".png"];
 
+function UploadCloudIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 11v7m0-7l-3 3m3-3l3 3"
+      />
+    </svg>
+  );
+}
+
 function validateFile(file: File): string | null {
   if (file.size > MAX_SIZE) return "File must be 10MB or smaller.";
   const ext = "." + (file.name.split(".").pop() ?? "").toLowerCase();
@@ -137,14 +150,14 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
 
   return (
     <div className="space-y-3">
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3.5">
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`
-            border-2 border-dashed rounded-lg p-6 text-center transition-colors
-            ${dragOver ? "border-sky-500 bg-brand-mint" : "border-border bg-slate-50"}
+            rounded-[14px] border-2 border-dashed p-5 text-center transition-all duration-200
+            ${dragOver ? "border-brand bg-brand-mint/35 shadow-sm" : "border-border/80 bg-brand-mint/10 hover:border-brand/40 hover:bg-brand-mint/20"}
           `}
         >
           <input
@@ -155,7 +168,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
             className="hidden"
           />
           {selectedFile ? (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2.5">
               {isImage && (
                 <img
                   src={URL.createObjectURL(selectedFile)}
@@ -173,7 +186,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
                   File
                 </div>
               )}
-              <p className="text-sm font-medium text-ink truncate max-w-full">
+              <p className="max-w-full truncate text-sm font-medium text-ink">
                 {selectedFile.name}
               </p>
               <p className="text-xs text-ink-muted">
@@ -187,11 +200,11 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
                   />
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-sm text-brand hover:underline"
+                  className="text-sm font-medium text-brand hover:underline"
                 >
                   Change file
                 </button>
@@ -208,31 +221,35 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
             </div>
           ) : (
             <>
-              <p className="text-ink-muted text-sm mb-2">
+              <span className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10 text-brand">
+                <UploadCloudIcon className="h-5 w-5" />
+              </span>
+              <p className="mb-1 text-sm font-medium text-slate-800">
                 Drag & drop a file here, or click to browse
               </p>
+              <p className="mb-3 text-xs text-slate-500">Upload PDF, JPG, or PNG documents in seconds.</p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-md bg-white border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
+                className="inline-flex h-10 items-center rounded-xl border border-brand/60 bg-white px-4 text-sm font-medium text-brand shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-mint/20"
               >
                 Select file
               </button>
-              <p className="text-xs text-ink-muted mt-2">
+              <p className="mt-2 text-xs text-slate-500">
                 PDF, JPG, PNG only. Max 10MB.
               </p>
             </>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Document type *
             </label>
             <select
               required
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value as DocumentType)}
             >
@@ -244,12 +261,12 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
               Expiry date (optional)
             </label>
             <input
               type="date"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
             />
@@ -257,12 +274,12 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink mb-1">
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">
             Notes (optional)
           </label>
           <input
             type="text"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Optional notes"
@@ -282,7 +299,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
         <button
           type="submit"
           disabled={!selectedFile || mutation.isPending}
-          className="inline-flex items-center rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-60"
+          className="inline-flex h-11 items-center rounded-xl bg-brand-gradient px-5 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:opacity-60"
         >
           {mutation.isPending ? (
             <>

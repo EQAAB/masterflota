@@ -29,6 +29,19 @@ const DOC_TYPE_COLORS: Record<DocumentType, string> = {
   other: "bg-gray-100 text-gray-800",
 };
 
+function DocumentStackIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+      />
+    </svg>
+  );
+}
+
 function formatDate(value: string | null): string {
   if (!value) return "—";
   const d = value.split("T")[0];
@@ -110,38 +123,42 @@ export function DocumentList({ driverId }: DocumentListProps) {
 
   if (docs.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-slate-50 p-8 text-center text-sm text-ink-muted">
-        No documents yet. Upload one above.
+      <div className="rounded-[14px] border border-dashed border-border/80 bg-brand-mint/10 px-6 py-8 text-center">
+        <span className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand">
+          <DocumentStackIcon className="h-5 w-5" />
+        </span>
+        <p className="text-sm font-medium text-slate-800">No documents yet</p>
+        <p className="mt-1 text-sm text-slate-500">Upload the first document using the form above.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {docs.map((doc) => (
         <div
           key={doc.id}
-          className="rounded-lg border border-border bg-white p-4 shadow-sm"
+          className="rounded-[14px] border border-border/80 bg-white p-4 shadow-soft transition-all duration-200 hover:-translate-y-px hover:shadow-md"
         >
-          <div className="flex flex-wrap items-center gap-2 mb-2">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <span
-              className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
+              className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium ${
                 DOC_TYPE_COLORS[doc.document_type]
               }`}
             >
               {DOC_TYPE_LABELS[doc.document_type]}
             </span>
             {doc.is_verified ? (
-              <span className="inline-flex rounded px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800">
+              <span className="inline-flex h-6 items-center rounded-full bg-emerald-100 px-2.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
                 Verified
               </span>
             ) : (
-              <span className="inline-flex rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-ink-muted">
+              <span className="inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-xs font-medium text-ink-muted ring-1 ring-slate-200/80">
                 Pending
               </span>
             )}
             {doc.expiry_date && isExpired(doc.expiry_date) && (
-              <span className="inline-flex rounded px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800">
+              <span className="inline-flex h-6 items-center rounded-full bg-red-100 px-2.5 text-xs font-medium text-red-800 ring-1 ring-red-200/70">
                 Expired
               </span>
             )}
@@ -150,7 +167,7 @@ export function DocumentList({ driverId }: DocumentListProps) {
           <p className="text-sm font-medium text-ink truncate" title={doc.file_name}>
             {doc.file_name}
           </p>
-          <p className="text-xs text-ink-muted mt-0.5">
+          <p className="mt-0.5 text-xs text-ink-muted">
             {formatSize(doc.file_size)} · Uploaded {formatDate(doc.created_at)}
           </p>
           {doc.expiry_date && (
@@ -162,7 +179,7 @@ export function DocumentList({ driverId }: DocumentListProps) {
             </p>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => handleDownload(doc)}
