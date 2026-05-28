@@ -16,6 +16,12 @@ export function SubcontractorSettlementsPage() {
     periodEnd,
     setPeriodStart,
     setPeriodEnd,
+    subcontractorId,
+    setSubcontractorId,
+    periodValidation,
+    applyPreviousWeek,
+    subcontractors,
+    subcontractorsLoading,
     msg,
     query,
     rows,
@@ -30,6 +36,7 @@ export function SubcontractorSettlementsPage() {
     exportBusyKey,
     closeActionMenu,
     handleActionMenuToggle,
+    handleGenerateReport,
     handleRefresh,
     handleMarkAllPaid,
     handleMarkOnePaid,
@@ -70,8 +77,16 @@ export function SubcontractorSettlementsPage() {
           periodEnd={periodEnd}
           onPeriodStartChange={setPeriodStart}
           onPeriodEndChange={setPeriodEnd}
+          onResetPreviousWeek={applyPreviousWeek}
+          periodValidation={periodValidation}
+          subcontractorId={subcontractorId}
+          onSubcontractorIdChange={setSubcontractorId}
+          subcontractors={subcontractors}
+          subcontractorsLoading={subcontractorsLoading}
+          onGenerateReport={handleGenerateReport}
           onRefresh={handleRefresh}
           onMarkPaid={handleMarkAllPaid}
+          generatePending={query.isFetching}
           refreshPending={refreshMut.isPending}
           markPaidPending={payMut.isPending}
           pendingCount={pendingIds.length}

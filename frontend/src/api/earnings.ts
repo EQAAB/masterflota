@@ -536,11 +536,34 @@ export interface SubcontractorSettlementRow {
   paid_amount: string | null;
 }
 
-export function getSubcontractorSettlements(params: { periodStart: string; periodEnd: string }) {
-  return api.get<{ periodStart: string; periodEnd: string; rows: SubcontractorSettlementRow[] }>(
-    "/earnings/subcontractors/settlements",
-    { params: { periodStart: params.periodStart, periodEnd: params.periodEnd } },
-  );
+export type SettlementReportResponse = {
+  periodStart: string;
+  periodEnd: string;
+  subcontractorId: string;
+  rows: SubcontractorSettlementRow[];
+};
+
+export function getSettlementReport(params: {
+  periodStart: string;
+  periodEnd: string;
+  subcontractorId?: string;
+}) {
+  return api.get<SettlementReportResponse>("/earnings/subcontractors/settlements", {
+    params: {
+      periodStart: params.periodStart,
+      periodEnd: params.periodEnd,
+      subcontractorId: params.subcontractorId ?? "all",
+    },
+  });
+}
+
+/** @alias getSettlementReport */
+export function getSubcontractorSettlements(params: {
+  periodStart: string;
+  periodEnd: string;
+  subcontractorId?: string;
+}) {
+  return getSettlementReport(params);
 }
 
 export function postRefreshSubcontractorRentCharges(body: { periodStart: string; periodEnd: string }) {
