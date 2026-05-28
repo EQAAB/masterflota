@@ -1,26 +1,30 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getSubcontractorSettlements } from "../../../api/earnings";
+import { getSettlementReport } from "../../../api/earnings";
+import { getSubcontractors } from "../../../api/subcontractors";
 import { bulkUpdateSubcontractorPayouts, postRefreshSubcontractorPayouts } from "../../../api/subcontractorPayouts";
 import { useAuthStore } from "../../../store/authStore";
 import { exportSettlementCsv } from "../../../utils/exportSettlementCsv";
+import { getPreviousWeek, validatePaymentWeek } from "../../../utils/earningsImportWeek";
 import {
   aggregateSettlementKpis,
   canMarkSettlementPaid,
   hasSettlementData,
   settlementRowKey,
-  weekBoundsMonday,
 } from "./settlementsDisplayUtils";
+
+const ALL_SUBCONTRACTORS = "all";
 
 export function useSettlementsPageState() {
   const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const def = weekBoundsMonday(new Date());
+  const previousWeek = useMemo(() => getPreviousWeek(), []);
 
-  const [periodStart, setPeriodStart] = useState(def.start);
-  const [periodEnd, setPeriodEnd] = useState(def.end);
+  const [periodStart, setPeriodStart] = useState(previousWeek.start);
+  const [periodEnd, setPeriodEnd] = useState(previousWeek.end);
+  const [subcontractorId, setSubcontractorId] = useState(ALL_SUBCONTRACTORS);
   const [msg, setMsg] = useState<string | null>(null);
   const [openMenuRowKey, setOpenMenuRowKey] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
@@ -28,10 +32,32 @@ export function useSettlementsPageState() {
 
   const canAccess = user?.role === "admin" || user?.role === "accountant";
 
+  const periodValidation = useMemo(
+    () => validatePaymentWeek(periodStart, periodEnd),
+    [periodStart, periodEnd],
+  );
+
+  const applyPreviousWeek = useCallback(() => {
+    const { start, end } = getPreviousWeek();
+    setPeriodStart(start);
+    setPeriodEnd(end);
+  }, []);
+
+  const subcontractorsQuery = useQuery({
+    queryKey: ["subcontractors"],
+    queryFn: () => getSubcontractors().then((r) => r.data),
+    enabled: canAccess,
+  });
+
   const query = useQuery({
-    queryKey: ["earnings", "subcontractor-settlements", periodStart, periodEnd],
-    queryFn: () => getSubcontractorSettlements({ periodStart, periodEnd }).then((r) => r.data),
-    enabled: canAccess && !!periodStart && !!periodEnd,
+    queryKey: ["earnings", "subcontractor-settlements", periodStart, periodEnd, subcontractorId],
+    queryFn: () =>
+      getSettlementReport({
+        periodStart,
+        periodEnd,
+        subcontractorId,
+      }).then((r) => r.data),
+    enabled: canAccess && periodValidation.valid,
   });
 
   const rows = query.data?.rows ?? [];
@@ -87,6 +113,12 @@ export function useSettlementsPageState() {
     ? rows.find((r) => settlementRowKey(r) === openMenuRowKey)
     : undefined;
 
+  const handleGenerateReport = useCallback(() => {
+    setMsg(null);
+    if (!periodValidation.valid) return;
+    void query.refetch();
+  }, [periodValidation.valid, query]);
+
   const handleRefresh = useCallback(() => {
     setMsg(null);
     refreshMut.mutate();
@@ -132,6 +164,12 @@ export function useSettlementsPageState() {
     periodEnd,
     setPeriodStart,
     setPeriodEnd,
+    subcontractorId,
+    setSubcontractorId,
+    periodValidation,
+    applyPreviousWeek,
+    subcontractors: subcontractorsQuery.data ?? [],
+    subcontractorsLoading: subcontractorsQuery.isLoading,
     msg,
     query,
     rows,
@@ -146,6 +184,7 @@ export function useSettlementsPageState() {
     exportBusyKey,
     closeActionMenu,
     handleActionMenuToggle,
+    handleGenerateReport,
     handleRefresh,
     handleMarkAllPaid,
     handleMarkOnePaid,

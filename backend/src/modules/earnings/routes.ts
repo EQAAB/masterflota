@@ -24,6 +24,7 @@ import {
 } from "./payoutPlatform";
 import { extractDateFromFilename, weekBoundsFromDates } from "./filenameDate";
 import { totalLinesInFile } from "../../lib/filterParsedRows";
+import { getPreviousWeek } from "../../lib/paymentWeek";
 import { parseEarningsFile } from "./parseFile";
 import { DriverMatchIndex, type DriverMatchRow } from "./matchDriver";
 import { runEarningsCommitFromStaging } from "./earningsCommit";
@@ -2444,9 +2445,18 @@ router.get("/reports/export", async (req, res) => {
 router.get("/subcontractors/settlements", async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
-  const { periodStart, periodEnd } = req.query as { periodStart?: string; periodEnd?: string };
-  if (!periodStart || !periodEnd) {
-    return res.status(400).json({ message: "periodStart and periodEnd are required (YYYY-MM-DD)" });
+  const q = req.query as { periodStart?: string; periodEnd?: string; subcontractorId?: string };
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+  const defaults = getPreviousWeek();
+  const periodStart =
+    typeof q.periodStart === "string" && isoDate.test(q.periodStart) ? q.periodStart : defaults.start;
+  const periodEnd =
+    typeof q.periodEnd === "string" && isoDate.test(q.periodEnd) ? q.periodEnd : defaults.end;
+  const subRaw = typeof q.subcontractorId === "string" ? q.subcontractorId.trim() : "all";
+  const subcontractorId =
+    subRaw && subRaw !== "all" && /^[0-9a-f-]{36}$/i.test(subRaw) ? subRaw : null;
+  if (periodStart > periodEnd) {
+    return res.status(400).json({ message: "periodStart must be on or before periodEnd" });
   }
   try {
     const { rows } = await query<{
@@ -2498,6 +2508,7 @@ router.get("/subcontractors/settlements", async (req, res) => {
         AND sp.payment_period_start = $2::date
         AND sp.payment_period_end = $3::date
        WHERE s.organization_id = $1::uuid
+         AND ($4::uuid IS NULL OR s.id = $4::uuid)
          AND (
            st.subcontractor_id IS NOT NULL
            OR EXISTS (
@@ -2508,9 +2519,14 @@ router.get("/subcontractors/settlements", async (req, res) => {
            )
          )
        ORDER BY s.legal_name ASC`,
-      [orgId, periodStart, periodEnd],
+      [orgId, periodStart, periodEnd, subcontractorId],
     );
-    return res.json({ periodStart, periodEnd, rows });
+    return res.json({
+      periodStart,
+      periodEnd,
+      subcontractorId: subcontractorId ?? "all",
+      rows,
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Subcontractor settlements error", err);

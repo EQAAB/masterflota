@@ -1,5 +1,7 @@
 import type { EarningsPreviewResponse } from "../../../api/earningsImport";
+import type { PaymentWeekValidation } from "../../../utils/earningsImportWeek";
 import { EarningsImportPreviewVirtualTable } from "../EarningsImportPreviewVirtualTable";
+import { ImportPayPeriodFields } from "./ImportPayPeriodFields";
 import { btnPrimary, btnSecondary, input, sectionLabel } from "../../../theme/classNames";
 
 const PROVIDER_OPTIONS = [
@@ -20,6 +22,8 @@ type EarningsImportPreviewPanelProps = {
   periodEnd: string;
   onPeriodStartChange: (value: string) => void;
   onPeriodEndChange: (value: string) => void;
+  onResetPreviousWeek: () => void;
+  periodValidation: PaymentWeekValidation;
   clientCsvRowCount: number | null;
   debtSummaryLine: string | null;
   busy: boolean;
@@ -37,6 +41,8 @@ export function EarningsImportPreviewPanel({
   periodEnd,
   onPeriodStartChange,
   onPeriodEndChange,
+  onResetPreviousWeek,
+  periodValidation,
   clientCsvRowCount,
   debtSummaryLine,
   busy,
@@ -82,28 +88,15 @@ export function EarningsImportPreviewPanel({
             ))}
           </select>
         </label>
-        <div className="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label>
-            <span className={sectionLabel}>Period start</span>
-            <input
-              type="date"
-              className={input}
-              value={periodStart}
-              disabled={busy}
-              onChange={(e) => onPeriodStartChange(e.target.value)}
-            />
-          </label>
-          <label>
-            <span className={sectionLabel}>Period end</span>
-            <input
-              type="date"
-              className={input}
-              value={periodEnd}
-              disabled={busy}
-              onChange={(e) => onPeriodEndChange(e.target.value)}
-            />
-          </label>
-        </div>
+        <ImportPayPeriodFields
+          periodStart={periodStart}
+          periodEnd={periodEnd}
+          onPeriodStartChange={onPeriodStartChange}
+          onPeriodEndChange={onPeriodEndChange}
+          onResetPreviousWeek={onResetPreviousWeek}
+          validation={periodValidation}
+          busy={busy}
+        />
       </div>
 
       <div className="flex flex-wrap gap-6 rounded-xl border border-border/60 bg-surface-elevated/50 px-4 py-3 text-sm">

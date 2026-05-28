@@ -30,26 +30,12 @@ import { EarningsImportUploadCard } from "../../components/earnings/import/Earni
 import { RecentImportsTable } from "../../components/earnings/import/RecentImportsTable";
 import { alertError, alertSuccess, driversPage } from "../../theme/classNames";
 import { useCsvValidation } from "../../hooks/useCsvValidation";
+import { useEarningsImportPeriod } from "../../hooks/useEarningsImportPeriod";
 import { useUnsavedImportNavigationGuard } from "../../hooks/useUnsavedImportNavigationGuard";
+import { getPreviousWeek } from "../../utils/earningsImportWeek";
 
 function providerLabel(value: string): string {
   return PROVIDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
-
-function localIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function weeklyDefaultRange(): { start: string; end: string } {
-  const ref = new Date();
-  const end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
-  end.setDate(end.getDate() - 1);
-  const start = new Date(end);
-  start.setDate(end.getDate() - 7);
-  return { start: localIsoDate(start), end: localIsoDate(end) };
 }
 
 function errMessage(e: unknown): string {
@@ -72,8 +58,6 @@ export function EarningsImportPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [clientCsvRowCount, setClientCsvRowCount] = useState<number | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("uber");
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
   const [commitImportOpen, setCommitImportOpen] = useState(false);
   const [revertImportId, setRevertImportId] = useState<string | null>(null);
   const [deleteImportId, setDeleteImportId] = useState<string | null>(null);
@@ -86,11 +70,24 @@ export function EarningsImportPage() {
     stagedImportId: preview?.importId ?? null,
   });
 
+  const importsQuery = useQuery({
+    queryKey: ["earnings", "imports"],
+    queryFn: () => getEarningsImports(1, 15).then((r) => r.data),
+    enabled: user?.role === "admin" || user?.role === "accountant",
+  });
+
+  const {
+    periodStart,
+    periodEnd,
+    setPeriodStart,
+    setPeriodEnd,
+    applyPreviousWeek,
+    validationForPlatform,
+  } = useEarningsImportPeriod(importsQuery.data?.items);
+
   useEffect(() => {
-    const { start, end } = weeklyDefaultRange();
-    setPeriodStart(start);
-    setPeriodEnd(end);
-  }, []);
+    applyPreviousWeek();
+  }, [applyPreviousWeek]);
 
   useEffect(() => {
     if (preview?.platform) setSelectedPlatform(preview.platform);
@@ -99,12 +96,6 @@ export function EarningsImportPage() {
   useEffect(() => {
     if (!preview) setCommitImportOpen(false);
   }, [preview]);
-
-  const importsQuery = useQuery({
-    queryKey: ["earnings", "imports"],
-    queryFn: () => getEarningsImports(1, 15).then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
-  });
 
   const orgImportSettingsQuery = useQuery({
     queryKey: ["earnings", "org-import-settings"],
@@ -210,6 +201,9 @@ export function EarningsImportPage() {
   const handleFile = useCallback(
     (file: File | undefined) => {
       if (!file) return;
+      const { start, end } = getPreviousWeek();
+      setPeriodStart(start);
+      setPeriodEnd(end);
       setClientCsvRowCount(null);
       setClientDebtScan(null);
       if (file.name.toLowerCase().endsWith(".csv")) {
@@ -230,8 +224,18 @@ export function EarningsImportPage() {
           selectedPlatform === "glovo" ? glovoCommissionBaseType : undefined,
       });
     },
-    [previewMut, setClientDebtScan, runClientDebtScan, selectedPlatform, glovoCommissionBaseType],
+    [
+      previewMut,
+      setClientDebtScan,
+      runClientDebtScan,
+      selectedPlatform,
+      glovoCommissionBaseType,
+      setPeriodStart,
+      setPeriodEnd,
+    ],
   );
+
+  const periodValidation = validationForPlatform(selectedPlatform);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -251,8 +255,7 @@ export function EarningsImportPage() {
     deleteImportMut.isPending;
 
   const periodValid =
-    Boolean(periodStart && periodEnd && periodStart <= periodEnd) &&
-    PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
+    periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
   if (user?.role !== "admin" && user?.role !== "accountant") {
     return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
@@ -323,6 +326,8 @@ export function EarningsImportPage() {
             periodEnd={periodEnd}
             onPeriodStartChange={setPeriodStart}
             onPeriodEndChange={setPeriodEnd}
+            onResetPreviousWeek={applyPreviousWeek}
+            periodValidation={periodValidation}
             clientCsvRowCount={clientCsvRowCount}
             debtSummaryLine={debtSummaryLine}
             busy={busy}
