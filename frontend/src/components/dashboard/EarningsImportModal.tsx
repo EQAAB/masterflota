@@ -11,8 +11,12 @@ import {
 } from "../../api/earningsImport";
 import { EarningsImportPreviewVirtualTable } from "../earnings/EarningsImportPreviewVirtualTable";
 import { ConfirmDialog } from "../UI/ConfirmDialog";
+import { getEarningsImports } from "../../api/earnings";
 import { useCsvValidation } from "../../hooks/useCsvValidation";
+import { useEarningsImportPeriod } from "../../hooks/useEarningsImportPeriod";
 import { useUnsavedImportNavigationGuard } from "../../hooks/useUnsavedImportNavigationGuard";
+import { ImportPayPeriodFields } from "../earnings/import/ImportPayPeriodFields";
+import { getPreviousWeek } from "../../utils/earningsImportWeek";
 
 const PROVIDER_OPTIONS = [
   { value: "uber", label: "Uber" },
@@ -25,23 +29,6 @@ const PROVIDER_OPTIONS = [
 
 function providerLabel(value: string): string {
   return PROVIDER_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
-
-function localIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-/** Rolling window: local yesterday minus 7 calendar days through local yesterday. */
-function weeklyDefaultRange(): { start: string; end: string } {
-  const ref = new Date();
-  const end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
-  end.setDate(end.getDate() - 1);
-  const start = new Date(end);
-  start.setDate(end.getDate() - 7);
-  return { start: localIsoDate(start), end: localIsoDate(end) };
 }
 
 function errMessage(e: unknown): string {
@@ -66,8 +53,6 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   const [preview, setPreview] = useState<EarningsPreviewResponse | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("uber");
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
   const [commitImportOpen, setCommitImportOpen] = useState(false);
   const [commitWarnings, setCommitWarnings] = useState<string[]>([]);
 
@@ -83,6 +68,21 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
     if (!preview) setCommitImportOpen(false);
   }, [preview]);
 
+  const importsQuery = useQuery({
+    queryKey: ["earnings", "imports"],
+    queryFn: () => getEarningsImports(1, 15).then((r) => r.data),
+    enabled: open && canImport,
+  });
+
+  const {
+    periodStart,
+    periodEnd,
+    setPeriodStart,
+    setPeriodEnd,
+    applyPreviousWeek,
+    validationForPlatform,
+  } = useEarningsImportPeriod(importsQuery.data?.items);
+
   useEffect(() => {
     if (!open) {
       setPreview(null);
@@ -92,10 +92,8 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
       setCommitWarnings([]);
       return;
     }
-    const { start, end } = weeklyDefaultRange();
-    setPeriodStart(start);
-    setPeriodEnd(end);
-  }, [open]);
+    applyPreviousWeek();
+  }, [open, applyPreviousWeek]);
 
   useEffect(() => {
     if (preview?.platform) {
@@ -168,8 +166,9 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   const busy = previewMut.isPending || commitMut.isPending || cancelMut.isPending;
   const confidencePct =
     preview?.detectionConfidence != null ? Math.round(preview.detectionConfidence * 100) : null;
+  const periodValidation = validationForPlatform(selectedPlatform);
   const periodValid =
-    Boolean(periodStart && periodEnd && periodStart <= periodEnd && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform));
+    periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
@@ -212,6 +211,9 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                   const f = ev.target.files?.[0];
                   ev.target.value = "";
                   if (f) {
+                    const { start, end } = getPreviousWeek();
+                    setPeriodStart(start);
+                    setPeriodEnd(end);
                     setClientDebtScan(null);
                     void runClientDebtScan(f);
                     previewMut.mutate(f);
@@ -284,34 +286,16 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                   ))}
                 </select>
               </div>
-              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="earnings-period-start" className="block text-xs font-medium text-ink mb-1">
-                    Period start
-                  </label>
-                  <input
-                    id="earnings-period-start"
-                    type="date"
-                    className="w-full rounded-md border border-border px-3 py-2 text-sm"
-                    value={periodStart}
-                    disabled={busy}
-                    onChange={(e) => setPeriodStart(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="earnings-period-end" className="block text-xs font-medium text-ink mb-1">
-                    Period end
-                  </label>
-                  <input
-                    id="earnings-period-end"
-                    type="date"
-                    className="w-full rounded-md border border-border px-3 py-2 text-sm"
-                    value={periodEnd}
-                    disabled={busy}
-                    onChange={(e) => setPeriodEnd(e.target.value)}
-                  />
-                </div>
-              </div>
+              <ImportPayPeriodFields
+                variant="modal"
+                periodStart={periodStart}
+                periodEnd={periodEnd}
+                onPeriodStartChange={setPeriodStart}
+                onPeriodEndChange={setPeriodEnd}
+                onResetPreviousWeek={applyPreviousWeek}
+                validation={periodValidation}
+                busy={busy}
+              />
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-ink-muted">
