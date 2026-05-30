@@ -440,6 +440,8 @@ export interface DriverPayoutCustomFeesResponse {
   total_additions: string;
   raw_net_amount: string;
   net_driver_payout: string;
+  is_weekly_fee_anchor?: boolean;
+  weekly_fee_anchor_platform?: string | null;
 }
 
 export function getPayoutCustomFees(payoutId: string) {

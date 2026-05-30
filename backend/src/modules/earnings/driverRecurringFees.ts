@@ -146,52 +146,6 @@ export async function listActiveRecurringForPayoutPeriod(
   return rows.filter((fee) => recurringFeeAppliesToPayoutPeriod(fee, ps, pe));
 }
 
-/** Replace materialized recurring rows for one payout; leaves manual rows untouched. */
-export async function syncRecurringFeesToPayout(
-  client: PoolClient,
-  orgId: string,
-  payoutId: string,
-): Promise<void> {
-  const pr = await client.query<{
-    driver_id: string;
-    payment_period_start: string;
-    payment_period_end: string;
-  }>(
-    `SELECT driver_id::text, payment_period_start::text, payment_period_end::text
-     FROM driver_payouts
-     WHERE id = $1::uuid AND organization_id = $2::uuid
-     FOR UPDATE`,
-    [payoutId, orgId],
-  );
-  const row = pr.rows[0];
-  if (!row) return;
-
-  await client.query(
-    `DELETE FROM driver_payout_adjustments
-     WHERE driver_payout_id = $1::uuid AND organization_id = $2::uuid AND source = 'recurring'`,
-    [payoutId, orgId],
-  );
-
-  const periodStart = row.payment_period_start.slice(0, 10);
-  const periodEnd = row.payment_period_end.slice(0, 10);
-  const active = await listActiveRecurringForPayoutPeriod(
-    client,
-    orgId,
-    row.driver_id,
-    periodStart,
-    periodEnd,
-  );
-
-  for (const fee of active) {
-    await client.query(
-      `INSERT INTO driver_payout_adjustments (
-         driver_payout_id, organization_id, fee_name, fee_type, amount, source, recurring_fee_id
-       ) VALUES ($1::uuid, $2::uuid, $3, $4, $5, 'recurring', $6::uuid)`,
-      [payoutId, orgId, fee.fee_name, fee.fee_type, Number(fee.amount), fee.id],
-    );
-  }
-}
-
 export function parseRecurringFrequency(value: unknown): RecurringFeeFrequency | null {
   if (typeof value !== "string") return null;
   const f = value.trim() as RecurringFeeFrequency;

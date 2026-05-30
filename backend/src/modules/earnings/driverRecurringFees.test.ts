@@ -107,7 +107,7 @@ describe("monthly_first_week (June 2026, start 2026-06-01)", () => {
 });
 
 describe("recurring + manual combined raw net", () => {
-  it("base minus recurring and manual deductions flows to debt", () => {
+  it("base minus recurring (anchor) and manual deductions flows to debt", () => {
     const base = computeBaseRawNet({
       total_net_earnings: 1000,
       company_commission: 100,

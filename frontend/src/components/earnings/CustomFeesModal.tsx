@@ -107,6 +107,15 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
   const recurringItems = data?.recurring_items ?? data?.items.filter((i) => i.source === "recurring") ?? [];
   const manualItems = data?.manual_items ?? data?.items.filter((i) => i.source === "manual") ?? [];
 
+  const anchorPlatform = data?.weekly_fee_anchor_platform;
+  const showAnchorHint =
+    recurringItems.length > 0 &&
+    anchorPlatform &&
+    data?.is_weekly_fee_anchor === false;
+
+  const formatPlatformLabel = (platform: string) =>
+    platform.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
   const renderFeeLine = (item: DriverPayoutCustomFee, readOnly: boolean) => (
     <li key={item.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm bg-white">
       <div>
@@ -208,6 +217,11 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                   </Link>
                 )}
               </div>
+              {showAnchorHint && (
+                <p className="text-xs text-violet-700 mb-2">
+                  Weekly recurring fees are deducted on the {formatPlatformLabel(anchorPlatform)} payout for this week.
+                </p>
+              )}
               <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
                 {recurringItems.map((item) => renderFeeLine(item, true))}
               </ul>
