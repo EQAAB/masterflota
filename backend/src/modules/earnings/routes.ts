@@ -41,6 +41,7 @@ import {
   recomputeDriverPayoutAfterCustomFees,
   type CustomFeeType,
 } from "./driverPayoutCustomFees";
+import { syncRecurringFeesToDriverWeek } from "./driverWeeklyFees";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
@@ -1729,11 +1730,26 @@ router.get("/payouts/:id/custom-fees", async (req, res) => {
 
   const client = await pool.connect();
   try {
-    const exists = await client.query<{ id: string }>(
-      `SELECT id::text FROM driver_payouts WHERE id = $1::uuid AND organization_id = $2::uuid`,
+    const exists = await client.query<{
+      id: string;
+      driver_id: string;
+      payment_period_start: string;
+      payment_period_end: string;
+    }>(
+      `SELECT id::text, driver_id::text, payment_period_start::text, payment_period_end::text
+       FROM driver_payouts WHERE id = $1::uuid AND organization_id = $2::uuid`,
       [payoutId, orgId],
     );
-    if (!exists.rows[0]) return res.status(404).json({ message: "Payout not found" });
+    const payout = exists.rows[0];
+    if (!payout) return res.status(404).json({ message: "Payout not found" });
+
+    await syncRecurringFeesToDriverWeek(
+      client,
+      orgId,
+      payout.driver_id,
+      payout.payment_period_start,
+      payout.payment_period_end,
+    );
 
     const [items, summary] = await Promise.all([
       listCustomFeesForPayout(client, orgId, payoutId),
@@ -1751,6 +1767,8 @@ router.get("/payouts/:id/custom-fees", async (req, res) => {
       total_additions: summary.total_additions.toFixed(2),
       raw_net_amount: summary.raw_net_amount.toFixed(2),
       net_driver_payout: summary.net_driver_payout.toFixed(2),
+      is_weekly_fee_anchor: summary.is_weekly_fee_anchor,
+      weekly_fee_anchor_platform: summary.weekly_fee_anchor_platform,
     });
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -1832,6 +1850,8 @@ router.post("/payouts/:id/custom-fees", async (req, res) => {
       total_additions: summary.total_additions.toFixed(2),
       raw_net_amount: summary.raw_net_amount.toFixed(2),
       net_driver_payout: summary.net_driver_payout.toFixed(2),
+      is_weekly_fee_anchor: summary.is_weekly_fee_anchor,
+      weekly_fee_anchor_platform: summary.weekly_fee_anchor_platform,
     });
   } catch (err) {
     try {
@@ -1882,6 +1902,22 @@ router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
       [adjustmentId, payoutId, orgId],
     );
     if (!existing.rows[0]) {
+      const weeklyFee = await client.query<{ id: string }>(
+        `SELECT dwf.id::text
+         FROM driver_weekly_fees dwf
+         INNER JOIN driver_payouts dp ON dp.driver_id = dwf.driver_id
+           AND dp.organization_id = dwf.organization_id
+           AND dp.payment_period_start = dwf.payment_period_start
+           AND dp.payment_period_end = dwf.payment_period_end
+         WHERE dwf.id = $1::uuid AND dp.id = $2::uuid AND dwf.organization_id = $3::uuid`,
+        [adjustmentId, payoutId, orgId],
+      );
+      if (weeklyFee.rows[0]) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          message: "Recurring fees are managed on the driver profile. Edit or disable them there.",
+        });
+      }
       await client.query("ROLLBACK");
       return res.status(404).json({ message: "Custom fee not found" });
     }
@@ -1918,6 +1954,8 @@ router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
       total_additions: summary.total_additions.toFixed(2),
       raw_net_amount: summary.raw_net_amount.toFixed(2),
       net_driver_payout: summary.net_driver_payout.toFixed(2),
+      is_weekly_fee_anchor: summary.is_weekly_fee_anchor,
+      weekly_fee_anchor_platform: summary.weekly_fee_anchor_platform,
     });
   } catch (err) {
     try {
