@@ -171,3 +171,64 @@ export function updateVehicleMaintenance(
 ) {
   return api.patch<VehicleMaintenance>(`/vehicles/${vehicleId}/maintenance/${maintenanceId}`, data);
 }
+
+export type VehicleHistoryEventType =
+  | "assigned"
+  | "unassigned"
+  | "status_change"
+  | "maintenance"
+  | "incident"
+  | "rent_changed"
+  | "rent_collected";
+
+export interface VehicleHistoryEvent {
+  id: string;
+  vehicle_id: string;
+  event_type: VehicleHistoryEventType;
+  event_date: string;
+  driver_id: string | null;
+  previous_driver_id: string | null;
+  previous_status: string | null;
+  new_status: string | null;
+  previous_rent: string | null;
+  new_rent: string | null;
+  title: string | null;
+  description: string | null;
+  cost: string | null;
+  odometer_reading: number | null;
+  metadata: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
+  driver_first_name: string | null;
+  driver_last_name: string | null;
+  previous_driver_first_name: string | null;
+  previous_driver_last_name: string | null;
+  created_by_first_name: string | null;
+  created_by_last_name: string | null;
+}
+
+export interface GetVehicleHistoryParams {
+  eventType?: VehicleHistoryEventType | "";
+  startDate?: string;
+  endDate?: string;
+  driverId?: string;
+}
+
+export function getVehicleHistory(vehicleId: string, params?: GetVehicleHistoryParams) {
+  return api.get<{ vehicleId: string; rows: VehicleHistoryEvent[] }>(`/vehicles/${vehicleId}/history`, {
+    params,
+  });
+}
+
+export interface CreateVehicleIncidentPayload {
+  title: string;
+  description?: string;
+  cost?: number;
+  odometerReading?: number;
+  driverId?: string;
+  eventDate?: string;
+}
+
+export function createVehicleIncident(vehicleId: string, data: CreateVehicleIncidentPayload) {
+  return api.post<{ id: string }>(`/vehicles/${vehicleId}/incidents`, data);
+}

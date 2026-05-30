@@ -5,6 +5,7 @@ import {
   closeOpenVehicleAssignment,
   recordVehicleAssignment,
 } from "./vehicleAssignmentHistory";
+import { driverDisplayName, insertVehicleHistory } from "./vehicleHistory";
 
 export type AssignVehicleParams = {
   orgId: string;
@@ -67,8 +68,13 @@ export async function assignVehicleToDriver(
     throw new Error("Driver not found");
   }
 
-  const { rows: vehicleRows } = await client.query<{ id: string; current_driver_id: string | null }>(
-    `SELECT id::text, current_driver_id::text
+  const { rows: vehicleRows } = await client.query<{
+    id: string;
+    current_driver_id: string | null;
+    weekly_rent: string | null;
+    license_plate: string | null;
+  }>(
+    `SELECT id::text, current_driver_id::text, weekly_rent::text, license_plate
      FROM vehicles
      WHERE id = $1::uuid AND organization_id = $2::uuid`,
     [vehicleId, orgId],
@@ -124,6 +130,23 @@ export async function assignVehicleToDriver(
     assignedBy,
     notes: notes ?? null,
   });
+
+  const driverName = await driverDisplayName(client, driverId);
+  const weeklyRent = Number(vehicleRows[0].weekly_rent ?? 0) || 0;
+  await insertVehicleHistory(client, {
+    orgId,
+    vehicleId,
+    eventType: "assigned",
+    driverId,
+    previousDriverId: priorDriverOnVehicle !== driverId ? priorDriverOnVehicle : null,
+    newRent: weeklyRent,
+    title: "Vehicle assigned",
+    description: driverName
+      ? `Assigned to ${driverName}${vehicleRows[0].license_plate ? ` (${vehicleRows[0].license_plate})` : ""}`
+      : "Driver assigned to vehicle",
+    metadata: { weekly_rent: weeklyRent },
+    createdBy: assignedBy ?? null,
+  });
 }
 
 export async function unassignVehicle(
@@ -160,6 +183,15 @@ export async function unassignVehicle(
     return;
   }
 
+  let vehiclePlate: string | null = null;
+  if (resolvedVehicleId) {
+    const { rows: vrows } = await client.query<{ license_plate: string | null; status: string }>(
+      `SELECT license_plate, status FROM vehicles WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [resolvedVehicleId, orgId],
+    );
+    vehiclePlate = vrows[0]?.license_plate ?? null;
+  }
+
   if (resolvedDriverId) {
     await closeOpenVehicleAssignment(client, {
       driverId: resolvedDriverId,
@@ -177,6 +209,22 @@ export async function unassignVehicle(
       notes: notes ?? "Unassigned",
     });
     await clearVehicleDriverLink(client, resolvedVehicleId, orgId);
+  }
+
+  if (resolvedVehicleId && resolvedDriverId) {
+    const driverName = await driverDisplayName(client, resolvedDriverId);
+    await insertVehicleHistory(client, {
+      orgId,
+      vehicleId: resolvedVehicleId,
+      eventType: "unassigned",
+      driverId: null,
+      previousDriverId: resolvedDriverId,
+      title: "Vehicle unassigned",
+      description: driverName
+        ? `${driverName} removed from vehicle${vehiclePlate ? ` ${vehiclePlate}` : ""}`
+        : "Driver removed from vehicle",
+      createdBy: unassignedBy ?? null,
+    });
   }
 }
 
