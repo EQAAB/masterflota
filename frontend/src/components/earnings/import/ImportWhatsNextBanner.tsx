@@ -19,23 +19,20 @@ const STEPS = [
 
 export function ImportWhatsNextBanner() {
   return (
-    <div className="border-t border-border/40 bg-gradient-to-br from-brand-mint/25 via-brand-mint/10 to-white px-4 py-4 sm:px-5">
-      <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand shadow-sm ring-1 ring-brand/10">
-          <SparklesIcon className="h-[18px] w-[18px]" />
+    <div className="border-t border-border/30 bg-gradient-to-r from-brand-mint/20 via-brand-mint/8 to-white px-4 py-3 sm:px-5">
+      <div className="flex items-start gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 text-brand ring-1 ring-brand/10">
+          <SparklesIcon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm font-semibold tracking-tight text-ink">What happens next?</h4>
-          <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
-            After upload, earnings are validated and processed automatically.
-          </p>
-          <ul className="mt-2 space-y-1.5">
+          <h4 className="text-[13px] font-semibold tracking-tight text-ink">What happens next?</h4>
+          <ul className="mt-1.5 space-y-1">
             {STEPS.map((step, i) => (
-              <li key={step} className="flex items-start gap-2 text-xs text-slate-600">
-                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-semibold text-brand-dark">
+              <li key={step} className="flex items-center gap-2 text-[11px] leading-snug text-slate-600">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[9px] font-semibold text-brand-dark">
                   {i + 1}
                 </span>
-                <span className="leading-relaxed">{step}</span>
+                {step}
               </li>
             ))}
           </ul>

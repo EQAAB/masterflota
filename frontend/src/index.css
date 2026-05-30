@@ -122,4 +122,173 @@
   .fm-kpi-value {
     @apply text-3xl font-semibold tracking-tight tabular-nums text-ink sm:text-4xl;
   }
+
+  .platform-template-card {
+    box-sizing: border-box;
+    width: 160px;
+    height: 175px;
+    flex: 0 0 160px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    transform: translateZ(0);
+    will-change: transform;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+
+  .platform-template-card:hover {
+    transform: translateY(-2px) translateZ(0);
+    border-color: #99f6e4;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    background-color: #ffffff;
+  }
+
+  .platform-template-card * {
+    box-sizing: border-box;
+  }
+
+  .platform-template-card__download {
+    box-sizing: border-box;
+    height: 28px;
+    width: 100%;
+    border: 1px solid rgba(11, 122, 110, 0.15);
+    border-radius: 8px;
+    background-color: #ffffff;
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+
+  .platform-template-card__download:hover {
+    border-color: rgba(11, 122, 110, 0.3);
+    background-color: rgba(221, 245, 238, 0.35);
+  }
+
+  .platform-template-carousel {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-top: 4px;
+    padding-bottom: 8px;
+  }
+
+  .platform-template-card__logo {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+  }
+
+  .platform-template-card__label {
+    box-sizing: border-box;
+    display: flex;
+    min-height: 36px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .platform-template-card__title {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .import-upload-zone {
+    box-sizing: border-box;
+    min-height: 148px;
+    border: 1px dashed rgba(11, 122, 110, 0.22);
+    border-radius: 12px;
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .import-upload-zone:hover:not(:disabled) {
+    border-color: rgba(11, 122, 110, 0.36);
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+  }
+
+  .import-browse-btn {
+    box-sizing: border-box;
+    display: inline-flex;
+    height: 36px;
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(11, 122, 110, 0.22);
+    background-color: #ffffff;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0b7a6e;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .import-browse-btn:hover {
+    border-color: rgba(11, 122, 110, 0.34);
+    background-color: rgba(221, 245, 238, 0.4);
+    box-shadow: 0 2px 6px rgba(16, 24, 40, 0.06);
+  }
+
+  .import-feature-card {
+    box-sizing: border-box;
+    border: 1px solid rgba(229, 231, 235, 0.85);
+    border-radius: 12px;
+    transform: translateZ(0);
+    will-change: transform;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .import-feature-card:hover {
+    transform: translateY(-2px) translateZ(0);
+    border-color: rgba(11, 122, 110, 0.14);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .import-feature-card * {
+    box-sizing: border-box;
+  }
+
+  .platform-table-badge {
+    box-sizing: border-box;
+    display: inline-flex;
+    height: 28px;
+    max-width: 100%;
+    align-items: center;
+    gap: 6px;
+    border-radius: 9999px;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    background-color: #f6f7fb;
+    padding: 0 10px 0 4px;
+  }
+
+  .platform-table-badge__logo {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+  }
+
+  .platform-table-badge__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: #111827;
+  }
 }

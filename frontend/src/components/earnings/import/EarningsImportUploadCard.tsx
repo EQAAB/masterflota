@@ -70,10 +70,10 @@ export function EarningsImportUploadCard({
   const progress = uploadPhaseProgress(uploadPhase, isPending);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.07)]">
-      <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch lg:gap-4">
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_6px_20px_rgba(16,24,40,0.05)]">
+      <div className="grid gap-3 p-3 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch lg:gap-3.5">
         <div
-          className={`min-h-[168px] ${transitionDefault}`}
+          className={transitionDefault}
           onDragEnter={onDragEnter}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -83,12 +83,12 @@ export function EarningsImportUploadCard({
             type="button"
             onClick={onBrowseClick}
             disabled={isPending}
-            className={`group relative flex h-full min-h-[168px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed px-4 py-3 text-left sm:flex-row sm:items-center sm:gap-4 sm:px-4 sm:py-3 ${transitionDefault} disabled:cursor-not-allowed ${
+            className={`import-upload-zone group relative flex h-full w-full cursor-pointer flex-col items-center justify-center px-3 py-2.5 text-left sm:flex-row sm:items-center sm:gap-3.5 sm:px-4 sm:py-2.5 disabled:cursor-not-allowed ${
               hasError
-                ? "border-red-200/80 bg-gradient-to-br from-red-50/40 via-white to-white hover:border-red-300"
+                ? "!border-red-200/80 bg-gradient-to-br from-red-50/30 via-white to-white"
                 : zoneActive
-                  ? "border-brand/45 bg-gradient-to-br from-brand-mint/35 via-brand-mint/15 to-white shadow-[inset_0_0_0_1px_rgba(11,122,110,0.06)]"
-                  : "border-brand/20 bg-gradient-to-br from-brand-mint/10 via-white to-surface/30 hover:border-brand/35 hover:from-brand-mint/20 hover:shadow-soft"
+                  ? "!border-brand/40 bg-gradient-to-br from-brand-mint/30 via-brand-mint/10 to-white"
+                  : "bg-gradient-to-br from-brand-mint/[0.07] via-white to-surface/20"
             }`}
           >
             <EarningsImportUploadIllustration
@@ -98,14 +98,14 @@ export function EarningsImportUploadCard({
             />
 
             <div className="min-w-0 flex-1 text-center sm:text-left">
-              <h2 className="text-[15px] font-semibold tracking-tight text-ink sm:text-base">
+              <h2 className="text-sm font-semibold tracking-tight text-ink">
                 {hasError
                   ? "Upload failed"
                   : dragActive && !isPending
                     ? "Drop to upload"
                     : uploadPhaseLabel(uploadPhase, isPending)}
               </h2>
-              <p className="mt-0.5 text-sm text-ink-muted">
+              <p className="mt-0.5 text-[13px] leading-snug text-ink-muted">
                 {hasError ? (
                   uploadError
                 ) : isPending ? (
@@ -119,8 +119,8 @@ export function EarningsImportUploadCard({
                 )}
               </p>
               {!isPending && !hasError && (
-                <p className="mt-1.5 text-xs text-ink-muted/85">
-                  {uploadPhaseDescription(uploadPhase, isPending)}
+                <p className="mt-1 text-[11px] text-ink-muted/80">
+                  CSV, XLSX, ZIP, XML, PDF · Max 25 MB
                 </p>
               )}
 
@@ -137,16 +137,14 @@ export function EarningsImportUploadCard({
               />
 
               {!isPending && !hasError && (
-                <span
-                  className={`mt-2.5 inline-flex h-10 items-center gap-2 rounded-xl border border-brand/25 bg-white px-4 text-sm font-semibold text-brand shadow-[0_1px_2px_rgba(11,122,110,0.08),0_4px_12px_rgba(11,122,110,0.12)] ${transitionDefault} group-hover:-translate-y-px group-hover:border-brand/40 group-hover:bg-brand-mint/25 group-hover:shadow-[0_2px_8px_rgba(11,122,110,0.16)]`}
-                >
-                  <FolderUploadIcon className="h-4 w-4" />
+                <span className="import-browse-btn mt-2">
+                  <FolderUploadIcon className="h-4 w-4 shrink-0" />
                   Browse files
                 </span>
               )}
 
               {hasError && onRetry && (
-                <span className="mt-2.5 inline-flex items-center gap-2">
+                <span className="mt-2 inline-flex">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -154,7 +152,7 @@ export function EarningsImportUploadCard({
                       onRetry();
                       onBrowseClick();
                     }}
-                    className={`inline-flex h-9 items-center gap-2 rounded-xl border border-brand/30 bg-white px-3.5 text-sm font-medium text-brand shadow-sm ${transitionDefault} hover:bg-brand-mint/25`}
+                    className="import-browse-btn"
                   >
                     Try again
                   </button>
@@ -162,7 +160,7 @@ export function EarningsImportUploadCard({
               )}
 
               {isPending && (
-                <div className="mt-2.5 w-full max-w-sm">
+                <div className="mt-2 w-full max-w-sm">
                   <div className="h-1 overflow-hidden rounded-full bg-border/70">
                     <div
                       className="h-full rounded-full bg-brand transition-all duration-500 ease-out"
@@ -174,8 +172,8 @@ export function EarningsImportUploadCard({
               )}
 
               {hasError && (
-                <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-red-600">
-                  <AlertIcon className="h-3.5 w-3.5" />
+                <span className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-red-600">
+                  <AlertIcon className="h-3.5 w-3.5 shrink-0" />
                   Check file format and try again
                 </span>
               )}
@@ -183,7 +181,7 @@ export function EarningsImportUploadCard({
           </button>
         </div>
 
-        <div className="min-h-[168px]">
+        <div className="min-h-[148px]">
           <EarningsImportTemplatesPanel />
         </div>
       </div>

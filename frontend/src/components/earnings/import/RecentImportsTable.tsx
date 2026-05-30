@@ -100,15 +100,11 @@ function XIcon({ className }: { className?: string }) {
 function PlatformCell({ platform }: { platform: string }) {
   const key = earningsPlatformToBadgeKey(platform);
   if (key) {
-    return (
-      <span className="inline-flex h-7 items-center rounded-full bg-surface/90 px-1.5 ring-1 ring-border/50">
-        <PlatformBadge platform={key} />
-      </span>
-    );
+    return <PlatformBadge platform={key} compact />;
   }
   return (
-    <span className="inline-flex h-7 items-center rounded-full bg-surface px-2.5 text-xs font-medium capitalize text-ink ring-1 ring-border/50">
-      {platform.replace(/_/g, " ")}
+    <span className="platform-table-badge">
+      <span className="platform-table-badge__label capitalize">{platform.replace(/_/g, " ")}</span>
     </span>
   );
 }
@@ -135,8 +131,9 @@ function StatusBadge({ tone, label }: { tone: ImportStatusTone; label: string })
   );
 }
 
-const tableCell = "px-4 py-3 align-middle";
+const tableCell = "px-4 py-3.5 align-middle";
 const tableHeaderCell = `${tableCell} text-left`;
+const headerLabel = "text-[10px] font-semibold uppercase tracking-wider text-slate-500";
 
 type RecentImportsTableProps = {
   rows: EarningsImportListItem[];
@@ -231,22 +228,22 @@ export function RecentImportsTable({
             <thead className="sticky top-0 z-10 border-b border-border/50 bg-white/95 backdrop-blur-sm">
               <tr>
                 <th className={`${tableHeaderCell} min-w-[220px]`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">File</span>
+                  <span className={headerLabel}>File</span>
                 </th>
-                <th className={`${tableHeaderCell} w-[132px]`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Platform</span>
+                <th className={`${tableHeaderCell} w-[140px]`}>
+                  <span className={headerLabel}>Platform</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[128px]`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Period</span>
+                  <span className={headerLabel}>Period</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[108px]`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Status</span>
+                  <span className={headerLabel}>Status</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[96px] text-right`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Processed</span>
+                  <span className={headerLabel}>Processed</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[116px]`}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Created</span>
+                  <span className={headerLabel}>Created</span>
                 </th>
                 {isAdmin && (
                   <th className={`${tableHeaderCell} w-[48px] text-right`}>
@@ -255,7 +252,7 @@ export function RecentImportsTable({
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/30">
+            <tbody className="divide-y divide-border/25">
               {rows.map((row) => {
                 const processed = importProcessedRows(row);
                 const total = importTotalRows(row);

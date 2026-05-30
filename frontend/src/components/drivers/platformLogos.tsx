@@ -68,9 +68,18 @@ const LOGO_BY_PLATFORM: Record<PlatformBadgeKey, ComponentType<{ className?: str
   wolt: WoltPlatformLogo,
 };
 
-export function PlatformBadge({ platform }: { platform: PlatformBadgeKey }) {
+export function PlatformBadge({ platform, compact }: { platform: PlatformBadgeKey; compact?: boolean }) {
   const Logo = LOGO_BY_PLATFORM[platform];
   const label = PLATFORM_LABELS[platform];
+
+  if (compact) {
+    return (
+      <span className="platform-table-badge">
+        <Logo className="platform-table-badge__logo !h-[22px] !w-[22px] !rounded-md" />
+        <span className="platform-table-badge__label">{label}</span>
+      </span>
+    );
+  }
 
   return (
     <span className="inline-flex h-7 min-w-[7rem] items-center gap-2 rounded-full py-0 pl-0.5 pr-2.5">
