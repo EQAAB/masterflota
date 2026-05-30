@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { insertVehicleHistory } from "../vehicles/vehicleHistory";
 
 /**
  * Rebuilds payroll vehicle rent line item from driver vehicle assignment (weekly_rent),
@@ -41,6 +42,56 @@ export async function syncPayoutRentEntries(client: PoolClient, orgId: string, p
        AND calculate_rental_fee(dp.organization_id, dp.driver_id, dp.payment_period_start, dp.payment_period_end) > 0`,
     [payoutId],
   );
+
+  const rentLogRes = await client.query<{
+    vehicle_id: string;
+    driver_id: string;
+    license_plate: string | null;
+    rent_amount: string;
+    period_start: string;
+    period_end: string;
+  }>(
+    `SELECT v.id::text AS vehicle_id,
+            dp.driver_id::text AS driver_id,
+            v.license_plate,
+            calculate_rental_fee(dp.organization_id, dp.driver_id, dp.payment_period_start, dp.payment_period_end)::text AS rent_amount,
+            dp.payment_period_start::text AS period_start,
+            dp.payment_period_end::text AS period_end
+       FROM driver_payouts dp
+       INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
+       INNER JOIN vehicles v ON v.id = d.current_vehicle_id AND v.organization_id = dp.organization_id
+      WHERE dp.id = $1::uuid
+        AND calculate_rental_fee(dp.organization_id, dp.driver_id, dp.payment_period_start, dp.payment_period_end) > 0`,
+    [payoutId],
+  );
+
+  for (const row of rentLogRes.rows) {
+    const dup = await client.query<{ c: string }>(
+      `SELECT COUNT(*)::text AS c FROM vehicle_history
+       WHERE event_type = 'rent_collected'
+         AND vehicle_id = $1::uuid
+         AND metadata->>'driver_payout_id' = $2`,
+      [row.vehicle_id, payoutId],
+    );
+    if (parseInt(dup.rows[0]?.c ?? "0", 10) > 0) continue;
+
+    const amount = Number(row.rent_amount) || 0;
+    await insertVehicleHistory(client, {
+      orgId,
+      vehicleId: row.vehicle_id,
+      eventType: "rent_collected",
+      driverId: row.driver_id,
+      cost: amount,
+      title: "Rent collected",
+      description: `Weekly rent ${amount.toFixed(2)} deducted for ${row.period_start}–${row.period_end}`,
+      metadata: {
+        driver_payout_id: payoutId,
+        period_start: row.period_start,
+        period_end: row.period_end,
+        license_plate: row.license_plate,
+      },
+    });
+  }
 
   await client.query(
     `UPDATE driver_payouts dp

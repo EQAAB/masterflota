@@ -17,10 +17,11 @@ import { VehicleDocumentUpload } from "../../components/vehicles/VehicleDocument
 import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
 import { VehicleMaintenancePanel } from "../../components/vehicles/VehicleMaintenancePanel";
+import { VehicleHistoryTimeline } from "../../components/vehicles/VehicleHistoryTimeline";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/currency";
 
-type TabId = "profile" | "maintenance" | "documents";
+type TabId = "profile" | "maintenance" | "documents" | "history";
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -198,15 +199,15 @@ export function VehicleDetailPage() {
         </div>
 
         <nav className="mx-auto mt-2 flex max-w-[1600px] gap-2 px-4 pb-3 sm:px-6 lg:px-8">
-          {(["profile", "maintenance", "documents"] as TabId[]).map((t) => (
+          {(["profile", "maintenance", "history", "documents"] as TabId[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`rounded-full px-4 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
+              className={`rounded-full px-5 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
                 tab === t
-                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-border/70"
-                  : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
+                  ? "bg-white text-brand-dark shadow-soft ring-1 ring-brand/20"
+                  : "text-ink-muted hover:bg-white/80 hover:text-ink"
               }`}
             >
               {t}
@@ -215,7 +216,7 @@ export function VehicleDetailPage() {
         </nav>
       </header>
 
-      <main className={`mx-auto p-4 sm:p-6 ${tab === "maintenance" ? "max-w-6xl" : "max-w-5xl"}`}>
+      <main className={`mx-auto p-4 sm:p-6 ${tab === "maintenance" || tab === "history" ? "max-w-6xl" : "max-w-5xl"}`}>
         {tab === "profile" && (
           <div className="space-y-4">
             <section className={cardClass}>
@@ -330,6 +331,8 @@ export function VehicleDetailPage() {
             onAdd={() => setAddMaintenanceOpen(true)}
           />
         )}
+
+        {tab === "history" && id && <VehicleHistoryTimeline vehicleId={id} />}
 
         {tab === "documents" && (
           <div className="space-y-4">

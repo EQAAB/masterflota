@@ -6,6 +6,7 @@ import {
   runAssignVehicleTransaction,
   runUnassignVehicleTransaction,
 } from "./vehicleAssignmentService";
+import { insertVehicleHistoryQuery, listVehicleHistory } from "./vehicleHistory";
 import { parseListSort, type ListSortQuery } from "../../lib/listSort";
 
 const router = Router();
@@ -257,6 +258,91 @@ router.get("/search", async (req, res) => {
   }
 });
 
+router.get("/:id/history", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  const { id } = req.params;
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+  if (!UUID_RE.test(String(id))) {
+    return res.status(400).json({ message: "Invalid vehicle id" });
+  }
+
+  const q = req.query as {
+    eventType?: string;
+    startDate?: string;
+    endDate?: string;
+    driverId?: string;
+  };
+
+  try {
+    const { rows: vehicleRows } = await query<{ id: string }>(
+      "SELECT id FROM vehicles WHERE id = $1::uuid AND organization_id = $2::uuid LIMIT 1",
+      [id, orgId],
+    );
+    if (!vehicleRows[0]) return res.status(404).json({ message: "Vehicle not found" });
+
+    const rows = await listVehicleHistory(orgId, String(id), {
+      eventType: q.eventType,
+      startDate: q.startDate,
+      endDate: q.endDate,
+      driverId: q.driverId,
+    });
+    return res.json({ vehicleId: id, rows });
+  } catch (err) {
+    console.error("List vehicle history error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/:id/incidents", requireRole("admin", "accountant"), async (req, res) => {
+  const orgId = req.user?.orgId;
+  const { id: vehicleId } = req.params;
+  const body = req.body as Record<string, unknown>;
+  const { title, description, cost, odometerReading, driverId, eventDate } = body;
+
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+  if (!title || typeof title !== "string" || !title.trim()) {
+    return res.status(400).json({ message: "title is required" });
+  }
+
+  try {
+    const { rows: vehicleRows } = await query<{ id: string; current_driver_id: string | null }>(
+      "SELECT id, current_driver_id::text FROM vehicles WHERE id = $1::uuid AND organization_id = $2::uuid LIMIT 1",
+      [vehicleId, orgId],
+    );
+    if (!vehicleRows[0]) return res.status(404).json({ message: "Vehicle not found" });
+
+    const resolvedDriverId =
+      typeof driverId === "string" && UUID_RE.test(driverId)
+        ? driverId
+        : vehicleRows[0].current_driver_id;
+
+    const historyId = await insertVehicleHistoryQuery({
+      orgId,
+      vehicleId: String(vehicleId),
+      eventType: "incident",
+      eventDate:
+        typeof eventDate === "string" && !Number.isNaN(Date.parse(eventDate))
+          ? new Date(eventDate)
+          : undefined,
+      driverId: resolvedDriverId,
+      title: title.trim(),
+      description: typeof description === "string" ? description : null,
+      cost: cost != null ? Number(cost) : null,
+      odometerReading: odometerReading != null ? Number(odometerReading) : null,
+      createdBy: req.user?.sub ?? null,
+    });
+
+    return res.status(201).json({ id: historyId });
+  } catch (err) {
+    console.error("Create vehicle incident error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 const vehicleDriverHistory = [requireRole("admin", "accountant"), handleVehicleDriverHistory];
 router.get("/:id/vehicle-assignment-history", ...vehicleDriverHistory);
 router.get("/:id/driver-history", ...vehicleDriverHistory);
@@ -485,6 +571,17 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
   }
 
   try {
+    const { rows: beforeRows } = await query<{
+      status: string;
+      weekly_rent: string;
+    }>(
+      `SELECT status, weekly_rent::text
+       FROM vehicles WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [id, orgId],
+    );
+    const before = beforeRows[0];
+    if (!before) return res.status(404).json({ message: "Vehicle not found" });
+
     const { rows } = await query(
       `
       UPDATE vehicles
@@ -534,6 +631,42 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
     );
     const vehicle = rows[0];
     if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+
+    const userId = req.user?.sub ?? null;
+    const nextStatus = status != null ? String(status) : before.status;
+    if (nextStatus !== before.status) {
+      await insertVehicleHistoryQuery({
+        orgId,
+        vehicleId: String(id),
+        eventType: "status_change",
+        previousStatus: before.status,
+        newStatus: nextStatus,
+        title: "Status changed",
+        description: `Status updated from ${before.status} to ${nextStatus}`,
+        createdBy: userId,
+      });
+    }
+
+    const nextWeekly =
+      weeklyRent != null && weeklyRent !== "" ? Number(weeklyRent) : Number(before.weekly_rent);
+    const prevWeekly = Number(before.weekly_rent ?? 0);
+    if (
+      weeklyRent != null &&
+      weeklyRent !== "" &&
+      Number.isFinite(nextWeekly) &&
+      Math.abs(nextWeekly - prevWeekly) > 0.009
+    ) {
+      await insertVehicleHistoryQuery({
+        orgId,
+        vehicleId: String(id),
+        eventType: "rent_changed",
+        previousRent: prevWeekly,
+        newRent: nextWeekly,
+        title: "Weekly rent updated",
+        description: `Weekly rent changed from ${prevWeekly.toFixed(2)} to ${nextWeekly.toFixed(2)}`,
+        createdBy: userId,
+      });
+    }
 
     if (typeof currentDriverId !== "undefined") {
       const vehicleIdStr = String(id);
@@ -632,6 +765,9 @@ router.post("/:id/maintenance", requireRole("admin", "accountant"), async (req, 
   if (!maintenanceType) {
     return res.status(400).json({ message: "maintenanceType is required" });
   }
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
 
   try {
     const { rows: vehicleRows } = await query<{ id: string }>(
@@ -667,6 +803,21 @@ router.post("/:id/maintenance", requireRole("admin", "accountant"), async (req, 
         [vehicleId],
       );
     }
+
+    await insertVehicleHistoryQuery({
+      orgId,
+      vehicleId: String(vehicleId),
+      eventType: "maintenance",
+      title: String(maintenanceType),
+      description: description != null ? String(description) : null,
+      cost: cost != null ? Number(cost) : null,
+      metadata: {
+        maintenance_id: rows[0]?.id,
+        maintenance_type: maintenanceType,
+        status: status ?? "pending",
+      },
+      createdBy: req.user?.sub ?? null,
+    });
 
     return res.status(201).json(rows[0]);
   } catch (err) {
