@@ -47,7 +47,15 @@ export function importProgressPct(row: EarningsImportListItem): number {
   return Math.round((processed / total) * 100);
 }
 
-export type ImportStatusTone = "success" | "warning" | "muted" | "purple";
+export type ImportStatusTone =
+  | "success"
+  | "warning"
+  | "muted"
+  | "purple"
+  | "processing"
+  | "pending"
+  | "validating"
+  | "failed";
 
 export function importStatusDisplay(status: string): { label: string; tone: ImportStatusTone } {
   switch (status) {
@@ -57,8 +65,14 @@ export function importStatusDisplay(status: string): { label: string; tone: Impo
       return { label: "Reverted", tone: "purple" };
     case "preview":
       return { label: "Preview", tone: "warning" };
+    case "processing":
+      return { label: "Processing", tone: "processing" };
+    case "pending":
+      return { label: "Pending", tone: "pending" };
+    case "validating":
+      return { label: "Validating", tone: "validating" };
     case "failed":
-      return { label: "Failed", tone: "muted" };
+      return { label: "Failed", tone: "failed" };
     default:
       return { label: status.charAt(0).toUpperCase() + status.slice(1), tone: "muted" };
   }

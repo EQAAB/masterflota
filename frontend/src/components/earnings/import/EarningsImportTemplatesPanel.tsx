@@ -73,20 +73,27 @@ function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
 
   return (
     <div
-      className={`flex h-[118px] w-[118px] shrink-0 flex-col items-center justify-between rounded-2xl border border-[#E7ECEF] bg-white px-2.5 py-3 shadow-soft ${transitionDefault} hover:border-brand/30 hover:shadow-card`}
+      className={`group flex h-[136px] w-[128px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/60 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${transitionDefault} hover:-translate-y-0.5 hover:border-brand/20 hover:shadow-card-hover`}
     >
-      <div className="flex flex-col items-center gap-1.5">
-        <Logo />
-        <p className="text-xs font-semibold text-ink">{config.label}</p>
-        <p className="text-[10px] text-ink-muted">{config.category}</p>
+      <div className="flex flex-col items-center gap-2 pt-0.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface/80 ring-1 ring-border/50">
+          <Logo className="!h-6 !w-6 !rounded-md" />
+        </div>
+        <div className="text-center">
+          <p className="text-[13px] font-semibold leading-tight text-ink">{config.label}</p>
+          <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-muted">
+            {config.category}
+          </p>
+        </div>
       </div>
       <button
         type="button"
         onClick={() => downloadPlatformImportTemplate(config.id)}
-        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border border-brand/30 bg-white text-brand ${transitionDefault} hover:bg-brand-mint/30`}
+        className={`inline-flex h-7 w-full items-center justify-center gap-1 rounded-lg border border-brand/15 bg-white text-[11px] font-medium text-brand ${transitionDefault} group-hover:border-brand/30 group-hover:bg-brand-mint/20`}
         aria-label={`Download ${config.label} ${config.category} template`}
       >
-        <DownloadIcon className="h-3.5 w-3.5" />
+        <DownloadIcon className="h-3 w-3" />
+        Download
       </button>
     </div>
   );
@@ -101,9 +108,9 @@ function ViewAllPopoverRow({ config, onDownload }: ViewAllPopoverRowProps) {
   const Logo = LOGO_BY_PLATFORM[config.id];
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 hover:bg-surface">
+    <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 hover:bg-surface">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Logo />
+        <Logo className="!h-7 !w-7" />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink">{platformDisplayLabel(config)}</p>
           <p className="text-xs text-ink-muted">{config.category}</p>
@@ -136,12 +143,12 @@ export function EarningsImportTemplatesPanel() {
   }, []);
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-[#E7ECEF] bg-white p-4 shadow-soft">
+    <div className="flex h-full min-h-[168px] flex-col rounded-xl border border-border/50 bg-gradient-to-br from-surface/50 to-white p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-ink">Download templates</h3>
-          <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
-            Choose your platform to get the correct import template.
+          <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
+            Correct CSV format per platform
           </p>
         </div>
         <div className="relative shrink-0" ref={popoverRef}>
@@ -156,7 +163,7 @@ export function EarningsImportTemplatesPanel() {
             <ArrowIcon className="h-3 w-3" />
           </button>
           {viewAllOpen && (
-            <div className="absolute right-0 z-50 mt-1.5 w-56 rounded-xl border border-border bg-white p-1.5 shadow-card-hover">
+            <div className="absolute right-0 z-50 mt-1.5 w-60 rounded-xl border border-border bg-white p-1.5 shadow-card-hover">
               <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
                 All platforms
               </p>
@@ -177,18 +184,28 @@ export function EarningsImportTemplatesPanel() {
         </div>
       </div>
 
-      <div className="-mx-1 mt-3 flex flex-nowrap justify-between gap-2.5 overflow-x-auto px-1 pb-2 [scrollbar-color:theme(colors.teal.500)_#E5E7EB] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-teal-500/70 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-200 [&::-webkit-scrollbar]:h-1.5">
-        {FEATURED_IMPORT_TEMPLATES.map((config) => (
-          <ImportTemplateMiniCard key={config.id} config={config} />
-        ))}
+      <div className="relative mt-2.5 flex-1">
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-white/95 to-transparent"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-white/95 to-transparent"
+          aria-hidden
+        />
+        <div className="flex flex-nowrap gap-2.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [-ms-overflow-style:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
+          {FEATURED_IMPORT_TEMPLATES.map((config) => (
+            <ImportTemplateMiniCard key={config.id} config={config} />
+          ))}
+        </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-brand-mint/45 bg-brand-mint/20 px-2.5 py-1.5 shadow-sm">
+      <div className="mt-2 flex items-center gap-2 rounded-lg border border-brand-mint/40 bg-brand-mint/20 px-2.5 py-1.5">
         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-          <InfoIcon className="h-3.5 w-3.5" />
+          <InfoIcon className="h-3 w-3" />
         </span>
-        <p className="text-xs leading-snug text-slate-600">
-          Using the right template helps prevent validation errors.
+        <p className="text-[11px] leading-snug text-slate-600">
+          Using the right template prevents validation errors.
         </p>
       </div>
     </div>

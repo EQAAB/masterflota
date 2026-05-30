@@ -31,6 +31,7 @@ import { RecentImportsTable } from "../../components/earnings/import/RecentImpor
 import { alertError, alertSuccess, driversPage } from "../../theme/classNames";
 import { useCsvValidation } from "../../hooks/useCsvValidation";
 import { useEarningsImportPeriod } from "../../hooks/useEarningsImportPeriod";
+import { useUploadPhase } from "../../hooks/useUploadPhase";
 import { useUnsavedImportNavigationGuard } from "../../hooks/useUnsavedImportNavigationGuard";
 import { getPreviousWeek } from "../../utils/earningsImportWeek";
 
@@ -136,6 +137,9 @@ export function EarningsImportPage() {
       setLocalError(errMessage(e));
     },
   });
+
+  const uploadPhase = useUploadPhase(previewMut.isPending);
+  const uploadError = !preview && localError && previewMut.isError ? localError : null;
 
   const commitMut = useMutation({
     mutationFn: (args: { importId: string; platform: string; weekStart: string; weekEnd: string }) =>
@@ -262,14 +266,14 @@ export function EarningsImportPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto bg-surface-elevated">
+    <div className="flex flex-1 flex-col overflow-auto bg-[#E8ECF2]">
       <EarningsImportHeader />
 
-      <div className={`${driversPage} !space-y-5 !py-5 sm:!py-6`}>
-        {localError && <div className={alertError}>{localError}</div>}
+      <div className={`${driversPage} !space-y-3 !py-4 sm:!space-y-3.5 sm:!py-5`}>
+        {localError && !uploadError && <div className={alertError}>{localError}</div>}
 
         {importSuccess && (
-          <div className={alertSuccess}>
+          <div className={`${alertSuccess} rounded-2xl border-emerald-200/60 shadow-soft`}>
             <p className="font-medium">Import complete</p>
             <p className="mt-1 opacity-90">{importSuccess.insertedRows} row(s) saved.</p>
           </div>
@@ -302,6 +306,8 @@ export function EarningsImportPage() {
           <EarningsImportUploadCard
             dragActive={dragActive}
             isPending={previewMut.isPending}
+            uploadPhase={uploadPhase}
+            uploadError={uploadError}
             fileInputRef={fileInputRef}
             onDragEnter={(e) => {
               e.preventDefault();
@@ -315,6 +321,7 @@ export function EarningsImportPage() {
             onDrop={onDrop}
             onFileChange={handleFile}
             onBrowseClick={() => fileInputRef.current?.click()}
+            onRetry={() => setLocalError(null)}
           />
         ) : (
           <EarningsImportPreviewPanel
