@@ -72,15 +72,13 @@ function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
   const Logo = LOGO_BY_PLATFORM[config.id];
 
   return (
-    <div
-      className={`group flex h-[136px] w-[128px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/60 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${transitionDefault} hover:-translate-y-0.5 hover:border-brand/20 hover:shadow-card-hover`}
-    >
-      <div className="flex flex-col items-center gap-2 pt-0.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface/80 ring-1 ring-border/50">
-          <Logo className="!h-6 !w-6 !rounded-md" />
+    <div className="platform-template-card flex shrink-0 snap-start flex-col justify-between p-3">
+      <div className="flex flex-col items-center gap-2">
+        <div className="platform-template-card__logo flex items-center justify-center rounded-lg bg-surface/80 ring-1 ring-border/50">
+          <Logo className="!h-[22px] !w-[22px] !rounded-md" />
         </div>
-        <div className="text-center">
-          <p className="text-[13px] font-semibold leading-tight text-ink">{config.label}</p>
+        <div className="platform-template-card__label w-full">
+          <p className="platform-template-card__title text-[13px] font-semibold text-ink">{config.label}</p>
           <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-muted">
             {config.category}
           </p>
@@ -89,10 +87,10 @@ function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
       <button
         type="button"
         onClick={() => downloadPlatformImportTemplate(config.id)}
-        className={`inline-flex h-7 w-full items-center justify-center gap-1 rounded-lg border border-brand/15 bg-white text-[11px] font-medium text-brand ${transitionDefault} group-hover:border-brand/30 group-hover:bg-brand-mint/20`}
+        className="platform-template-card__download inline-flex items-center justify-center gap-1 text-[11px] font-medium text-brand"
         aria-label={`Download ${config.label} ${config.category} template`}
       >
-        <DownloadIcon className="h-3 w-3" />
+        <DownloadIcon className="h-3 w-3 shrink-0" />
         Download
       </button>
     </div>
@@ -143,7 +141,7 @@ export function EarningsImportTemplatesPanel() {
   }, []);
 
   return (
-    <div className="flex h-full min-h-[168px] flex-col rounded-xl border border-border/50 bg-gradient-to-br from-surface/50 to-white p-3">
+    <div className="flex h-full min-h-[148px] flex-col rounded-xl border border-border/50 bg-gradient-to-br from-surface/40 to-white p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-ink">Download templates</h3>
@@ -193,7 +191,7 @@ export function EarningsImportTemplatesPanel() {
           className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-white/95 to-transparent"
           aria-hidden
         />
-        <div className="flex flex-nowrap gap-2.5 overflow-x-auto px-1 py-0.5 [scrollbar-width:none] [-ms-overflow-style:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
+        <div className="platform-template-carousel flex flex-nowrap gap-3 px-1.5 [scrollbar-width:none] [-ms-overflow-style:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
           {FEATURED_IMPORT_TEMPLATES.map((config) => (
             <ImportTemplateMiniCard key={config.id} config={config} />
           ))}
