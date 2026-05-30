@@ -1,18 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import type { EarningsImportListItem } from "../../../api/earnings";
 import { importProcessedRows, importTotalRows } from "../../../api/earnings";
-import {
-  BoltPlatformLogo,
-  GlovoPlatformLogo,
-  UberPlatformLogo,
-  WoltPlatformLogo,
-} from "../../drivers/platformLogos";
+import { PlatformBadge } from "../../drivers/platformLogos";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
-import { EmptyState } from "../../theme/EmptyState";
-import { actionMenuTrigger, btnSecondary, transitionDefault } from "../../../theme/classNames";
+import { btnSecondary, transitionDefault } from "../../../theme/classNames";
 import { DotsVerticalIcon } from "../../theme/actionMenuIcons";
 import { buildImportActionMenuItems } from "./buildImportActionMenuItems";
-import { ImportWhatsNextBanner } from "./ImportWhatsNextBanner";
+import { ImportEmptyState, ImportFailedEmptyHint, ImportWhatsNextBanner } from "./ImportWhatsNextBanner";
 import {
   earningsPlatformToBadgeKey,
   formatFileSizeLabel,
@@ -21,6 +15,7 @@ import {
   formatPeriodDate,
   importProgressPct,
   importStatusDisplay,
+  type ImportStatusTone,
 } from "./importDisplayUtils";
 
 function RefreshIcon({ className }: { className?: string }) {
@@ -38,8 +33,8 @@ function RefreshIcon({ className }: { className?: string }) {
 
 function CsvFileIcon() {
   return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-mint/45 text-brand ring-1 ring-brand/10">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -85,37 +80,63 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function PlatformCell({ platform }: { platform: string }) {
-  const key = earningsPlatformToBadgeKey(platform);
-  const Logo =
-    key === "uber"
-      ? UberPlatformLogo
-      : key === "glovo"
-        ? GlovoPlatformLogo
-        : key === "bolt"
-          ? BoltPlatformLogo
-          : key === "wolt"
-            ? WoltPlatformLogo
-            : null;
-
+function SpinnerIcon({ className }: { className?: string }) {
   return (
-    <div className="flex items-center gap-2">
-      {Logo ? <Logo /> : null}
-      <span className="text-sm lowercase text-ink">{platform.replace(/_/g, " ")}</span>
-    </div>
+    <svg className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24" aria-hidden>
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   );
 }
 
-const STATUS_STYLES = {
-  success: "bg-success/10 text-success ring-1 ring-success/20",
-  warning: "bg-warning/10 text-warning ring-1 ring-warning/20",
-  purple: "bg-purple-100 text-purple-700 ring-1 ring-purple-200",
-  muted: "bg-surface text-ink-muted ring-1 ring-border",
-} as const;
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
 
-const tableCell = "px-3 py-3 lg:px-4 lg:py-3 align-middle";
+function PlatformCell({ platform }: { platform: string }) {
+  const key = earningsPlatformToBadgeKey(platform);
+  if (key) {
+    return (
+      <span className="inline-flex h-7 items-center rounded-full bg-surface/90 px-1.5 ring-1 ring-border/50">
+        <PlatformBadge platform={key} />
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex h-7 items-center rounded-full bg-surface px-2.5 text-xs font-medium capitalize text-ink ring-1 ring-border/50">
+      {platform.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+const STATUS_STYLES: Record<ImportStatusTone, string> = {
+  success: "bg-emerald-50/90 text-emerald-700 ring-1 ring-emerald-200/60",
+  warning: "bg-amber-50 text-amber-800 ring-1 ring-amber-200/60",
+  purple: "bg-violet-50 text-violet-700 ring-1 ring-violet-200/60",
+  muted: "bg-slate-100 text-slate-600 ring-1 ring-slate-200/70",
+  processing: "bg-sky-50 text-sky-700 ring-1 ring-sky-200/60",
+  pending: "bg-slate-50 text-slate-600 ring-1 ring-slate-200/60",
+  validating: "bg-brand-mint/70 text-brand-dark ring-1 ring-brand/15",
+  failed: "bg-red-50 text-red-700 ring-1 ring-red-200/60",
+};
+
+function StatusBadge({ tone, label }: { tone: ImportStatusTone; label: string }) {
+  return (
+    <span className={`inline-flex h-[22px] items-center gap-1 rounded-full px-2 text-[10px] font-medium leading-none ${STATUS_STYLES[tone]}`}>
+      {tone === "success" && <CheckIcon className="h-2.5 w-2.5 shrink-0" />}
+      {(tone === "processing" || tone === "validating") && <SpinnerIcon className="h-2.5 w-2.5 shrink-0" />}
+      {tone === "failed" && <XIcon className="h-2.5 w-2.5 shrink-0" />}
+      {label}
+    </span>
+  );
+}
+
+const tableCell = "px-4 py-3 align-middle";
 const tableHeaderCell = `${tableCell} text-left`;
-const headerLabel = "text-[11px] font-semibold uppercase tracking-wide text-slate-600";
 
 type RecentImportsTableProps = {
   rows: EarningsImportListItem[];
@@ -147,6 +168,7 @@ export function RecentImportsTable({
   }, []);
 
   const openRow = openMenuRowId ? rows.find((r) => r.id === openMenuRowId) : undefined;
+  const hasFailedImports = rows.some((r) => r.status === "failed");
 
   const menuItems = useMemo(() => {
     if (!openRow) return [];
@@ -168,77 +190,94 @@ export function RecentImportsTable({
   }, [openRow, closeMenu, onDelete, onRevert]);
 
   return (
-    <section id="recent-imports" className="scroll-mt-6 overflow-hidden rounded-[18px] border border-border/80 bg-white shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-4 sm:px-5">
-        <h2 className="text-base font-semibold tracking-tight text-ink">Recent imports</h2>
+    <section
+      id="recent-imports"
+      className="scroll-mt-4 overflow-hidden rounded-2xl border border-border/60 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.07)]"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 px-4 py-3.5 sm:px-5">
+        <div>
+          <h2 className="text-base font-semibold tracking-tight text-ink">Recent imports</h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            {rows.length > 0 ? `${rows.length} import${rows.length === 1 ? "" : "s"} · validation & processing status` : "Track validation, processing, and completion"}
+          </p>
+        </div>
         <button
           type="button"
           disabled={busy || resyncPending}
           onClick={onResync}
-          className={`${btnSecondary} h-10 gap-2 rounded-xl border-border/80 px-3.5 text-sm ${transitionDefault}`}
+          className={`${btnSecondary} h-9 gap-2 rounded-xl border-border/60 px-3 text-sm shadow-sm ${transitionDefault} hover:shadow-md`}
         >
-          <RefreshIcon className="h-4 w-4 text-ink-muted" />
-          {resyncPending ? "Re-syncing…" : "Re-sync vehicle rentals"}
+          <RefreshIcon className={`h-4 w-4 text-ink-muted ${resyncPending ? "animate-spin" : ""}`} />
+          {resyncPending ? "Re-syncing…" : "Re-sync rentals"}
         </button>
       </div>
 
+      {hasFailedImports && rows.length > 0 && <ImportFailedEmptyHint />}
+
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <div className="flex flex-col items-center justify-center gap-3 py-16">
           <span
-            className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
+            className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent"
             role="status"
             aria-label="Loading imports"
           />
           <p className="text-sm text-ink-muted">Loading recent imports…</p>
         </div>
       ) : rows.length === 0 ? (
-        <EmptyState
-          title="No imports yet"
-          description="Upload your first earnings file to see import history here."
-          className="border-0 py-16"
-        />
+        <ImportEmptyState />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] table-fixed text-sm">
-            <thead className="bg-[#F4F6FA]">
+          <table className="w-full min-w-[920px] table-fixed text-sm">
+            <thead className="sticky top-0 z-10 border-b border-border/50 bg-white/95 backdrop-blur-sm">
               <tr>
-                <th className={`${tableHeaderCell} min-w-[240px]`}><span className={headerLabel}>File</span></th>
-                <th className={`${tableHeaderCell} w-[120px]`}><span className={headerLabel}>Platform</span></th>
-                <th className={`${tableHeaderCell} w-[140px]`}><span className={headerLabel}>Period</span></th>
-                <th className={`${tableHeaderCell} w-[120px]`}><span className={headerLabel}>Status</span></th>
-                <th className={`${tableHeaderCell} w-[120px]`}><span className={headerLabel}>Processed / Total</span></th>
-                <th className={`${tableHeaderCell} w-[120px]`}><span className={headerLabel}>Created</span></th>
+                <th className={`${tableHeaderCell} min-w-[220px]`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">File</span>
+                </th>
+                <th className={`${tableHeaderCell} w-[132px]`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Platform</span>
+                </th>
+                <th className={`${tableHeaderCell} w-[128px]`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Period</span>
+                </th>
+                <th className={`${tableHeaderCell} w-[108px]`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Status</span>
+                </th>
+                <th className={`${tableHeaderCell} w-[96px] text-right`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Processed</span>
+                </th>
+                <th className={`${tableHeaderCell} w-[116px]`}>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-muted">Created</span>
+                </th>
                 {isAdmin && (
-                  <th className={`${tableHeaderCell} w-[56px] text-right`}>
+                  <th className={`${tableHeaderCell} w-[48px] text-right`}>
                     <span className="sr-only">Actions</span>
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody>
-              {rows.map((row, index) => {
+            <tbody className="divide-y divide-border/30">
+              {rows.map((row) => {
                 const processed = importProcessedRows(row);
                 const total = importTotalRows(row);
                 const pct = importProgressPct(row);
                 const status = importStatusDisplay(row.status);
-                const isEven = index % 2 === 1;
                 const canDelete = processed === 0;
                 const canRevert = row.status === "completed" && processed > 0;
                 const hasActions = isAdmin && (canDelete || canRevert);
 
                 return (
-                  <tr
-                    key={row.id}
-                    className={`${transitionDefault} ${isEven ? "bg-[#FAFBFD]" : "bg-white"} hover:bg-brand-mint/20`}
-                  >
+                  <tr key={row.id} className={`bg-white ${transitionDefault} hover:bg-brand-mint/10`}>
                     <td className={tableCell}>
                       <div className="flex min-w-0 items-center gap-2.5">
                         <CsvFileIcon />
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-ink" title={row.file_name ?? undefined}>
+                          <p
+                            className="truncate text-[13px] text-ink"
+                            title={row.file_name ?? undefined}
+                          >
                             {row.file_name ?? "—"}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-ink-muted">{formatFileSizeLabel(row.file_name)}</p>
+                          <p className="mt-0.5 text-[10px] text-ink-muted">{formatFileSizeLabel(row.file_name)}</p>
                         </div>
                       </div>
                     </td>
@@ -246,32 +285,30 @@ export function RecentImportsTable({
                       <PlatformCell platform={row.platform} />
                     </td>
                     <td className={tableCell}>
-                      <div className="flex items-start gap-2 whitespace-nowrap">
-                        <CalendarIcon className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted/80" />
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted/60" />
                         <div>
-                          <p className="tabular-nums text-ink">{formatPeriodDate(row.week_start)}</p>
-                          <p className="text-xs text-ink-muted">– {formatPeriodDate(row.week_end)}</p>
+                          <p className="text-[13px] tabular-nums text-ink">{formatPeriodDate(row.week_start)}</p>
+                          <p className="text-[10px] tabular-nums text-ink-muted">– {formatPeriodDate(row.week_end)}</p>
                         </div>
                       </div>
                     </td>
                     <td className={tableCell}>
-                      <span className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium ${STATUS_STYLES[status.tone]}`}>
-                        {status.tone === "success" && <CheckIcon className="h-3 w-3" />}
-                        {status.label}
-                      </span>
+                      <StatusBadge tone={status.tone} label={status.label} />
                     </td>
-                    <td className={tableCell}>
-                      <p className="font-medium tabular-nums text-ink">
-                        {processed} / {total}
+                    <td className={`${tableCell} text-right`}>
+                      <p className="text-[13px] font-medium tabular-nums text-ink">
+                        {processed}
+                        <span className="font-normal text-ink-muted/80"> / {total}</span>
                       </p>
-                      <p className="mt-0.5 text-[11px] text-ink-muted">{pct}%</p>
+                      <p className="text-[10px] tabular-nums text-ink-muted/70">{pct}%</p>
                     </td>
                     <td className={tableCell}>
-                      <div className="flex items-start gap-2 whitespace-nowrap">
-                        <ClockIcon className="mt-0.5 h-4 w-4 shrink-0 text-ink-muted/80" />
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
+                        <ClockIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted/60" />
                         <div>
-                          <p className="tabular-nums text-ink">{formatImportDate(row.created_at)}</p>
-                          <p className="text-xs tabular-nums text-ink-muted">{formatImportTime(row.created_at)}</p>
+                          <p className="text-[13px] tabular-nums text-ink">{formatImportDate(row.created_at)}</p>
+                          <p className="text-[10px] tabular-nums text-ink-muted">{formatImportTime(row.created_at)}</p>
                         </div>
                       </div>
                     </td>
@@ -292,7 +329,7 @@ export function RecentImportsTable({
                               setOpenMenuRowId(row.id);
                               setMenuAnchorEl(e.currentTarget);
                             }}
-                            className={`${actionMenuTrigger} ${transitionDefault} ${openMenuRowId === row.id ? "ring-2 ring-brand/25" : ""}`}
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted ${transitionDefault} hover:bg-surface hover:text-ink ${openMenuRowId === row.id ? "bg-surface text-ink ring-2 ring-brand/12" : ""}`}
                           >
                             <DotsVerticalIcon />
                           </button>

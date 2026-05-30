@@ -73,8 +73,8 @@ export function PlatformBadge({ platform }: { platform: PlatformBadgeKey }) {
   const label = PLATFORM_LABELS[platform];
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg py-0.5 pr-1.5">
-      <Logo />
+    <span className="inline-flex h-7 min-w-[7rem] items-center gap-2 rounded-full py-0 pl-0.5 pr-2.5">
+      <Logo className="!h-6 !w-6 !rounded-md" />
       <span className="whitespace-nowrap text-xs font-medium text-ink">{label}</span>
     </span>
   );

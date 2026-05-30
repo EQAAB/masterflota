@@ -95,12 +95,12 @@
 
   .sidebar-shell {
     @apply relative flex flex-col shrink-0 text-white shadow-soft-lg transition-[width] duration-200 ease-out;
-    background-image: linear-gradient(180deg, #003d38 0%, #005f56 42%, #0b7a6e 100%);
+    background-image: linear-gradient(180deg, #004842 0%, #005a52 42%, #0a7268 100%);
   }
 
   .sidebar-shell::before {
     content: "";
-    @apply pointer-events-none absolute inset-0 opacity-[0.35];
+    @apply pointer-events-none absolute inset-0 opacity-[0.28];
     background-image: radial-gradient(ellipse 80% 50% at 0% 0%, rgba(221, 245, 238, 0.12), transparent 55%);
   }
 

@@ -1,49 +1,86 @@
-import { btnGhost, transitionDefault } from "../../../theme/classNames";
-import { scrollToRecentImports } from "./importDisplayUtils";
-
-function InfoIcon() {
+function SparklesIcon({ className }: { className?: string }) {
   return (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={1.75}
-        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
       />
     </svg>
   );
 }
 
-function ArrowIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 12h14m-7-7l7 7-7 7" />
-    </svg>
-  );
-}
+const STEPS = [
+  "Validate file against the platform template",
+  "Match drivers and calculate earnings",
+  "Track status updates in the table above",
+] as const;
 
 export function ImportWhatsNextBanner() {
   return (
-    <div className="flex flex-col gap-3 border-t border-border/60 bg-gradient-to-r from-brand-mint/25 to-brand-mint/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-          <InfoIcon />
+    <div className="border-t border-border/40 bg-gradient-to-br from-brand-mint/25 via-brand-mint/10 to-white px-4 py-4 sm:px-5">
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-brand shadow-sm ring-1 ring-brand/10">
+          <SparklesIcon className="h-[18px] w-[18px]" />
         </span>
-        <div>
-          <h4 className="text-sm font-semibold text-ink">What happens next?</h4>
-          <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-600">
-            We&apos;ll validate your file and process the data. You&apos;ll be notified once the import is complete.
+        <div className="min-w-0 flex-1">
+          <h4 className="text-sm font-semibold tracking-tight text-ink">What happens next?</h4>
+          <p className="mt-0.5 text-xs leading-relaxed text-ink-muted">
+            After upload, earnings are validated and processed automatically.
           </p>
+          <ul className="mt-2 space-y-1.5">
+            {STEPS.map((step, i) => (
+              <li key={step} className="flex items-start gap-2 text-xs text-slate-600">
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-semibold text-brand-dark">
+                  {i + 1}
+                </span>
+                <span className="leading-relaxed">{step}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={scrollToRecentImports}
-        className={`${btnGhost} h-10 shrink-0 gap-2 rounded-xl border border-brand/20 bg-white/75 px-3.5 text-sm font-medium text-brand hover:bg-white ${transitionDefault}`}
-      >
-        View import history
-        <ArrowIcon className="h-4 w-4" />
-      </button>
+    </div>
+  );
+}
+
+function UploadIllustration() {
+  return (
+    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mint/50 ring-1 ring-brand/15">
+      <svg className="h-7 w-7 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.75}
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+        />
+      </svg>
+    </div>
+  );
+}
+
+export function ImportEmptyState() {
+  return (
+    <div className="flex flex-col items-center px-6 py-14 text-center">
+      <UploadIllustration />
+      <h3 className="mt-4 text-sm font-semibold text-ink">No imports yet</h3>
+      <p className="mt-1 max-w-sm text-sm leading-relaxed text-ink-muted">
+        Upload your first platform export above. Import history and status will appear here.
+      </p>
+    </div>
+  );
+}
+
+export function ImportFailedEmptyHint() {
+  return (
+    <div className="mx-4 mb-4 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50/60 px-3 py-2.5">
+      <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      </svg>
+      <p className="text-xs leading-relaxed text-red-800">
+        Failed imports stay in this list. Delete or re-upload with the correct template.
+      </p>
     </div>
   );
 }
