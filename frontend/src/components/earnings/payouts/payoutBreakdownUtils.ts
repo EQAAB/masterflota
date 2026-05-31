@@ -1,5 +1,5 @@
 import type { ConsolidatedDriverPayout, PayoutListItem } from "../../../api/earnings";
-import { formatRatePctFromFraction, toNum } from "./payoutRowUtils";
+import { toNum } from "./payoutRowUtils";
 
 export type PlatformBreakdownLine = {
   payoutId: string;
@@ -9,8 +9,21 @@ export type PlatformBreakdownLine = {
   tips: number;
   gross: number;
   platformFees: number;
+  /** Platform net after fees (earnings base for commission & payout). */
+  netIncome: number;
   fleetSub: number;
-  netFromPlatform: number;
+  cashBalance: number;
+  accountOpeningFee: number;
+  /** net_income − fleet commission − cash − opening fee (matches backend driver_payout). */
+  netPayoutFromPlatform: number;
+  /** gross − platformFees − netIncome when platform reports net differently (e.g. Bolt). */
+  platformNetAdjustment: number;
+  /** Stored payable on the platform leg (after vehicle rent / debt on that row). */
+  storedNetDriverPayout: number;
+  /** Raw net after rent/fees on this platform leg (before debt allocation). */
+  rawNet: number;
+  /** Platform had negative raw net this week (debt leg). */
+  isDebtPlatform: boolean;
   commissionBase: number;
   commissionRate: number;
   commissionCharged: number;
@@ -20,14 +33,42 @@ export type UnifiedPayoutBreakdown = {
   platforms: PlatformBreakdownLine[];
   totalGross: number;
   totalPlatformFees: number;
+  /** gross − fees − net_income when platforms report net differently from gross − taxa. */
+  totalPlatformNetAdjustment: number;
+  totalNetIncome: number;
   totalFleetSub: number;
-  combinedNetBeforeRent: number;
-  vehicleRent: number;
-  taxableAmount: number;
-  taxRate: number;
-  taxAmount: number;
+  /** Sum(net_income) − fleet commission, before cash. */
+  netAfterFleetBeforeCash: number;
+  totalCashBalance: number;
+  /** Sum of per-platform net_income − commission − cash − opening fee. */
+  totalNetPayoutAllPlatforms: number;
+  /** Custom fee / vehicle rent applied once on combined platform net. */
+  customFeeVehicleRent: number;
+  /** Combined platform net minus vehicle rent / custom fee. */
+  amountAfterVehicleRent: number;
+  /** Total gap between amount after vehicle rent and stored final payout. */
   otherDeductions: number;
+  /** Debt applied from this period's earnings to older debt rows. */
+  totalDebtApplied: number;
+  /** Current-period deficit when raw net is negative (new debt on driver). */
+  newPeriodDebt: number;
+  /** Residual adjustments (custom fees, per-platform allocation, rounding). */
+  otherAdjustments: number;
+  /** Sum of positive platform raw nets this week. */
+  totalPositiveRaw: number;
+  /** Sum of negative platform raw nets this week (negative number). */
+  totalNegativeRaw: number;
+  /** Pooled raw net across all platforms (earnings − platform debt). */
+  weekRawNet: number;
+  /** Same-week debt offset by positive platforms. */
+  crossPlatformDebtOffset: number;
+  debtPlatforms: string[];
+  /** Operational platform net minus pooled raw net (recurring fees, custom charges). */
+  weeklyChargesDelta: number;
+  /** Authoritative total from consolidated payout (sum of net_driver_payout). */
   finalNet: number;
+  /** True when stored final matches the computed ladder within 0.02 RON. */
+  isReconciled: boolean;
   payoutId: string;
 };
 
@@ -59,6 +100,15 @@ export function formatPeriodParts(
   };
 }
 
+/** Matches backend: net_income − company_commission − |cash| − |opening fee|. */
+export function computePlatformNetPayout(p: PayoutListItem): number {
+  const netIncome = toNum(p.net_income);
+  const fleetSub = toNum(p.company_commission);
+  const cashBalance = round2(Math.abs(toNum(p.total_daily_cash)));
+  const accountOpeningFee = round2(Math.abs(toNum(p.account_opening_fee)));
+  return round2(netIncome - fleetSub - cashBalance - accountOpeningFee);
+}
+
 export function computeUnifiedBreakdown(
   row: ConsolidatedDriverPayout,
   payoutItems: PayoutListItem[],
@@ -66,8 +116,12 @@ export function computeUnifiedBreakdown(
   const platforms: PlatformBreakdownLine[] = payoutItems.map((p) => {
     const gross = toNum(p.total_gross_earnings);
     const platformFees = toNum(p.total_platform_fees);
+    const netIncome = toNum(p.net_income);
     const fleetSub = toNum(p.company_commission);
-    const netFromPlatform = round2(gross - platformFees - fleetSub);
+    const cashBalance = round2(Math.abs(toNum(p.total_daily_cash)));
+    const accountOpeningFee = round2(Math.abs(toNum(p.account_opening_fee)));
+    const platformNetAdjustment = round2(gross - platformFees - netIncome);
+    const rawNet = round2(toNum(p.raw_net_amount));
     return {
       payoutId: p.id,
       platform: p.earnings_platform ?? "unknown",
@@ -76,9 +130,16 @@ export function computeUnifiedBreakdown(
       tips: toNum(p.tips),
       gross,
       platformFees,
+      netIncome,
       fleetSub,
-      netFromPlatform,
-      commissionBase: toNum(p.net_income),
+      cashBalance,
+      accountOpeningFee,
+      netPayoutFromPlatform: computePlatformNetPayout(p),
+      platformNetAdjustment,
+      storedNetDriverPayout: round2(toNum(p.net_driver_payout)),
+      rawNet,
+      isDebtPlatform: rawNet < -0.02,
+      commissionBase: toNum(p.commission_base),
       commissionRate: toNum(p.commission_rate),
       commissionCharged: fleetSub,
     };
@@ -86,26 +147,51 @@ export function computeUnifiedBreakdown(
 
   const totalGross = round2(platforms.reduce((s, l) => s + l.gross, 0));
   const totalPlatformFees = round2(platforms.reduce((s, l) => s + l.platformFees, 0));
+  const totalNetIncome = round2(platforms.reduce((s, l) => s + l.netIncome, 0));
+  const totalPlatformNetAdjustment = round2(totalGross - totalPlatformFees - totalNetIncome);
   const totalFleetSub = round2(platforms.reduce((s, l) => s + l.fleetSub, 0));
-  const combinedNetBeforeRent = round2(platforms.reduce((s, l) => s + l.netFromPlatform, 0));
+  const netAfterFleetBeforeCash = round2(totalNetIncome - totalFleetSub);
+  const totalCashBalance = round2(platforms.reduce((s, l) => s + l.cashBalance, 0));
+  const totalNetPayoutAllPlatforms = round2(
+    platforms.reduce((s, l) => s + l.netPayoutFromPlatform, 0),
+  );
 
-  const vehicleRent = round2(
+  const customFeeVehicleRent = round2(
     payoutItems.reduce((m, p) => Math.max(m, toNum(p.vehicle_rental_fee)), 0),
   );
 
-  const taxableAmount = round2(Math.max(0, combinedNetBeforeRent - vehicleRent));
-  const anchor = payoutItems[0];
-  const taxRate = anchor ? toNum(anchor.commission_rate) : 0;
-  const nominalTax = taxRate > 0 ? round2(taxableAmount * (taxRate <= 1 ? taxRate : taxRate / 100)) : 0;
-
-  const finalNet = round2(toNum(row.total_amount));
-  const otherDeductions = round2(
-    Math.max(0, combinedNetBeforeRent - vehicleRent - nominalTax - finalNet),
+  const amountAfterVehicleRent = round2(
+    Math.max(0, totalNetPayoutAllPlatforms - customFeeVehicleRent),
   );
-  const taxAmount =
-    otherDeductions > 0.02
-      ? round2(Math.max(0, combinedNetBeforeRent - vehicleRent - otherDeductions - finalNet))
-      : nominalTax;
+
+  const totalPositiveRaw = round2(
+    platforms.reduce((s, l) => (l.rawNet > 0.02 ? s + l.rawNet : s), 0),
+  );
+  const totalNegativeRaw = round2(
+    platforms.reduce((s, l) => (l.rawNet < -0.02 ? s + l.rawNet : s), 0),
+  );
+  const weekRawNet = round2(totalPositiveRaw + totalNegativeRaw);
+  const crossPlatformDebtOffset = round2(
+    toNum(row.total_debt_offset) > 0
+      ? toNum(row.total_debt_offset)
+      : Math.min(totalPositiveRaw, Math.abs(totalNegativeRaw)),
+  );
+  const debtPlatforms =
+    row.debt_platforms?.length
+      ? row.debt_platforms
+      : platforms.filter((l) => l.isDebtPlatform).map((l) => l.platform);
+
+  /** Authoritative — same source as consolidated payouts list / pay action. */
+  const finalNet = round2(toNum(row.total_amount));
+  const otherDeductions = round2(Math.max(0, amountAfterVehicleRent - finalNet));
+  const totalDebtApplied = round2(
+    payoutItems.reduce((s, p) => s + toNum(p.debt_applied_amount), 0),
+  );
+  const newPeriodDebt = weekRawNet < -0.02 ? round2(Math.abs(weekRawNet)) : 0;
+  const weeklyChargesDelta = round2(weekRawNet - totalNetPayoutAllPlatforms);
+  const otherAdjustments = round2(Math.max(0, otherDeductions - totalDebtApplied - newPeriodDebt));
+  const isReconciled =
+    Math.abs(weekRawNet - totalDebtApplied - otherAdjustments - finalNet) < 0.05;
 
   const payoutId = row.driver_payment_id ?? row.platform_payout_ids[0] ?? "—";
 
@@ -113,32 +199,42 @@ export function computeUnifiedBreakdown(
     platforms,
     totalGross,
     totalPlatformFees,
+    totalPlatformNetAdjustment,
+    totalNetIncome,
     totalFleetSub,
-    combinedNetBeforeRent,
-    vehicleRent,
-    taxableAmount,
-    taxRate,
-    taxAmount,
+    netAfterFleetBeforeCash,
+    totalCashBalance,
+    totalNetPayoutAllPlatforms,
+    customFeeVehicleRent,
+    amountAfterVehicleRent,
     otherDeductions,
+    totalDebtApplied,
+    newPeriodDebt,
+    otherAdjustments,
+    totalPositiveRaw,
+    totalNegativeRaw,
+    weekRawNet,
+    crossPlatformDebtOffset,
+    debtPlatforms,
+    weeklyChargesDelta,
     finalNet,
+    isReconciled,
     payoutId,
   };
 }
 
+/** Implied non-fleet deductions on list row (vehicle rent + gap to net), not income tax. */
 export function tableTaxDisplay(row: ConsolidatedDriverPayout): number | null {
-  const gross = toNum(row.total_gross);
-  const fleet = toNum(row.total_fees);
-  const platformFees = toNum(row.total_platform_fees ?? "0");
   const vehicleRent = toNum(row.total_vehicle_rent ?? "0");
   const net = toNum(row.total_amount);
-  if (platformFees <= 0 && vehicleRent <= 0) return null;
-  return round2(Math.max(0, gross - platformFees - fleet - vehicleRent - net));
+  const platformNet = round2(toNum(row.total_gross) - toNum(row.total_platform_fees ?? "0") - toNum(row.total_fees));
+  const gap = round2(Math.max(0, platformNet - vehicleRent - net));
+  if (vehicleRent <= 0 && gap <= 0.02) return null;
+  return round2(vehicleRent + gap);
 }
 
-export function tableTaxRateLabel(items: PayoutListItem[]): string {
-  const rate = items[0] ? toNum(items[0].commission_rate) : 0;
-  if (rate <= 0) return "Taxes";
-  return `Taxes (${formatRatePctFromFraction(rate)})`;
+export function tableTaxRateLabel(_items: PayoutListItem[]): string {
+  return "Deductions";
 }
 
 function round2(n: number): number {

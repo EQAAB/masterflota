@@ -407,7 +407,11 @@
   }
 
   .fm-payout-detail-summary {
-    @apply grid grid-cols-1 gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:grid-cols-2 sm:p-5 lg:grid-cols-6 lg:items-center lg:gap-5;
+    @apply grid grid-cols-1 gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-md sm:grid-cols-2 lg:grid-cols-6 lg:items-center lg:gap-5;
+  }
+
+  .fm-payout-detail-summary--debt {
+    @apply border-rose-200/80 bg-gradient-to-r from-rose-50/30 via-white to-white ring-1 ring-rose-100/80;
   }
 
   .fm-payout-detail-summary__block {
@@ -423,7 +427,11 @@
   }
 
   .fm-payout-detail-summary__amount .fm-payout-detail-summary__value {
-    @apply mt-1 text-xl font-bold tabular-nums text-emerald-900 sm:text-2xl;
+    @apply mt-1 text-2xl font-bold tabular-nums text-emerald-900 sm:text-3xl;
+  }
+
+  .fm-payout-detail-summary__amount--debt .fm-payout-detail-summary__value {
+    @apply text-rose-950;
   }
 
   .fm-payout-detail-summary__actions {
@@ -440,6 +448,83 @@
 
   .fm-payout-detail-platform-card {
     @apply flex min-w-0 flex-col rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5;
+  }
+
+  .fm-payout-detail-platform-card--debt {
+    @apply border-rose-300/70 bg-gradient-to-br from-rose-50/40 to-white ring-1 ring-rose-200/50;
+  }
+
+  .fm-payout-detail-debt-badge {
+    @apply inline-flex shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-800 ring-1 ring-inset ring-rose-200/70;
+  }
+
+  .fm-payout-detail-platform-net--debt {
+    @apply bg-rose-100/80 ring-rose-300/50 text-rose-950;
+  }
+
+  .fm-payout-detail-offset-band {
+    @apply rounded-2xl border-2 border-violet-200/60 bg-gradient-to-br from-violet-50/90 via-white to-indigo-50/40 p-5 shadow-md sm:p-6;
+  }
+
+  .fm-payout-detail-offset-band__head {
+    @apply mb-5 border-b border-violet-200/50 pb-4;
+  }
+
+  .fm-payout-detail-offset-formula {
+    @apply text-sm font-medium text-slate-700;
+  }
+
+  .fm-payout-detail-offset-band__grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .fm-payout-detail-offset-band__cell {
+    @apply rounded-xl border border-slate-200/70 bg-white/90 px-4 py-3 shadow-sm;
+  }
+
+  .fm-payout-detail-offset-band__cell--positive {
+    @apply border-emerald-200/70 bg-emerald-50/40;
+  }
+
+  .fm-payout-detail-offset-band__cell--debt {
+    @apply border-rose-200/70 bg-rose-50/40;
+  }
+
+  .fm-payout-detail-offset-band__cell--offset {
+    @apply border-orange-200/60 bg-orange-50/30;
+  }
+
+  .fm-payout-detail-offset-band__cell--final {
+    @apply border-violet-300/60 bg-violet-50/50 ring-2 ring-violet-200/40;
+  }
+
+  .fm-payout-detail-offset-band__final {
+    @apply rounded-xl bg-white/80 px-3 py-2 ring-1 ring-violet-200/50 sm:col-span-2 lg:col-span-1;
+  }
+
+  .fm-payout-detail-not-payable-banner {
+    @apply mt-4 flex items-start gap-3 rounded-xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-900 ring-1 ring-rose-200/50;
+  }
+
+  .fm-payout-detail-pay-disabled {
+    @apply rounded-xl border border-rose-200/60 bg-rose-50/50 px-4 py-3 text-center text-sm font-medium text-rose-800/80;
+  }
+
+  .fm-payout-detail-earnings-details summary {
+    @apply list-none;
+  }
+
+  .fm-payout-detail-earnings-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fm-payout-detail-earnings-details summary::after {
+    content: "▾";
+    @apply float-right text-slate-400;
+  }
+
+  .fm-payout-detail-earnings-details[open] summary::after {
+    content: "▴";
   }
 
   .fm-payout-detail-platform-card__head {
@@ -491,12 +576,72 @@
     @apply rounded-2xl border-2 border-violet-200/70 bg-white p-4 shadow-sm sm:p-5;
   }
 
+  .fm-payout-detail-combined__head {
+    @apply mb-4 flex items-center gap-2;
+  }
+
   .fm-payout-detail-combined__title {
-    @apply mb-4 text-base font-bold text-violet-950;
+    @apply text-base font-bold text-violet-950;
   }
 
   .fm-payout-detail-combined__body {
-    @apply space-y-1 rounded-xl bg-slate-50/50 p-4 ring-1 ring-slate-200/60;
+    @apply space-y-1 rounded-xl bg-slate-50/50 p-3 ring-1 ring-slate-200/60 sm:p-4;
+  }
+
+  .fm-payout-detail-step {
+    @apply flex items-start justify-between gap-4 border-b border-slate-200/60 py-3 last:border-0;
+  }
+
+  .fm-payout-detail-step__num {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200/80 text-[11px] font-bold text-slate-600;
+  }
+
+  .fm-payout-detail-step__value {
+    @apply text-sm sm:text-base;
+  }
+
+  .fm-payout-detail-step--total {
+    @apply bg-violet-50/50 -mx-2 px-2 rounded-lg border-b-0;
+  }
+
+  .fm-payout-detail-step--deduct {
+    @apply bg-orange-50/30 -mx-2 px-2 rounded-lg border-b-0;
+  }
+
+  .fm-payout-detail-step--final {
+    @apply mt-2 bg-emerald-100/90 -mx-2 px-3 py-3.5 rounded-xl border-b-0 ring-1 ring-emerald-300/50;
+  }
+
+  .fm-payout-detail-step--final .fm-payout-detail-step__num {
+    @apply bg-emerald-200/80 text-emerald-900;
+  }
+
+  .fm-payout-detail-step--final .fm-payout-detail-step__value {
+    @apply text-lg font-bold text-emerald-950;
+  }
+
+  .fm-payout-detail-step--final-debt {
+    @apply mt-3 rounded-xl bg-rose-100/90 px-3 py-3 ring-1 ring-rose-300/50;
+  }
+
+  .fm-payout-detail-step--final-debt .fm-payout-detail-step__num {
+    @apply bg-rose-200/80 text-rose-900;
+  }
+
+  .fm-payout-detail-step--final-debt .fm-payout-detail-step__value {
+    @apply text-lg font-bold text-rose-950;
+  }
+
+  .fm-payout-detail-info-note {
+    @apply mt-4 rounded-xl bg-sky-50/80 px-3 py-3 ring-1 ring-sky-200/50;
+  }
+
+  .fm-payout-detail-info-note__title {
+    @apply text-xs font-semibold uppercase tracking-wider text-sky-900;
+  }
+
+  .fm-payout-detail-info-note__text {
+    @apply mt-1 text-xs leading-relaxed text-sky-950/80;
   }
 
   .fm-payout-detail-deduct-band {
@@ -517,6 +662,22 @@
 
   .fm-payout-detail-final-panel {
     @apply flex min-w-0 flex-col rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50/95 via-white to-teal-50/60 p-4 shadow-sm sm:p-5;
+  }
+
+  .fm-payout-detail-final-panel--debt {
+    @apply border-rose-200/70 from-rose-50/95 to-orange-50/50;
+  }
+
+  .fm-payout-detail-final-panel--debt .fm-payout-detail-final-panel__head {
+    @apply border-rose-200/40;
+  }
+
+  .fm-payout-detail-final-panel--debt .fm-payout-detail-final-panel__meta {
+    @apply border-rose-200/30;
+  }
+
+  .fm-payout-detail-final-panel--debt .fm-payout-detail-final-panel__amount {
+    @apply text-rose-950;
   }
 
   .fm-payout-detail-final-panel__head {

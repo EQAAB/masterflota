@@ -1,4 +1,9 @@
 import type { PoolClient } from "pg";
+import {
+  computeWeekDebtPool,
+  distributeWeekNetToLegs,
+  type WeekPlatformLeg,
+} from "./crossPlatformDebt";
 
 export function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
@@ -105,67 +110,98 @@ export function resolvePaymentStatusAfterDebtAllocation(params: {
   return "pending";
 }
 
-type CurrentPayoutRow = {
+
+type WeekPayoutRow = {
   id: string;
   driver_id: string;
+  platform: string;
   raw_net_amount: string | null;
   payment_status: string;
+  payment_period_start: string;
   payment_period_end: string;
   remaining_debt_amount: string | null;
 };
 
 /**
- * After `raw_net_amount` is set on a driver_payout, compute debt carry-forward from
- * older periods (same driver) and set net_driver_payout / debt fields on this row.
- * Also reduces `remaining_debt_amount` on prior debt rows when this period has positive raw net.
- *
- * Forgiven negative periods (`payment_status = hold` and `remaining_debt_amount = 0`) keep 0 remaining.
+ * Pool all platform legs for a driver-week, offset negative platforms against positive
+ * platforms, then apply older-period debt once on the combined net.
  */
-export async function applyDebtCarryForward(client: PoolClient, orgId: string, payoutId: string): Promise<void> {
-  const currentRes = await client.query<CurrentPayoutRow>(
-    `SELECT id::text, driver_id::text, raw_net_amount::text, payment_status, payment_period_end::text,
-            remaining_debt_amount::text
-     FROM driver_payouts
-     WHERE id = $1::uuid AND organization_id = $2::uuid
-     FOR UPDATE`,
-    [payoutId, orgId],
-  );
-  const current = currentRes.rows[0];
-  if (!current) return;
+export async function applyWeekDebtCarryForward(
+  client: PoolClient,
+  orgId: string,
+  driverId: string,
+  weekStart: string,
+  weekEnd: string,
+): Promise<void> {
+  const ps = weekStart.slice(0, 10);
+  const pe = weekEnd.slice(0, 10);
 
-  const outstandingDebtRes = await client.query<{
-    id: string;
-    remaining_debt_amount: string | null;
-  }>(
+  const weekRes = await client.query<WeekPayoutRow>(
+    `SELECT id::text, driver_id::text, platform, raw_net_amount::text, payment_status,
+            payment_period_start::text, payment_period_end::text, remaining_debt_amount::text
+     FROM driver_payouts
+     WHERE organization_id = $1::uuid
+       AND driver_id = $2::uuid
+       AND payment_period_start = $3::date
+       AND payment_period_end = $4::date
+     ORDER BY platform, id
+     FOR UPDATE`,
+    [orgId, driverId, ps, pe],
+  );
+  const weekRows = weekRes.rows;
+  if (!weekRows.length) return;
+
+  const weekIds = weekRows.map((r) => r.id);
+  const legs: WeekPlatformLeg[] = weekRows.map((r) => ({
+    payoutId: r.id,
+    platform: r.platform,
+    rawNet: roundMoney(Number(r.raw_net_amount ?? "0")),
+    existingRemainingDebt: roundMoney(Number(r.remaining_debt_amount ?? "0")),
+    currentPaymentStatus: r.payment_status,
+  }));
+
+  const pool = computeWeekDebtPool(legs);
+  const anchor = legs.reduce((a, b) => {
+    if (a.rawNet < -0.02 && b.rawNet < -0.02) return a.rawNet < b.rawNet ? a : b;
+    if (a.rawNet < -0.02) return a;
+    if (b.rawNet < -0.02) return b;
+    return a.rawNet >= b.rawNet ? a : b;
+  });
+
+  const outstandingDebtRes = await client.query<{ id: string; remaining_debt_amount: string | null }>(
     `SELECT id::text, remaining_debt_amount::text
      FROM driver_payouts
      WHERE organization_id = $1::uuid
        AND driver_id = $2::uuid
-       AND id <> $3::uuid
+       AND id <> ALL($3::uuid[])
        AND COALESCE(remaining_debt_amount, 0) > 0
        AND payment_period_end <= $4::date
      ORDER BY payment_period_end ASC, id ASC
      FOR UPDATE`,
-    [orgId, current.driver_id, current.id, current.payment_period_end],
+    [orgId, driverId, weekIds, pe],
   );
 
-  const rawNet = roundMoney(Number(current.raw_net_amount ?? "0"));
-  let debtApplied = 0;
-  let debtAmount = 0;
+  let weekFinalNet = 0;
+  let debtAppliedToOlder = 0;
+  let newWeekDebtAmount = 0;
   let remainingDebtAmount = 0;
-  let payable = 0;
+  let weekPaymentStatus = "pending";
 
-  if (rawNet < 0) {
-    debtAmount = roundMoney(Math.abs(rawNet));
-    const existingRem = roundMoney(Number(current.remaining_debt_amount ?? "0"));
+  if (pool.weekRawNet < -0.02) {
+    newWeekDebtAmount = roundMoney(Math.abs(pool.weekRawNet));
     remainingDebtAmount = nextRemainingForNegativePayoutRow({
-      debtAmount,
-      existingRem,
-      paymentStatus: current.payment_status,
+      debtAmount: newWeekDebtAmount,
+      existingRem: anchor.existingRemainingDebt,
+      paymentStatus: anchor.currentPaymentStatus,
     });
-    payable = rawNet;
+    weekFinalNet = pool.weekRawNet;
+    weekPaymentStatus = resolvePaymentStatusAfterDebtAllocation({
+      rawNet: pool.weekRawNet,
+      remainingDebtAmount,
+      currentPaymentStatus: anchor.currentPaymentStatus,
+    });
   } else {
-    let available = rawNet;
+    let available = pool.weekRawNet;
     for (const debt of outstandingDebtRes.rows) {
       if (available <= 0) break;
       const outstanding = roundMoney(Number(debt.remaining_debt_amount ?? "0"));
@@ -179,54 +215,100 @@ export async function applyDebtCarryForward(client: PoolClient, orgId: string, p
          WHERE id = $3::uuid AND organization_id = $4::uuid`,
         [nextRemaining, applied, debt.id, orgId],
       );
-      debtApplied = roundMoney(debtApplied + applied);
+      debtAppliedToOlder = roundMoney(debtAppliedToOlder + applied);
       available = roundMoney(available - applied);
     }
-    payable = roundMoney(Math.max(0, available));
+    weekFinalNet = roundMoney(Math.max(0, available));
+    weekPaymentStatus = resolvePaymentStatusAfterDebtAllocation({
+      rawNet: pool.weekRawNet,
+      remainingDebtAmount: 0,
+      currentPaymentStatus: anchor.currentPaymentStatus,
+    });
   }
 
-  const nextStatus = resolvePaymentStatusAfterDebtAllocation({
-    rawNet,
+  const allocation = distributeWeekNetToLegs(legs, pool, {
+    weekFinalNet,
+    debtAppliedToOlder,
+    newWeekDebtAmount,
     remainingDebtAmount,
-    currentPaymentStatus: current.payment_status,
+    weekPaymentStatus,
   });
 
-  const holdReasonSql =
-    nextStatus === "hold"
-      ? `, hold_reason = COALESCE(hold_reason, 'system_debt_forgiven')`
-      : "";
+  for (const leg of legs) {
+    const row = allocation.get(leg.payoutId);
+    if (!row) continue;
+    const holdReasonSql =
+      row.payment_status === "hold" ? `, hold_reason = COALESCE(hold_reason, 'system_debt_forgiven')` : "";
+    await client.query(
+      `UPDATE driver_payouts
+       SET net_driver_payout = $1,
+           debt_amount = $2,
+           debt_applied_amount = $3,
+           remaining_debt_amount = $4,
+           payment_status = $5,
+           cross_platform_debt_offset = $6,
+           week_debt_platforms = $7::text[]${holdReasonSql}
+       WHERE id = $8::uuid AND organization_id = $9::uuid`,
+      [
+        row.net_driver_payout,
+        row.debt_amount,
+        row.debt_applied_amount,
+        row.remaining_debt_amount,
+        row.payment_status,
+        pool.crossPlatformDebtOffset,
+        pool.debtPlatforms,
+        leg.payoutId,
+        orgId,
+      ],
+    );
+  }
+}
 
-  await client.query(
-    `UPDATE driver_payouts
-     SET net_driver_payout = $1,
-         debt_amount = $2,
-         debt_applied_amount = $3,
-         remaining_debt_amount = $4,
-         payment_status = $5${holdReasonSql}
-     WHERE id = $6::uuid AND organization_id = $7::uuid`,
-    [payable, debtAmount, debtApplied, remainingDebtAmount, nextStatus, payoutId, orgId],
+/**
+ * After `raw_net_amount` is set on a driver_payout, recompute debt for the full driver-week.
+ */
+export async function applyDebtCarryForward(client: PoolClient, orgId: string, payoutId: string): Promise<void> {
+  const currentRes = await client.query<{
+    driver_id: string;
+    payment_period_start: string;
+    payment_period_end: string;
+  }>(
+    `SELECT driver_id::text, payment_period_start::text, payment_period_end::text
+     FROM driver_payouts
+     WHERE id = $1::uuid AND organization_id = $2::uuid`,
+    [payoutId, orgId],
+  );
+  const current = currentRes.rows[0];
+  if (!current) return;
+  await applyWeekDebtCarryForward(
+    client,
+    orgId,
+    current.driver_id,
+    current.payment_period_start,
+    current.payment_period_end,
   );
 }
 
 /**
- * Re-apply carry-forward for payouts strictly after the edited row (same driver).
+ * Re-apply carry-forward for weeks on or after the edited payout (same driver).
  */
 export async function propagateDebtAfterManualEdit(
   client: PoolClient,
   orgId: string,
   driverId: string,
   pivotPeriodEnd: string,
-  pivotPayoutId: string,
+  _pivotPayoutId: string,
 ): Promise<void> {
-  const res = await client.query<{ id: string }>(
-    `SELECT id::text FROM driver_payouts
+  const weeksRes = await client.query<{ payment_period_start: string; payment_period_end: string }>(
+    `SELECT DISTINCT payment_period_start::text, payment_period_end::text
+     FROM driver_payouts
      WHERE organization_id = $1::uuid AND driver_id = $2::uuid
-       AND (payment_period_end > $3::date OR (payment_period_end = $3::date AND id > $4::uuid))
-     ORDER BY payment_period_end ASC, id ASC`,
-    [orgId, driverId, pivotPeriodEnd, pivotPayoutId],
+       AND payment_period_end >= $3::date
+     ORDER BY payment_period_start, payment_period_end`,
+    [orgId, driverId, pivotPeriodEnd],
   );
-  for (const row of res.rows) {
-    await applyDebtCarryForward(client, orgId, row.id);
+  for (const w of weeksRes.rows) {
+    await applyWeekDebtCarryForward(client, orgId, driverId, w.payment_period_start, w.payment_period_end);
   }
 }
 
@@ -266,6 +348,8 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
          ELSE 0
        END,
        net_driver_payout = raw_net_amount,
+       cross_platform_debt_offset = 0,
+       week_debt_platforms = '{}',
        payment_status = CASE
          WHEN COALESCE(raw_net_amount, 0) < 0
               AND payment_status = 'hold'
@@ -297,7 +381,7 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
     );
   }
 
-  for (const id of ids) {
-    await applyDebtCarryForward(client, orgId, id);
+  for (const w of weeksRes.rows) {
+    await applyWeekDebtCarryForward(client, orgId, driverId, w.payment_period_start, w.payment_period_end);
   }
 }

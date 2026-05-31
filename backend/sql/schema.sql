@@ -266,6 +266,8 @@ CREATE TABLE IF NOT EXISTS driver_payouts (
     debt_amount DECIMAL(12, 2) DEFAULT 0,
     debt_applied_amount DECIMAL(12, 2) DEFAULT 0,
     remaining_debt_amount DECIMAL(12, 2) DEFAULT 0,
+    cross_platform_debt_offset NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    week_debt_platforms TEXT[] NOT NULL DEFAULT '{}',
     net_driver_payout DECIMAL(10, 2),
     vehicle_rental_fee DECIMAL(12, 2) DEFAULT 0,
     payment_status VARCHAR(50) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'processing', 'approved', 'paid', 'failed', 'hold', 'debt')),
@@ -342,6 +344,8 @@ CREATE TABLE IF NOT EXISTS driver_payments (
     payment_period_start DATE NOT NULL,
     payment_period_end DATE NOT NULL,
     total_amount NUMERIC(12, 2) NOT NULL,
+    total_debt_offset NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    debt_platforms TEXT[] NOT NULL DEFAULT '{}',
     platforms TEXT[] NOT NULL DEFAULT '{}',
     platform_payout_ids UUID[] NOT NULL DEFAULT '{}',
     payment_status VARCHAR(50) NOT NULL DEFAULT 'paid'

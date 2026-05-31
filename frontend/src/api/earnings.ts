@@ -249,6 +249,10 @@ export interface ConsolidatedDriverPayout {
   total_platform_fees?: string;
   /** Vehicle rent charged once for the driver week (max across legs). */
   total_vehicle_rent?: string;
+  /** Same-week negative platform raw net offset by positive platforms. */
+  total_debt_offset?: string;
+  /** Platforms with negative raw net in this week. */
+  debt_platforms?: string[];
   platforms: string[];
   platform_payout_ids: string[];
   platform_lines: ConsolidatedPlatformLine[];
