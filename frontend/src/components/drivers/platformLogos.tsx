@@ -74,8 +74,8 @@ export function PlatformBadge({ platform, compact }: { platform: PlatformBadgeKe
 
   if (compact) {
     return (
-      <span className="platform-table-badge">
-        <Logo className="platform-table-badge__logo !h-[22px] !w-[22px] !rounded-md" />
+      <span className={`platform-table-badge platform-table-badge--${platform}`}>
+        <Logo className="platform-table-badge__logo !h-5 !w-5 !rounded-md !shadow-none" />
         <span className="platform-table-badge__label">{label}</span>
       </span>
     );

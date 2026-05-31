@@ -3,6 +3,7 @@ import type { EarningsPlatform } from "./detectPlatform";
 import { isEarningsPlatform } from "./detectPlatform";
 import type { DriverMatchRow } from "./matchDriver";
 import { payoutPlatformFromEarnings } from "./payoutPlatform";
+import { applyWeeklyCustomFees } from "./driverPayoutCustomFees";
 import { recomputeDriverPayoutRollup } from "./recomputeDriverPayoutRollup";
 
 export class RevertEarningsImportError extends Error {
@@ -228,6 +229,8 @@ export async function revertEarningsImport(
     );
     driversRecalculated += 1;
   }
+
+  await applyWeeklyCustomFees(client, orgId, imp.week_start, imp.week_end);
 
   await client.query(`SELECT refresh_subcontractor_payouts($1::uuid, $2::date, $3::date)`, [
     orgId,

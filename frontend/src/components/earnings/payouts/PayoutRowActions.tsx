@@ -1,5 +1,5 @@
 import type { PayoutListItem } from "../../../api/earnings";
-import { actionMenuTrigger, btnPrimary, transitionDefault } from "../../../theme/classNames";
+import { actionMenuTrigger, transitionDefault } from "../../../theme/classNames";
 import { DotsVerticalIcon } from "../../theme/actionMenuIcons";
 import { payoutRowHasActionMenu } from "./buildPayoutActionMenuItems";
 
@@ -38,14 +38,14 @@ export function PayoutRowActions({
     >
       <input
         type="checkbox"
-        className="rounded border-border"
+        className="h-4 w-4 rounded border-border text-brand focus:ring-brand/30"
         checked={isSelected}
         onChange={onToggleSelection}
         disabled={!isPending || isPaying}
         aria-label={`Select payout for ${row.first_name}`}
       />
       {isPending && (
-        <button type="button" disabled={isPaying} onClick={onPayNow} className={btnPrimary}>
+        <button type="button" disabled={isPaying} onClick={onPayNow} className="fm-payout-pay-btn">
           {isPayingRow ? "Paying…" : "Pay now"}
         </button>
       )}

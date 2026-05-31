@@ -12,9 +12,7 @@
  * payouts in weeks that had recurring fee adjustments (or any open multi-platform week).
  */
 import { pool } from "../src/db/pool";
-import { recomputeDriverDebtAllocation } from "../src/modules/earnings/debtAllocation";
-import { applyCustomFeesToRawNet } from "../src/modules/earnings/driverPayoutCustomFees";
-import { syncRecurringFeesToDriverWeek } from "../src/modules/earnings/driverWeeklyFees";
+import { applyWeeklyCustomFees } from "../src/modules/earnings/driverPayoutCustomFees";
 
 async function countDuplicateRecurringAdjustments(client: Awaited<ReturnType<typeof pool.connect>>) {
   const { rows } = await client.query<{ count: string }>(
@@ -82,26 +80,19 @@ async function main() {
     let recomputedDrivers = 0;
     const seenDrivers = new Set<string>();
 
+    const weeks = new Map<string, { start: string; end: string }>();
     for (const row of affected) {
       const ps = row.payment_period_start.slice(0, 10);
       const pe = row.payment_period_end.slice(0, 10);
+      weeks.set(`${ps}|${pe}`, { start: ps, end: pe });
+    }
 
-      await syncRecurringFeesToDriverWeek(client, orgId, row.driver_id, ps, pe);
+    for (const { start, end } of weeks.values()) {
+      await applyWeeklyCustomFees(client, orgId, start, end);
+    }
 
-      const payouts = await client.query<{ id: string }>(
-        `SELECT id::text FROM driver_payouts
-         WHERE organization_id = $1::uuid AND driver_id = $2::uuid
-           AND payment_period_start = $3::date AND payment_period_end = $4::date
-         ORDER BY id`,
-        [orgId, row.driver_id, ps, pe],
-      );
-
-      for (const p of payouts.rows) {
-        await applyCustomFeesToRawNet(client, orgId, p.id);
-      }
-
+    for (const row of affected) {
       if (!seenDrivers.has(row.driver_id)) {
-        await recomputeDriverDebtAllocation(client, orgId, row.driver_id);
         seenDrivers.add(row.driver_id);
         recomputedDrivers += 1;
       }

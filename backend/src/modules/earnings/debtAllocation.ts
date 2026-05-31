@@ -279,9 +279,25 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
     [orgId, driverId],
   );
 
+  const weeksRes = await client.query<{ payment_period_start: string; payment_period_end: string }>(
+    `SELECT DISTINCT payment_period_start::text, payment_period_end::text
+     FROM driver_payouts
+     WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+     ORDER BY payment_period_start, payment_period_end`,
+    [orgId, driverId],
+  );
+  const { applyWeeklyCustomFeesToRawNet } = await import("./driverPayoutCustomFees");
+  for (const w of weeksRes.rows) {
+    await applyWeeklyCustomFeesToRawNet(
+      client,
+      orgId,
+      w.payment_period_start,
+      w.payment_period_end,
+      [driverId],
+    );
+  }
+
   for (const id of ids) {
-    const { applyCustomFeesToRawNet } = await import("./driverPayoutCustomFees");
-    await applyCustomFeesToRawNet(client, orgId, id);
     await applyDebtCarryForward(client, orgId, id);
   }
 }

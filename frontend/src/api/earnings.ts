@@ -227,6 +227,86 @@ export function importTotalRows(row: EarningsImportListItem): number {
   return row.total_rows ?? row.record_count ?? 0;
 }
 
+export interface ConsolidatedPlatformLine {
+  payout_id: string;
+  platform: string;
+  net_driver_payout: string;
+  raw_net_amount: string | null;
+  payment_status: string;
+}
+
+export interface ConsolidatedDriverPayout {
+  driver_id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  payment_period_start: string;
+  payment_period_end: string;
+  total_amount: string;
+  total_gross: string;
+  total_fees: string;
+  /** Sum of platform fees (Taxa) across linked platform payouts. */
+  total_platform_fees?: string;
+  /** Vehicle rent charged once for the driver week (max across legs). */
+  total_vehicle_rent?: string;
+  platforms: string[];
+  platform_payout_ids: string[];
+  platform_lines: ConsolidatedPlatformLine[];
+  consolidated_status: string;
+  can_pay: boolean;
+  driver_payment_id: string | null;
+  paid_at: string | null;
+}
+
+export interface ConsolidatedPayoutsResponse {
+  weekStart: string;
+  weekEnd: string;
+  items: ConsolidatedDriverPayout[];
+  summary: {
+    driver_count: number;
+    total_amount: string;
+    payable_count: number;
+    paid_count: number;
+    debt_count: number;
+  };
+}
+
+export function getConsolidatedPayouts(params: {
+  weekStart: string;
+  weekEnd: string;
+  q?: string;
+  status?: string;
+  driverId?: string;
+  platform?: string;
+}) {
+  return api.get<ConsolidatedPayoutsResponse>("/earnings/payouts/consolidated", { params });
+}
+
+export function postPayDriverConsolidated(body: {
+  driverId: string;
+  weekStart: string;
+  weekEnd: string;
+  paymentMethod?: string;
+  transactionRef?: string;
+}) {
+  return api.post<{
+    driverId: string;
+    totalAmount: number;
+    platforms: string[];
+    platformPayoutIds: string[];
+    driverPaymentId: string;
+    updatedPayoutRows: number;
+  }>("/earnings/payouts/pay-driver", body);
+}
+
+export function postPayAllConsolidated(body: { weekStart: string; weekEnd: string }) {
+  return api.post<{
+    driversPaid: number;
+    totalAmount: number;
+    skipped: number;
+  }>("/earnings/payouts/pay-all", body);
+}
+
 export function getEarningsPayouts(params: {
   page?: number;
   pageSize?: number;

@@ -54,8 +54,18 @@ export async function sumCustomFees(client: PoolClient, payoutId: string): Promi
   return sumManualCustomFees(client, payoutId);
 }
 
-/** Apply manual adjustments + weekly recurring (anchor payout only) to raw_net_amount before debt. */
-export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string, payoutId: string): Promise<number> {
+type ApplyPayoutFeesOptions = {
+  /** When true, caller already ran syncRecurringFeesToDriverWeek for this driver/week. */
+  skipWeeklySync?: boolean;
+};
+
+/** Apply manual + weekly recurring (anchor only) to one payout row. */
+export async function applyPayoutCustomFeesToRawNet(
+  client: PoolClient,
+  orgId: string,
+  payoutId: string,
+  options?: ApplyPayoutFeesOptions,
+): Promise<number> {
   const pr = await client.query<{
     driver_id: string;
     total_net_earnings: string | null;
@@ -80,7 +90,9 @@ export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string,
   const periodStart = row.payment_period_start.slice(0, 10);
   const periodEnd = row.payment_period_end.slice(0, 10);
 
-  await syncRecurringFeesToDriverWeek(client, orgId, row.driver_id, periodStart, periodEnd);
+  if (!options?.skipWeeklySync) {
+    await syncRecurringFeesToDriverWeek(client, orgId, row.driver_id, periodStart, periodEnd);
+  }
 
   const baseRaw = computeBaseRawNet({
     total_net_earnings: Number(row.total_net_earnings ?? "0"),
@@ -117,6 +129,103 @@ export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string,
   return adjustedRaw;
 }
 
+/** @deprecated Prefer applyPayoutCustomFeesToRawNet or applyWeeklyCustomFees. */
+export async function applyCustomFeesToRawNet(client: PoolClient, orgId: string, payoutId: string): Promise<number> {
+  return applyPayoutCustomFeesToRawNet(client, orgId, payoutId);
+}
+
+export type ApplyWeeklyCustomFeesResult = {
+  driversProcessed: number;
+  payoutRowsUpdated: number;
+};
+
+/**
+ * Materialize recurring fees per driver/week and apply to all platform payout rows.
+ * Weekly recurring deducts on anchor payout only (Glovo → Uber → Bolt Taxi → Bolt).
+ * Re-run for the full payment week after each import so former anchor rows are cleared.
+ */
+export async function applyWeeklyCustomFeesToRawNet(
+  client: PoolClient,
+  orgId: string,
+  periodStart: string,
+  periodEnd: string,
+  driverIds?: string[],
+): Promise<ApplyWeeklyCustomFeesResult> {
+  const ps = periodStart.slice(0, 10);
+  const pe = periodEnd.slice(0, 10);
+
+  const driverRes = await client.query<{ driver_id: string }>(
+    driverIds?.length
+      ? `SELECT DISTINCT driver_id::text
+         FROM driver_payouts
+         WHERE organization_id = $1::uuid
+           AND payment_period_start = $2::date
+           AND payment_period_end = $3::date
+           AND driver_id = ANY($4::uuid[])`
+      : `SELECT DISTINCT driver_id::text
+         FROM driver_payouts
+         WHERE organization_id = $1::uuid
+           AND payment_period_start = $2::date
+           AND payment_period_end = $3::date`,
+    driverIds?.length ? [orgId, ps, pe, driverIds] : [orgId, ps, pe],
+  );
+
+  let payoutRowsUpdated = 0;
+  for (const { driver_id: driverId } of driverRes.rows) {
+    await syncRecurringFeesToDriverWeek(client, orgId, driverId, ps, pe);
+
+    const payouts = await client.query<{ id: string }>(
+      `SELECT id::text FROM driver_payouts
+       WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+         AND payment_period_start = $3::date AND payment_period_end = $4::date
+       ORDER BY id`,
+      [orgId, driverId, ps, pe],
+    );
+
+    for (const { id } of payouts.rows) {
+      await applyPayoutCustomFeesToRawNet(client, orgId, id, { skipWeeklySync: true });
+      payoutRowsUpdated += 1;
+    }
+  }
+
+  return { driversProcessed: driverRes.rows.length, payoutRowsUpdated };
+}
+
+/** Apply weekly custom fees for a payment week, then recompute debt carry-forward per driver. */
+export async function applyWeeklyCustomFees(
+  client: PoolClient,
+  orgId: string,
+  periodStart: string,
+  periodEnd: string,
+  driverIds?: string[],
+): Promise<ApplyWeeklyCustomFeesResult> {
+  const result = await applyWeeklyCustomFeesToRawNet(client, orgId, periodStart, periodEnd, driverIds);
+
+  const ps = periodStart.slice(0, 10);
+  const pe = periodEnd.slice(0, 10);
+  const driverRes = await client.query<{ driver_id: string }>(
+    driverIds?.length
+      ? `SELECT DISTINCT driver_id::text
+         FROM driver_payouts
+         WHERE organization_id = $1::uuid
+           AND payment_period_start = $2::date
+           AND payment_period_end = $3::date
+           AND driver_id = ANY($4::uuid[])`
+      : `SELECT DISTINCT driver_id::text
+         FROM driver_payouts
+         WHERE organization_id = $1::uuid
+           AND payment_period_start = $2::date
+           AND payment_period_end = $3::date`,
+    driverIds?.length ? [orgId, ps, pe, driverIds] : [orgId, ps, pe],
+  );
+
+  for (const { driver_id: driverId } of driverRes.rows) {
+    await recomputeDriverDebtAllocation(client, orgId, driverId);
+  }
+
+  return result;
+}
+
 /** Re-sync weekly recurring + custom raw net on all open payouts for a driver, then debt allocation. */
 export async function recomputeDriverOpenPayoutsAfterRecurringChange(
   client: PoolClient,
@@ -136,19 +245,14 @@ export async function recomputeDriverOpenPayoutsAfterRecurringChange(
     [orgId, driverId],
   );
 
-  const syncedWeeks = new Set<string>();
+  const weeks = new Map<string, { start: string; end: string }>();
   for (const p of rows) {
     const ps = p.payment_period_start.slice(0, 10);
     const pe = p.payment_period_end.slice(0, 10);
-    const weekKey = `${ps}|${pe}`;
-    if (!syncedWeeks.has(weekKey)) {
-      await syncRecurringFeesToDriverWeek(client, orgId, driverId, ps, pe);
-      syncedWeeks.add(weekKey);
-    }
-    await applyCustomFeesToRawNet(client, orgId, p.id);
+    weeks.set(`${ps}|${pe}`, { start: ps, end: pe });
   }
-  if (rows.length > 0) {
-    await recomputeDriverDebtAllocation(client, orgId, driverId);
+  for (const { start, end } of weeks.values()) {
+    await applyWeeklyCustomFees(client, orgId, start, end, [driverId]);
   }
 }
 
@@ -165,8 +269,15 @@ export async function recomputeDriverPayoutAfterCustomFees(
   const driverId = dr.rows[0]?.driver_id;
   if (!driverId) return;
 
-  await applyCustomFeesToRawNet(client, orgId, payoutId);
-  await recomputeDriverDebtAllocation(client, orgId, driverId);
+  const pr = await client.query<{ payment_period_start: string; payment_period_end: string }>(
+    `SELECT payment_period_start::text, payment_period_end::text
+     FROM driver_payouts WHERE id = $1::uuid AND organization_id = $2::uuid`,
+    [payoutId, orgId],
+  );
+  const period = pr.rows[0];
+  if (!period) return;
+
+  await applyWeeklyCustomFees(client, orgId, period.payment_period_start, period.payment_period_end, [driverId]);
 }
 
 export type CustomFeeSource = "manual" | "recurring";

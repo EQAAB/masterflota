@@ -10,7 +10,6 @@ import {
   btnSecondary,
   card,
   tableCell,
-  tableHeader,
   tableRow,
   tableRowAlert,
   tableRowExpandable,
@@ -23,6 +22,7 @@ import { PayoutExpandedDetails } from "./payouts/PayoutExpandedDetails";
 import { PayoutPeriodCell } from "./payouts/PayoutPeriodCell";
 import { buildPayoutActionMenuItems } from "./payouts/buildPayoutActionMenuItems";
 import { PayoutRowActions } from "./payouts/PayoutRowActions";
+import { PayoutPageKpiCards } from "./payouts/PayoutPageKpiCards";
 import { PayoutStatusBadge } from "./payouts/PayoutStatusBadge";
 import { PayoutTableSkeleton } from "./payouts/PayoutTableSkeleton";
 import { PayoutTableToolbar } from "./payouts/PayoutTableToolbar";
@@ -258,6 +258,15 @@ export function DriverPayoutTable({
 
   return (
     <div className="space-y-4">
+      <PayoutPageKpiCards
+        showingLabel="Showing"
+        showingValue={`${isFilterPending ? "…" : filteredCount.toLocaleString()} of ${totalCount.toLocaleString()}`}
+        showingSubtitle="Rows on this page"
+        pendingTotal={pendingTotal}
+        paidCount={paidCount}
+        loading={isLoading}
+      />
+
       <PayoutTableToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -270,12 +279,10 @@ export function DriverPayoutTable({
         totalCount={totalCount}
         debouncedQuery={debouncedQuery}
         platformIdMatchCount={platformIdMatchCount}
-        pendingTotal={pendingTotal}
-        paidCount={paidCount}
       />
 
       {selectedPendingIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-card border border-brand-mint bg-brand-mint px-4 py-3 shadow-soft">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-brand/20 bg-brand-mint/60 px-4 py-3 shadow-sm">
           <span className="text-sm font-medium text-ink">
             {selectedPendingIds.length} pending selected
           </span>
@@ -325,11 +332,9 @@ export function DriverPayoutTable({
         </div>
       ) : (
         <>
-          <div
-            className={`hidden md:block ${card} overflow-hidden p-0`}
-          >
-            <div className="overflow-x-auto [scrollbar-gutter:stable] shadow-[inset_-8px_0_8px_-8px_rgba(0,0,0,0.08)]">
-              <table className="min-w-[980px] w-full table-fixed text-sm text-left">
+          <div className="hidden md:block fm-card overflow-hidden p-0">
+            <div className="overflow-x-auto [scrollbar-gutter:stable]">
+              <table className="fm-payout-table min-w-[980px] w-full table-fixed text-sm text-left">
                 <colgroup>
                   <col className="w-[24%]" />
                   <col className="w-[14%]" />
@@ -340,16 +345,16 @@ export function DriverPayoutTable({
                   <col className="w-[10%]" />
                   <col className="w-[18%]" />
                 </colgroup>
-                <thead className={tableHeader}>
+                <thead>
                   <tr>
-                    <th className={tableCell}>Driver</th>
-                    <th className={tableCell}>Period</th>
-                    <th className={`${tableCell} text-right`}>Gross</th>
-                    <th className={`${tableCell} text-right`}>Fleet / Sub</th>
-                    <th className={`${tableCell} text-right`}>Net payout</th>
-                    <th className={tableCell}>Status</th>
-                    <th className={tableCell}>Vehicle</th>
-                    <th className={`${tableCell} text-right`}>Actions</th>
+                    <th className={`${tableCell} !py-3`}>Driver</th>
+                    <th className={`${tableCell} !py-3`}>Period</th>
+                    <th className={`${tableCell} !py-3 text-right`}>Gross</th>
+                    <th className={`${tableCell} !py-3 text-right`}>Fleet / Sub</th>
+                    <th className={`${tableCell} !py-3 text-right`}>Net payout</th>
+                    <th className={`${tableCell} !py-3`}>Status</th>
+                    <th className={`${tableCell} !py-3`}>Vehicle</th>
+                    <th className={`${tableCell} !py-3 text-right`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -374,11 +379,11 @@ export function DriverPayoutTable({
                               toggleExpand(row.id);
                             }
                           }}
-                          className={`align-top text-ink border-b border-border ${tableRowExpandable} ${
+                          className={`fm-payout-row align-top text-ink border-b border-border/80 ${tableRowExpandable} ${
                             flags.isDebtStyle ? debtRowClass : `${normalRowClass} ${stripeClass}`
                           } ${isExpanded && !flags.isDebtStyle ? tableRowExpandedAccent : ""}`}
                         >
-                          <td className={`${tableCell} min-w-0`}>
+                          <td className={`${tableCell} min-w-0 !py-3.5`}>
                             <div className="font-medium text-ink truncate">
                               <HighlightText
                                 text={`${row.first_name} ${row.last_name}`}
@@ -414,20 +419,20 @@ export function DriverPayoutTable({
                               </span>
                             </div>
                           </td>
-                          <td className={tableCell}>
+                          <td className={`${tableCell} !py-3.5`}>
                             <PayoutPeriodCell row={row} query={debouncedQuery} />
                           </td>
-                          <td className={`${tableCell} text-right tabular-nums text-ink whitespace-nowrap`}>
+                          <td className={`${tableCell} !py-3.5 text-right tabular-nums text-ink whitespace-nowrap`}>
                             {formatCurrency(toNum(row.total_gross_earnings))}
                           </td>
                           <td
-                            className={`${tableCell} text-right tabular-nums text-ink whitespace-nowrap`}
+                            className={`${tableCell} !py-3.5 text-right tabular-nums text-ink whitespace-nowrap`}
                             title={payoutCommissionTitle(row)}
                           >
                             {formatCurrency(toNum(row.company_commission))}
                           </td>
                           <td
-                            className={`${tableCell} text-right whitespace-nowrap`}
+                            className={`${tableCell} !py-3.5 text-right whitespace-nowrap`}
                             title={payoutGlovoBreakdownTitle(row)}
                           >
                             <div className="text-base font-semibold tabular-nums text-ink">
@@ -447,10 +452,10 @@ export function DriverPayoutTable({
                               </div>
                             )}
                           </td>
-                          <td className={tableCell}>
+                          <td className={`${tableCell} !py-3.5`}>
                             <PayoutStatusBadge status={row.payment_status} highlightQuery={debouncedQuery} />
                           </td>
-                          <td className={tableCell}>
+                          <td className={`${tableCell} !py-3.5`}>
                             <span
                               className="inline-flex rounded-full bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 tabular-nums"
                               title={vehicleRentDetailTitle(row)}
@@ -470,7 +475,7 @@ export function DriverPayoutTable({
                               </span>
                             )}
                           </td>
-                          <td className={tableCell} onClick={(e) => e.stopPropagation()}>
+                          <td className={`${tableCell} !py-3.5`} onClick={(e) => e.stopPropagation()}>
                             <PayoutRowActions
                               row={row}
                               isPending={flags.isPending}

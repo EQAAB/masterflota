@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from "react";
 import type { PayoutListItem, PayoutAssignmentDetail } from "../../../api/earnings";
+import { PlatformBadge, type PlatformBadgeKey } from "../../drivers/platformLogos";
 import { btnGhost } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
 import { commissionBaseTypeLabel } from "../../../utils/commissionBaseLabels";
@@ -26,7 +27,7 @@ type PayoutExpandedDetailsProps = {
   onOpenReleaseHold?: () => void;
 };
 
-function Section({
+function PanelSection({
   title,
   children,
   className = "",
@@ -36,10 +37,40 @@ function Section({
   className?: string;
 }) {
   return (
-    <section className={`rounded-lg border border-border/60 bg-white/80 p-3 ${className}`}>
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{title}</h4>
-      <div className="mt-2 space-y-1 text-xs text-ink">{children}</div>
+    <section className={`fm-payout-panel-section h-full ${className}`}>
+      <h4 className="fm-payout-panel-title mb-2.5">{title}</h4>
+      {children}
     </section>
+  );
+}
+
+function MetricRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-0.5 text-sm">
+      <span className="text-ink-muted shrink-0">{label}</span>
+      <span className={`tabular-nums text-right ${strong ? "font-semibold text-ink" : "font-medium text-ink"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function platformBadgeKey(platform: string | null | undefined): PlatformBadgeKey | null {
+  const p = (platform ?? "").toLowerCase();
+  if (p === "bolt" || p === "bolt_taxi" || p === "glovo" || p === "uber" || p === "wolt") return p;
+  return null;
+}
+
+function BanknotesIcon() {
+  return (
+    <svg className="h-5 w-5 text-emerald-600/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+      />
+    </svg>
   );
 }
 
@@ -63,119 +94,186 @@ export const PayoutExpandedDetails = memo(function PayoutExpandedDetails({
   const showEffectiveRate = b > 0.001 && nominal > 0 && Math.abs(c - nominal) > 0.02;
   const hasQuickActions = canCustomFees || canDebtActions || canReleaseHold;
   const driverName = `${row.first_name} ${row.last_name}`;
+  const netPayout = toNum(row.net_driver_payout);
+  const isDebtPayout = netPayout < 0 || row.payment_status === "debt";
+  const remainingDebt = toNum(row.remaining_debt_amount);
+  const badgeKey = platformBadgeKey(row.earnings_platform);
 
   return (
-    <div className="space-y-4 text-xs text-ink">
-      <div className={`grid grid-cols-1 gap-3 ${compact ? "" : "md:grid-cols-2 xl:grid-cols-3"}`}>
-        <Section title="Driver">
-          <p className="font-medium text-sm text-ink">
+    <div className="space-y-3 text-ink">
+      <div className={`grid grid-cols-1 gap-3 ${compact ? "" : "lg:grid-cols-12"}`}>
+        {/* 1. Driver */}
+        <PanelSection title="Driver" className={compact ? "" : "lg:col-span-3"}>
+          <p className="text-base font-semibold text-ink">
             <HighlightText text={driverName} query={debouncedQuery} />
           </p>
-          <p>
-            Phone:{" "}
-            <HighlightText text={row.phone || "—"} query={debouncedQuery} />
+          <p className="mt-1.5 text-xs text-ink-muted">
+            <HighlightText text={row.phone || "No phone"} query={debouncedQuery} />
           </p>
-          <p>
-            Platform:{" "}
-            <span className="font-medium">
-              <HighlightText text={earningsPlatformLabel(row.earnings_platform)} query={debouncedQuery} />
-            </span>
-          </p>
-          <p>
-            Account ID:{" "}
-            <span className="font-mono">
-              <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
-            </span>
-          </p>
-        </Section>
-
-        <Section title="Earnings breakdown" className={compact ? "md:col-span-2" : "md:col-span-2 xl:col-span-2"}>
-          <p>Base income: {formatCurrency(toNum(row.income))}</p>
-          <p>Tips: {formatCurrency(toNum(row.tips))}</p>
-          {!compact && <p>Gross (Income + Tips): {formatCurrency(toNum(row.total_gross_earnings))}</p>}
-          {compact ? (
-            <p>Gross: {formatCurrency(toNum(row.total_gross_earnings))}</p>
-          ) : (
-            <p>Platform fees (Taxa): {formatCurrency(toNum(row.total_platform_fees))}</p>
-          )}
-          {compact && <p>Platform fees: {formatCurrency(toNum(row.total_platform_fees))}</p>}
-          <p>Net income: {formatCurrency(toNum(row.net_income))}</p>
-          <div className="mt-2 rounded-lg border border-violet-200/80 bg-violet-50/80 px-3 py-2 text-[11px] text-violet-950">
-            <p className="font-semibold text-violet-900">Commission</p>
-            <p className="mt-1">
-              Base: {formatCurrency(b)}{" "}
-              <span className="text-violet-700">({commissionBaseTypeLabel(row.commission_base_type)})</span>
-            </p>
-            <p>Rate{compact ? "" : " (driver)"}: {formatRatePctFromFraction(r)}</p>
-            <p className="font-semibold">Charged: {formatCurrency(c)}</p>
-            {showEffectiveRate && (
-              <p className="mt-1 text-violet-800">
-                Effective rate on base: {`${((c / b) * 100).toFixed(2).replace(/\.?0+$/, "")}%`} (fixed / hybrid /
-                minimum)
-              </p>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {badgeKey ? (
+              <PlatformBadge platform={badgeKey} compact />
+            ) : (
+              <span className="text-xs font-medium text-ink">
+                {earningsPlatformLabel(row.earnings_platform)}
+              </span>
             )}
           </div>
-          <p className="mt-2">
-            {boltPayoutCashDeductionLabel(row)}: {formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
+          <p className="mt-2 font-mono text-[11px] text-ink-muted">
+            ID: <HighlightText text={row.platform_id || "—"} query={debouncedQuery} />
           </p>
-          <p>Account opening fee (deduction): {formatCurrency(Math.abs(toNum(row.account_opening_fee)))}</p>
-          <p>Raw net: {formatCurrency(toNum(row.raw_net_amount))}</p>
-          <p className="font-semibold text-ink">
-            Net payout: {formatCurrency(toNum(row.net_driver_payout))}
-          </p>
-        </Section>
+        </PanelSection>
 
-        <Section title="Debt">
-          <p>Debt applied: {formatCurrency(toNum(row.debt_applied_amount))}</p>
-          <p className="font-semibold text-red-700">
-            Remaining debt: {formatCurrency(toNum(row.remaining_debt_amount))}
-          </p>
-          <p>Status: {row.payment_status}</p>
-          <p>Paid on: {row.payment_date?.slice(0, 10) ?? "—"}</p>
-        </Section>
+        {/* 2. Platform breakdown */}
+        <PanelSection
+          title="Platform breakdown"
+          className={compact ? "md:col-span-2" : "lg:col-span-5"}
+        >
+          <div className="space-y-0.5">
+            <MetricRow label="Base income" value={formatCurrency(toNum(row.income))} />
+            <MetricRow label="Tips" value={formatCurrency(toNum(row.tips))} />
+            <MetricRow label="Gross (income + tips)" value={formatCurrency(toNum(row.total_gross_earnings))} />
+            {!compact && (
+              <MetricRow label="Platform fees (Taxa)" value={formatCurrency(toNum(row.total_platform_fees))} />
+            )}
+            <MetricRow label="Net income" value={formatCurrency(toNum(row.net_income))} strong />
+          </div>
+        </PanelSection>
 
-        <Section title="Vehicle">
-          <p>Assigned: {detail?.has_vehicle_assigned ? "Yes" : "No"}</p>
-          <p>Plate: {detail?.license_plate ?? "—"}</p>
-          <p>
-            Weekly rent: {detail?.weekly_rent ? formatCurrency(toNum(detail.weekly_rent)) : "—"}
-          </p>
-          <p className="text-amber-800">Vehicle rental: {formatCurrency(toNum(row.vehicle_rental_fee))}</p>
+        {/* 3. Unified tax & commission */}
+        <div className={compact ? "" : "lg:col-span-4"}>
+          <div className="fm-payout-tax-card h-full">
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-violet-800/90">
+              Unified tax & commission
+            </h4>
+            <div className="mt-3 space-y-1 text-sm text-violet-950">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-violet-700/90">Base</span>
+                <span className="font-semibold tabular-nums">{formatCurrency(b)}</span>
+                <span className="text-[11px] text-violet-600">
+                  ({commissionBaseTypeLabel(row.commission_base_type)})
+                </span>
+              </div>
+              <p>
+                Rate: <span className="font-semibold tabular-nums">{formatRatePctFromFraction(r)}</span>
+              </p>
+              <div className="mt-2 rounded-lg bg-white/70 px-2.5 py-2 ring-1 ring-violet-200/50">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-violet-700">Charged</p>
+                <p className="text-lg font-bold tabular-nums text-violet-950">{formatCurrency(c)}</p>
+              </div>
+              {showEffectiveRate && (
+                <p className="text-[11px] text-violet-800">
+                  Effective on base: {`${((c / b) * 100).toFixed(2).replace(/\.?0+$/, "")}%`}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Deductions & final payout */}
+        <div className={`grid grid-cols-1 gap-3 ${compact ? "" : "lg:col-span-8 lg:grid-cols-2"}`}>
+          <PanelSection title="Deductions">
+            <div className="space-y-0.5">
+              <MetricRow
+                label={boltPayoutCashDeductionLabel(row)}
+                value={formatCurrency(Math.abs(toNum(row.total_daily_cash)))}
+              />
+              <MetricRow
+                label="Account opening fee"
+                value={formatCurrency(Math.abs(toNum(row.account_opening_fee)))}
+              />
+              <MetricRow label="Debt applied" value={formatCurrency(toNum(row.debt_applied_amount))} />
+              <MetricRow label="Vehicle rental" value={formatCurrency(toNum(row.vehicle_rental_fee))} />
+              <MetricRow label="Raw net" value={formatCurrency(toNum(row.raw_net_amount))} />
+            </div>
+          </PanelSection>
+
+          <div
+            className={`fm-payout-final-card flex flex-col justify-between min-h-[140px] ${
+              isDebtPayout ? "fm-payout-final-card--debt" : ""
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800/90">
+                  Final payout
+                </p>
+                <p className="mt-1 text-3xl font-bold tabular-nums leading-none sm:text-[2rem]">
+                  {formatCurrency(netPayout)}
+                </p>
+                <p className="mt-1.5 text-[11px] capitalize text-ink-muted">
+                  Status: {row.payment_status}
+                  {row.payment_date ? ` · Paid ${row.payment_date.slice(0, 10)}` : ""}
+                </p>
+              </div>
+              <span className="fm-payout-final-icon" aria-hidden>
+                <BanknotesIcon />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Vehicle & debt overview */}
+        <PanelSection title="Vehicle & debt overview" className={compact ? "" : "lg:col-span-4"}>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-muted">Vehicle</p>
+              <p className="mt-0.5 font-medium">{detail?.has_vehicle_assigned ? "Assigned" : "None"}</p>
+              <p className="text-xs text-ink-muted">{detail?.license_plate ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-muted">Weekly rent</p>
+              <p className="mt-0.5 font-medium tabular-nums">
+                {detail?.weekly_rent ? formatCurrency(toNum(detail.weekly_rent)) : "—"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${
+                remainingDebt > 0 || isDebtPayout
+                  ? "bg-rose-50 text-rose-800 ring-rose-200/80"
+                  : "bg-emerald-50 text-emerald-800 ring-emerald-200/80"
+              }`}
+            >
+              {remainingDebt > 0
+                ? `Debt ${formatCurrency(remainingDebt)}`
+                : isDebtPayout
+                  ? "Debt period"
+                  : "No open debt"}
+            </span>
+          </div>
           {rentEntries.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-amber-900/90">
+            <ul className="mt-2 space-y-1 border-t border-border/50 pt-2 text-xs">
               {rentEntries.map((e) => (
-                <li key={e.id}>
-                  {rentEntryTypeLabel(e.entry_type)}: {formatCurrency(Number(e.amount) || 0)}
-                  {e.description ? <span className="text-ink-muted"> — {e.description}</span> : null}
+                <li key={e.id} className="flex justify-between gap-2">
+                  <span className="text-ink-muted">{rentEntryTypeLabel(e.entry_type)}</span>
+                  <span className="font-medium tabular-nums text-amber-900">
+                    {formatCurrency(Number(e.amount) || 0)}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-        </Section>
+          {(row.hold_reason || row.hold_notes) && (
+            <div className="mt-2 rounded-lg bg-amber-50/80 px-2 py-1.5 text-[11px] text-amber-900">
+              {row.hold_reason && <p>Hold: {row.hold_reason}</p>}
+              {row.hold_notes && <p className="mt-0.5">{row.hold_notes}</p>}
+            </div>
+          )}
+        </PanelSection>
 
-        {(row.hold_reason || row.hold_notes || row.hold_released_at) && (
-          <Section title="Notes / hold">
-            {row.hold_reason && <p>Hold reason: {row.hold_reason}</p>}
-            {row.hold_released_at && (
-              <p>
-                Released: {row.hold_released_at.slice(0, 10)}
-                {row.hold_released_by_name ? ` by ${row.hold_released_by_name}` : ""}
-              </p>
-            )}
-            {row.hold_notes && <p>Release notes: {row.hold_notes}</p>}
-          </Section>
-        )}
-
+        {/* 6. Reference */}
         {!compact && (
-          <Section title="Reference" className="md:col-span-2 xl:col-span-3">
-            <p>Payout ID: {row.id}</p>
-          </Section>
+          <PanelSection title="Reference" className="lg:col-span-12">
+            <p className="font-mono text-[11px] text-ink-muted break-all">Payout ID: {row.id}</p>
+          </PanelSection>
         )}
       </div>
 
       {hasQuickActions && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-ink-muted mr-1">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
             Quick actions
           </span>
           {canDebtActions && (

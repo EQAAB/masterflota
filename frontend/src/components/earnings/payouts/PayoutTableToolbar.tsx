@@ -1,5 +1,4 @@
-import { card, input, sectionLabel } from "../../../theme/classNames";
-import { formatCurrency } from "../../../utils/currency";
+import { filterInputClass, filterSelectClass } from "./PayoutFiltersCard";
 
 type PayoutTableToolbarProps = {
   searchQuery: string;
@@ -13,10 +12,9 @@ type PayoutTableToolbarProps = {
   totalCount: number;
   debouncedQuery: string;
   platformIdMatchCount: number;
-  pendingTotal: number;
-  paidCount: number;
 };
 
+/** In-page quick filter only. Summary KPIs live in PayoutPageKpiCards above the table. */
 export function PayoutTableToolbar({
   searchQuery,
   onSearchChange,
@@ -25,41 +23,46 @@ export function PayoutTableToolbar({
   hasQuery,
   onClearSearch,
   isFilterPending,
-  filteredCount,
-  totalCount,
   debouncedQuery,
   platformIdMatchCount,
-  pendingTotal,
-  paidCount,
+  filteredCount,
+  totalCount,
 }: PayoutTableToolbarProps) {
   return (
-    <div className={`${card} space-y-4`}>
-      <div>
-        <h2 className="text-sm font-semibold text-ink">Filter this page</h2>
-        <p className="text-xs text-ink-muted mt-0.5">
-          Search within the 25 rows loaded; use filters above for date/status across all pages.
-        </p>
-      </div>
+    <div className="rounded-2xl border border-border/60 bg-slate-50/50 px-3 py-3 sm:px-4">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        Filter this page
+      </p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="md:col-span-2">
-            <label htmlFor="payout-search" className={sectionLabel}>
+          <label htmlFor="payout-search" className="sr-only">
             Quick search
           </label>
           <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </span>
             <input
               id="payout-search"
               type="search"
               autoComplete="off"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="e.g. Bilal, 46bcf8, pending, 250"
-                className={`${input} ${hasQuery ? "pr-[4.5rem]" : ""}`}
+              placeholder="Name, platform ID, status, amount…"
+              className={`${filterInputClass} pl-9 ${hasQuery ? "pr-[4.5rem]" : ""}`}
             />
             {hasQuery && (
               <button
                 type="button"
                 onClick={onClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-ink-muted hover:bg-slate-100 hover:text-ink"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-ink-muted hover:bg-white hover:text-ink"
               >
                 Clear
               </button>
@@ -67,12 +70,12 @@ export function PayoutTableToolbar({
           </div>
         </div>
         <div>
-          <label htmlFor="payout-status" className={sectionLabel}>
+          <label htmlFor="payout-status" className="sr-only">
             Status on page
           </label>
           <select
             id="payout-status"
-            className={input}
+            className={filterSelectClass}
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}
           >
@@ -87,29 +90,18 @@ export function PayoutTableToolbar({
           </select>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="rounded-xl border border-border/70 bg-white/70 px-3 py-2.5">
-          <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Showing</p>
-          <p className="text-sm font-semibold text-ink tabular-nums mt-0.5">
-            {isFilterPending ? "Filtering…" : `${filteredCount.toLocaleString()} of ${totalCount.toLocaleString()}`}
-          </p>
-          {!isFilterPending && debouncedQuery.trim() && (
-            <p className="mt-1 text-xs text-ink-muted">
-              Found {platformIdMatchCount.toLocaleString()} matching platform ID
-              {platformIdMatchCount === 1 ? "" : "s"}
-            </p>
-          )}
-        </div>
-        <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-3 py-2.5">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Pending total</p>
-          <p className="text-sm font-semibold text-amber-900 tabular-nums mt-0.5">{formatCurrency(pendingTotal)}</p>
-        </div>
-        <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-3 py-2.5">
-          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Paid rows</p>
-          <p className="text-sm font-semibold text-emerald-900 tabular-nums mt-0.5">{paidCount.toLocaleString()}</p>
-        </div>
-      </div>
+      <p className="mt-2 text-[11px] text-ink-muted">
+        {isFilterPending
+          ? "Filtering…"
+          : `${filteredCount.toLocaleString()} of ${totalCount.toLocaleString()} rows on this page`}
+        {debouncedQuery.trim() && !isFilterPending && (
+          <>
+            {" "}
+            · {platformIdMatchCount.toLocaleString()} platform ID match
+            {platformIdMatchCount === 1 ? "" : "es"}
+          </>
+        )}
+      </p>
     </div>
   );
 }

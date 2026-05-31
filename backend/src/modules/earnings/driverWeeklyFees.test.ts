@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeBaseRawNet, computeAdjustedRawNetWithFees } from "./driverPayoutCustomFees";
+import {
+  computeAdjustedRawNetWithFees,
+  computeBaseRawNet,
+} from "./driverPayoutCustomFees";
 import {
   pickWeeklyFeeAnchorPlatform,
   sumWeeklyFeeRows,
@@ -41,6 +44,24 @@ describe("sumWeeklyFeeRows", () => {
       { fee_type: "addition", amount: "10" },
     ]);
     expect(totals).toEqual({ deductions: 75, additions: 10 });
+  });
+});
+
+describe("import order: former anchor must clear weekly fees", () => {
+  it("when Glovo is imported after Bolt was anchor, Bolt raw net drops recurring deduction", () => {
+    const weekly = { deductions: 50, additions: 0 };
+    const manual = { deductions: 0, additions: 0 };
+    const boltBase = 450;
+
+    const boltAsFormerAnchor = computeAdjustedRawNetWithFees(boltBase, manual, weekly, true);
+    expect(boltAsFormerAnchor).toBe(400);
+
+    const boltAfterGlovoAnchor = computeAdjustedRawNetWithFees(boltBase, manual, weekly, false);
+    expect(boltAfterGlovoAnchor).toBe(450);
+
+    const glovoBase = 900;
+    const glovoAsAnchor = computeAdjustedRawNetWithFees(glovoBase, manual, weekly, true);
+    expect(glovoAsAnchor).toBe(850);
   });
 });
 
