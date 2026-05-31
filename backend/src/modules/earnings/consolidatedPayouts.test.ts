@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveConsolidatedStatus } from "./consolidatedPayouts";
+import { buildConsolidatedPayoutSearchClause, deriveConsolidatedStatus } from "./consolidatedPayouts";
 
 describe("deriveConsolidatedStatus", () => {
   it("marks negative total as debt", () => {
@@ -28,5 +28,18 @@ describe("deriveConsolidatedStatus", () => {
       consolidated_status: "hold",
       can_pay: false,
     });
+  });
+});
+
+describe("buildConsolidatedPayoutSearchClause", () => {
+  it("prefixes search with AND for valid WHERE composition", () => {
+    const clause = buildConsolidatedPayoutSearchClause("rahmat", 4);
+    expect(clause).not.toBeNull();
+    expect(clause!.sql.startsWith("AND (")).toBe(true);
+    expect(clause!.param).toBe("%rahmat%");
+  });
+
+  it("returns null for blank search", () => {
+    expect(buildConsolidatedPayoutSearchClause("  ", 4)).toBeNull();
   });
 });
