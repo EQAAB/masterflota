@@ -474,6 +474,43 @@
     @apply bg-emerald-100/90 ring-emerald-300/60 text-emerald-950;
   }
 
+  .fm-payout-detail-calc-strip {
+    @apply mt-5 rounded-xl border border-violet-200/60 bg-gradient-to-r from-violet-50/70 via-white to-slate-50/80 px-4 py-3.5 ring-1 ring-violet-100/80;
+  }
+
+  .fm-payout-detail-calc-strip__flow {
+    @apply flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-xs sm:gap-x-3 sm:text-sm;
+  }
+
+  .fm-payout-detail-calc-strip__item {
+    @apply inline-flex flex-col items-center rounded-lg bg-white/80 px-2.5 py-1.5 ring-1 ring-slate-200/70 sm:px-3;
+  }
+
+  .fm-payout-detail-calc-strip__item--highlight {
+    @apply bg-emerald-50/90 ring-emerald-200/70;
+  }
+
+  .fm-payout-detail-calc-strip__item--final {
+    @apply bg-emerald-100/90 ring-emerald-300/60;
+  }
+
+  .fm-payout-detail-calc-strip__label {
+    @apply text-[10px] font-medium uppercase tracking-wide text-slate-500;
+  }
+
+  .fm-payout-detail-calc-strip__value {
+    @apply font-semibold text-ink;
+  }
+
+  .fm-payout-detail-calc-strip__item--highlight .fm-payout-detail-calc-strip__value,
+  .fm-payout-detail-calc-strip__item--final .fm-payout-detail-calc-strip__value {
+    @apply text-emerald-950;
+  }
+
+  .fm-payout-detail-calc-strip__op {
+    @apply shrink-0 font-medium text-slate-400;
+  }
+
   .fm-payout-detail-platform-card {
     @apply flex min-w-0 flex-col rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5;
   }

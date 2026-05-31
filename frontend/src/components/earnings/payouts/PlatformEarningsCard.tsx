@@ -21,10 +21,65 @@ export type PlatformEarningsCardProps = {
 function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
   return (
     <div className="fm-payout-detail-commission-box">
-      <p className="fm-payout-detail-commission-box__title">Commission (after platform fee)</p>
+      <p className="fm-payout-detail-commission-box__title">Commission after platform fee</p>
       <LineRow label="Base" value={formatCurrency(line.commissionBase)} />
-      <LineRow label="Rate (driver)" value={formatRatePctFromFraction(line.commissionRate)} />
+      <LineRow label="Rate" value={formatRatePctFromFraction(line.commissionRate)} />
       <LineRow label="Commission charged" value={formatCurrency(line.commissionCharged)} bold />
+    </div>
+  );
+}
+
+function PlatformCalculationStrip({ line }: { line: PlatformBreakdownLine }) {
+  const weeklyFees = Math.abs(line.rawNet - line.netPayoutFromPlatform);
+  const hasWeeklyFees = weeklyFees > 0.02;
+
+  return (
+    <div className="fm-payout-detail-calc-strip" aria-label="Platform payout calculation summary">
+      <div className="fm-payout-detail-calc-strip__flow">
+        <span className="fm-payout-detail-calc-strip__item">
+          <span className="fm-payout-detail-calc-strip__label">Net income</span>
+          <span className="fm-payout-detail-calc-strip__value tabular-nums">{formatCurrency(line.netIncome)}</span>
+        </span>
+        <span className="fm-payout-detail-calc-strip__op">−</span>
+        <span className="fm-payout-detail-calc-strip__item">
+          <span className="fm-payout-detail-calc-strip__label">Fleet / Subscription</span>
+          <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
+            {formatCurrency(line.fleetSub)}
+          </span>
+        </span>
+        <span className="fm-payout-detail-calc-strip__op">−</span>
+        <span className="fm-payout-detail-calc-strip__item">
+          <span className="fm-payout-detail-calc-strip__label">Cash balance</span>
+          <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
+            {formatCurrency(line.cashBalance)}
+          </span>
+        </span>
+        <span className="fm-payout-detail-calc-strip__op">=</span>
+        <span className="fm-payout-detail-calc-strip__item fm-payout-detail-calc-strip__item--highlight">
+          <span className="fm-payout-detail-calc-strip__label">Net after platform deductions</span>
+          <span className="fm-payout-detail-calc-strip__value tabular-nums">
+            {formatCurrency(line.netPayoutFromPlatform)}
+          </span>
+        </span>
+        {hasWeeklyFees && (
+          <>
+            <span className="fm-payout-detail-calc-strip__op">−</span>
+            <span className="fm-payout-detail-calc-strip__item">
+              <span className="fm-payout-detail-calc-strip__label">Weekly fees & charges</span>
+              <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
+                {formatCurrency(weeklyFees)}
+              </span>
+            </span>
+          </>
+        )}
+        <span className="fm-payout-detail-calc-strip__op">=</span>
+        <span className="fm-payout-detail-calc-strip__item fm-payout-detail-calc-strip__item--final">
+          <span className="fm-payout-detail-calc-strip__label">Final platform payout</span>
+          <span className="fm-payout-detail-calc-strip__value tabular-nums">
+            {formatCurrency(line.storedNetDriverPayout)}
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
@@ -50,32 +105,22 @@ function EarningsLeftColumn({ line }: { line: PlatformBreakdownLine }) {
   );
 }
 
-function EarningsRightColumn({
-  line,
-  showLegShare,
-  showNetPayoutRow,
-}: {
-  line: PlatformBreakdownLine;
-  showLegShare: boolean;
-  showNetPayoutRow: boolean;
-}) {
-  const platformLabel = earningsPlatformLabel(line.platform);
+function WideRightColumn({ line, showNetPayoutRow }: { line: PlatformBreakdownLine; showNetPayoutRow: boolean }) {
   const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
 
   return (
     <>
-      <LineRow label="Cash balance (deducted)" value={formatCurrency(-line.cashBalance)} variant="deduction" />
+      <LineRow label="Cash balance deducted" value={formatCurrency(-line.cashBalance)} variant="deduction" />
       {line.accountOpeningFee > 0 && (
         <LineRow label="Account opening fee" value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
       )}
-      <div className={`fm-payout-detail-platform-net${line.isDebtPlatform ? " fm-payout-detail-platform-net--debt" : ""}`}>
-        <span>Operational net ({platformLabel})</span>
+      <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
+        <span>Net after platform deductions</span>
         <span className="tabular-nums">{formatCurrency(line.netPayoutFromPlatform)}</span>
       </div>
       <LineRow
-        label="Raw net (this platform)"
-        value={formatCurrency(line.rawNet)}
-        variant={line.isDebtPlatform ? "deduction" : "neutral"}
+        label="Platform balance before final fees"
+        value={formatCurrency(line.netPayoutFromPlatform)}
         bold
       />
       {Math.abs(weeklyFeesDelta) > 0.02 && (
@@ -88,24 +133,9 @@ function EarningsRightColumn({
       )}
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
-          <span>Net payout from {platformLabel}</span>
+          <span>Final platform payout</span>
           <span className="tabular-nums">{formatCurrency(line.storedNetDriverPayout)}</span>
         </div>
-      )}
-      {showLegShare && (
-        <LineRow
-          label="This leg's share of final payout"
-          value={formatCurrency(line.storedNetDriverPayout)}
-          variant={
-            line.storedNetDriverPayout < -0.02
-              ? "deduction"
-              : line.storedNetDriverPayout > 0.02
-                ? "positive"
-                : "neutral"
-          }
-          bold
-          hint="After cross-platform pooling for the driver week"
-        />
       )}
     </>
   );
@@ -196,15 +226,18 @@ export function PlatformEarningsCard({
       </div>
 
       {isWide ? (
-        <div className="fm-payout-detail-platform-card__split">
-          <div className="fm-payout-detail-platform-card__body fm-payout-detail-platform-card__body--col">
-            <EarningsLeftColumn line={line} />
+        <>
+          <div className="fm-payout-detail-platform-card__split">
+            <div className="fm-payout-detail-platform-card__body fm-payout-detail-platform-card__body--col">
+              <EarningsLeftColumn line={line} />
+            </div>
+            <div className="fm-payout-detail-platform-card__body fm-payout-detail-platform-card__body--col">
+              <WideRightColumn line={line} showNetPayoutRow={showNetPayoutRow} />
+              <CommissionBox line={line} />
+            </div>
           </div>
-          <div className="fm-payout-detail-platform-card__body fm-payout-detail-platform-card__body--col">
-            <EarningsRightColumn line={line} showLegShare={showLegShare} showNetPayoutRow={showNetPayoutRow} />
-            <CommissionBox line={line} />
-          </div>
-        </div>
+          <PlatformCalculationStrip line={line} />
+        </>
       ) : (
         <>
           <div className="fm-payout-detail-platform-card__body">
