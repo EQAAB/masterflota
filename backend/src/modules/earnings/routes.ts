@@ -42,6 +42,12 @@ import {
   type CustomFeeType,
 } from "./driverPayoutCustomFees";
 import { syncRecurringFeesToDriverWeek } from "./driverWeeklyFees";
+import {
+  ConsolidatedPayoutError,
+  listConsolidatedPayouts,
+  payAllConsolidated,
+  payDriverConsolidated,
+} from "./consolidatedPayouts";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
@@ -1449,6 +1455,151 @@ router.patch("/payouts/bulk", async (req, res) => {
     // eslint-disable-next-line no-console
     console.error("Earnings payouts bulk update error", err);
     return res.status(500).json({ message: "Bulk update failed" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/payouts/consolidated", async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+
+  const weekStart = String(req.query.weekStart ?? "").slice(0, 10);
+  const weekEnd = String(req.query.weekEnd ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || !/^\d{4}-\d{2}-\d{2}$/.test(weekEnd)) {
+    return res.status(400).json({ message: "weekStart and weekEnd are required (YYYY-MM-DD)" });
+  }
+  if (weekStart > weekEnd) {
+    return res.status(400).json({ message: "weekStart must be on or before weekEnd" });
+  }
+
+  const q = typeof req.query.q === "string" ? req.query.q : undefined;
+  const status = typeof req.query.status === "string" ? req.query.status : undefined;
+  const driverId =
+    typeof req.query.driverId === "string" && UUID_RE.test(req.query.driverId)
+      ? req.query.driverId
+      : undefined;
+  const platform = typeof req.query.platform === "string" ? req.query.platform.trim() : undefined;
+
+  const client = await pool.connect();
+  try {
+    const items = await listConsolidatedPayouts(client, orgId, weekStart, weekEnd, {
+      q,
+      status,
+      driverId,
+      platform: platform || undefined,
+    });
+    const summary = items.reduce(
+      (acc, row) => {
+        acc.total_amount += Number(row.total_amount);
+        if (row.can_pay) acc.payable_count += 1;
+        if (row.consolidated_status === "paid") acc.paid_count += 1;
+        if (row.consolidated_status === "debt") acc.debt_count += 1;
+        return acc;
+      },
+      { total_amount: 0, payable_count: 0, paid_count: 0, debt_count: 0 },
+    );
+    return res.json({
+      weekStart,
+      weekEnd,
+      items,
+      summary: {
+        driver_count: items.length,
+        total_amount: roundMoney(summary.total_amount).toFixed(2),
+        payable_count: summary.payable_count,
+        paid_count: summary.paid_count,
+        debt_count: summary.debt_count,
+      },
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Consolidated payouts list error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/payouts/pay-driver", async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  const body = req.body as {
+    driverId?: unknown;
+    weekStart?: unknown;
+    weekEnd?: unknown;
+    paymentMethod?: unknown;
+    transactionRef?: unknown;
+  };
+  const driverId = typeof body.driverId === "string" ? body.driverId : "";
+  const weekStart = typeof body.weekStart === "string" ? body.weekStart.slice(0, 10) : "";
+  const weekEnd = typeof body.weekEnd === "string" ? body.weekEnd.slice(0, 10) : "";
+  if (!UUID_RE.test(driverId)) {
+    return res.status(400).json({ message: "driverId is required" });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || !/^\d{4}-\d{2}-\d{2}$/.test(weekEnd)) {
+    return res.status(400).json({ message: "weekStart and weekEnd are required (YYYY-MM-DD)" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await payDriverConsolidated(client, orgId, userId, driverId, weekStart, weekEnd, {
+      paymentMethod: typeof body.paymentMethod === "string" ? body.paymentMethod : null,
+      transactionRef: typeof body.transactionRef === "string" ? body.transactionRef : null,
+    });
+    await client.query("COMMIT");
+    return res.json(result);
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    if (err instanceof ConsolidatedPayoutError) {
+      const status = err.code === "NOT_FOUND" ? 404 : 400;
+      return res.status(status).json({ message: err.message, code: err.code });
+    }
+    // eslint-disable-next-line no-console
+    console.error("Pay driver consolidated error", err);
+    return res.status(500).json({ message: "Payment failed" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/payouts/pay-all", async (req, res) => {
+  const orgId = req.user?.orgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  const body = req.body as { weekStart?: unknown; weekEnd?: unknown };
+  const weekStart = typeof body.weekStart === "string" ? body.weekStart.slice(0, 10) : "";
+  const weekEnd = typeof body.weekEnd === "string" ? body.weekEnd.slice(0, 10) : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || !/^\d{4}-\d{2}-\d{2}$/.test(weekEnd)) {
+    return res.status(400).json({ message: "weekStart and weekEnd are required (YYYY-MM-DD)" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await payAllConsolidated(client, orgId, userId, weekStart, weekEnd);
+    await client.query("COMMIT");
+    return res.json(result);
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line no-console
+    console.error("Pay all consolidated error", err);
+    return res.status(500).json({ message: "Bulk payment failed" });
   } finally {
     client.release();
   }

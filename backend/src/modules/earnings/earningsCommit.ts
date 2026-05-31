@@ -7,6 +7,7 @@ import type { EarningsStagingPayload } from "./normalizeRow";
 import { roundMoney } from "./debtAllocation";
 import { calculatePayout, parseCommissionBaseType } from "./calculatePayout";
 import { payoutPlatformIdForDriver } from "./payoutPlatformId";
+import { applyWeeklyCustomFees } from "./driverPayoutCustomFees";
 import { isBoltWeeklyImportMeta, recomputeDriverPayoutsForPaymentWeek } from "./recomputeDriverPayoutRollup";
 import { mapBoltWeeklyAmounts } from "./mapBoltWeeklyAmounts";
 import { mapUberTaxiAmounts } from "./mapUberTaxiAmounts";
@@ -433,6 +434,8 @@ export async function runEarningsCommitFromStaging(
     weekEndEff,
     platformEff,
   );
+
+  await applyWeeklyCustomFees(client, orgId, weekStartEff, weekEndEff);
 
   const driverIds = touchedDriverIds;
   const warnings: string[] = [];

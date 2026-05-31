@@ -2,8 +2,7 @@ import type { PoolClient } from "pg";
 import { driverCommissionRateAsFraction } from "./calculatePayout";
 import type { DriverMatchRow } from "./matchDriver";
 import { computeCompanyCommissionFromBase } from "./commission";
-import { applyDebtCarryForward, roundMoney } from "./debtAllocation";
-import { applyCustomFeesToRawNet } from "./driverPayoutCustomFees";
+import { roundMoney } from "./debtAllocation";
 import type { EarningsPlatform } from "./detectPlatform";
 import { payoutPlatformFromEarnings, type DriverPayoutPlatform } from "./payoutPlatform";
 import { payoutPlatformIdForDriver } from "./payoutPlatformId";
@@ -269,8 +268,6 @@ export async function recomputeDriverPayoutRollup(
       [payoutId, orgId],
     );
   }
-  await applyCustomFeesToRawNet(client, orgId, payoutId);
-  await applyDebtCarryForward(client, orgId, payoutId);
   return payoutId;
 }
 

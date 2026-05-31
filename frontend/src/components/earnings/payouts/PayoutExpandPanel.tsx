@@ -114,7 +114,7 @@ export const PayoutExpandPanel = memo(function PayoutExpandPanel({
     >
       <div
         ref={contentRef}
-        className="border-t border-border/80 bg-surface/40 px-4 py-4 [contain:layout]"
+        className="fm-payout-expand-inner fm-pdetail-expand-inner min-w-0 max-w-full [contain:layout]"
       >
         {showContent ? children : null}
       </div>

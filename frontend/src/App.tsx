@@ -17,6 +17,7 @@ import { VehicleDocumentsPage } from "./pages/vehicles/VehicleDocumentsPage";
 import { EarningsOverviewPage } from "./pages/earnings/EarningsOverviewPage";
 import { EarningsImportPage } from "./pages/earnings/EarningsImportPage";
 import { EarningsPayoutsPage } from "./pages/earnings/EarningsPayoutsPage";
+import { CombinedPayoutDetailsPage } from "./pages/earnings/CombinedPayoutDetailsPage";
 import { EarningsReportsPage } from "./pages/earnings/EarningsReportsPage";
 import { SubcontractorSettlementsPage } from "./pages/earnings/SubcontractorSettlementsPage";
 import { SubcontractorSettlementDetailPage } from "./pages/earnings/SubcontractorSettlementDetailPage";
@@ -113,6 +114,14 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <EarningsImportPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/earnings/payouts/:driverId",
+      element: (
+        <ProtectedRoute>
+          <CombinedPayoutDetailsPage />
         </ProtectedRoute>
       ),
     },
