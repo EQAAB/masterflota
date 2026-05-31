@@ -1,21 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { ConsolidatedDriverPayout, PayoutAssignmentDetail, PayoutListItem } from "../../../api/earnings";
-import {
-  BoltPlatformLogo,
-  PlatformBadge,
-  UberPlatformLogo,
-  type PlatformBadgeKey,
-} from "../../drivers/platformLogos";
 import { btnSecondary } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
-import { formatRatePctFromFraction, toNum } from "./payoutRowUtils";
-import {
-  computeUnifiedBreakdown,
-  formatPeriodParts,
-  platformShortId,
-} from "./payoutBreakdownUtils";
+import { toNum } from "./payoutRowUtils";
+import { computeUnifiedBreakdown, formatPeriodParts } from "./payoutBreakdownUtils";
+import { LineRow, PlatformLogo } from "./payoutDetailUi";
+import { PlatformEarningsCard } from "./PlatformEarningsCard";
 
 export type CombinedPayoutDetailsContentProps = {
   row: ConsolidatedDriverPayout;
@@ -51,40 +43,6 @@ function statusBadgeClass(status: string): string {
     default:
       return "bg-slate-100 text-slate-700 ring-slate-200/60";
   }
-}
-
-function platformAdjustmentLabel(platform: string): string {
-  if (platform.toLowerCase().includes("bolt")) {
-    return "Platform net adjustment (Bolt reported net earnings)";
-  }
-  return "Platform net adjustment";
-}
-
-function platformAdjustmentHint(platform: string): string {
-  if (platform.toLowerCase().includes("bolt")) {
-    return "Bolt net income comes from the platform export, not always gross − taxa.";
-  }
-  return "Difference between gross − taxa and stored net income.";
-}
-
-function platformBadgeKey(platform: string): PlatformBadgeKey | null {
-  const p = platform.toLowerCase();
-  if (p === "bolt" || p === "bolt_taxi" || p === "glovo" || p === "uber" || p === "wolt") return p;
-  return null;
-}
-
-function PlatformLogo({ platform, size = "md" }: { platform: string; size?: "sm" | "md" }) {
-  const cls = size === "sm" ? "!h-7 !w-7 !rounded-lg" : "!h-9 !w-9 !rounded-xl";
-  const p = platform.toLowerCase();
-  if (p === "uber") return <UberPlatformLogo className={cls} />;
-  if (p === "bolt" || p === "bolt_taxi") return <BoltPlatformLogo className={cls} />;
-  const key = platformBadgeKey(platform);
-  if (key) return <PlatformBadge platform={key} compact />;
-  return (
-    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200 text-xs font-bold text-slate-600">
-      {platform.slice(0, 1).toUpperCase()}
-    </span>
-  );
 }
 
 function SummaryStep({
@@ -147,36 +105,6 @@ function MiniCardHeading({ icon, title }: { icon: ReactNode; title: string }) {
       <span className="text-slate-400">{icon}</span>
       {title}
     </h3>
-  );
-}
-
-function LineRow({
-  label,
-  value,
-  variant = "neutral",
-  bold,
-  hint,
-}: {
-  label: string;
-  value: ReactNode;
-  variant?: "neutral" | "deduction" | "positive";
-  bold?: boolean;
-  hint?: string;
-}) {
-  const valueClass =
-    variant === "deduction"
-      ? "text-rose-700"
-      : variant === "positive"
-        ? "text-emerald-800 font-semibold"
-        : "text-ink";
-  return (
-    <div className={`fm-payout-detail-line ${bold ? "fm-payout-detail-line--bold" : ""}`}>
-      <div className="min-w-0">
-        <span className="fm-payout-detail-line__label">{label}</span>
-        {hint && <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{hint}</p>}
-      </div>
-      <span className={`fm-payout-detail-line__value tabular-nums ${valueClass}`}>{value}</span>
-    </div>
   );
 }
 
@@ -502,12 +430,27 @@ export function CombinedPayoutDetailsContent({
       }),
     [breakdown.platforms],
   );
+  const platformCount = breakdown.platforms.length;
   const showCrossPlatformOffset =
-    breakdown.platforms.length > 1 &&
+    platformCount > 1 &&
     (breakdown.crossPlatformDebtOffset > 0.02 || breakdown.debtPlatforms.length > 0);
-  const showLegShare = breakdown.platforms.length > 1;
+  const showLegShare = platformCount > 1;
+  const showNetPayoutRow = platformCount === 1;
+  const platformLayout = platformCount === 1 ? "wide" : "compact";
+  const platformsGridClass =
+    platformCount === 1
+      ? "fm-payout-detail-platforms fm-payout-detail-platforms--single"
+      : platformCount === 2
+        ? "fm-payout-detail-platforms"
+        : "fm-payout-detail-platforms fm-payout-detail-platforms--multi";
 
   const statementUrl = `/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}&from=${encodeURIComponent(row.payment_period_start.slice(0, 10))}&to=${encodeURIComponent(row.payment_period_end.slice(0, 10))}`;
+
+  function platformCardTitle(platform: string): string {
+    if (platform.toLowerCase() === "uber") return "Uber Earnings";
+    if (platform.toLowerCase().includes("bolt")) return "Bolt Earnings";
+    return `${earningsPlatformLabel(platform)} Earnings`;
+  }
 
   return (
     <div className="fm-payout-detail-page">
@@ -585,85 +528,17 @@ export function CombinedPayoutDetailsContent({
       </section>
 
       {/* Platform cards */}
-      <div className="fm-payout-detail-platforms">
-        {sortedPlatforms.map((line) => {
-          const title =
-            line.platform.toLowerCase() === "uber"
-              ? "Uber Earnings"
-              : line.platform.toLowerCase().includes("bolt")
-                ? "Bolt Earnings"
-                : `${earningsPlatformLabel(line.platform)} Earnings`;
-          return (
-            <article
-              key={line.payoutId}
-              className={`fm-payout-detail-platform-card${line.isDebtPlatform ? " fm-payout-detail-platform-card--debt" : ""}`}
-            >
-              <div className="fm-payout-detail-platform-card__head">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <PlatformLogo platform={line.platform} />
-                  <h2 className="text-base font-semibold text-ink">{title}</h2>
-                  {line.isDebtPlatform && (
-                    <span className="fm-payout-detail-debt-badge">Platform debt</span>
-                  )}
-                </div>
-                <span className="fm-payout-detail-id-badge">ID: {platformShortId(line.platform, line.payoutId)}</span>
-              </div>
-              <div className="fm-payout-detail-platform-card__body">
-                <LineRow label="Base income" value={formatCurrency(line.baseIncome)} />
-                <LineRow label="Tips" value={formatCurrency(line.tips)} />
-                <LineRow label="Gross (Income + Tips)" value={formatCurrency(line.gross)} bold />
-                <LineRow label="Platform fees (Taxa)" value={formatCurrency(-line.platformFees)} variant="deduction" />
-                {Math.abs(line.platformNetAdjustment) > 0.02 && (
-                  <LineRow
-                    label={platformAdjustmentLabel(line.platform)}
-                    value={formatCurrency(-line.platformNetAdjustment)}
-                    variant="deduction"
-                    hint={platformAdjustmentHint(line.platform)}
-                  />
-                )}
-                <LineRow label="Net income" value={formatCurrency(line.netIncome)} bold />
-                <LineRow label="Fleet / Subscription" value={formatCurrency(-line.fleetSub)} variant="deduction" />
-                <LineRow label="Cash balance (deducted)" value={formatCurrency(-line.cashBalance)} variant="deduction" />
-                {line.accountOpeningFee > 0 && (
-                  <LineRow label="Account opening fee" value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
-                )}
-                <div className={`fm-payout-detail-platform-net${line.isDebtPlatform ? " fm-payout-detail-platform-net--debt" : ""}`}>
-                  <span>Operational net ({earningsPlatformLabel(line.platform)})</span>
-                  <span className="tabular-nums">{formatCurrency(line.netPayoutFromPlatform)}</span>
-                </div>
-                <LineRow
-                  label="Raw net (this platform)"
-                  value={formatCurrency(line.rawNet)}
-                  variant={line.isDebtPlatform ? "deduction" : "neutral"}
-                  bold
-                />
-                {Math.abs(line.rawNet - line.netPayoutFromPlatform) > 0.02 && (
-                  <LineRow
-                    label="Weekly fees & charges"
-                    value={formatCurrency(line.rawNet - line.netPayoutFromPlatform)}
-                    variant="deduction"
-                    hint="Recurring/custom fees on this platform leg"
-                  />
-                )}
-                {showLegShare && (
-                  <LineRow
-                    label="This leg's share of final payout"
-                    value={formatCurrency(line.storedNetDriverPayout)}
-                    variant={line.storedNetDriverPayout < -0.02 ? "deduction" : line.storedNetDriverPayout > 0.02 ? "positive" : "neutral"}
-                    bold
-                    hint="After cross-platform pooling for the driver week"
-                  />
-                )}
-              </div>
-              <div className="fm-payout-detail-commission-box">
-                <p className="fm-payout-detail-commission-box__title">Commission (after platform fee)</p>
-                <LineRow label="Base" value={formatCurrency(line.commissionBase)} />
-                <LineRow label="Rate (driver)" value={formatRatePctFromFraction(line.commissionRate)} />
-                <LineRow label="Commission charged" value={formatCurrency(line.commissionCharged)} bold />
-              </div>
-            </article>
-          );
-        })}
+      <div className={platformsGridClass}>
+        {sortedPlatforms.map((line) => (
+          <PlatformEarningsCard
+            key={line.payoutId}
+            line={line}
+            title={platformCardTitle(line.platform)}
+            layout={platformLayout}
+            showLegShare={showLegShare}
+            showNetPayoutRow={showNetPayoutRow}
+          />
+        ))}
       </div>
 
       {showCrossPlatformOffset && (

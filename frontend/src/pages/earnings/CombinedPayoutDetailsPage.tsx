@@ -12,6 +12,7 @@ import {
   type PayoutListItem,
 } from "../../api/earnings";
 import { CombinedPayoutDetailsContent } from "../../components/earnings/payouts/CombinedPayoutDetailsContent";
+import { PayoutDetailsPageHeader } from "../../components/earnings/payouts/PayoutDetailsPageHeader";
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
@@ -191,41 +192,14 @@ export function CombinedPayoutDetailsPage() {
 
   return (
     <div className="flex flex-col flex-1 overflow-auto bg-[#f4f6f8] print:bg-white">
-      <header className="shrink-0 border-b border-border/80 bg-white/90 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5 print:hidden">
-        <nav className="mb-3 text-xs text-ink-muted">
-          <Link to="/earnings/payouts" className="hover:text-brand hover:underline">
-            Payouts
-          </Link>
-          <span className="mx-1.5 text-slate-300">/</span>
-          <Link to={`/drivers/${row.driver_id}`} className="hover:text-brand hover:underline">
-            {driverName}
-          </Link>
-          <span className="mx-1.5 text-slate-300">/</span>
-          <span className="font-medium text-ink">Combined Payout Details</span>
-        </nav>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <Link to={backUrl} className={`${btnSecondary} !mb-3 !min-h-0 !py-1.5 !px-3 !text-xs inline-flex`}>
-              ← Back to payouts
-            </Link>
-            <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">Combined Payout Details</h1>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-muted">
-              Detailed breakdown of earnings, deductions and final payout.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={downloadBusy || !payoutItems.length}
-            className={`${btnSecondary} !gap-2 shrink-0 !text-xs print:hidden`}
-            onClick={handleDownloadReport}
-          >
-            <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {downloadBusy ? "Downloading…" : "Download report"}
-          </button>
-        </div>
-      </header>
+      <PayoutDetailsPageHeader
+        driverName={driverName}
+        driverId={row.driver_id}
+        backUrl={backUrl}
+        downloadBusy={downloadBusy}
+        downloadDisabled={!payoutItems.length}
+        onDownloadReport={handleDownloadReport}
+      />
 
       <div ref={printRef} className="mx-auto w-full max-w-[1400px] flex-1 space-y-6 p-6 sm:space-y-8">
         {error && <div className={alertError}>{error}</div>}
