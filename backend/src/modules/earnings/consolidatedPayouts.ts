@@ -173,11 +173,12 @@ export async function listConsolidatedPayouts(
     params.push(options.driverId);
   }
   if (options?.q?.trim()) {
-    extra.push(
-      `(d.first_name ILIKE $${p} OR d.last_name ILIKE $${p} OR d.phone ILIKE $${p} OR CONCAT(d.first_name, ' ', d.last_name) ILIKE $${p})`,
-    );
-    params.push(`%${options.q.trim()}%`);
-    p++;
+    const search = buildConsolidatedPayoutSearchClause(options.q, p);
+    if (search) {
+      extra.push(search.sql);
+      params.push(search.param);
+      p++;
+    }
   }
   if (options?.platform?.trim()) {
     extra.push(`AND dp.platform = $${p++}`);
@@ -223,6 +224,19 @@ export async function listConsolidatedPayouts(
   }
 
   return consolidated;
+}
+
+/** Builds the driver search WHERE fragment for consolidated payout listing (param index starts at 4). */
+export function buildConsolidatedPayoutSearchClause(
+  q: string,
+  paramIndex: number,
+): { sql: string; param: string } | null {
+  const trimmed = q.trim();
+  if (!trimmed) return null;
+  return {
+    sql: `AND (d.first_name ILIKE $${paramIndex} OR d.last_name ILIKE $${paramIndex} OR d.phone ILIKE $${paramIndex} OR CONCAT(d.first_name, ' ', d.last_name) ILIKE $${paramIndex})`,
+    param: `%${trimmed}%`,
+  };
 }
 
 export type PayDriverResult = {
