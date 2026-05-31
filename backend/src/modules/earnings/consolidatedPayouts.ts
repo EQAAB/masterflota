@@ -21,6 +21,10 @@ export type ConsolidatedDriverPayoutRow = {
   total_fees: string;
   total_platform_fees: string;
   total_vehicle_rent: string;
+  /** Same-week negative platform raw net offset by positive platforms. */
+  total_debt_offset: string;
+  /** Platforms with negative raw net in this week. */
+  debt_platforms: string[];
   platforms: string[];
   platform_payout_ids: string[];
   platform_lines: ConsolidatedPlatformLine[];
@@ -46,6 +50,8 @@ type PayoutLegRow = {
   company_commission: string | null;
   total_platform_fees: string | null;
   vehicle_rental_fee: string | null;
+  cross_platform_debt_offset: string | null;
+  week_debt_platforms: string[] | null;
   payment_status: string;
 };
 
@@ -118,6 +124,12 @@ function buildConsolidatedRows(
     const totalVehicleRent = roundMoney(
       driverLegs.reduce((m, l) => Math.max(m, Number(l.vehicle_rental_fee ?? "0")), 0),
     );
+    const totalDebtOffset = roundMoney(
+      Math.max(...driverLegs.map((l) => Number(l.cross_platform_debt_offset ?? "0")), 0),
+    );
+    const debtPlatforms = [
+      ...new Set(driverLegs.flatMap((l) => l.week_debt_platforms ?? []).filter(Boolean)),
+    ].sort();
     const statuses = driverLegs.map((l) => l.payment_status);
     const { consolidated_status, can_pay } = deriveConsolidatedStatus(total, statuses);
 
@@ -136,6 +148,8 @@ function buildConsolidatedRows(
       total_fees: totalFees.toFixed(2),
       total_platform_fees: totalPlatformFees.toFixed(2),
       total_vehicle_rent: totalVehicleRent.toFixed(2),
+      total_debt_offset: totalDebtOffset.toFixed(2),
+      debt_platforms: debtPlatforms,
       platforms: [...new Set(driverLegs.map((l) => l.platform))].sort(),
       platform_payout_ids: driverLegs.map((l) => l.id),
       platform_lines: platformLines,
@@ -190,7 +204,8 @@ export async function listConsolidatedPayouts(
             dp.platform, dp.payment_period_start::text, dp.payment_period_end::text,
             dp.net_driver_payout::text, dp.raw_net_amount::text,
             dp.total_gross_earnings::text, dp.company_commission::text,
-            dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status
+            dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
+            dp.cross_platform_debt_offset::text, dp.week_debt_platforms
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid
@@ -265,7 +280,8 @@ export async function payDriverConsolidated(
             dp.platform, dp.payment_period_start::text, dp.payment_period_end::text,
             dp.net_driver_payout::text, dp.raw_net_amount::text,
             dp.total_gross_earnings::text, dp.company_commission::text,
-            dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status
+            dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
+            dp.cross_platform_debt_offset::text, dp.week_debt_platforms
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid
@@ -326,12 +342,14 @@ export async function payDriverConsolidated(
   const payIns = await client.query<{ id: string }>(
     `INSERT INTO driver_payments (
        organization_id, driver_id, payment_period_start, payment_period_end,
-       total_amount, platforms, platform_payout_ids, payment_status,
+       total_amount, total_debt_offset, debt_platforms, platforms, platform_payout_ids, payment_status,
        payment_method, transaction_ref, paid_by
-     ) VALUES ($1::uuid, $2::uuid, $3::date, $4::date, $5, $6::text[], $7::uuid[], 'paid', $8, $9, $10::uuid)
+     ) VALUES ($1::uuid, $2::uuid, $3::date, $4::date, $5, $6, $7::text[], $8::text[], $9::uuid[], 'paid', $10, $11, $12::uuid)
      ON CONFLICT ON CONSTRAINT uq_driver_payment_driver_week
      DO UPDATE SET
        total_amount = EXCLUDED.total_amount,
+       total_debt_offset = EXCLUDED.total_debt_offset,
+       debt_platforms = EXCLUDED.debt_platforms,
        platforms = EXCLUDED.platforms,
        platform_payout_ids = EXCLUDED.platform_payout_ids,
        payment_status = 'paid',
@@ -346,6 +364,8 @@ export async function payDriverConsolidated(
       ps,
       pe,
       totalAmount,
+      roundMoney(Number(consolidated.total_debt_offset)),
+      consolidated.debt_platforms,
       consolidated.platforms,
       payoutIds,
       options?.paymentMethod ?? null,

@@ -119,14 +119,32 @@ export function CombinedPayoutDetailsPage() {
         { section: "Combined", label: "Total gross income", amount: breakdown.totalGross },
         { section: "Combined", label: "Platform fees", amount: -breakdown.totalPlatformFees },
         { section: "Combined", label: "Fleet / subscription", amount: -breakdown.totalFleetSub },
-        { section: "Combined", label: "Combined net before vehicle rent", amount: breakdown.combinedNetBeforeRent },
-        { section: "Combined", label: "Vehicle rent", amount: -breakdown.vehicleRent },
-        { section: "Combined", label: "Taxable amount", amount: breakdown.taxableAmount },
-        { section: "Combined", label: "Tax", amount: -breakdown.taxAmount },
+        { section: "Combined", label: "Total net income", amount: breakdown.totalNetIncome },
+        { section: "Combined", label: "Net after fleet (before cash)", amount: breakdown.netAfterFleetBeforeCash },
+        { section: "Combined", label: "Cash balance", amount: -breakdown.totalCashBalance },
+        { section: "Combined", label: "Total net payout of all platforms", amount: breakdown.totalNetPayoutAllPlatforms },
+        { section: "Combined", label: "Custom fee / vehicle rent", amount: -breakdown.customFeeVehicleRent },
+        { section: "Combined", label: "Amount after vehicle rent", amount: breakdown.amountAfterVehicleRent },
+        ...(breakdown.crossPlatformDebtOffset > 0.02
+          ? [
+              { section: "Combined", label: "Cross-platform debt offset", amount: -breakdown.crossPlatformDebtOffset },
+              { section: "Combined", label: "Net after cross-platform offset", amount: breakdown.weekRawNet },
+            ]
+          : []),
+        ...(breakdown.totalDebtApplied > 0.02
+          ? [{ section: "Combined", label: "Debt applied (prior periods)", amount: -breakdown.totalDebtApplied }]
+          : []),
+        ...(breakdown.newPeriodDebt > 0.02
+          ? [{ section: "Combined", label: "New period deficit (debt)", amount: -breakdown.newPeriodDebt }]
+          : []),
+        ...(breakdown.otherAdjustments > 0.02
+          ? [{ section: "Combined", label: "Custom fees & other adjustments", amount: -breakdown.otherAdjustments }]
+          : []),
         { section: "Combined", label: "Final net payout", amount: breakdown.finalNet },
         ...breakdown.platforms.flatMap((p) => [
           { section: p.platform, label: "Gross", amount: p.gross },
-          { section: p.platform, label: "Net from platform", amount: p.netFromPlatform },
+          { section: p.platform, label: "Cash balance", amount: -p.cashBalance },
+          { section: p.platform, label: "Net payout from platform", amount: p.netPayoutFromPlatform },
         ]),
       ];
       const csv = Papa.unparse(rows);
@@ -172,7 +190,7 @@ export function CombinedPayoutDetailsPage() {
   const driverName = `${row.first_name} ${row.last_name}`;
 
   return (
-    <div className="flex flex-col flex-1 overflow-auto bg-slate-50/40 print:bg-white">
+    <div className="flex flex-col flex-1 overflow-auto bg-[#f4f6f8] print:bg-white">
       <header className="shrink-0 border-b border-border/80 bg-white/90 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5 print:hidden">
         <nav className="mb-3 text-xs text-ink-muted">
           <Link to="/earnings/payouts" className="hover:text-brand hover:underline">
@@ -195,10 +213,21 @@ export function CombinedPayoutDetailsPage() {
               Detailed breakdown of earnings, deductions and final payout.
             </p>
           </div>
+          <button
+            type="button"
+            disabled={downloadBusy || !payoutItems.length}
+            className={`${btnSecondary} !gap-2 shrink-0 !text-xs print:hidden`}
+            onClick={handleDownloadReport}
+          >
+            <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {downloadBusy ? "Downloading…" : "Download report"}
+          </button>
         </div>
       </header>
 
-      <div ref={printRef} className="mx-auto w-full max-w-[1280px] flex-1 space-y-6 p-4 sm:p-6 sm:space-y-8">
+      <div ref={printRef} className="mx-auto w-full max-w-[1400px] flex-1 space-y-6 p-6 sm:space-y-8">
         {error && <div className={alertError}>{error}</div>}
         {successMsg && <div className={alertSuccess}>{successMsg}</div>}
 
