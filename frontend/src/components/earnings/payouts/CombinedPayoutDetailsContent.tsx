@@ -279,11 +279,63 @@ export function CombinedPayoutDetailsContent({
     .map((p) => `${earningsPlatformLabel(p.platform)} ${formatCurrency(p.netPayoutFromPlatform)}`)
     .join("  +  ");
 
-  /** Short ladder: what the driver actually gets paid (uses pooled raw net per platform). */
+  /** Short ladder: what the driver actually gets paid. */
   const finalPayoutSteps = useMemo(() => {
     type StepKind = "neutral" | "deduction" | "total" | "final" | "final-debt";
     type StepDef = { kind: StepKind; prefix?: "-" | "=" | ""; label: string; amount: number; hint?: string };
     const steps: StepDef[] = [];
+
+    if (breakdown.platforms.length === 1) {
+      const p = breakdown.platforms[0]!;
+      const weeklyFees = p.rawNet - p.netPayoutFromPlatform;
+
+      steps.push({
+        kind: "neutral",
+        label: "Net after platform deductions",
+        amount: p.netPayoutFromPlatform,
+        hint: "Net income after fleet/subscription and cash balance.",
+      });
+
+      if (Math.abs(weeklyFees) > 0.02) {
+        steps.push({
+          kind: "deduction",
+          prefix: "-",
+          label: "Weekly fees & charges",
+          amount: weeklyFees,
+          hint: "Recurring/custom fees on this platform.",
+        });
+      }
+
+      if (breakdown.customFeeVehicleRent > 0.02) {
+        steps.push({
+          kind: "deduction",
+          prefix: "-",
+          label: "Custom fee / vehicle rent",
+          amount: -breakdown.customFeeVehicleRent,
+          hint: "Vehicle rent applied once on platform payout.",
+        });
+      }
+
+      if (breakdown.totalDebtApplied > 0.02) {
+        steps.push({
+          kind: "deduction",
+          prefix: "-",
+          label: "Debt applied to older periods",
+          amount: -breakdown.totalDebtApplied,
+          hint: "Paid from this week's earnings toward prior debt",
+        });
+      }
+
+      steps.push({
+        kind: isDebtPayout ? "final-debt" : "final",
+        prefix: "=",
+        label: "Final net payout",
+        amount: breakdown.finalNet,
+        hint: breakdown.isReconciled ? "Matches stored driver payout total" : undefined,
+      });
+
+      return steps;
+    }
 
     for (const p of breakdown.platforms) {
       if (Math.abs(p.rawNet) <= 0.02) continue;
@@ -592,7 +644,11 @@ export function CombinedPayoutDetailsContent({
             </svg>
             <div className="min-w-0">
               <h2 className="fm-payout-detail-combined__title">Final payout calculation</h2>
-              <p className="mt-0.5 text-xs text-slate-500">How this week&apos;s platforms combine into one payable amount.</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {platformCount === 1
+                  ? "How this week's platform payout becomes the final payable amount."
+                  : "How this week's platforms combine into one payable amount."}
+              </p>
             </div>
           </div>
           <div className="fm-payout-detail-combined__body">
@@ -719,9 +775,9 @@ export function CombinedPayoutDetailsContent({
           <div className="fm-payout-detail-info-note">
             <p className="fm-payout-detail-info-note__title">Important note</p>
             <p className="fm-payout-detail-info-note__text">
-              Fleet commission is deducted per platform on net income. Individual platform net payouts are
-              combined, then custom fee / vehicle rent is applied once on the total. Final payout is the stored
-              payable amount — there is no separate income tax on top of fleet commission.
+              {platformCount === 1
+                ? "Fleet commission is deducted on platform net income. Cash balance and weekly fees are deducted before the final payout. Final payout is the stored payable amount for this period."
+                : "Fleet commission is deducted per platform on net income. Individual platform net payouts are combined, then custom fee / vehicle rent is applied once on the total. Final payout is the stored payable amount — there is no separate income tax on top of fleet commission."}
             </p>
           </div>
         </section>
@@ -755,13 +811,15 @@ export function CombinedPayoutDetailsContent({
               </svg>
             }
           />
-          <LineRow label="Assigned" value={vehicleDetail?.has_vehicle_assigned ? "Yes" : "No"} />
-          <LineRow label="Plate" value={vehicleDetail?.license_plate ?? "—"} />
-          <LineRow label="Weekly rent" value={weeklyRent > 0 ? formatCurrency(weeklyRent) : "—"} />
-          {breakdown.customFeeVehicleRent > 0 && (
+          <LineRow label="Assigned" value={vehicleDetail?.has_vehicle_assigned && breakdown.customFeeVehicleRent > 0.02 ? "Yes" : "No"} />
+          <LineRow label="Plate" value={breakdown.customFeeVehicleRent > 0.02 ? (vehicleDetail?.license_plate ?? "—") : "—"} />
+          <LineRow label="Weekly rent" value={breakdown.customFeeVehicleRent > 0.02 && weeklyRent > 0 ? formatCurrency(weeklyRent) : "—"} />
+          {breakdown.customFeeVehicleRent > 0.02 ? (
             <p className="mt-2 text-xs font-medium text-emerald-700">
-              Vehicle rent included after combined platform net payout
+              Vehicle rent included after platform payout calculation
             </p>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">No vehicle rent applied this period</p>
           )}
         </article>
 
