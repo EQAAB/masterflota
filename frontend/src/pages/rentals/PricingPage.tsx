@@ -1,48 +1,119 @@
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getRentalPricing } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
-import { formatCurrency } from "../../utils/currency";
+import {
+  getRentalPricing,
+  getRentalPricingInsights,
+  getRentalPricingSummary,
+} from "../../api/rentals";
+import type { RentalPricing } from "../../api/rentals";
+import { PricingEditModal } from "../../components/rentals/pricing/PricingEditModal";
+import { PricingInsightsRow } from "../../components/rentals/pricing/PricingInsightsRow";
+import { PricingKpiRow } from "../../components/rentals/pricing/PricingKpiRow";
+import { PricingPageHeader } from "../../components/rentals/pricing/PricingPageHeader";
+import { PricingTable } from "../../components/rentals/pricing/PricingTable";
+import { PricingToolbar } from "../../components/rentals/pricing/PricingToolbar";
+import {
+  exportPricingCsv,
+  filterAndSortPricing,
+  vehicleTypeOptions,
+  type PricingFilters,
+} from "../../components/rentals/pricing/pricingListUtils";
+import { dashboardPage } from "../../theme/classNames";
+
+function useDebounce<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
 
 export function PricingPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["rentals", "pricing"],
-    queryFn: () => getRentalPricing().then((r) => r.data),
+  const [filters, setFilters] = useState<PricingFilters>({
+    q: "",
+    vehicleType: "",
+    pricingType: "",
+    vehicleStatus: "",
+    activeOnly: true,
+    sort: "plate",
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<RentalPricing | null>(null);
+
+  const debouncedQ = useDebounce(filters.q, 300);
+
+  const pricingQuery = useQuery({
+    queryKey: ["rentals", "pricing", debouncedQ],
+    queryFn: () =>
+      getRentalPricing({ vehicleQ: debouncedQ.trim() || undefined }).then((r) => r.data),
   });
 
+  const summaryQuery = useQuery({
+    queryKey: ["rentals", "pricing", "summary"],
+    queryFn: () => getRentalPricingSummary().then((r) => r.data),
+  });
+
+  const insightsQuery = useQuery({
+    queryKey: ["rentals", "pricing", "insights"],
+    queryFn: () => getRentalPricingInsights().then((r) => r.data),
+  });
+
+  const rows = pricingQuery.data ?? [];
+
+  const filtered = useMemo(
+    () => filterAndSortPricing(rows, { ...filters, q: debouncedQ }),
+    [rows, filters, debouncedQ],
+  );
+
+  const types = useMemo(() => vehicleTypeOptions(rows), [rows]);
+
+  const openAdd = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (row: RentalPricing) => {
+    setEditing(row);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditing(null);
+  };
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
-        title="Pricing"
-        subtitle="Rate cards per vehicle. Seeded from vehicle daily/weekly/monthly rent fields."
-        backTo="/rentals"
-      />
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-        {isLoading && <p className="p-6 text-sm">Loading…</p>}
-        <table className="w-full text-sm">
-          <thead className="border-b bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Vehicle</th>
-              <th className="px-4 py-3">Daily</th>
-              <th className="px-4 py-3">Weekly</th>
-              <th className="px-4 py-3">Monthly</th>
-              <th className="px-4 py-3">Deposit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data ?? []).map((p) => (
-              <tr key={p.id} className="border-b border-slate-100">
-                <td className="px-4 py-3">
-                  {p.license_plate ? `${p.license_plate} (${p.make} ${p.model})` : "Default / all vehicles"}
-                </td>
-                <td className="px-4 py-3 tabular-nums">{formatCurrency(Number(p.daily_rate))}</td>
-                <td className="px-4 py-3 tabular-nums">{formatCurrency(Number(p.weekly_rate))}</td>
-                <td className="px-4 py-3 tabular-nums">{formatCurrency(Number(p.monthly_rate))}</td>
-                <td className="px-4 py-3 tabular-nums">{formatCurrency(Number(p.deposit_default))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="fm-rental-pricing flex min-h-full flex-1 flex-col bg-surface-elevated">
+      <div className={dashboardPage}>
+        <PricingPageHeader onAdd={openAdd} onExport={() => exportPricingCsv(filtered)} />
+
+        <PricingKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
+
+        <PricingToolbar
+          filters={filters}
+          onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
+          vehicleTypes={types}
+          resultCount={filtered.length}
+        />
+
+        {pricingQuery.isError && (
+          <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            Failed to load pricing. Check your connection and try again.
+          </p>
+        )}
+
+        <PricingTable
+          rows={filtered}
+          loading={pricingQuery.isLoading}
+          onAdd={openAdd}
+          onEdit={openEdit}
+        />
+
+        <PricingInsightsRow insights={insightsQuery.data} loading={insightsQuery.isLoading} />
       </div>
+
+      <PricingEditModal open={modalOpen} editing={editing} onClose={closeModal} />
     </div>
   );
 }

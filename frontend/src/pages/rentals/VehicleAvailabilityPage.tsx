@@ -1,59 +1,168 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getRentalAvailability } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
+import { getRentalAvailability, getRentalAvailabilitySummary } from "../../api/rentals";
+import { AvailabilityCalendarView } from "../../components/rentals/availability/AvailabilityCalendarView";
+import { AvailabilityKpiRow } from "../../components/rentals/availability/AvailabilityKpiRow";
+import {
+  AvailabilityPageHeader,
+  type AvailabilityViewMode,
+} from "../../components/rentals/availability/AvailabilityPageHeader";
+import { AvailabilitySidePanel } from "../../components/rentals/availability/AvailabilitySidePanel";
+import { AvailabilityToolbar } from "../../components/rentals/availability/AvailabilityToolbar";
+import { AvailabilityVehicleList } from "../../components/rentals/availability/AvailabilityVehicleList";
+import { BlockDatesModal } from "../../components/rentals/availability/BlockDatesModal";
+import {
+  defaultRange,
+  filterAndSortVehicles,
+  vehicleTypeOptions,
+  type AvailabilityFilters,
+} from "../../components/rentals/availability/availabilityListUtils";
+import { dashboardPage } from "../../theme/classNames";
+
+function useDebounce<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
 
 export function VehicleAvailabilityPage() {
-  const today = useMemo(() => new Date(), []);
-  const from = today.toISOString().slice(0, 10);
-  const to = useMemo(() => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + 14);
-    return d.toISOString().slice(0, 10);
-  }, [today]);
+  const initialRange = useMemo(() => defaultRange(30), []);
+  const [from, setFrom] = useState(initialRange.from);
+  const [to, setTo] = useState(initialRange.to);
+  const [view, setView] = useState<AvailabilityViewMode>("list");
+  const [focusVehicleId, setFocusVehicleId] = useState<string | undefined>();
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockVehicleId, setBlockVehicleId] = useState<string | undefined>();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["rentals", "availability-matrix", from, to],
-    queryFn: () => getRentalAvailability({ from, to }).then((r) => r.data),
+  const [filters, setFilters] = useState<AvailabilityFilters>({
+    q: "",
+    status: "",
+    vehicleType: "",
+    rentalStatus: "",
+    sort: "plate",
   });
 
-  const blockedByVehicle = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const a of data?.availability ?? []) {
-      if (!a.is_available) {
-        map.set(a.vehicle_id, (map.get(a.vehicle_id) ?? 0) + 1);
-      }
-    }
-    return map;
-  }, [data?.availability]);
+  const debouncedQ = useDebounce(filters.q, 300);
+
+  const availQuery = useQuery({
+    queryKey: ["rentals", "availability", from, to, debouncedQ],
+    queryFn: () =>
+      getRentalAvailability({ from, to, vehicleQ: debouncedQ.trim() || undefined }).then((r) => r.data),
+  });
+
+  const summaryQuery = useQuery({
+    queryKey: ["rentals", "availability", "summary", from, to],
+    queryFn: () => getRentalAvailabilitySummary({ from, to }).then((r) => r.data),
+  });
+
+  const vehicles = availQuery.data?.vehicles ?? [];
+  const bookings = availQuery.data?.bookings ?? [];
+  const blocks = availQuery.data?.availability ?? [];
+
+  const filteredVehicles = useMemo(
+    () =>
+      filterAndSortVehicles(
+        vehicles,
+        bookings,
+        blocks,
+        from,
+        to,
+        { ...filters, q: debouncedQ },
+      ),
+    [vehicles, bookings, blocks, from, to, filters, debouncedQ],
+  );
+
+  const types = useMemo(() => vehicleTypeOptions(vehicles), [vehicles]);
+
+  const openBlockModal = (vehicleId?: string) => {
+    setBlockVehicleId(vehicleId);
+    setBlockModalOpen(true);
+  };
+
+  const handleViewCalendar = (vehicleId: string) => {
+    setFocusVehicleId(vehicleId);
+    setView("calendar");
+  };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
-        title="Vehicle availability"
-        subtitle={`Next 14 days from ${from}`}
-        backTo="/rentals"
-      />
-      {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {(data?.vehicles ?? []).map((v) => {
-          const blocked = blockedByVehicle.get(v.id) ?? 0;
-          const assigned = (v as { driver_assigned?: boolean }).driver_assigned;
-          return (
-            <article key={v.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-              <p className="font-semibold text-ink">{v.license_plate}</p>
-              <p className="text-sm text-slate-600">
-                {v.make} {v.model}
+    <div className="fm-rental-availability flex min-h-full flex-1 flex-col bg-surface-elevated">
+      <div className={dashboardPage}>
+        <AvailabilityPageHeader
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          view={view}
+          onViewChange={(v) => {
+            setView(v);
+            if (v === "list") setFocusVehicleId(undefined);
+          }}
+          onBlockDates={() => openBlockModal()}
+        />
+
+        <AvailabilityKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
+
+        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-6">
+          <div>
+            <AvailabilityToolbar
+              filters={filters}
+              onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
+              vehicleTypes={types}
+              resultCount={filteredVehicles.length}
+            />
+
+            {availQuery.isError && (
+              <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                Failed to load availability. Check your connection and try again.
               </p>
-              <p className="mt-2 text-xs capitalize text-slate-500">Status: {v.status}</p>
-              {assigned && <p className="mt-1 text-xs text-amber-700">Driver assigned — external rental may conflict</p>}
-              {blocked > 0 && (
-                <p className="mt-1 text-xs text-rose-700">{blocked} blocked day(s) in range</p>
-              )}
-            </article>
-          );
-        })}
+            )}
+
+            {view === "list" ? (
+              <AvailabilityVehicleList
+                vehicles={filteredVehicles}
+                bookings={bookings}
+                blocks={blocks}
+                from={from}
+                to={to}
+                loading={availQuery.isLoading}
+                onBlockDates={openBlockModal}
+                onViewCalendar={handleViewCalendar}
+              />
+            ) : (
+              <AvailabilityCalendarView
+                vehicles={filteredVehicles}
+                bookings={bookings}
+                blocks={blocks}
+                from={from}
+                to={to}
+                loading={availQuery.isLoading}
+                focusVehicleId={focusVehicleId}
+              />
+            )}
+          </div>
+
+          <AvailabilitySidePanel
+            bookings={bookings}
+            vehicles={vehicles}
+            className="mt-6 hidden xl:block"
+          />
+        </div>
       </div>
+
+      <BlockDatesModal
+        open={blockModalOpen}
+        vehicles={vehicles}
+        initialVehicleId={blockVehicleId}
+        defaultFrom={from}
+        defaultTo={to}
+        onClose={() => {
+          setBlockModalOpen(false);
+          setBlockVehicleId(undefined);
+        }}
+      />
     </div>
   );
 }

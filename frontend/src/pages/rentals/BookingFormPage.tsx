@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getVehicles } from "../../api/vehicles";
 import {
@@ -8,10 +8,27 @@ import {
   getRentalCustomers,
   quoteRental,
   updateRentalBooking,
+  type RentalQuote,
 } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
-import { btnPrimary, btnSecondary } from "../../theme/classNames";
-import { formatCurrency } from "../../utils/currency";
+import { BookingDateTimeFields } from "../../components/rentals/booking-form/BookingDateTimeFields";
+import { BookingDetailsSection } from "../../components/rentals/booking-form/BookingDetailsSection";
+import { BookingFormCard } from "../../components/rentals/booking-form/BookingFormCard";
+import { BookingFormFooter } from "../../components/rentals/booking-form/BookingFormFooter";
+import { BookingFormHeader } from "../../components/rentals/booking-form/BookingFormHeader";
+import { BookingSummarySidebar } from "../../components/rentals/booking-form/BookingSummarySidebar";
+import { CustomerSelectField } from "../../components/rentals/booking-form/CustomerSelectField";
+import { ExtraServicesChips } from "../../components/rentals/booking-form/ExtraServicesChips";
+import { RentalTypeSegment } from "../../components/rentals/booking-form/RentalTypeSegment";
+import { VehicleSelectField } from "../../components/rentals/booking-form/VehicleSelectField";
+import {
+  addDaysToDate,
+  buildFormMetaPayload,
+  combineDateAndTime,
+  computeDisplayTotals,
+  hydrateFormMeta,
+  parseStartAtParam,
+  splitIsoToDateTime,
+} from "../../components/rentals/booking-form/bookingFormUtils";
 
 export function BookingFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,20 +36,36 @@ export function BookingFormPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState(searchParams.get("customerId") ?? "");
   const [vehicleId, setVehicleId] = useState(searchParams.get("vehicleId") ?? "");
   const [rentalType, setRentalType] = useState<"daily" | "weekly" | "monthly">("daily");
-  const [startAt, setStartAt] = useState("");
-  const [endAt, setEndAt] = useState("");
-  const [quote, setQuote] = useState<{ subtotal: number; deposit: number; total: number } | null>(null);
+
+  const startParam = searchParams.get("startAt");
+  const initialPickup = startParam ? parseStartAtParam(startParam) : { date: "", time: "10:00" };
+  const [pickupDate, setPickupDate] = useState(initialPickup.date);
+  const [pickupTime, setPickupTime] = useState(initialPickup.time);
+  const [returnDate, setReturnDate] = useState(
+    initialPickup.date ? addDaysToDate(initialPickup.date, 7) : "",
+  );
+  const [returnTime, setReturnTime] = useState(initialPickup.time || "10:00");
+
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [returnLocation, setReturnLocation] = useState("");
+  const [driverNotes, setDriverNotes] = useState("");
+  const [internalNotes, setInternalNotes] = useState("");
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  const [quote, setQuote] = useState<RentalQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const customersQuery = useQuery({
-    queryKey: ["rentals", "customers"],
+    queryKey: ["rentals", "customers", "booking-form"],
     queryFn: () => getRentalCustomers().then((r) => r.data),
   });
   const vehiclesQuery = useQuery({
-    queryKey: ["vehicles", "list-rental"],
+    queryKey: ["vehicles", "list-rental-booking"],
     queryFn: () => getVehicles({ limit: 200 }).then((r) => r.data.data),
   });
   const existingQuery = useQuery({
@@ -41,173 +74,274 @@ export function BookingFormPage() {
     enabled: isEdit,
   });
 
+  const existing = existingQuery.data;
+  const isDraft = !isEdit || existing?.status === "draft";
+  const formDisabled = isEdit && !isDraft;
+
   useEffect(() => {
-    const b = existingQuery.data;
+    const b = existing;
     if (!b) return;
     setCustomerId(b.customer_id);
     setVehicleId(b.vehicle_id);
     setRentalType(b.rental_type);
-    setStartAt(b.start_at.slice(0, 16));
-    setEndAt(b.end_at.slice(0, 16));
-  }, [existingQuery.data]);
+    const start = splitIsoToDateTime(b.start_at);
+    const end = splitIsoToDateTime(b.end_at);
+    setPickupDate(start.date);
+    setPickupTime(start.time);
+    setReturnDate(end.date);
+    setReturnTime(end.time);
+    const meta = hydrateFormMeta(b.pricing_snapshot);
+    setPickupLocation(meta.pickupLocation);
+    setReturnLocation(meta.returnLocation);
+    setDriverNotes(meta.driverNotes);
+    setInternalNotes(meta.internalNotes);
+    setSelectedExtras(meta.selectedExtras);
+    setDiscountAmount(meta.discountAmount);
+  }, [existing]);
+
+  const startIso = useMemo(
+    () => combineDateAndTime(pickupDate, pickupTime),
+    [pickupDate, pickupTime],
+  );
+  const endIso = useMemo(() => combineDateAndTime(returnDate, returnTime), [returnDate, returnTime]);
 
   useEffect(() => {
-    if (!vehicleId || !startAt || !endAt) {
+    if (!vehicleId || !startIso || !endIso) {
       setQuote(null);
+      setQuoteError(null);
       return;
     }
+    if (new Date(endIso) <= new Date(startIso)) {
+      setQuote(null);
+      setQuoteError("Return must be after pickup");
+      return;
+    }
+    setQuoteLoading(true);
     const t = setTimeout(() => {
       quoteRental({
         vehicleId,
         rentalType,
-        startAt: new Date(startAt).toISOString(),
-        endAt: new Date(endAt).toISOString(),
+        startAt: startIso,
+        endAt: endIso,
       })
         .then((r) => {
-          if (r.data.conflict) {
-            setQuoteError(r.data.conflict.message);
-            setQuote(null);
-          } else {
-            setQuoteError(null);
-            setQuote({ subtotal: r.data.subtotal, deposit: r.data.deposit, total: r.data.total });
-          }
+          setQuote(r.data);
+          setQuoteError(r.data.conflict ? r.data.conflict.message : null);
         })
-        .catch(() => setQuoteError("Could not get quote"));
+        .catch(() => {
+          setQuote(null);
+          setQuoteError("Could not get quote");
+        })
+        .finally(() => setQuoteLoading(false));
     }, 400);
     return () => clearTimeout(t);
-  }, [vehicleId, rentalType, startAt, endAt]);
+  }, [vehicleId, rentalType, startIso, endIso]);
+
+  const customers = customersQuery.data ?? [];
+  const vehicles = vehiclesQuery.data ?? [];
+  const selectedCustomer = customers.find((c) => c.id === customerId) ?? null;
+  const selectedVehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
+
+  const totals = useMemo(
+    () => computeDisplayTotals(quote, rentalType, selectedExtras, discountAmount),
+    [quote, rentalType, selectedExtras, discountAmount],
+  );
+
+  const buildBody = () => {
+    if (!customerId || !vehicleId || !startIso || !endIso) {
+      throw new Error("Complete required fields");
+    }
+    const formMeta = buildFormMetaPayload({
+      pickupLocation,
+      returnLocation,
+      driverNotes,
+      internalNotes,
+      selectedExtras,
+      discountAmount,
+    });
+    return {
+      customerId,
+      vehicleId,
+      rentalType,
+      startAt: startIso,
+      endAt: endIso,
+      ...(formMeta ? { formMeta } : {}),
+    };
+  };
+
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const saveMut = useMutation({
-    mutationFn: async () => {
-      const body = {
-        customerId,
-        vehicleId,
-        rentalType,
-        startAt: new Date(startAt).toISOString(),
-        endAt: new Date(endAt).toISOString(),
-      };
-      if (isEdit) return updateRentalBooking(id!, body).then((r) => r.data);
+    mutationFn: async (_navigateAfter: boolean) => {
+      const body = buildBody();
+      if (isEdit) {
+        return updateRentalBooking(id!, body).then((r) => r.data);
+      }
       return createRentalBooking(body).then((r) => r.data);
     },
-    onSuccess: (b) => navigate(`/rentals/bookings/${b.id}`),
+    onSuccess: (b, navigateAfter) => {
+      if (navigateAfter) {
+        navigate(`/rentals/bookings/${b.id}`);
+        return;
+      }
+      setSavedFlash(true);
+      window.setTimeout(() => setSavedFlash(false), 3000);
+      if (!isEdit) {
+        navigate(`/rentals/bookings/${b.id}/edit`, { replace: true });
+      }
+    },
   });
 
+  const canSubmit =
+    !!customerId &&
+    !!vehicleId &&
+    !!startIso &&
+    !!endIso &&
+    isDraft &&
+    !quoteError &&
+    quote?.available !== false;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    saveMut.mutate(true);
+  };
+
+  const handleSaveDraft = () => {
+    if (!customerId || !vehicleId || !startIso || !endIso || !isDraft) return;
+    saveMut.mutate(false);
+  };
+
+  const rentalDays = quote?.days ?? null;
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
+    <div className="fm-rental-booking-form flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
+      <BookingFormHeader
         title={isEdit ? "Edit booking" : "New booking"}
+        subtitle="Create a rental reservation and schedule vehicle pickup."
         backTo={isEdit ? `/rentals/bookings/${id}` : "/rentals/bookings"}
         backLabel={isEdit ? "Booking" : "Bookings"}
+        statusBadge={isEdit ? existing?.status ?? "draft" : "Draft"}
+        onSaveDraft={!formDisabled ? handleSaveDraft : undefined}
+        saveDraftPending={saveMut.isPending}
+        saveDraftDisabled={!canSubmit && !(customerId && vehicleId && startIso && endIso)}
       />
 
-      <form
-        className="max-w-xl space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          saveMut.mutate();
-        }}
-      >
-        <label className="block text-sm">
-          <span className="font-medium text-ink">Customer</span>
-          <select
-            required
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-          >
-            <option value="">Select customer</option>
-            {(customersQuery.data ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.legal_name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-sm">
-          <span className="font-medium text-ink">Vehicle</span>
-          <select
-            required
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={vehicleId}
-            onChange={(e) => setVehicleId(e.target.value)}
-          >
-            <option value="">Select vehicle</option>
-            {(vehiclesQuery.data ?? []).map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.license_plate} — {v.make} {v.model}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-sm">
-          <span className="font-medium text-ink">Rental type</span>
-          <select
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={rentalType}
-            onChange={(e) => setRentalType(e.target.value as typeof rentalType)}
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </label>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="font-medium text-ink">Start</span>
-            <input
-              type="datetime-local"
-              required
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-              value={startAt}
-              onChange={(e) => setStartAt(e.target.value)}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="font-medium text-ink">End</span>
-            <input
-              type="datetime-local"
-              required
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-              value={endAt}
-              onChange={(e) => setEndAt(e.target.value)}
-            />
-          </label>
+      {formDisabled && (
+        <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200/60">
+          Only draft bookings can be edited.
         </div>
+      )}
 
-        {quoteError && <p className="text-sm text-rose-700">{quoteError}</p>}
-        {quote && (
-          <div className="rounded-xl bg-violet-50/80 p-4 text-sm ring-1 ring-violet-200/50">
-            <p>
-              Subtotal: <strong>{formatCurrency(quote.subtotal)}</strong>
-            </p>
-            <p>
-              Deposit: <strong>{formatCurrency(quote.deposit)}</strong>
-            </p>
-            <p>
-              Total: <strong>{formatCurrency(quote.total)}</strong>
-            </p>
+      <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
+        <div className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-8">
+          <div className="space-y-6">
+            <BookingFormCard
+              title="Reservation details"
+              description="Choose customer, vehicle, rental period, and optional services."
+            >
+              <div className="space-y-6">
+                <CustomerSelectField
+                  customers={customers}
+                  value={customerId}
+                  onChange={setCustomerId}
+                  disabled={formDisabled}
+                />
+                <VehicleSelectField
+                  vehicles={vehicles}
+                  value={vehicleId}
+                  onChange={setVehicleId}
+                  quote={quote}
+                  quoteLoading={quoteLoading}
+                  disabled={formDisabled}
+                />
+                <div>
+                  <span className="block text-sm font-medium text-ink">Rental type</span>
+                  <div className="mt-1.5">
+                    <RentalTypeSegment
+                      value={rentalType}
+                      onChange={setRentalType}
+                      disabled={formDisabled}
+                    />
+                  </div>
+                </div>
+                <BookingDateTimeFields
+                  pickupDate={pickupDate}
+                  pickupTime={pickupTime}
+                  returnDate={returnDate}
+                  returnTime={returnTime}
+                  onPickupDate={setPickupDate}
+                  onPickupTime={setPickupTime}
+                  onReturnDate={setReturnDate}
+                  onReturnTime={setReturnTime}
+                  rentalDays={rentalDays}
+                  disabled={formDisabled}
+                />
+                {quoteError && (
+                  <p className="text-sm font-medium text-rose-700" role="alert">
+                    {quoteError}
+                  </p>
+                )}
+              </div>
+            </BookingFormCard>
+
+            <BookingFormCard
+              title="Booking details"
+              description="Optional pickup information, notes, and pricing adjustments."
+            >
+              <BookingDetailsSection
+                pickupLocation={pickupLocation}
+                returnLocation={returnLocation}
+                driverNotes={driverNotes}
+                internalNotes={internalNotes}
+                discountAmount={discountAmount}
+                onPickupLocation={setPickupLocation}
+                onReturnLocation={setReturnLocation}
+                onDriverNotes={setDriverNotes}
+                onInternalNotes={setInternalNotes}
+                onDiscountAmount={setDiscountAmount}
+                disabled={formDisabled}
+              />
+            </BookingFormCard>
+
+            <BookingFormCard title="Extra services" description="Add optional services to this rental.">
+              <ExtraServicesChips
+                selected={selectedExtras}
+                onChange={setSelectedExtras}
+                disabled={formDisabled}
+              />
+            </BookingFormCard>
           </div>
-        )}
 
-        <div className="flex gap-2 pt-2">
-          <button type="submit" className={btnPrimary} disabled={saveMut.isPending}>
-            {isEdit ? "Save" : "Create draft"}
-          </button>
-          <button type="button" className={btnSecondary} onClick={() => navigate(-1)}>
-            Cancel
-          </button>
+          <BookingSummarySidebar
+            customer={selectedCustomer}
+            vehicle={selectedVehicle}
+            quote={quote}
+            quoteLoading={quoteLoading}
+            totals={totals}
+            selectedExtras={selectedExtras}
+            isEdit={isEdit}
+          />
         </div>
+
+        <BookingFormFooter
+          isEdit={isEdit}
+          onCancel={() => navigate(isEdit ? `/rentals/bookings/${id}` : "/rentals/bookings")}
+          onSaveDraft={handleSaveDraft}
+          saveDraftPending={saveMut.isPending}
+          createPending={saveMut.isPending}
+          disabled={!canSubmit}
+        />
       </form>
 
-      {!isEdit && (customersQuery.data ?? []).length === 0 && (
-        <p className="mt-4 text-sm text-slate-600">
-          <a href="/rentals/customers/new" className="text-brand hover:underline">
-            Add a customer
-          </a>{" "}
-          first.
+      {savedFlash && (
+        <p className="mt-2 text-sm font-medium text-emerald-700" role="status">
+          Draft saved.
+        </p>
+      )}
+      {saveMut.isError && (
+        <p className="mt-2 text-sm text-rose-700" role="alert">
+          Could not save booking. Check required fields and availability.
         </p>
       )}
     </div>

@@ -25,7 +25,7 @@
 }
 
 @layer base {
-  body {
+body {
     @apply bg-surface text-ink font-sans antialiased;
   }
 }
@@ -1111,5 +1111,1077 @@
     line-height: 1;
     letter-spacing: 0.01em;
     color: #111827;
+  }
+
+  /* Rental dashboard */
+  .fm-rental-dashboard__cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-dashboard__cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-dashboard__kpi {
+    @apply min-h-[108px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-dashboard__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-dashboard__kpi--active {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-dashboard__kpi--upcoming {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-dashboard__kpi--customers {
+    border-color: rgba(20, 184, 166, 0.28);
+    background: linear-gradient(145deg, rgba(240, 253, 250, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-dashboard__kpi--revenue {
+    border-color: rgba(0, 160, 130, 0.35);
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.5), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 4px 14px rgba(0, 160, 130, 0.08);
+  }
+
+  .fm-rental-dashboard__kpi-icon {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
+  }
+
+  .fm-rental-dashboard__tabs {
+    @apply inline-flex flex-wrap gap-1 rounded-xl border border-border/60 bg-slate-100/80 p-1;
+  }
+
+  .fm-rental-dashboard__tab {
+    @apply rounded-lg px-4 py-2 text-sm font-medium text-ink-muted transition-all duration-200;
+  }
+
+  .fm-rental-dashboard__tab:hover {
+    @apply text-ink bg-white/60;
+  }
+
+  .fm-rental-dashboard__tab--active {
+    @apply bg-white font-semibold text-ink shadow-sm ring-1 ring-black/[0.04];
+  }
+
+  .fm-rental-dashboard__row {
+    @apply flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition-colors duration-150;
+  }
+
+  .fm-rental-dashboard__row:hover {
+    @apply border-border/50 bg-slate-50/90;
+  }
+
+  .fm-rental-dashboard__avatar {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold;
+  }
+
+  .fm-rental-dashboard__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  .fm-rental-dashboard__overdue {
+    @apply rounded-2xl border border-rose-200/80 bg-gradient-to-br from-rose-50/90 to-white p-5 shadow-sm;
+  }
+
+  .fm-rental-dashboard__cal-day {
+    @apply flex h-8 w-8 items-center justify-center rounded-lg text-xs font-medium text-ink-muted;
+  }
+
+  .fm-rental-dashboard__cal-day--has-booking {
+    @apply relative font-semibold text-brand-dark;
+  }
+
+  .fm-rental-dashboard__cal-day--has-booking::after {
+    content: "";
+    @apply absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-brand;
+  }
+
+  .fm-rental-dashboard__cal-day--today {
+    @apply bg-brand-mint/80 text-ink ring-1 ring-brand/25;
+  }
+
+  .fm-rental-dashboard__fleet-bar {
+    @apply h-2 overflow-hidden rounded-full bg-slate-100;
+  }
+
+  .fm-rental-dashboard__fleet-bar-fill {
+    @apply h-full rounded-full transition-all duration-300;
+  }
+
+  /* Rental bookings list */
+  .fm-rental-bookings__header-cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-bookings__header-cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-bookings__kpi {
+    @apply min-h-[100px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-bookings__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-bookings__kpi--active {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-bookings__kpi--upcoming {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-bookings__kpi--completed {
+    border-color: rgba(139, 92, 246, 0.25);
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-bookings__kpi--revenue {
+    border-color: rgba(0, 160, 130, 0.35);
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.45), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 4px 14px rgba(0, 160, 130, 0.08);
+  }
+
+  .fm-rental-bookings__toolbar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-bookings__table-card {
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-bookings__row {
+    @apply border-b border-slate-100/90 transition-colors duration-150;
+  }
+
+  .fm-rental-bookings__row:hover {
+    @apply bg-slate-50/90;
+  }
+
+  .fm-rental-bookings__row--compact td {
+    @apply py-2.5;
+  }
+
+  .fm-rental-bookings__row td {
+    @apply px-4 py-4 align-middle;
+  }
+
+  .fm-rental-bookings__plate-badge {
+    @apply inline-flex rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-800 ring-1 ring-slate-200/80;
+  }
+
+  .fm-rental-bookings__avatar {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold;
+  }
+
+  .fm-rental-bookings__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  .fm-rental-bookings__search {
+    @apply w-full min-w-[200px] rounded-xl border border-border/80 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-bookings__filter-select {
+    @apply rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  /* Rental booking calendar */
+  .fm-rental-calendar__view-toggle {
+    @apply inline-flex gap-1 rounded-xl border border-border/60 bg-slate-100/80 p-1;
+  }
+
+  .fm-rental-calendar__view-btn {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium text-ink-muted transition-all duration-200;
+  }
+
+  .fm-rental-calendar__view-btn:hover {
+    @apply bg-white/70 text-ink;
+  }
+
+  .fm-rental-calendar__view-btn--active {
+    @apply bg-white font-semibold text-ink shadow-sm ring-1 ring-black/[0.04];
+  }
+
+  .fm-rental-calendar__nav {
+    @apply flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-white px-4 py-3 shadow-sm;
+  }
+
+  .fm-rental-calendar__nav-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border/80 bg-white text-ink-muted shadow-sm transition-all hover:bg-slate-50 hover:text-ink;
+  }
+
+  .fm-rental-calendar__filter-bar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-calendar__grid-card {
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-calendar__grid {
+    @apply grid grid-cols-7 border-t border-border/60;
+  }
+
+  .fm-rental-calendar__weekday {
+    @apply border-b border-border/60 bg-slate-50/90 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500;
+  }
+
+  .fm-rental-calendar__cell {
+    @apply relative min-h-[120px] border-b border-r border-slate-100/90 p-1.5 transition-colors duration-150;
+  }
+
+  .fm-rental-calendar__cell:hover {
+    @apply bg-slate-50/80;
+  }
+
+  .fm-rental-calendar__cell--today {
+    @apply bg-brand-mint/20 ring-1 ring-inset ring-brand/20;
+  }
+
+  .fm-rental-calendar__cell--outside {
+    @apply bg-slate-50/40 opacity-60;
+  }
+
+  .fm-rental-calendar__cell-date {
+    @apply mb-1 flex items-center justify-between text-xs font-semibold text-slate-600;
+  }
+
+  .fm-rental-calendar__cell-add {
+    @apply invisible flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-all hover:bg-brand-mint/80 hover:text-brand;
+  }
+
+  .fm-rental-calendar__cell:hover .fm-rental-calendar__cell-add {
+    @apply visible;
+  }
+
+  .fm-rental-calendar__event {
+    @apply mb-1 block w-full cursor-pointer rounded-md border-l-[3px] px-2 py-1.5 text-left text-[11px] leading-snug shadow-sm transition-all duration-150 hover:shadow-md;
+  }
+
+  .fm-rental-calendar__event--active {
+    border-left-color: #10b981;
+    background: rgba(236, 253, 245, 0.95);
+    color: #065f46;
+  }
+
+  .fm-rental-calendar__event--completed {
+    border-left-color: #8b5cf6;
+    background: rgba(245, 243, 255, 0.95);
+    color: #5b21b6;
+  }
+
+  .fm-rental-calendar__event--confirmed {
+    border-left-color: #0ea5e9;
+    background: rgba(240, 249, 255, 0.95);
+    color: #0369a1;
+  }
+
+  .fm-rental-calendar__event--draft {
+    border-left-color: #f59e0b;
+    background: rgba(255, 251, 235, 0.95);
+    color: #92400e;
+  }
+
+  .fm-rental-calendar__event--cancelled {
+    border-left-color: #f43f5e;
+    background: rgba(255, 241, 242, 0.95);
+    color: #9f1239;
+  }
+
+  .fm-rental-calendar__legend-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-calendar__side-panel {
+    @apply space-y-4 rounded-2xl border border-border/80 bg-white p-4 shadow-card xl:sticky xl:top-6;
+  }
+
+  .fm-rental-calendar__side-item {
+    @apply rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-sm transition-colors hover:border-brand/30 hover:bg-white;
+  }
+
+  .fm-rental-calendar__drawer-backdrop {
+    @apply fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px];
+  }
+
+  .fm-rental-calendar__drawer {
+    @apply fixed inset-y-0 right-0 z-[201] flex w-full max-w-md flex-col border-l border-border/80 bg-white shadow-2xl;
+  }
+
+  .fm-rental-calendar__week-col {
+    @apply min-h-[200px] border-r border-slate-100 p-2 last:border-r-0;
+  }
+
+  .fm-rental-calendar__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  /* Rental customers list */
+  .fm-rental-customers__header-cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-customers__header-cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-customers__kpi {
+    @apply min-h-[100px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-customers__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-customers__kpi--total {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-customers__kpi--active {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-customers__kpi--returning {
+    border-color: rgba(139, 92, 246, 0.25);
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-customers__kpi--revenue {
+    border-color: rgba(0, 160, 130, 0.35);
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.45), rgba(255, 255, 255, 0.98));
+    box-shadow: 0 4px 14px rgba(0, 160, 130, 0.08);
+  }
+
+  .fm-rental-customers__toolbar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-customers__search {
+    @apply w-full min-w-[200px] rounded-xl border border-border/80 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-customers__filter-select {
+    @apply rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-customers__table-card {
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-customers__row {
+    @apply border-b border-slate-100/90 transition-colors duration-150 cursor-pointer;
+  }
+
+  .fm-rental-customers__row:hover {
+    @apply bg-slate-50/90;
+  }
+
+  .fm-rental-customers__row td {
+    @apply px-4 py-4 align-middle;
+  }
+
+  .fm-rental-customers__avatar {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold;
+  }
+
+  .fm-rental-customers__type-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-customers__type-pill--company {
+    @apply bg-sky-50 text-sky-800 ring-sky-200/60;
+  }
+
+  .fm-rental-customers__type-pill--individual {
+    @apply bg-violet-50 text-violet-800 ring-violet-200/60;
+  }
+
+  .fm-rental-customers__status-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-customers__status-pill--rental {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-customers__status-pill--active {
+    @apply bg-slate-100 text-slate-700 ring-slate-200/60;
+  }
+
+  .fm-rental-customers__status-pill--inactive {
+    @apply bg-rose-50 text-rose-800 ring-rose-200/60;
+  }
+
+  .fm-rental-customers__mobile-card {
+    @apply rounded-2xl border border-border/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-card;
+  }
+
+  .fm-rental-customers__drawer-backdrop {
+    @apply fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px];
+  }
+
+  .fm-rental-customers__drawer {
+    @apply fixed inset-y-0 right-0 z-[201] flex w-full max-w-md flex-col border-l border-border/80 bg-white shadow-2xl;
+  }
+
+  .fm-rental-customers__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  /* Rental vehicle availability */
+  .fm-rental-availability__header-cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-availability__header-cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-availability__kpi {
+    @apply min-h-[100px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-availability__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-availability__kpi--available {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-availability__kpi--rented {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-availability__kpi--upcoming {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-availability__kpi--blocked {
+    border-color: rgba(244, 63, 94, 0.25);
+    background: linear-gradient(145deg, rgba(255, 241, 242, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-availability__toolbar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-availability__search {
+    @apply w-full min-w-[200px] rounded-xl border border-border/80 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-availability__filter-select {
+    @apply rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-availability__view-toggle {
+    @apply inline-flex gap-1 rounded-xl border border-border/60 bg-slate-100/80 p-1;
+  }
+
+  .fm-rental-availability__view-btn {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium text-ink-muted transition-all duration-200;
+  }
+
+  .fm-rental-availability__view-btn--active {
+    @apply bg-white font-semibold text-ink shadow-sm ring-1 ring-black/[0.04];
+  }
+
+  .fm-rental-availability__vehicle-card {
+    @apply rounded-2xl border border-border/80 bg-white p-4 shadow-card transition-all duration-200 hover:shadow-card-hover;
+  }
+
+  .fm-rental-availability__thumb {
+    @apply flex h-16 w-20 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-slate-200/80;
+  }
+
+  .fm-rental-availability__timeline {
+    @apply flex h-3 gap-px overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/60;
+  }
+
+  .fm-rental-availability__timeline-seg {
+    @apply min-w-[3px] flex-1 transition-opacity hover:opacity-80;
+  }
+
+  .fm-rental-availability__timeline-seg--available {
+    @apply bg-emerald-500;
+  }
+
+  .fm-rental-availability__timeline-seg--booked {
+    @apply bg-rose-500;
+  }
+
+  .fm-rental-availability__timeline-seg--blocked {
+    @apply bg-slate-400;
+  }
+
+  .fm-rental-availability__timeline-seg--maintenance {
+    @apply bg-amber-500;
+  }
+
+  .fm-rental-availability__status-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-availability__status-pill--available {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-availability__status-pill--rented {
+    @apply bg-sky-50 text-sky-800 ring-sky-200/60;
+  }
+
+  .fm-rental-availability__status-pill--maintenance {
+    @apply bg-amber-50 text-amber-900 ring-amber-200/60;
+  }
+
+  .fm-rental-availability__status-pill--blocked {
+    @apply bg-rose-50 text-rose-800 ring-rose-200/60;
+  }
+
+  .fm-rental-availability__status-pill--unavailable {
+    @apply bg-slate-100 text-slate-600 ring-slate-200/60;
+  }
+
+  .fm-rental-availability__calendar-grid {
+    @apply overflow-x-auto rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-availability__calendar-row {
+    @apply flex border-b border-slate-100 last:border-b-0;
+  }
+
+  .fm-rental-availability__calendar-cell {
+    @apply h-8 w-8 shrink-0 border-r border-slate-50 last:border-r-0;
+  }
+
+  .fm-rental-availability__side-panel {
+    @apply space-y-4 rounded-2xl border border-border/80 bg-white p-4 shadow-card xl:sticky xl:top-6;
+  }
+
+  .fm-rental-availability__side-item {
+    @apply rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-sm transition-colors hover:border-brand/30 hover:bg-white;
+  }
+
+  .fm-rental-availability__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  /* Rental pricing */
+  .fm-rental-pricing__header-cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-pricing__header-cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-pricing__kpi {
+    @apply min-h-[100px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-pricing__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-pricing__kpi--daily {
+    border-color: rgba(0, 160, 130, 0.35);
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.45), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-pricing__kpi--weekly {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-pricing__kpi--revenue {
+    border-color: rgba(139, 92, 246, 0.25);
+    background: linear-gradient(145deg, rgba(245, 243, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-pricing__kpi--custom {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-pricing__toolbar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-pricing__search {
+    @apply w-full min-w-[200px] rounded-xl border border-border/80 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-pricing__filter-select {
+    @apply rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-pricing__table-card {
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-pricing__row {
+    @apply border-b border-slate-100/90 transition-colors duration-150;
+  }
+
+  .fm-rental-pricing__row:hover {
+    @apply bg-slate-50/90;
+  }
+
+  .fm-rental-pricing__row--expanded {
+    @apply bg-slate-50/50;
+  }
+
+  .fm-rental-pricing__row td {
+    @apply px-4 py-4 align-middle;
+  }
+
+  .fm-rental-pricing__thumb {
+    @apply flex h-14 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-slate-200/80;
+  }
+
+  .fm-rental-pricing__plate-badge {
+    @apply inline-flex rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-800 ring-1 ring-slate-200/80;
+  }
+
+  .fm-rental-pricing__rate-sublabel {
+    @apply text-xs text-slate-500;
+  }
+
+  .fm-rental-pricing__status-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-pricing__status-pill--active {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-pricing__status-pill--draft {
+    @apply bg-slate-100 text-slate-600 ring-slate-200/60;
+  }
+
+  .fm-rental-pricing__status-pill--seasonal {
+    @apply bg-sky-50 text-sky-800 ring-sky-200/60;
+  }
+
+  .fm-rental-pricing__status-pill--discounted {
+    @apply bg-violet-50 text-violet-800 ring-violet-200/60;
+  }
+
+  .fm-rental-pricing__fleet-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset capitalize;
+  }
+
+  .fm-rental-pricing__fleet-pill--available {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-pricing__fleet-pill--rented {
+    @apply bg-rose-50 text-rose-800 ring-rose-200/60;
+  }
+
+  .fm-rental-pricing__fleet-pill--maintenance {
+    @apply bg-amber-50 text-amber-900 ring-amber-200/60;
+  }
+
+  .fm-rental-pricing__fleet-pill--unavailable {
+    @apply bg-slate-100 text-slate-600 ring-slate-200/60;
+  }
+
+  .fm-rental-pricing__expand-panel {
+    @apply border-t border-slate-100 bg-slate-50/80 px-4 py-4;
+  }
+
+  .fm-rental-pricing__insight-card {
+    @apply rounded-2xl border border-border/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-card;
+  }
+
+  .fm-rental-pricing__mobile-card {
+    @apply rounded-2xl border border-border/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-card;
+  }
+
+  .fm-rental-pricing__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  /* Rental payments */
+  .fm-rental-payments__header-cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-payments__header-cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-payments__kpi {
+    @apply min-h-[100px] rounded-2xl border p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-rental-payments__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-rental-payments__kpi--total {
+    border-color: rgba(0, 160, 130, 0.35);
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.45), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-payments__kpi--paid {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: linear-gradient(145deg, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-payments__kpi--pending {
+    border-color: rgba(245, 158, 11, 0.28);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-payments__kpi--mtd {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(145deg, rgba(239, 246, 255, 0.95), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-payments__toolbar {
+    @apply rounded-2xl border border-border/70 bg-slate-50/80 p-4 shadow-sm;
+  }
+
+  .fm-rental-payments__search {
+    @apply w-full min-w-[200px] rounded-xl border border-border/80 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-payments__filter-select {
+    @apply rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-rental-payments__activity-card {
+    @apply mb-6 rounded-2xl border border-border/80 bg-white p-4 shadow-sm;
+  }
+
+  .fm-rental-payments__activity-item {
+    @apply flex gap-3 border-l-2 border-slate-200 py-2 pl-4 first:pt-0 last:pb-0;
+  }
+
+  .fm-rental-payments__activity-item--paid {
+    @apply border-emerald-400;
+  }
+
+  .fm-rental-payments__activity-item--pending {
+    @apply border-amber-400;
+  }
+
+  .fm-rental-payments__table-card {
+    @apply overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card;
+  }
+
+  .fm-rental-payments__row {
+    @apply border-b border-slate-100/90 transition-colors duration-150;
+  }
+
+  .fm-rental-payments__row:hover {
+    @apply bg-slate-50/90;
+  }
+
+  .fm-rental-payments__row--expanded {
+    @apply bg-slate-50/50;
+  }
+
+  .fm-rental-payments__row td {
+    @apply px-4 py-4 align-middle;
+  }
+
+  .fm-rental-payments__avatar {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold;
+  }
+
+  .fm-rental-payments__plate-badge {
+    @apply inline-flex rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-semibold text-slate-800 ring-1 ring-slate-200/80;
+  }
+
+  .fm-rental-payments__amount--paid {
+    @apply font-bold tabular-nums text-emerald-700;
+  }
+
+  .fm-rental-payments__amount--pending {
+    @apply font-bold tabular-nums text-amber-700;
+  }
+
+  .fm-rental-payments__amount--refunded {
+    @apply font-bold tabular-nums text-violet-700;
+  }
+
+  .fm-rental-payments__type-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-payments__type-pill--rent {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-payments__type-pill--deposit {
+    @apply bg-sky-50 text-sky-800 ring-sky-200/60;
+  }
+
+  .fm-rental-payments__type-pill--refund {
+    @apply bg-violet-50 text-violet-800 ring-violet-200/60;
+  }
+
+  .fm-rental-payments__type-pill--extra {
+    @apply bg-amber-50 text-amber-900 ring-amber-200/60;
+  }
+
+  .fm-rental-payments__type-pill--damage {
+    @apply bg-rose-50 text-rose-800 ring-rose-200/60;
+  }
+
+  .fm-rental-payments__method-chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200/60 capitalize;
+  }
+
+  .fm-rental-payments__status-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-payments__status-pill--paid {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-payments__status-pill--pending {
+    @apply bg-amber-50 text-amber-900 ring-amber-200/60;
+  }
+
+  .fm-rental-payments__status-pill--failed {
+    @apply bg-rose-50 text-rose-800 ring-rose-200/60;
+  }
+
+  .fm-rental-payments__status-pill--refunded {
+    @apply bg-violet-50 text-violet-800 ring-violet-200/60;
+  }
+
+  .fm-rental-payments__expand-panel {
+    @apply border-t border-slate-100 bg-slate-50/80 px-4 py-4;
+  }
+
+  .fm-rental-payments__mobile-card {
+    @apply rounded-2xl border border-border/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-card;
+  }
+
+  .fm-rental-payments__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  /* Rental booking form (new / edit) */
+  .fm-rental-booking-form__card {
+    @apply rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-shadow duration-200;
+  }
+
+  .fm-rental-booking-form__card:hover {
+    @apply shadow-card;
+  }
+
+  .fm-rental-booking-form__input {
+    @apply w-full min-h-[44px] rounded-2xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm text-ink shadow-sm transition-shadow placeholder:text-slate-400 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+
+  .fm-rental-booking-form__textarea {
+    @apply w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-sm text-ink shadow-sm transition-shadow placeholder:text-slate-400 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+
+  .fm-rental-booking-form__segment {
+    @apply flex flex-1 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition-all duration-200;
+  }
+
+  .fm-rental-booking-form__segment--active {
+    @apply bg-brand text-white shadow-sm;
+  }
+
+  .fm-rental-booking-form__segment-group {
+    @apply flex gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1;
+  }
+
+  .fm-rental-booking-form__chip {
+    @apply inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-brand/30 hover:bg-slate-50;
+  }
+
+  .fm-rental-booking-form__chip--selected {
+    @apply border-brand/40 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200/60;
+  }
+
+  .fm-rental-booking-form__preview-card {
+    @apply mt-3 flex gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4;
+  }
+
+  .fm-rental-booking-form__thumb {
+    @apply flex h-16 w-20 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200/80 text-slate-400 ring-1 ring-slate-200/60;
+  }
+
+  .fm-rental-booking-form__avatar {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-sm font-semibold text-brand;
+  }
+
+  .fm-rental-booking-form__placeholder {
+    @apply flex min-h-[88px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 text-sm text-slate-500;
+  }
+
+  .fm-rental-booking-form__summary {
+    @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:sticky lg:top-6;
+  }
+
+  .fm-rental-booking-form__summary-total {
+    @apply text-2xl font-bold tabular-nums text-brand;
+  }
+
+  .fm-rental-booking-form__status-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-rental-booking-form__status-pill--ok {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-rental-booking-form__status-pill--warn {
+    @apply bg-amber-50 text-amber-900 ring-amber-200/60;
+  }
+
+  .fm-rental-booking-form__status-pill--neutral {
+    @apply bg-slate-100 text-slate-700 ring-slate-200/60;
+  }
+
+  .fm-rental-booking-form__footer {
+    @apply sticky bottom-0 z-10 -mx-6 mt-6 border-t border-slate-200/80 bg-white/95 px-6 py-4 backdrop-blur-sm sm:-mx-8 sm:px-8;
+  }
+
+  .fm-rental-booking-form__cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-booking-form__cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-booking-form__back {
+    @apply inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink;
+  }
+
+  .fm-rental-booking-form__combobox-list {
+    @apply absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-2xl border border-slate-200/90 bg-white py-1 shadow-lg ring-1 ring-slate-200/50;
+  }
+
+  .fm-rental-booking-form__combobox-option {
+    @apply cursor-pointer px-4 py-2.5 text-sm transition-colors hover:bg-slate-50;
+  }
+
+  .fm-rental-booking-form__combobox-option--active {
+    @apply bg-emerald-50 text-emerald-900;
+  }
+
+  /* Rental customer form (new / edit) */
+  .fm-rental-customer-form__card {
+    @apply rounded-[18px] border border-slate-200/80 bg-white p-6 shadow-sm transition-shadow duration-200;
+  }
+
+  .fm-rental-customer-form__card:hover {
+    @apply shadow-card;
+  }
+
+  .fm-rental-customer-form__input {
+    @apply w-full min-h-[44px] rounded-2xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm text-ink shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+
+  .fm-rental-customer-form__input--error {
+    @apply border-rose-300/80 focus:border-rose-400/60 focus:ring-rose-200/50;
+  }
+
+  .fm-rental-customer-form__textarea {
+    @apply w-full rounded-2xl border border-slate-200/90 bg-white px-4 py-3 text-sm text-ink shadow-sm transition-all duration-200 placeholder:text-slate-400 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+
+  .fm-rental-customer-form__segment {
+    @apply flex flex-1 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition-all duration-200;
+  }
+
+  .fm-rental-customer-form__segment--active {
+    @apply bg-brand text-white shadow-sm;
+  }
+
+  .fm-rental-customer-form__segment-group {
+    @apply flex gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1;
+  }
+
+  .fm-rental-customer-form__section-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  .fm-rental-customer-form__field-error {
+    @apply mt-1.5 text-xs text-rose-700;
+  }
+
+  .fm-rental-customer-form__field-hint {
+    @apply mt-1.5 text-xs text-ink-muted;
+  }
+
+  .fm-rental-customer-form__preview {
+    @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:sticky lg:top-6;
+  }
+
+  .fm-rental-customer-form__avatar {
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-50 text-base font-semibold text-teal-900 ring-1 ring-teal-200/50;
+  }
+
+  .fm-rental-customer-form__type-pill {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset;
+  }
+
+  .fm-rental-customer-form__type-pill--individual {
+    @apply bg-sky-50 text-sky-800 ring-sky-200/60;
+  }
+
+  .fm-rental-customer-form__type-pill--company {
+    @apply bg-violet-50 text-violet-800 ring-violet-200/60;
+  }
+
+  .fm-rental-customer-form__preview-empty {
+    @apply rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-6 text-center text-sm text-slate-500;
+  }
+
+  .fm-rental-customer-form__meta-row {
+    @apply flex justify-between gap-2 border-b border-slate-100 py-2.5 text-sm last:border-0;
+  }
+
+  .fm-rental-customer-form__tips {
+    @apply mt-4 rounded-2xl border border-emerald-200/50 p-4 shadow-sm;
+    background: linear-gradient(145deg, rgba(209, 250, 229, 0.45), rgba(255, 255, 255, 0.98));
+  }
+
+  .fm-rental-customer-form__footer {
+    @apply mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-6;
+  }
+
+  .fm-rental-customer-form__cta {
+    @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-all duration-200;
+  }
+
+  .fm-rental-customer-form__cta:hover {
+    @apply shadow-lg opacity-95;
+  }
+
+  .fm-rental-customer-form__back {
+    @apply inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink;
   }
 }
