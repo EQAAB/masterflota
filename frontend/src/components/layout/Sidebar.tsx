@@ -14,6 +14,16 @@ const earningsSubItems = [
   { to: "/earnings/subcontractors/settlements", label: "Sub settlements" },
 ];
 
+const rentalSubItems = [
+  { to: "/rentals", label: "Dashboard", exact: true },
+  { to: "/rentals/bookings", label: "Bookings" },
+  { to: "/rentals/calendar", label: "Calendar" },
+  { to: "/rentals/customers", label: "Customers" },
+  { to: "/rentals/availability", label: "Availability" },
+  { to: "/rentals/pricing", label: "Pricing" },
+  { to: "/rentals/payments", label: "Payments" },
+];
+
 const ICON = "w-5 h-5 shrink-0 stroke-[1.75]";
 
 function DashboardIcon({ className }: { className?: string }) {
@@ -57,6 +67,14 @@ function EarningsIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function RentalsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
 }
@@ -116,10 +134,14 @@ function SidebarNavItem({
   );
 }
 
-function EarningsFlyout({
+function NavSubFlyout({
+  title,
+  items,
   anchorRect,
   onClose,
 }: {
+  title: string;
+  items: { to: string; label: string; exact?: boolean }[];
   anchorRect: DOMRect;
   onClose: () => void;
 }) {
@@ -132,12 +154,9 @@ function EarningsFlyout({
         onClick={(e) => e.stopPropagation()}
         role="menu"
       >
-        <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/50">Earnings</p>
-        {earningsSubItems.map(({ to, label }) => {
-          const active =
-            to === "/earnings"
-              ? location.pathname === "/earnings"
-              : location.pathname.startsWith(to);
+        <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/50">{title}</p>
+        {items.map(({ to, label, exact }) => {
+          const active = exact ? location.pathname === to : location.pathname.startsWith(to);
           return (
             <Link
               key={to}
@@ -154,8 +173,12 @@ function EarningsFlyout({
         })}
       </div>
     </div>,
-    document.body
+    document.body,
   );
+}
+
+function isRentalNavActive(pathname: string, to: string, exact?: boolean) {
+  return exact ? pathname === to : pathname.startsWith(to);
 }
 
 export interface SidebarProps {
@@ -166,22 +189,27 @@ export interface SidebarProps {
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const role = useAuthStore((s) => s.user?.role);
-  const showEarnings = role === "admin" || role === "accountant";
+  const showFinanceNav = role === "admin" || role === "accountant";
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: DashboardIcon },
     { to: "/drivers", label: "Drivers", icon: DriversIcon },
     { to: "/vehicles", label: "Vehicles", icon: VehiclesIcon },
-    ...(showEarnings ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }] : []),
+    ...(showFinanceNav ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }] : []),
   ];
   const [earningsOpen, setEarningsOpen] = useState(() => location.pathname.startsWith("/earnings"));
+  const [rentalsOpen, setRentalsOpen] = useState(() => location.pathname.startsWith("/rentals"));
   const [earningsFlyout, setEarningsFlyout] = useState(false);
+  const [rentalsFlyout, setRentalsFlyout] = useState(false);
   const earningsBtnRef = useRef<HTMLButtonElement>(null);
+  const rentalsBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (location.pathname.startsWith("/earnings")) setEarningsOpen(true);
+    if (location.pathname.startsWith("/rentals")) setRentalsOpen(true);
   }, [location.pathname]);
 
   const earningsActive = location.pathname.startsWith("/earnings");
+  const rentalsActive = location.pathname.startsWith("/rentals");
 
   return (
     <aside
@@ -227,7 +255,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             );
           })}
 
-          {showEarnings &&
+          {showFinanceNav &&
             (collapsed ? (
               <>
                 <button
@@ -242,52 +270,115 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <EarningsIcon className={ICON} />
                 </button>
                 {earningsFlyout && earningsBtnRef.current && (
-                  <EarningsFlyout
+                  <NavSubFlyout
+                    title="Earnings"
+                    items={earningsSubItems.map(({ to, label }) => ({
+                      to,
+                      label,
+                      exact: to === "/earnings",
+                    }))}
                     anchorRect={earningsBtnRef.current.getBoundingClientRect()}
                     onClose={() => setEarningsFlyout(false)}
                   />
                 )}
+                <button
+                  ref={rentalsBtnRef}
+                  type="button"
+                  title="Rentals"
+                  onClick={() => setRentalsFlyout((o) => !o)}
+                  className={`${sidebarNavItem} w-full ${rentalsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
+                  aria-expanded={rentalsFlyout}
+                  aria-haspopup="menu"
+                >
+                  <RentalsIcon className={ICON} />
+                </button>
+                {rentalsFlyout && rentalsBtnRef.current && (
+                  <NavSubFlyout
+                    title="Rentals"
+                    items={rentalSubItems}
+                    anchorRect={rentalsBtnRef.current.getBoundingClientRect()}
+                    onClose={() => setRentalsFlyout(false)}
+                  />
+                )}
               </>
             ) : (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setEarningsOpen((o) => !o)}
-                  className={`${sidebarNavItem} w-full text-left ${
-                    earningsActive ? sidebarNavActive : sidebarNavInactive
-                  }`}
-                  aria-expanded={earningsOpen}
-                >
-                  <EarningsIcon className={ICON} />
-                  <span className="flex-1 truncate">Earnings</span>
-                  <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${earningsOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                {earningsOpen && (
-                  <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
-                    {earningsSubItems.map(({ to, label }) => {
-                      const active =
-                        to === "/earnings"
-                          ? location.pathname === "/earnings"
-                          : location.pathname.startsWith(to);
-                      return (
-                        <Link
-                          key={to}
-                          to={to}
-                          className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
-                            active
-                              ? "bg-brand-mint font-medium text-ink"
-                              : "text-white/60 hover:bg-white/10 hover:text-white"
-                          }`}
-                        >
-                          <span className="truncate">{label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setEarningsOpen((o) => !o)}
+                    className={`${sidebarNavItem} w-full text-left ${
+                      earningsActive ? sidebarNavActive : sidebarNavInactive
+                    }`}
+                    aria-expanded={earningsOpen}
+                  >
+                    <EarningsIcon className={ICON} />
+                    <span className="flex-1 truncate">Earnings</span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform ${earningsOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {earningsOpen && (
+                    <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                      {earningsSubItems.map(({ to, label }) => {
+                        const active =
+                          to === "/earnings"
+                            ? location.pathname === "/earnings"
+                            : location.pathname.startsWith(to);
+                        return (
+                          <Link
+                            key={to}
+                            to={to}
+                            className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                              active
+                                ? "bg-brand-mint font-medium text-ink"
+                                : "text-white/60 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            <span className="truncate">{label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setRentalsOpen((o) => !o)}
+                    className={`${sidebarNavItem} w-full text-left ${
+                      rentalsActive ? sidebarNavActive : sidebarNavInactive
+                    }`}
+                    aria-expanded={rentalsOpen}
+                  >
+                    <RentalsIcon className={ICON} />
+                    <span className="flex-1 truncate">Rentals</span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition-transform ${rentalsOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {rentalsOpen && (
+                    <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                      {rentalSubItems.map(({ to, label, exact }) => {
+                        const active = isRentalNavActive(location.pathname, to, exact);
+                        return (
+                          <Link
+                            key={to}
+                            to={to}
+                            className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                              active
+                                ? "bg-brand-mint font-medium text-ink"
+                                : "text-white/60 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            <span className="truncate">{label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             ))}
         </div>
       </nav>
