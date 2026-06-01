@@ -1,21 +1,40 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createRentalCustomer, getRentalCustomer, updateRentalCustomer } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
-import { btnPrimary, btnSecondary } from "../../theme/classNames";
+import { CustomerFormCard } from "../../components/rentals/customer-form/CustomerFormCard";
+import { CustomerFormFields } from "../../components/rentals/customer-form/CustomerFormFields";
+import { CustomerFormFooter } from "../../components/rentals/customer-form/CustomerFormFooter";
+import { CustomerFormHeader } from "../../components/rentals/customer-form/CustomerFormHeader";
+import { CustomerPreviewPanel } from "../../components/rentals/customer-form/CustomerPreviewPanel";
+import { CustomerTipsCard } from "../../components/rentals/customer-form/CustomerTipsCard";
+import {
+  getPreviewDisplay,
+  hasFormErrors,
+  validateCustomerForm,
+  type CustomerFormErrors,
+  type CustomerFormValues,
+} from "../../components/rentals/customer-form/customerFormUtils";
+
+const EMPTY_VALUES: CustomerFormValues = {
+  legalName: "",
+  customerType: "individual",
+  contactName: "",
+  email: "",
+  phone: "",
+  taxId: "",
+  notes: "",
+};
 
 export function CustomerFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
-  const [legalName, setLegalName] = useState("");
-  const [customerType, setCustomerType] = useState<"company" | "individual">("individual");
-  const [contactName, setContactName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [taxId, setTaxId] = useState("");
-  const [notes, setNotes] = useState("");
+
+  const [values, setValues] = useState<CustomerFormValues>(EMPTY_VALUES);
+  const [errors, setErrors] = useState<CustomerFormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof CustomerFormValues, boolean>>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const existing = useQuery({
     queryKey: ["rentals", "customer", id],
@@ -26,106 +45,108 @@ export function CustomerFormPage() {
   useEffect(() => {
     const c = existing.data;
     if (!c) return;
-    setLegalName(c.legal_name);
-    setCustomerType(c.customer_type);
-    setContactName(c.contact_name ?? "");
-    setEmail(c.email ?? "");
-    setPhone(c.phone ?? "");
-    setTaxId(c.tax_id ?? "");
-    setNotes(c.notes ?? "");
+    setValues({
+      legalName: c.legal_name,
+      customerType: c.customer_type,
+      contactName: c.contact_name ?? "",
+      email: c.email ?? "",
+      phone: c.phone ?? "",
+      taxId: c.tax_id ?? "",
+      notes: c.notes ?? "",
+    });
   }, [existing.data]);
+
+  const preview = useMemo(() => getPreviewDisplay(values), [values]);
 
   const saveMut = useMutation({
     mutationFn: () => {
-      const body = { legalName, customerType, contactName, email, phone, taxId, notes };
+      const body = {
+        legalName: values.legalName.trim(),
+        customerType: values.customerType,
+        contactName: values.contactName.trim() || undefined,
+        email: values.email.trim() || undefined,
+        phone: values.phone.trim() || undefined,
+        taxId: values.taxId.trim() || undefined,
+        notes: values.notes.trim() || undefined,
+      };
       if (isEdit) return updateRentalCustomer(id!, body);
       return createRentalCustomer(body);
     },
     onSuccess: () => navigate("/rentals/customers"),
   });
 
+  const handleChange = <K extends keyof CustomerFormValues>(key: K, value: CustomerFormValues[K]) => {
+    setValues((prev) => {
+      const next = { ...prev, [key]: value };
+      if (submitAttempted || touched[key]) {
+        setErrors(validateCustomerForm(next));
+      }
+      return next;
+    });
+  };
+
+  const handleBlur = (key: keyof CustomerFormValues) => {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    setErrors(validateCustomerForm(values));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitAttempted(true);
+    const nextErrors = validateCustomerForm(values);
+    setErrors(nextErrors);
+    setTouched({
+      legalName: true,
+      email: true,
+      phone: true,
+    });
+    if (hasFormErrors(nextErrors)) return;
+    saveMut.mutate();
+  };
+
+  const displayTouched = submitAttempted
+    ? { legalName: true, email: true, phone: true, ...touched }
+    : touched;
+
+  const subtitle = isEdit
+    ? "Update this rental customer profile for bookings, invoices, and contact history."
+    : "Add a rental customer profile for bookings, invoices, and contact history.";
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
-        title={isEdit ? "Edit customer" : "New customer"}
-        backTo="/rentals/customers"
-      />
-      <form
-        className="max-w-lg space-y-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          saveMut.mutate();
-        }}
-      >
-        <label className="block text-sm">
-          Type
-          <select
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={customerType}
-            onChange={(e) => setCustomerType(e.target.value as typeof customerType)}
-          >
-            <option value="individual">Individual</option>
-            <option value="company">Company</option>
-          </select>
-        </label>
-        <label className="block text-sm">
-          Legal name *
-          <input
-            required
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={legalName}
-            onChange={(e) => setLegalName(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          Contact name
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={contactName}
-            onChange={(e) => setContactName(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          Email
-          <input
-            type="email"
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          Phone
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          Tax ID
-          <input
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            value={taxId}
-            onChange={(e) => setTaxId(e.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          Notes
-          <textarea
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </label>
-        <button type="submit" className={btnPrimary} disabled={saveMut.isPending}>
-          Save
-        </button>
-        <button type="button" className={`${btnSecondary} ml-2`} onClick={() => navigate(-1)}>
-          Cancel
-        </button>
+    <div className="fm-rental-customer-form flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
+      <CustomerFormHeader title={isEdit ? "Edit customer" : "New customer"} subtitle={subtitle} />
+
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-8">
+          <div>
+            <CustomerFormCard>
+              <CustomerFormFields
+                values={values}
+                errors={errors}
+                touched={displayTouched}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              />
+              <CustomerFormFooter
+                isEdit={isEdit}
+                pending={saveMut.isPending}
+                onCancel={() => navigate(-1)}
+              />
+            </CustomerFormCard>
+          </div>
+
+          <div className="space-y-4">
+            <CustomerPreviewPanel preview={preview} customerType={values.customerType} />
+            <CustomerTipsCard />
+          </div>
+        </div>
       </form>
+
+      {saveMut.isError && (
+        <p className="mt-4 text-sm text-rose-700" role="alert">
+          Could not save customer. Please try again.
+        </p>
+      )}
     </div>
   );
 }

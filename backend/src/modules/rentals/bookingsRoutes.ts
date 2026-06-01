@@ -9,6 +9,11 @@ import {
   pickupBooking,
   returnBooking,
 } from "./bookingService";
+import {
+  mergeSnapshotWithFormMeta,
+  parseFormMeta,
+  quotePayload,
+} from "./bookingFormMeta";
 import { resolvePricing } from "./pricingService";
 import type { RentalType } from "./rentalTypes";
 
@@ -25,6 +30,7 @@ bookingsRoutes.get("/", async (req, res) => {
   const customerId = typeof req.query.customerId === "string" ? req.query.customerId : undefined;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : undefined;
 
   try {
     const params: unknown[] = [orgId];
@@ -32,9 +38,20 @@ bookingsRoutes.get("/", async (req, res) => {
       SELECT b.*,
              c.legal_name AS customer_name,
              c.customer_type,
+             c.phone AS customer_phone,
+             c.email AS customer_email,
              v.license_plate,
              v.make,
-             v.model
+             v.model,
+             (SELECT CASE
+                WHEN COALESCE(SUM(CASE WHEN p.payment_type = 'rent' AND p.status = 'paid' THEN p.amount ELSE 0 END), 0)
+                     >= b.total_amount THEN 'paid'
+                WHEN COALESCE(SUM(CASE WHEN p.payment_type = 'rent' AND p.status = 'paid' THEN p.amount ELSE 0 END), 0) > 0
+                     THEN 'partial'
+                ELSE 'unpaid'
+              END
+              FROM rental_payments p
+              WHERE p.booking_id = b.id) AS rent_payment_state
       FROM rental_bookings b
       JOIN rental_customers c ON c.id = b.customer_id
       JOIN vehicles v ON v.id = b.vehicle_id
@@ -65,6 +82,15 @@ bookingsRoutes.get("/", async (req, res) => {
       params.push(to);
       i++;
     }
+    if (q) {
+      sql += ` AND (
+        b.booking_number ILIKE '%' || $${i} || '%'
+        OR c.legal_name ILIKE '%' || $${i} || '%'
+        OR v.license_plate ILIKE '%' || $${i} || '%'
+      )`;
+      params.push(q);
+      i++;
+    }
     sql += ` ORDER BY b.start_at DESC`;
     const { rows } = await query(sql, params);
     return res.json(rows);
@@ -88,7 +114,11 @@ bookingsRoutes.post("/quote", async (req, res) => {
   try {
     const conflict = await checkVehicleAvailableForRental(rentalDb, orgId, vehicleId, startAt, endAt);
     const priced = await resolvePricing(rentalDb, orgId, vehicleId, rentalType, startAt, endAt);
-    return res.json({ ...priced, available: !conflict, conflict });
+    return res.json({
+      ...quotePayload(priced),
+      available: !conflict,
+      conflict,
+    });
   } catch (err) {
     console.error("Quote rental error", err);
     return res.status(500).json({ message: err instanceof Error ? err.message : "Internal server error" });
@@ -142,6 +172,8 @@ bookingsRoutes.post("/", async (req, res) => {
 
     const bookingNumber = await nextBookingNumber(rentalDb, orgId);
     const priced = await resolvePricing(rentalDb, orgId, vehicleId, rentalType, startAt, endAt);
+    const formMeta = parseFormMeta(b);
+    const snapshot = mergeSnapshotWithFormMeta(priced.snapshot, formMeta);
 
     const { rows } = await query(
       `INSERT INTO rental_bookings (
@@ -157,7 +189,7 @@ bookingsRoutes.post("/", async (req, res) => {
         rentalType,
         startAt,
         endAt,
-        JSON.stringify(priced.snapshot),
+        JSON.stringify(snapshot),
         priced.subtotal,
         priced.deposit,
         priced.total,
@@ -178,8 +210,16 @@ bookingsRoutes.put("/:id", async (req, res) => {
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   const b = req.body as Record<string, unknown>;
   try {
-    const { rows: existing } = await query<{ status: string; vehicle_id: string }>(
-      `SELECT status, vehicle_id::text FROM rental_bookings WHERE id = $1::uuid AND organization_id = $2::uuid`,
+    const { rows: existing } = await query<{
+      status: string;
+      vehicle_id: string;
+      rental_type: RentalType;
+      start_at: Date;
+      end_at: Date;
+      customer_id: string;
+    }>(
+      `SELECT status, vehicle_id::text, rental_type, start_at, end_at, customer_id::text
+       FROM rental_bookings WHERE id = $1::uuid AND organization_id = $2::uuid`,
       [id, orgId],
     );
     if (!existing[0]) return res.status(404).json({ message: "Booking not found" });
@@ -189,32 +229,65 @@ bookingsRoutes.put("/:id", async (req, res) => {
 
     const startAt = b.startAt ? new Date(String(b.startAt)) : undefined;
     const endAt = b.endAt ? new Date(String(b.endAt)) : undefined;
-    const vehicleId = typeof b.vehicleId === "string" ? b.vehicleId : existing[0].vehicle_id;
-    const rentalType = (b.rentalType === "weekly" || b.rentalType === "monthly" ? b.rentalType : b.rentalType === "daily" ? "daily" : undefined) as RentalType | undefined;
+    const vehicleId =
+      typeof b.vehicleId === "string" && UUID_RE.test(b.vehicleId)
+        ? b.vehicleId
+        : existing[0].vehicle_id;
+    const rentalType = (
+      b.rentalType === "weekly" || b.rentalType === "monthly"
+        ? b.rentalType
+        : b.rentalType === "daily"
+          ? "daily"
+          : existing[0].rental_type
+    ) as RentalType;
+    const finalStart = startAt ?? existing[0].start_at;
+    const finalEnd = endAt ?? existing[0].end_at;
 
-    if (startAt && endAt) {
-      const conflict = await checkVehicleAvailableForRental(rentalDb, orgId, vehicleId, startAt, endAt, id);
-      if (conflict) return res.status(409).json({ message: conflict.message });
-    }
+    const conflict = await checkVehicleAvailableForRental(
+      rentalDb,
+      orgId,
+      vehicleId,
+      finalStart,
+      finalEnd,
+      id,
+    );
+    if (conflict) return res.status(409).json({ message: conflict.message });
+
+    const priced = await resolvePricing(rentalDb, orgId, vehicleId, rentalType, finalStart, finalEnd);
+    const formMeta = parseFormMeta(b);
+    const snapshot = mergeSnapshotWithFormMeta(priced.snapshot, formMeta);
+
+    const customerId =
+      typeof b.customerId === "string" && UUID_RE.test(b.customerId)
+        ? b.customerId
+        : existing[0].customer_id;
 
     const { rows } = await query(
       `UPDATE rental_bookings SET
-         customer_id = COALESCE($3::uuid, customer_id),
-         vehicle_id = COALESCE($4::uuid, vehicle_id),
-         rental_type = COALESCE($5, rental_type),
-         start_at = COALESCE($6, start_at),
-         end_at = COALESCE($7, end_at),
+         customer_id = $3::uuid,
+         vehicle_id = $4::uuid,
+         rental_type = $5,
+         start_at = $6,
+         end_at = $7,
+         pricing_snapshot = $8::jsonb,
+         subtotal = $9,
+         deposit_amount = $10,
+         total_amount = $11,
          updated_at = NOW()
        WHERE id = $1::uuid AND organization_id = $2::uuid AND status = 'draft'
        RETURNING *`,
       [
         id,
         orgId,
-        b.customerId ?? null,
-        b.vehicleId ?? null,
-        rentalType ?? null,
-        startAt ?? null,
-        endAt ?? null,
+        customerId,
+        vehicleId,
+        rentalType,
+        finalStart,
+        finalEnd,
+        JSON.stringify(snapshot),
+        priced.subtotal,
+        priced.deposit,
+        priced.total,
       ],
     );
     if (!rows[0]) return res.status(404).json({ message: "Booking not found or not editable" });

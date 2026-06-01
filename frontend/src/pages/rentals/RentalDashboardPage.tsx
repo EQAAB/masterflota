@@ -1,9 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { getOverdueRentals, getRentalDashboard } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
-import { formatCurrency } from "../../utils/currency";
-import { btnSecondary } from "../../theme/classNames";
+import { CalendarPreview } from "../../components/rentals/dashboard/CalendarPreview";
+import { FleetAvailabilityOverview } from "../../components/rentals/dashboard/FleetAvailabilityOverview";
+import { OverdueAlertBanner } from "../../components/rentals/dashboard/OverdueAlertBanner";
+import { RecentBookingsList } from "../../components/rentals/dashboard/RecentBookingsList";
+import { RecentCustomersList } from "../../components/rentals/dashboard/RecentCustomersList";
+import { RentalDashboardHeader } from "../../components/rentals/dashboard/RentalDashboardHeader";
+import { RentalKpiRow } from "../../components/rentals/dashboard/RentalKpiRow";
+import { RentalQuickNavTabs } from "../../components/rentals/dashboard/RentalQuickNavTabs";
+import { RentalRevenuePreview } from "../../components/rentals/dashboard/RentalRevenuePreview";
+import { UpcomingPaymentsList } from "../../components/rentals/dashboard/UpcomingPaymentsList";
+import { dashboardPage } from "../../theme/classNames";
 
 export function RentalDashboardPage() {
   const dashQuery = useQuery({
@@ -13,65 +20,63 @@ export function RentalDashboardPage() {
   const overdueQuery = useQuery({
     queryKey: ["rentals", "overdue"],
     queryFn: () => getOverdueRentals().then((r) => r.data),
+    enabled: (dashQuery.data?.overdue_bookings ?? 0) > 0,
   });
 
+  const loading = dashQuery.isLoading;
   const d = dashQuery.data;
+  const calendarDays = (d?.calendar_days ?? []).map((day) =>
+    typeof day === "string" ? day.slice(0, 10) : String(day).slice(0, 10),
+  );
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
-        title="Rental Dashboard"
-        subtitle="External vehicle rentals — separate from driver payroll rent."
-        actionTo="/rentals/bookings/new"
-        actionLabel="New booking"
-      />
+    <div className="fm-rental-dashboard flex min-h-full flex-1 flex-col bg-surface-elevated">
+      <div className={dashboardPage}>
+        <RentalDashboardHeader />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Active rentals", value: d?.active_bookings ?? "—" },
-          { label: "Confirmed upcoming", value: d?.confirmed_bookings ?? "—" },
-          { label: "Customers", value: d?.active_customers ?? "—" },
-          { label: "Revenue (MTD)", value: d ? formatCurrency(Number(d.mtd_revenue)) : "—" },
-        ].map((card) => (
-          <article key={card.label} className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{card.label}</p>
-            <p className="mt-2 text-2xl font-bold text-ink tabular-nums">{card.value}</p>
-          </article>
-        ))}
-      </div>
-
-      {(d?.overdue_bookings ?? 0) > 0 && (
-        <section className="mt-6 rounded-2xl border border-rose-200/80 bg-rose-50/50 p-5">
-          <h2 className="text-base font-semibold text-rose-900">Overdue returns</h2>
-          <p className="mt-1 text-sm text-rose-800">{d?.overdue_bookings} active booking(s) past return date.</p>
-          <ul className="mt-4 space-y-2">
-            {(overdueQuery.data ?? []).slice(0, 5).map((b) => (
-              <li key={b.id} className="flex items-center justify-between gap-2 rounded-xl bg-white/80 px-3 py-2 text-sm">
-                <span>
-                  {b.booking_number} · {b.license_plate}
-                </span>
-                <Link to={`/rentals/bookings/${b.id}`} className="text-brand font-medium hover:underline">
-                  View
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section className="mb-6">
+          <RentalKpiRow data={d} loading={loading} />
         </section>
-      )}
 
-      <div className="mt-8 flex flex-wrap gap-2">
-        <Link to="/rentals/bookings" className={btnSecondary}>
-          Bookings
-        </Link>
-        <Link to="/rentals/calendar" className={btnSecondary}>
-          Calendar
-        </Link>
-        <Link to="/rentals/customers" className={btnSecondary}>
-          Customers
-        </Link>
-        <Link to="/rentals/payments" className={btnSecondary}>
-          Payments
-        </Link>
+        <RentalQuickNavTabs />
+
+        {!loading && (d?.overdue_bookings ?? 0) > 0 && (
+          <OverdueAlertBanner count={d!.overdue_bookings} items={overdueQuery.data ?? []} />
+        )}
+
+        {dashQuery.isError && (
+          <p className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            Could not load dashboard data. Refresh the page or try again later.
+          </p>
+        )}
+
+        <div className="fm-rental-dashboard__grid grid gap-5 lg:grid-cols-12">
+          <RecentBookingsList
+            className="lg:col-span-7"
+            bookings={d?.recent_bookings}
+            loading={loading}
+          />
+          <CalendarPreview className="lg:col-span-5" bookingDates={calendarDays} loading={loading} />
+
+          <FleetAvailabilityOverview
+            className="lg:col-span-4"
+            fleet={d?.fleet}
+            activeBookings={d?.active_bookings}
+            loading={loading}
+          />
+          <UpcomingPaymentsList
+            className="lg:col-span-4"
+            payments={d?.upcoming_payments}
+            loading={loading}
+          />
+          <RecentCustomersList
+            className="lg:col-span-4"
+            customers={d?.recent_customers}
+            loading={loading}
+          />
+
+          <RentalRevenuePreview className="lg:col-span-12" data={d} loading={loading} />
+        </div>
       </div>
     </div>
   );

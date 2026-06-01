@@ -1,47 +1,90 @@
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { getRentalCustomers } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
+import { getRentalCustomers, getRentalCustomersSummary } from "../../api/rentals";
+import { CustomersKpiRow } from "../../components/rentals/customers/CustomersKpiRow";
+import { CustomersPageHeader } from "../../components/rentals/customers/CustomersPageHeader";
+import { CustomersTable } from "../../components/rentals/customers/CustomersTable";
+import {
+  CustomersToolbar,
+  type CustomersFilters,
+} from "../../components/rentals/customers/CustomersToolbar";
+import { exportCustomersCsv } from "../../components/rentals/customers/customersListUtils";
+import { dashboardPage } from "../../theme/classNames";
+
+function useDebounce<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
 
 export function CustomersListPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["rentals", "customers"],
-    queryFn: () => getRentalCustomers().then((r) => r.data),
+  const [filters, setFilters] = useState<CustomersFilters>({
+    q: "",
+    customerType: "",
+    rentalStatus: "",
+    activeOnly: true,
+    sort: "name",
   });
 
+  const debouncedQ = useDebounce(filters.q, 300);
+
+  const queryParams = useMemo(() => {
+    const hasActiveRental =
+      filters.rentalStatus === "active"
+        ? true
+        : filters.rentalStatus === "none"
+          ? false
+          : undefined;
+
+    return {
+      q: debouncedQ.trim() || undefined,
+      active: filters.rentalStatus === "inactive" ? false : filters.activeOnly,
+      customerType: filters.customerType || undefined,
+      hasActiveRental,
+      sort: filters.sort,
+    };
+  }, [debouncedQ, filters.customerType, filters.rentalStatus, filters.activeOnly, filters.sort]);
+
+  const customersQuery = useQuery({
+    queryKey: ["rentals", "customers", queryParams],
+    queryFn: () => getRentalCustomers(queryParams).then((r) => r.data),
+  });
+
+  const summaryQuery = useQuery({
+    queryKey: ["rentals", "customers", "summary"],
+    queryFn: () => getRentalCustomersSummary().then((r) => r.data),
+  });
+
+  const customers = customersQuery.data ?? [];
+
+  const patchFilters = (patch: Partial<CustomersFilters>) => {
+    setFilters((f) => ({ ...f, ...patch }));
+  };
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader
-        title="Rental customers"
-        subtitle="Companies and individuals who rent vehicles."
-        backTo="/rentals"
-        actionTo="/rentals/customers/new"
-        actionLabel="Add customer"
-      />
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-        {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
-        <table className="w-full text-sm">
-          <thead className="border-b bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Contact</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data ?? []).map((c) => (
-              <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="px-4 py-3">
-                  <Link to={`/rentals/customers/${c.id}/edit`} className="font-medium text-brand hover:underline">
-                    {c.legal_name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 capitalize">{c.customer_type}</td>
-                <td className="px-4 py-3 text-slate-600">{c.email || c.phone || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="fm-rental-customers flex min-h-full flex-1 flex-col bg-surface-elevated">
+      <div className={dashboardPage}>
+        <CustomersPageHeader />
+
+        <CustomersKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
+
+        <CustomersToolbar
+          filters={filters}
+          onChange={patchFilters}
+          onExport={() => exportCustomersCsv(customers)}
+          resultCount={customers.length}
+        />
+
+        {customersQuery.isError && (
+          <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            Failed to load customers. Check your connection and try again.
+          </p>
+        )}
+
+        <CustomersTable customers={customers} loading={customersQuery.isLoading} />
       </div>
     </div>
   );

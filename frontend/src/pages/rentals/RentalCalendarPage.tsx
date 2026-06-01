@@ -1,78 +1,174 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { getRentalAvailability } from "../../api/rentals";
-import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
-import { bookingStatusClass, formatBookingStatus } from "../../components/rentals/rentalStatus";
+import { getRentalAvailability, getRentalDashboard } from "../../api/rentals";
+import type { RentalAvailabilityBooking, RentalBooking } from "../../api/rentals";
+import { BookingsKpiRow } from "../../components/rentals/bookings/BookingsKpiRow";
+import { BookingCalendarDrawer } from "../../components/rentals/calendar/BookingCalendarDrawer";
+import { CalendarFilterBar } from "../../components/rentals/calendar/CalendarFilterBar";
+import { CalendarLegend } from "../../components/rentals/calendar/CalendarLegend";
+import { CalendarListView } from "../../components/rentals/calendar/CalendarListView";
+import { CalendarMonthGrid } from "../../components/rentals/calendar/CalendarMonthGrid";
+import { CalendarNav } from "../../components/rentals/calendar/CalendarNav";
+import { CalendarPageHeader } from "../../components/rentals/calendar/CalendarPageHeader";
+import { CalendarSidePanel } from "../../components/rentals/calendar/CalendarSidePanel";
+import { CalendarWeekGrid } from "../../components/rentals/calendar/CalendarWeekGrid";
+import type { CalendarFilters, CalendarViewMode } from "../../components/rentals/calendar/calendarUtils";
+import { monthRange, weekRange } from "../../components/rentals/calendar/calendarUtils";
+import { dashboardPage } from "../../theme/classNames";
 
-function monthRange(d: Date): { from: string; to: string } {
-  const start = new Date(d.getFullYear(), d.getMonth(), 1);
-  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return { from: start.toISOString().slice(0, 10), to: end.toISOString().slice(0, 10) };
+function useDebounce<T>(value: T, ms: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
+function useMediaListDefault(): boolean {
+  const [isNarrow, setIsNarrow] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 1023px)").matches : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const fn = () => setIsNarrow(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return isNarrow;
 }
 
 export function RentalCalendarPage() {
-  const [month, setMonth] = useState(() => new Date());
-  const range = useMemo(() => monthRange(month), [month]);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["rentals", "availability", range.from, range.to],
-    queryFn: () => getRentalAvailability(range).then((r) => r.data),
+  const isNarrow = useMediaListDefault();
+  const [view, setView] = useState<CalendarViewMode>(() => (isNarrow ? "list" : "month"));
+  const [cursorDate, setCursorDate] = useState(() => new Date());
+  const [selectedBooking, setSelectedBooking] = useState<RentalAvailabilityBooking | null>(null);
+  const [filters, setFilters] = useState<CalendarFilters>({
+    q: "",
+    status: "",
+    vehicleId: "",
+    customerId: "",
+    from: "",
+    to: "",
   });
 
+  const debouncedQ = useDebounce(filters.q, 300);
+
+  useEffect(() => {
+    if (isNarrow && view === "month") setView("list");
+  }, [isNarrow]);
+
+  const range = useMemo(() => {
+    if (filters.from && filters.to) return { from: filters.from, to: filters.to };
+    return view === "week" ? weekRange(cursorDate) : monthRange(cursorDate);
+  }, [view, cursorDate, filters.from, filters.to]);
+
+  const queryParams = useMemo(
+    () => ({
+      from: range.from,
+      to: range.to,
+      vehicleId: filters.vehicleId || undefined,
+      customerId: filters.customerId || undefined,
+      status: filters.status || undefined,
+      q: debouncedQ.trim() || undefined,
+    }),
+    [range, filters.vehicleId, filters.customerId, filters.status, debouncedQ],
+  );
+
+  const calendarQuery = useQuery({
+    queryKey: ["rentals", "calendar", queryParams],
+    queryFn: () => getRentalAvailability(queryParams).then((r) => r.data),
+  });
+
+  const dashboardQuery = useQuery({
+    queryKey: ["rentals", "dashboard"],
+    queryFn: () => getRentalDashboard().then((r) => r.data),
+  });
+
+  const bookings = calendarQuery.data?.bookings ?? [];
+  const loading = calendarQuery.isLoading;
+
+  const handlePrev = () => {
+    if (view === "week") {
+      setCursorDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7));
+    } else {
+      setCursorDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    }
+  };
+
+  const handleNext = () => {
+    if (view === "week") {
+      setCursorDate((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7));
+    } else {
+      setCursorDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+    }
+  };
+
+  const effectiveView = isNarrow && view === "month" ? "list" : view;
+
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <RentalPageHeader title="Booking calendar" subtitle="Upcoming and active rentals." backTo="/rentals" />
+    <div className="fm-rental-calendar flex min-h-full flex-1 flex-col bg-surface-elevated">
+      <div className={dashboardPage}>
+        <CalendarPageHeader view={view} onViewChange={setView} />
 
-      <div className="mb-4 flex items-center gap-2">
-        <button
-          type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-        >
-          Previous
-        </button>
-        <span className="text-sm font-semibold text-ink">
-          {month.toLocaleString("en-GB", { month: "long", year: "numeric" })}
-        </span>
-        <button
-          type="button"
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-        >
-          Next
-        </button>
-      </div>
+        <BookingsKpiRow
+          dashboard={dashboardQuery.data}
+          bookings={bookings as RentalBooking[]}
+          loading={loading && dashboardQuery.isLoading}
+        />
 
-      {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+        <CalendarLegend />
 
-      <div className="space-y-3">
-        {(data?.bookings ?? []).map((b) => (
-          <Link
-            key={b.id}
-            to={`/rentals/bookings/${b.id}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm hover:border-brand/30"
-          >
-            <div>
-              <p className="font-semibold text-ink">{b.booking_number}</p>
-              <p className="text-sm text-slate-600">
-                {b.customer_name} · {b.license_plate}
-              </p>
-              <p className="text-xs text-slate-500">
-                {b.start_at.slice(0, 10)} – {b.end_at.slice(0, 10)}
-              </p>
-            </div>
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${bookingStatusClass(b.status)}`}
-            >
-              {formatBookingStatus(b.status)}
-            </span>
-          </Link>
-        ))}
-        {(data?.bookings ?? []).length === 0 && !isLoading && (
-          <p className="text-sm text-slate-500">No bookings in this period.</p>
+        <CalendarFilterBar filters={filters} onChange={(p) => setFilters((f) => ({ ...f, ...p }))} />
+
+        {calendarQuery.isError && (
+          <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            Failed to load calendar data.
+          </p>
         )}
+
+        <CalendarNav
+          cursorDate={cursorDate}
+          view={effectiveView}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onToday={() => setCursorDate(new Date())}
+          onViewChange={setView}
+        />
+
+        <div className="grid gap-5 xl:grid-cols-12">
+          <div className="xl:col-span-9">
+            {effectiveView === "month" && (
+              <CalendarMonthGrid
+                cursorDate={cursorDate}
+                bookings={bookings}
+                loading={loading}
+                onSelectBooking={setSelectedBooking}
+              />
+            )}
+            {effectiveView === "week" && (
+              <CalendarWeekGrid
+                cursorDate={cursorDate}
+                bookings={bookings}
+                loading={loading}
+                onSelectBooking={setSelectedBooking}
+              />
+            )}
+            {effectiveView === "list" && (
+              <CalendarListView bookings={bookings} loading={loading} onSelectBooking={setSelectedBooking} />
+            )}
+          </div>
+          <div className="hidden xl:col-span-3 xl:block">
+            <CalendarSidePanel bookings={bookings} dashboard={dashboardQuery.data} />
+          </div>
+        </div>
+
+        <div className="mt-6 xl:hidden">
+          <CalendarSidePanel bookings={bookings} dashboard={dashboardQuery.data} />
+        </div>
       </div>
+
+      <BookingCalendarDrawer booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
     </div>
   );
 }

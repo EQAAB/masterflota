@@ -1,0 +1,42 @@
+import { Link } from "react-router-dom";
+import { btnPrimary, btnSecondary } from "../../../theme/classNames";
+import type { CalendarViewMode } from "./calendarUtils";
+
+type CalendarPageHeaderProps = {
+  view: CalendarViewMode;
+  onViewChange: (v: CalendarViewMode) => void;
+};
+
+export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderProps) {
+  return (
+    <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <Link
+          to="/rentals"
+          className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
+        >
+          ← Back
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Booking calendar</h1>
+        <p className="mt-1.5 text-sm text-ink-muted">Upcoming and active rentals.</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="fm-rental-calendar__view-toggle" role="group" aria-label="Calendar view">
+          {(["month", "week", "list"] as CalendarViewMode[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={`fm-rental-calendar__view-btn capitalize ${view === v ? "fm-rental-calendar__view-btn--active" : ""}`}
+              onClick={() => onViewChange(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
+          New booking
+        </Link>
+      </div>
+    </header>
+  );
+}

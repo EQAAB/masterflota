@@ -1,0 +1,229 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RentalPaymentListItem } from "../../../api/rentals";
+import { createRentalPayment, getRentalBookings, updateRentalPayment } from "../../../api/rentals";
+import { btnPrimary, btnSecondary } from "../../../theme/classNames";
+
+type RecordPaymentModalProps = {
+  open: boolean;
+  editing: RentalPaymentListItem | null;
+  onClose: () => void;
+};
+
+export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModalProps) {
+  const queryClient = useQueryClient();
+  const [bookingId, setBookingId] = useState("");
+  const [paymentType, setPaymentType] = useState("rent");
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("cash");
+  const [status, setStatus] = useState("paid");
+  const [reference, setReference] = useState("");
+  const [notes, setNotes] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const bookingsQuery = useQuery({
+    queryKey: ["rentals", "bookings", "payment-modal"],
+    queryFn: () =>
+      getRentalBookings({ status: undefined }).then((r) =>
+        r.data.filter((b) => b.status !== "cancelled"),
+      ),
+    enabled: open,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setBookingId(editing.booking_id);
+      setPaymentType(editing.payment_type);
+      setAmount(String(editing.amount));
+      setMethod(editing.method ?? "cash");
+      setStatus(editing.status);
+      setReference(editing.reference ?? "");
+      setNotes(editing.notes ?? "");
+    } else {
+      setBookingId("");
+      setPaymentType("rent");
+      setAmount("");
+      setMethod("cash");
+      setStatus("paid");
+      setReference("");
+      setNotes("");
+    }
+    setError(null);
+  }, [open, editing]);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const body = {
+        paymentType,
+        amount: Number(amount),
+        method: method || null,
+        status,
+        reference: reference.trim() || null,
+        notes: notes.trim() || null,
+        paidAt: status === "paid" ? new Date().toISOString() : null,
+      };
+      if (editing) {
+        return updateRentalPayment(editing.id, body);
+      }
+      if (!bookingId) throw new Error("Select a booking");
+      return createRentalPayment(bookingId, body);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["rentals", "payments"] });
+      void queryClient.invalidateQueries({ queryKey: ["rentals", "payments", "summary"] });
+      void queryClient.invalidateQueries({ queryKey: ["rentals", "payments", "activity"] });
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : err instanceof Error
+            ? err.message
+            : null;
+      setError(msg ?? "Failed to save payment");
+    },
+  });
+
+  if (!open) return null;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px]"
+        aria-label="Close"
+        onClick={onClose}
+      />
+      <div
+        className="fixed left-1/2 top-1/2 z-[201] max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border/80 bg-white p-6 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+      >
+        <h2 className="text-lg font-semibold text-ink">
+          {editing ? "Edit payment" : "Record payment"}
+        </h2>
+
+        <div className="mt-4 space-y-3">
+          {!editing ? (
+            <label className="block text-sm font-medium text-ink">
+              Booking
+              <select
+                className="fm-rental-payments__filter-select mt-1 w-full"
+                value={bookingId}
+                onChange={(e) => setBookingId(e.target.value)}
+              >
+                <option value="">Select booking</option>
+                {(bookingsQuery.data ?? []).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.booking_number} — {b.customer_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p className="text-sm text-slate-600">
+              Booking: <span className="font-semibold">{editing.booking_number}</span>
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm font-medium text-ink">
+              Type
+              <select
+                className="fm-rental-payments__filter-select mt-1 w-full"
+                value={paymentType}
+                onChange={(e) => setPaymentType(e.target.value)}
+              >
+                <option value="rent">Rent</option>
+                <option value="deposit">Deposit</option>
+                <option value="deposit_refund">Refund</option>
+                <option value="extra">Extra / fee</option>
+                <option value="damage">Damage</option>
+              </select>
+            </label>
+            <label className="block text-sm font-medium text-ink">
+              Status
+              <select
+                className="fm-rental-payments__filter-select mt-1 w-full"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="block text-sm font-medium text-ink">
+            Amount
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className="fm-rental-payments__filter-select mt-1 w-full"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-ink">
+            Payment method
+            <select
+              className="fm-rental-payments__filter-select mt-1 w-full"
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+            >
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="bank transfer">Bank transfer</option>
+              <option value="stripe">Stripe</option>
+              <option value="paypal">PayPal</option>
+            </select>
+          </label>
+
+          <label className="block text-sm font-medium text-ink">
+            Reference
+            <input
+              className="fm-rental-payments__filter-select mt-1 w-full"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-ink">
+            Notes
+            <textarea
+              className="fm-rental-payments__filter-select mt-1 w-full min-h-[72px] resize-y"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </label>
+        </div>
+
+        {error ? (
+          <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" className={btnSecondary} onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={btnPrimary}
+            disabled={mutation.isPending || (!editing && !bookingId) || !amount}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Saving…" : editing ? "Save changes" : "Record payment"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

@@ -6,20 +6,95 @@ const UUID_RE =
 
 export const customersRoutes = Router();
 
+customersRoutes.get("/summary", async (req, res) => {
+  const orgId = req.user?.orgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  try {
+    const { rows } = await query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM rental_customers WHERE organization_id = $1 AND is_active = true) AS total_customers,
+         (SELECT COUNT(*)::int FROM rental_bookings WHERE organization_id = $1 AND status = 'active') AS active_rentals,
+         (SELECT COUNT(*)::int FROM (
+            SELECT c.id FROM rental_customers c
+            JOIN rental_bookings b ON b.customer_id = c.id AND b.organization_id = c.organization_id
+            WHERE c.organization_id = $1 AND b.status = 'completed'
+            GROUP BY c.id HAVING COUNT(*) >= 2
+          ) sub) AS returning_customers,
+         (SELECT COALESCE(SUM(amount), 0)::numeric FROM rental_payments
+          WHERE organization_id = $1 AND payment_type = 'rent' AND status = 'paid') AS lifetime_revenue,
+         (SELECT COUNT(*)::int FROM rental_customers
+          WHERE organization_id = $1 AND created_at >= date_trunc('month', NOW())) AS customers_added_this_month`,
+      [orgId],
+    );
+    return res.json(rows[0]);
+  } catch (err) {
+    console.error("Rental customers summary error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 customersRoutes.get("/", async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const activeOnly = req.query.active !== "false";
+  const customerType =
+    req.query.customerType === "company" || req.query.customerType === "individual"
+      ? req.query.customerType
+      : undefined;
+  const hasActiveRental =
+    req.query.hasActiveRental === "true" ? true : req.query.hasActiveRental === "false" ? false : undefined;
+  const sort = typeof req.query.sort === "string" ? req.query.sort : "name";
+  const orderClause =
+    sort === "revenue"
+      ? "lifetime_revenue DESC NULLS LAST"
+      : sort === "bookings"
+        ? "total_bookings DESC NULLS LAST"
+        : sort === "created"
+          ? "c.created_at DESC"
+          : "c.legal_name ASC";
+
   try {
     const params: unknown[] = [orgId];
-    let sql = `SELECT * FROM rental_customers WHERE organization_id = $1::uuid`;
-    if (activeOnly) sql += ` AND is_active = true`;
-    if (q) {
-      params.push(`%${q}%`);
-      sql += ` AND (legal_name ILIKE $2 OR contact_name ILIKE $2 OR email ILIKE $2 OR phone ILIKE $2)`;
+    let i = 2;
+    let sql = `
+      SELECT c.*,
+        COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed'))::int AS active_bookings,
+        COUNT(b.id) FILTER (WHERE b.status = 'completed')::int AS completed_rentals,
+        COUNT(b.id)::int AS total_bookings,
+        COALESCE(SUM(CASE WHEN p.payment_type = 'rent' AND p.status = 'paid' THEN p.amount ELSE 0 END), 0)::numeric AS lifetime_revenue
+      FROM rental_customers c
+      LEFT JOIN rental_bookings b ON b.customer_id = c.id AND b.organization_id = c.organization_id
+      LEFT JOIN rental_payments p ON p.booking_id = b.id
+      WHERE c.organization_id = $1::uuid`;
+
+    if (activeOnly) sql += ` AND c.is_active = true`;
+    if (customerType) {
+      sql += ` AND c.customer_type = $${i}`;
+      params.push(customerType);
+      i++;
     }
-    sql += ` ORDER BY legal_name ASC`;
+    if (q) {
+      sql += ` AND (
+        c.legal_name ILIKE '%' || $${i} || '%'
+        OR c.contact_name ILIKE '%' || $${i} || '%'
+        OR c.email ILIKE '%' || $${i} || '%'
+        OR c.phone ILIKE '%' || $${i} || '%'
+      )`;
+      params.push(q);
+      i++;
+    }
+
+    sql += ` GROUP BY c.id`;
+
+    if (hasActiveRental === true) {
+      sql += ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) > 0`;
+    } else if (hasActiveRental === false) {
+      sql += ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) = 0`;
+    }
+
+    sql += ` ORDER BY ${orderClause}`;
+
     const { rows } = await query(sql, params);
     return res.json(rows);
   } catch (err) {
