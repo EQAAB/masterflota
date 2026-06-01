@@ -24,6 +24,16 @@ import { SubcontractorSettlementsPage } from "./pages/earnings/SubcontractorSett
 import { SubcontractorSettlementDetailPage } from "./pages/earnings/SubcontractorSettlementDetailPage";
 import { SubcontractorsListPage } from "./pages/subcontractors/SubcontractorsListPage";
 import { SubcontractorFormPage } from "./pages/subcontractors/SubcontractorFormPage";
+import { RentalDashboardPage } from "./pages/rentals/RentalDashboardPage";
+import { BookingsListPage } from "./pages/rentals/BookingsListPage";
+import { BookingDetailPage } from "./pages/rentals/BookingDetailPage";
+import { BookingFormPage } from "./pages/rentals/BookingFormPage";
+import { RentalCalendarPage } from "./pages/rentals/RentalCalendarPage";
+import { CustomersListPage } from "./pages/rentals/CustomersListPage";
+import { CustomerFormPage } from "./pages/rentals/CustomerFormPage";
+import { VehicleAvailabilityPage } from "./pages/rentals/VehicleAvailabilityPage";
+import { PricingPage } from "./pages/rentals/PricingPage";
+import { PaymentsPage } from "./pages/rentals/PaymentsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const token = useAuthStore((s) => s.token);
@@ -187,6 +197,102 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <SubcontractorFormPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals",
+      element: (
+        <ProtectedRoute>
+          <RentalDashboardPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/bookings/new",
+      element: (
+        <ProtectedRoute>
+          <BookingFormPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/bookings/:id/edit",
+      element: (
+        <ProtectedRoute>
+          <BookingFormPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/bookings/:id",
+      element: (
+        <ProtectedRoute>
+          <BookingDetailPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/bookings",
+      element: (
+        <ProtectedRoute>
+          <BookingsListPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/calendar",
+      element: (
+        <ProtectedRoute>
+          <RentalCalendarPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/customers/new",
+      element: (
+        <ProtectedRoute>
+          <CustomerFormPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/customers/:id/edit",
+      element: (
+        <ProtectedRoute>
+          <CustomerFormPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/customers",
+      element: (
+        <ProtectedRoute>
+          <CustomersListPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/availability",
+      element: (
+        <ProtectedRoute>
+          <VehicleAvailabilityPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/pricing",
+      element: (
+        <ProtectedRoute>
+          <PricingPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/rentals/payments",
+      element: (
+        <ProtectedRoute>
+          <PaymentsPage />
         </ProtectedRoute>
       ),
     },

@@ -18,10 +18,11 @@ import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentLi
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
 import { VehicleMaintenancePanel } from "../../components/vehicles/VehicleMaintenancePanel";
 import { VehicleHistoryTimeline } from "../../components/vehicles/VehicleHistoryTimeline";
+import { VehicleRentalHistoryPanel } from "../../components/rentals/VehicleRentalHistoryPanel";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/currency";
 
-type TabId = "profile" | "maintenance" | "documents" | "history";
+type TabId = "profile" | "maintenance" | "documents" | "history" | "rentals";
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -199,7 +200,7 @@ export function VehicleDetailPage() {
         </div>
 
         <nav className="mx-auto mt-2 flex max-w-[1600px] gap-2 px-4 pb-3 sm:px-6 lg:px-8">
-          {(["profile", "maintenance", "history", "documents"] as TabId[]).map((t) => (
+          {(["profile", "maintenance", "rentals", "history", "documents"] as TabId[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -216,7 +217,7 @@ export function VehicleDetailPage() {
         </nav>
       </header>
 
-      <main className={`mx-auto p-4 sm:p-6 ${tab === "maintenance" || tab === "history" ? "max-w-6xl" : "max-w-5xl"}`}>
+      <main className={`mx-auto p-4 sm:p-6 ${tab === "maintenance" || tab === "history" || tab === "rentals" ? "max-w-6xl" : "max-w-5xl"}`}>
         {tab === "profile" && (
           <div className="space-y-4">
             <section className={cardClass}>
@@ -331,6 +332,8 @@ export function VehicleDetailPage() {
             onAdd={() => setAddMaintenanceOpen(true)}
           />
         )}
+
+        {tab === "rentals" && id && <VehicleRentalHistoryPanel vehicleId={id} />}
 
         {tab === "history" && id && <VehicleHistoryTimeline vehicleId={id} />}
 
