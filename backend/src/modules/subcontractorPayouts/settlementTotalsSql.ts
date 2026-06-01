@@ -2,6 +2,12 @@
  * Settlement totals are vertical SUMs from driver_payouts only.
  * total_commission = SUM(company_commission); subcontractor_payouts has no commission columns.
  */
+import {
+  DRIVER_CUSTOM_ADDITIONS_EXPR,
+  DRIVER_CUSTOM_DEDUCTIONS_EXPR,
+  DRIVER_FEE_JOINS,
+} from "./settlementFeeSql";
+
 export const SETTLEMENT_TOTALS_FROM = `
   FROM subcontractors s
   LEFT JOIN subcontractor_settlement_totals($1::uuid, $2::date, $3::date) st
@@ -58,17 +64,11 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_LATERAL = `
              2
            ) AS total_platform_fees,
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2) AS total_daily_cash,
-           ROUND(COALESCE(SUM(fee.deductions), 0)::numeric, 2) AS total_custom_deductions,
-           ROUND(COALESCE(SUM(fee.additions), 0)::numeric, 2) AS total_custom_additions,
+           ROUND(COALESCE(SUM(${DRIVER_CUSTOM_DEDUCTIONS_EXPR}), 0)::numeric, 2) AS total_custom_deductions,
+           ROUND(COALESCE(SUM(${DRIVER_CUSTOM_ADDITIONS_EXPR}), 0)::numeric, 2) AS total_custom_additions,
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2) AS total_payable
     FROM driver_payouts dp
-    LEFT JOIN LATERAL (
-        SELECT
-            COALESCE(SUM(CASE WHEN pa.fee_type = 'deduction' THEN pa.amount ELSE 0 END), 0) AS deductions,
-            COALESCE(SUM(CASE WHEN pa.fee_type = 'addition' THEN pa.amount ELSE 0 END), 0) AS additions
-        FROM driver_payout_adjustments pa
-        WHERE pa.driver_payout_id = dp.id
-    ) fee ON true
+    ${DRIVER_FEE_JOINS}
     WHERE dp.subcontractor_payout_id = sp.id
   ) pt ON true`;
 

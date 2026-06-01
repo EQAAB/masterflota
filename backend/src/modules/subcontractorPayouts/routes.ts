@@ -2,6 +2,11 @@ import { Router } from "express";
 import { authenticateJWT, requireRole } from "../../middleware/auth";
 import { pool } from "../../db/pool";
 import {
+  DRIVER_CUSTOM_ADDITIONS_EXPR,
+  DRIVER_CUSTOM_DEDUCTIONS_EXPR,
+  DRIVER_FEE_JOINS,
+} from "./settlementFeeSql";
+import {
   PAYOUT_DETAIL_PARENT_FROM,
   PAYOUT_TOTALS_BY_PAYOUT_ID_SELECT,
   SETTLEMENT_TOTALS_FROM,
@@ -286,18 +291,13 @@ router.get("/:id/detail", async (req, res) => {
               COALESCE(dp.account_opening_fee, 0)::text AS account_opening_fee,
               COALESCE(dp.total_platform_fees, 0)::text AS platform_fees,
               COALESCE(dp.total_daily_cash, 0)::text AS daily_cash,
-              COALESCE(fee.deductions, 0)::text AS custom_deductions,
-              COALESCE(fee.additions, 0)::text AS custom_additions,
+              COALESCE(${DRIVER_CUSTOM_DEDUCTIONS_EXPR}, 0)::text AS custom_deductions,
+              COALESCE(${DRIVER_CUSTOM_ADDITIONS_EXPR}, 0)::text AS custom_additions,
               COALESCE(dp.net_driver_payout, 0)::text AS net
        FROM driver_payouts dp
        INNER JOIN drivers d ON d.id = dp.driver_id
-       LEFT JOIN LATERAL (
-         SELECT
-           COALESCE(SUM(CASE WHEN pa.fee_type = 'deduction' THEN pa.amount ELSE 0 END), 0) AS deductions,
-           COALESCE(SUM(CASE WHEN pa.fee_type = 'addition' THEN pa.amount ELSE 0 END), 0) AS additions
-         FROM driver_payout_adjustments pa
-         WHERE pa.driver_payout_id = dp.id
-       ) fee ON true
+       INNER JOIN subcontractor_payouts sp ON sp.id = dp.subcontractor_payout_id
+       ${DRIVER_FEE_JOINS}
        WHERE dp.subcontractor_payout_id = $1::uuid
        ORDER BY d.last_name, d.first_name`,
       [id],
