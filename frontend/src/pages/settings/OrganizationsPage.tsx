@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createOrganization, fetchOrganizations } from "../../api/organizations";
+import { PasswordInput } from "../../components/theme/PasswordInput";
+import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
 import { usePermission } from "../../lib/permissions";
 import {
   alertError,
@@ -38,6 +40,7 @@ export function OrganizationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
 
   const orgsQuery = useQuery({
     queryKey: ["organizations"],
@@ -52,14 +55,15 @@ export function OrganizationsPage() {
         email: form.email.trim() || undefined,
         phone: form.phone.trim() || undefined,
         adminEmail: form.adminEmail.trim(),
-        adminPassword: form.adminPassword,
+        adminPassword: form.adminPassword.trim(),
         adminFirstName: form.adminFirstName.trim() || undefined,
         adminLastName: form.adminLastName.trim() || undefined,
-      }),
-    onSuccess: () => {
+      }).then((r) => r.data),
+    onSuccess: (data) => {
       setShowForm(false);
       setForm(emptyForm);
       setFormError(null);
+      setTemporaryPassword(data.temporaryPassword ?? null);
       void queryClient.invalidateQueries({ queryKey: ["organizations"] });
     },
   });
@@ -84,7 +88,8 @@ export function OrganizationsPage() {
       setFormError("Please enter a valid admin email.");
       return;
     }
-    if (form.adminPassword.length < 8) {
+    const pwd = form.adminPassword.trim();
+    if (pwd.length > 0 && pwd.length < 8) {
       setFormError("Admin password must be at least 8 characters.");
       return;
     }
@@ -110,6 +115,14 @@ export function OrganizationsPage() {
             {showForm ? "Cancel" : "Create organization"}
           </button>
         </header>
+
+        {temporaryPassword && (
+          <TemporaryPasswordAlert
+            heading="Organization and admin user created successfully."
+            password={temporaryPassword}
+            onDismiss={() => setTemporaryPassword(null)}
+          />
+        )}
 
         {showForm && (
           <div className={`${card} p-5 shadow-card`}>
@@ -162,16 +175,12 @@ export function OrganizationsPage() {
                       required
                     />
                   </div>
-                  <div>
-                    <label className={sectionLabel}>Admin password *</label>
-                    <input
-                      type="password"
-                      className={input}
-                      value={form.adminPassword}
-                      onChange={(e) => setForm((f) => ({ ...f, adminPassword: e.target.value }))}
-                      required
-                    />
-                  </div>
+                  <PasswordInput
+                    label="Admin password"
+                    value={form.adminPassword}
+                    onChange={(adminPassword) => setForm((f) => ({ ...f, adminPassword }))}
+                    helperText="Generate a strong password or leave blank to auto-generate on create."
+                  />
                   <div>
                     <label className={sectionLabel}>First name</label>
                     <input

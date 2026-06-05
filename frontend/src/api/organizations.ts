@@ -26,5 +26,6 @@ export function createOrganization(body: CreateOrganizationBody) {
   return api.post<{
     organization: Organization;
     admin: { id: string; email: string; firstName: string; lastName: string };
+    temporaryPassword?: string;
   }>("/organizations", body);
 }

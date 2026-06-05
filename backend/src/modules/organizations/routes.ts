@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { pool } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
+import { generateStrongPassword } from "../../lib/generateStrongPassword";
 import { authenticateJWT, requirePermission, requireSuperAdmin } from "../../middleware/auth";
 
 const router = Router();
@@ -63,10 +64,12 @@ router.post("/", requirePermission("organizations.create"), async (req, res) => 
   if (!name?.trim()) {
     return res.status(400).json({ message: "Organization name is required" });
   }
-  if (!adminEmail?.trim() || !adminPassword) {
-    return res.status(400).json({ message: "Admin email and password are required" });
+  if (!adminEmail?.trim()) {
+    return res.status(400).json({ message: "Admin email is required" });
   }
-  if (adminPassword.length < 8) {
+  const passwordGenerated = !adminPassword?.trim();
+  const plainPassword = passwordGenerated ? generateStrongPassword() : adminPassword!.trim();
+  if (plainPassword.length < 8) {
     return res.status(400).json({ message: "Admin password must be at least 8 characters long" });
   }
 
@@ -103,7 +106,7 @@ router.post("/", requirePermission("organizations.create"), async (req, res) => 
     );
 
     const organizationId = orgResult.rows[0].id;
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
     const firstName = adminFirstName?.trim() || "Admin";
     const lastName = adminLastName?.trim() || name.trim();
 
@@ -149,6 +152,7 @@ router.post("/", requirePermission("organizations.create"), async (req, res) => 
         firstName,
         lastName,
       },
+      ...(passwordGenerated ? { temporaryPassword: plainPassword } : {}),
     });
   } catch (err: unknown) {
     await client.query("ROLLBACK");

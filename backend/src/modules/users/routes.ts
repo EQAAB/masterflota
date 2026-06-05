@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
+import { generateStrongPassword } from "../../lib/generateStrongPassword";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
 
 const router = Router();
@@ -79,10 +80,12 @@ router.post("/", async (req, res) => {
     phone?: string;
     roleId?: string;
   };
-  if (!email || !password || !firstName || !lastName || !roleId) {
-    return res.status(400).json({ message: "email, password, firstName, lastName, and roleId are required" });
+  if (!email || !firstName || !lastName || !roleId) {
+    return res.status(400).json({ message: "email, firstName, lastName, and roleId are required" });
   }
-  if (password.length < 8) {
+  const passwordGenerated = !password?.trim();
+  const plainPassword = passwordGenerated ? generateStrongPassword() : password!.trim();
+  if (plainPassword.length < 8) {
     return res.status(400).json({ message: "Password must be at least 8 characters long" });
   }
   try {
@@ -101,7 +104,7 @@ router.post("/", async (req, res) => {
     if (existing.rows[0]) {
       return res.status(409).json({ message: "A user with this email already exists" });
     }
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
     const { rows } = await query<{ id: string }>(
       `INSERT INTO users (
           organization_id, email, password_hash, first_name, last_name, phone, role_id, is_active
@@ -121,7 +124,10 @@ router.post("/", async (req, res) => {
         req,
       });
     }
-    return res.status(201).json({ id: newId });
+    return res.status(201).json({
+      id: newId,
+      ...(passwordGenerated ? { temporaryPassword: plainPassword } : {}),
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Create user error", err);

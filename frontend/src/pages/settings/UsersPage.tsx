@@ -18,6 +18,7 @@ import {
   paginateUsers,
   type UsersFilters,
 } from "../../components/settings/users/usersListUtils";
+import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
 import { useAnyPermission } from "../../lib/permissions";
 import { dashboardPage } from "../../theme/classNames";
 
@@ -48,6 +49,7 @@ export function UsersPage() {
   const [filters, setFilters] = useState<UsersFilters>({ q: "", roleId: "", status: "" });
   const [editingUser, setEditingUser] = useState<EditUserForm | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
 
   const debouncedQ = useDebounce(filters.q, 300);
 
@@ -72,11 +74,13 @@ export function UsersPage() {
     mutationFn: () =>
       createOrgUser({
         ...form,
+        password: form.password.trim(),
         roleId: form.roleId || rolesQuery.data?.[0]?.id || "",
-      }),
-    onSuccess: () => {
+      }).then((r) => r.data),
+    onSuccess: (data) => {
       setShowForm(false);
       setForm(emptyForm);
+      setTemporaryPassword(data.temporaryPassword ?? null);
       void queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
@@ -174,6 +178,13 @@ export function UsersPage() {
             roles={roles}
             onChange={patchFilters}
             onClear={() => patchFilters({ roleId: "", status: "" })}
+          />
+        )}
+
+        {temporaryPassword && (
+          <TemporaryPasswordAlert
+            password={temporaryPassword}
+            onDismiss={() => setTemporaryPassword(null)}
           />
         )}
 

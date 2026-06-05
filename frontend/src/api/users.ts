@@ -24,7 +24,7 @@ export function createOrgUser(body: {
   phone?: string;
   roleId: string;
 }) {
-  return api.post<{ id: string }>("/users", body);
+  return api.post<{ id: string; temporaryPassword?: string }>("/users", body);
 }
 
 export function updateOrgUser(
