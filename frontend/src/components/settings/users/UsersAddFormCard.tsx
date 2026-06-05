@@ -1,4 +1,5 @@
 import type { RoleItem } from "../../../api/roles";
+import { PasswordInput } from "../../../components/theme/PasswordInput";
 import { btnPrimary, input, sectionLabel } from "../../../theme/classNames";
 
 export type AddUserForm = {
@@ -32,15 +33,12 @@ export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }:
             onChange={(e) => onChange({ email: e.target.value })}
           />
         </div>
-        <div>
-          <label className={sectionLabel}>Password</label>
-          <input
-            type="password"
-            className={input}
-            value={form.password}
-            onChange={(e) => onChange({ password: e.target.value })}
-          />
-        </div>
+        <PasswordInput
+          label="Password"
+          value={form.password}
+          onChange={(password) => onChange({ password })}
+          helperText="Generate a strong password or leave blank to auto-generate on create."
+        />
         <div>
           <label className={sectionLabel}>First name</label>
           <input

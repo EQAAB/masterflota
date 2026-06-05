@@ -2185,6 +2185,23 @@ body {
     @apply inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink;
   }
 
+  /* Password input */
+  .fm-password-input {
+    @apply relative;
+  }
+
+  .fm-password-input__field {
+    @apply pr-[7.5rem];
+  }
+
+  .fm-password-input__actions {
+    @apply absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5;
+  }
+
+  .fm-password-input__action-btn {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
   /* Settings — Users */
   .fm-settings-users {
     @apply relative bg-surface-elevated;
