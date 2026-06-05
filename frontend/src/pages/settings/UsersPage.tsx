@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAuditLogs } from "../../api/audit";
 import { createOrgUser, deactivateOrgUser, fetchOrgUsers, updateOrgUser } from "../../api/users";
 import { fetchRoles } from "../../api/roles";
 import { UsersAddFormCard, type AddUserForm } from "../../components/settings/users/UsersAddFormCard";
@@ -7,7 +8,9 @@ import { UsersEditModal, type EditUserForm } from "../../components/settings/use
 import { UsersFilterPanel } from "../../components/settings/users/UsersFilterPanel";
 import { UsersKpiRow } from "../../components/settings/users/UsersKpiRow";
 import { UsersPageHeader } from "../../components/settings/users/UsersPageHeader";
+import { UsersInsightsColumn } from "../../components/settings/users/UsersInsightsColumn";
 import { UsersTable } from "../../components/settings/users/UsersTable";
+import { UsersTeamAccessOverview } from "../../components/settings/users/UsersTeamAccessOverview";
 import {
   USERS_PAGE_SIZE,
   computeUsersKpis,
@@ -56,6 +59,12 @@ export function UsersPage() {
   const rolesQuery = useQuery({
     queryKey: ["roles"],
     queryFn: () => fetchRoles().then((r) => r.data),
+    enabled: canManage,
+  });
+
+  const activityQuery = useQuery({
+    queryKey: ["audit-logs", "users-insights"],
+    queryFn: () => fetchAuditLogs({ entityType: "user", limit: 5, page: 1 }).then((r) => r.data),
     enabled: canManage,
   });
 
@@ -146,7 +155,7 @@ export function UsersPage() {
 
   return (
     <div className="fm-settings-users flex min-h-full flex-1 flex-col">
-      <div className={dashboardPage}>
+      <div className={`${dashboardPage} fm-settings-users__page`}>
         <UsersPageHeader
           search={filters.q}
           onSearchChange={(q) => patchFilters({ q })}
@@ -184,22 +193,33 @@ export function UsersPage() {
           </p>
         )}
 
-        <UsersTable
-          users={paginatedUsers}
-          totalFiltered={filteredUsers.length}
-          allUsersCount={allUsers.length}
-          roles={roles}
-          loading={usersQuery.isLoading}
-          page={safePage}
-          pageSize={USERS_PAGE_SIZE}
-          onPageChange={setPage}
-          onRoleChange={(id, roleId) => updateMut.mutate({ id, body: { roleId } })}
-          onEdit={openEdit}
-          onDeactivate={(id) => deactivateMut.mutate(id)}
-          onActivate={(id) => updateMut.mutate({ id, body: { isActive: true } })}
-          isUpdating={updateMut.isPending || deactivateMut.isPending}
-          hasActiveFilters={hasActiveFilters}
-        />
+        <div className="fm-settings-users__main-grid">
+          <div className="fm-settings-users__main-column min-w-0 space-y-3">
+            <UsersTable
+              users={paginatedUsers}
+              totalFiltered={filteredUsers.length}
+              allUsersCount={allUsers.length}
+              roles={roles}
+              loading={usersQuery.isLoading}
+              page={safePage}
+              pageSize={USERS_PAGE_SIZE}
+              onPageChange={setPage}
+              onRoleChange={(id, roleId) => updateMut.mutate({ id, body: { roleId } })}
+              onEdit={openEdit}
+              onDeactivate={(id) => deactivateMut.mutate(id)}
+              onActivate={(id) => updateMut.mutate({ id, body: { isActive: true } })}
+              isUpdating={updateMut.isPending || deactivateMut.isPending}
+              hasActiveFilters={hasActiveFilters}
+            />
+            <UsersTeamAccessOverview />
+          </div>
+
+          <UsersInsightsColumn
+            users={allUsers}
+            activity={activityQuery.data?.items}
+            activityLoading={activityQuery.isLoading}
+          />
+        </div>
       </div>
 
       {editingUser && editingUserRecord && (

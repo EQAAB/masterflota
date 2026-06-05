@@ -50,6 +50,16 @@ export function requirePermission(...names: string[]) {
   };
 }
 
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  if (req.user.role !== "super_admin") {
+    return res.status(403).json({ message: "Super admin access required" });
+  }
+  return next();
+}
+
 export function requireAllPermissions(...names: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

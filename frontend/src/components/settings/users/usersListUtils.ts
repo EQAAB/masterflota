@@ -36,6 +36,59 @@ export function roleOptionLabel(role: RoleItem): string {
   return labeled !== normalized.replace(/_/g, " ") ? labeled : role.name;
 }
 
+export type RoleSummary = {
+  superAdmin: number;
+  admin: number;
+  active: number;
+  inactive: number;
+};
+
+export function roleBadgeLabel(role: string): string {
+  if (role === "super_admin") return "Super Admin";
+  if (role === "admin") return "Admin";
+  return roleLabel(role);
+}
+
+export function roleBadgeVariant(role: string): "super_admin" | "admin" | "default" {
+  if (role === "super_admin") return "super_admin";
+  if (role === "admin") return "admin";
+  return "default";
+}
+
+export function computeRoleSummary(users: OrgUser[]): RoleSummary {
+  let superAdmin = 0;
+  let admin = 0;
+  let active = 0;
+  let inactive = 0;
+  for (const u of users) {
+    if (u.role === "super_admin") superAdmin += 1;
+    else if (u.role === "admin") admin += 1;
+    if (u.isActive) active += 1;
+    else inactive += 1;
+  }
+  return { superAdmin, admin, active, inactive };
+}
+
+export function formatAuditAction(action: string): string {
+  return action.replace(/\./g, " · ").replace(/_/g, " ");
+}
+
+export function formatRelativeTime(iso: string): string {
+  try {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(iso).toLocaleDateString();
+  } catch {
+    return iso;
+  }
+}
+
 export function computeUsersKpis(users: OrgUser[]): UsersKpis {
   let active = 0;
   let admin = 0;

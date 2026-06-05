@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { pool, query } from "../../db/pool";
+import { query } from "../../db/pool";
 import { env } from "../../config/env";
 import { createUserSession, hashSessionToken, newSessionJti } from "../../lib/userSession";
 import { authenticateJWT, type AuthPayload } from "../../middleware/auth";
@@ -57,87 +57,10 @@ async function issueToken(user: UserRow, req: Parameters<typeof createUserSessio
   return { token, payload };
 }
 
-router.post("/register", async (req, res) => {
-  const { organizationName, email, password, phone } = req.body as {
-    organizationName?: string;
-    email?: string;
-    password?: string;
-    phone?: string;
-  };
-
-  if (!organizationName || !email || !password) {
-    return res.status(400).json({ message: "organizationName, email and password are required" });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ message: "Password must be at least 8 characters long" });
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
-    const emailLower = email.toLowerCase();
-    const existingUser = await client.query<{ id: string }>(
-      "SELECT id FROM users WHERE email = $1 LIMIT 1",
-      [emailLower],
-    );
-    if (existingUser.rows[0]) {
-      await client.query("ROLLBACK");
-      return res.status(409).json({ message: "A user with this email already exists" });
-    }
-
-    const adminRole = await client.query<{ id: string }>(
-      `SELECT id::text FROM roles WHERE name = 'admin' LIMIT 1`,
-    );
-    const adminRoleId = adminRole.rows[0]?.id;
-    if (!adminRoleId) {
-      await client.query("ROLLBACK");
-      return res.status(500).json({ message: "Admin role is not configured" });
-    }
-
-    const orgResult = await client.query<{ id: string }>(
-      `INSERT INTO organizations (name, email, phone)
-       VALUES ($1, $2, $3)
-       RETURNING id`,
-      [organizationName, emailLower, phone ?? null],
-    );
-
-    const organizationId = orgResult.rows[0].id;
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const userResult = await client.query<UserRow>(
-      `INSERT INTO users (
-          organization_id, email, password_hash, first_name, last_name, phone, role_id, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7::uuid, true)
-        RETURNING *`,
-      [organizationId, emailLower, passwordHash, organizationName, "Admin", phone ?? null, adminRoleId],
-    );
-
-    await client.query("COMMIT");
-
-    const user = userResult.rows[0];
-    const issued = await issueToken(user, req);
-    if (!issued) {
-      return res.status(500).json({ message: "Failed to load user permissions" });
-    }
-
-    return res.status(201).json({
-      token: issued.token,
-      user: serializeUser(user, {
-        roleId: issued.payload.roleId,
-        roleName: issued.payload.role,
-        permissions: issued.payload.permissions,
-      }),
-    });
-  } catch (err: unknown) {
-    await client.query("ROLLBACK");
-    // eslint-disable-next-line no-console
-    console.error("Register error", err);
-    return res.status(500).json({ message: "Internal server error" });
-  } finally {
-    client.release();
-  }
+router.post("/register", (_req, res) => {
+  return res.status(403).json({
+    message: "Public registration is disabled. Contact your system administrator.",
+  });
 });
 
 router.post("/login", async (req, res) => {

@@ -25,11 +25,13 @@ const rentalSubItems = [
 ];
 
 function buildSettingsSubItems(opts: {
+  canOrganizations: boolean;
   canUsers: boolean;
   canRoles: boolean;
   canAudit: boolean;
 }) {
   const items: { to: string; label: string; exact?: boolean }[] = [];
+  if (opts.canOrganizations) items.push({ to: "/settings/organizations", label: "Organizations" });
   if (opts.canUsers) items.push({ to: "/settings/users", label: "Users" });
   if (opts.canRoles) items.push({ to: "/settings/roles", label: "Roles" });
   if (opts.canAudit) items.push({ to: "/settings/audit", label: "Activity log" });
@@ -215,9 +217,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewVehicles = usePermission("vehicles.view");
   const canViewDashboard = usePermission("dashboard.view");
   const canViewRentals = useAnyPermission("rentals.view", "rentals.manage");
+  const canManageOrganizations = usePermission("organizations.create");
   const canManageUsers = usePermission("users.manage");
   const canManageRoles = usePermission("roles.manage");
   const settingsSubItems = buildSettingsSubItems({
+    canOrganizations: canManageOrganizations,
     canUsers: canManageUsers,
     canRoles: canManageRoles,
     canAudit: canManageUsers,
@@ -460,7 +464,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   />
                 </button>
                 {settingsOpen && (
-                  <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                  <div className="relative z-10 mt-0.5 ml-2 space-y-1.5 border-l border-white/20 pl-3">
                     {settingsSubItems.map(({ to, label, exact }) => {
                       const active = exact ? location.pathname === to : location.pathname.startsWith(to);
                       return (
@@ -469,8 +473,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                           to={to}
                           className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
                             active
-                              ? "bg-brand-mint font-medium text-ink"
-                              : "text-white/60 hover:bg-white/10 hover:text-white"
+                              ? "bg-brand-mint/90 font-medium text-ink ring-1 ring-white/25"
+                              : "text-white/75 hover:bg-white/10 hover:text-white"
                           }`}
                         >
                           <span className="truncate">{label}</span>
