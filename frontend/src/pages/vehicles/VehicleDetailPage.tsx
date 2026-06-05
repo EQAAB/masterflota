@@ -19,7 +19,7 @@ import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/Vehicle
 import { VehicleMaintenancePanel } from "../../components/vehicles/VehicleMaintenancePanel";
 import { VehicleHistoryTimeline } from "../../components/vehicles/VehicleHistoryTimeline";
 import { VehicleRentalHistoryPanel } from "../../components/rentals/VehicleRentalHistoryPanel";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import { formatCurrency } from "../../utils/currency";
 
 type TabId = "profile" | "maintenance" | "documents" | "history" | "rentals";
@@ -65,7 +65,6 @@ function initials(firstName?: string | null, lastName?: string | null): string {
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<TabId>("profile");
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
   const [assignDriverOpen, setAssignDriverOpen] = useState(false);
@@ -92,7 +91,7 @@ export function VehicleDetailPage() {
   const vehicle = vehicleRes?.data;
   const maintenanceList = maintenanceRes?.data ?? [];
   const driversForAssign = driversRes?.data ?? [];
-  const canEdit = user?.role === "admin" || user?.role === "accountant";
+  const canEdit = usePermission("vehicles.edit");
 
   const assignDriverMutation = useMutation({
     mutationFn: (driverId: string) => assignDriverToVehicle(id!, driverId),
@@ -298,7 +297,7 @@ export function VehicleDetailPage() {
               </dl>
             </section>
 
-            {(user?.role === "admin" || user?.role === "accountant") && id && (
+            {canEdit && id && (
               <VehicleAssignmentHistoryPanel mode="vehicle" entityId={id} title="Driver history" />
             )}
 

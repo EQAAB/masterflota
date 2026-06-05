@@ -6,7 +6,7 @@ import {
   type VehicleHistoryEventType,
 } from "../../api/vehicles";
 import { getDrivers } from "../../api/drivers";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import { alertError, transitionDefault } from "../../theme/classNames";
 import { VehicleHistoryFilters } from "./VehicleHistoryFilters";
 import { VehicleHistoryTimelineItem } from "./VehicleHistoryTimelineItem";
@@ -55,8 +55,7 @@ function EmptyState() {
 }
 
 export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
-  const user = useAuthStore((s) => s.user);
-  const canEdit = user?.role === "admin" || user?.role === "accountant";
+  const canEdit = usePermission("vehicles.edit");
   const qc = useQueryClient();
 
   const [eventType, setEventType] = useState<"" | VehicleHistoryEventType>("");

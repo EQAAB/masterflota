@@ -1,7 +1,7 @@
 import { Router } from "express";
 import path from "path";
 import fs from "fs";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { roundMoney } from "../earnings/debtAllocation";
 import {
@@ -37,6 +37,7 @@ function resolveDriverListOrder(query: ListSortQuery) {
 }
 
 router.use(authenticateJWT);
+router.use(requirePermission("drivers.view"));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -197,7 +198,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-router.post("/:id/assign-vehicle", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/assign-vehicle", requirePermission("drivers.assign_vehicle"), async (req, res) => {
   const orgId = req.user?.orgId;
   const driverId = String(req.params.id);
   const body = req.body as { vehicleId?: string };
@@ -234,7 +235,7 @@ router.post("/:id/assign-vehicle", requireRole("admin", "accountant"), async (re
   }
 });
 
-router.post("/:id/unassign-vehicle", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/unassign-vehicle", requirePermission("drivers.assign_vehicle"), async (req, res) => {
   const orgId = req.user?.orgId;
   const driverId = String(req.params.id);
 
@@ -265,7 +266,7 @@ router.post("/:id/unassign-vehicle", requireRole("admin", "accountant"), async (
 
 router.patch(
   "/:id/photo",
-  requireRole("admin", "accountant"),
+  requirePermission("drivers.edit"),
   driverProfilePhotoUpload.single("photo"),
   async (req, res) => {
     const orgId = req.user?.orgId;
@@ -383,7 +384,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-const driverVehicleHistory = [requireRole("admin", "accountant"), handleDriverVehicleHistory];
+const driverVehicleHistory = [requirePermission("drivers.edit"), handleDriverVehicleHistory];
 router.get("/:id/vehicle-assignment-history", ...driverVehicleHistory);
 router.get("/:id/vehicle-history", ...driverVehicleHistory);
 
@@ -416,7 +417,7 @@ router.get("/:id/activity", async (req, res) => {
   }
 });
 
-router.patch("/:id/notes", requireRole("admin", "accountant"), async (req, res) => {
+router.patch("/:id/notes", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -459,7 +460,7 @@ router.patch("/:id/notes", requireRole("admin", "accountant"), async (req, res) 
   }
 });
 
-router.post("/", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/", requirePermission("drivers.create"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -600,7 +601,7 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
   }
 });
 
-router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
+router.put("/:id", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id } = req.params;
 
@@ -744,7 +745,7 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
   }
 });
 
-router.patch("/:id/status", requireRole("admin", "accountant"), async (req, res) => {
+router.patch("/:id/status", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id } = req.params;
   const { status } = req.body as { status?: string };
@@ -803,7 +804,7 @@ async function assertDriverInOrg(driverId: string, orgId: string): Promise<boole
   return !!rows[0];
 }
 
-router.get("/:id/recurring-fees", requireRole("admin", "accountant"), async (req, res) => {
+router.get("/:id/recurring-fees", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const driverId = String(req.params.id ?? "");
@@ -823,7 +824,7 @@ router.get("/:id/recurring-fees", requireRole("admin", "accountant"), async (req
   }
 });
 
-router.post("/:id/recurring-fees", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/recurring-fees", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -898,7 +899,7 @@ router.post("/:id/recurring-fees", requireRole("admin", "accountant"), async (re
   }
 });
 
-router.patch("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), async (req, res) => {
+router.patch("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -1004,7 +1005,7 @@ router.patch("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), a
   }
 });
 
-router.delete("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), async (req, res) => {
+router.delete("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -1043,7 +1044,7 @@ router.delete("/:id/recurring-fees/:feeId", requireRole("admin", "accountant"), 
   }
 });
 
-router.delete("/:id", requireRole("admin", "accountant"), async (req, res) => {
+router.delete("/:id", requirePermission("drivers.delete"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   const { id } = req.params;

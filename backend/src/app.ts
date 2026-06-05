@@ -12,6 +12,10 @@ import { importEarningsCsvRoutes } from "./modules/import/earningsCsvRoutes";
 import { subcontractorRoutes } from "./modules/subcontractors/routes";
 import { subcontractorPayoutRoutes } from "./modules/subcontractorPayouts/routes";
 import { rentalRoutes } from "./modules/rentals/routes";
+import { userRoutes } from "./modules/users/routes";
+import { roleRoutes } from "./modules/roles/routes";
+import { settingsRoutes } from "./modules/settings/routes";
+import { auditRoutes } from "./modules/audit/routes";
 
 export const app = express();
 
@@ -38,6 +42,10 @@ app.use("/api/vehicles", vehicleDocumentRoutes);
 app.use("/api/subcontractors", subcontractorRoutes);
 app.use("/api/subcontractor-payouts", subcontractorPayoutRoutes);
 app.use("/api/rentals", rentalRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/audit-logs", auditRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

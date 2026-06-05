@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import Papa from "papaparse";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import {
   bulkUpdateSubcontractorPayouts,
   getSubcontractorSettlementDetail,
@@ -24,7 +24,7 @@ function sumDrivers(rows: SubcontractorSettlementDetailDriver[], key: keyof Subc
 
 export function SubcontractorSettlementDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const user = useAuthStore((s) => s.user);
+  const canAccess = usePermission("subcontractors.settle");
   const qc = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function SubcontractorSettlementDetailPage() {
   const q = useQuery({
     queryKey: ["subcontractor-settlement-detail", id],
     queryFn: () => getSubcontractorSettlementDetail(id!).then((r) => r.data),
-    enabled: (user?.role === "admin" || user?.role === "accountant") && !!id,
+    enabled: canAccess && !!id,
   });
 
   const payMut = useMutation({
@@ -102,7 +102,7 @@ export function SubcontractorSettlementDetailPage() {
     }
   }
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return <p className="p-6 text-slate-500">You do not have access.</p>;
   }
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getEarningsOverview, getPayoutIntegrityRows } from "../../api/earnings";
-import { useAuthStore } from "../../store/authStore";
+import { useCanAccessFinance } from "../../lib/permissions";
 import { driversPage } from "../../theme/classNames";
 import { exportEarningsOverviewCsv } from "../../utils/exportEarningsOverviewCsv";
 import { CommissionGrossDonutCard } from "../../components/earnings/overview/CommissionGrossDonutCard";
@@ -20,7 +20,7 @@ import {
 } from "../../components/earnings/overview/useEarningsOverviewDerived";
 
 export function EarningsOverviewPage() {
-  const user = useAuthStore((s) => s.user);
+  const canAccess = useCanAccessFinance();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const driverFilter =
@@ -39,13 +39,13 @@ export function EarningsOverviewPage() {
   const overviewQuery = useQuery({
     queryKey: ["earnings", "overview"],
     queryFn: () => getEarningsOverview().then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
   const integrityQuery = useQuery({
     queryKey: ["earnings", "payout-integrity"],
     queryFn: () => getPayoutIntegrityRows().then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
   const allIntegrityRows = integrityQuery.data ?? [];
@@ -63,7 +63,7 @@ export function EarningsOverviewPage() {
 
   const platforms = useMemo(() => uniquePlatforms(allIntegrityRows), [allIntegrityRows]);
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return <p className="p-6 text-ink-muted">You do not have access to earnings.</p>;
   }
 

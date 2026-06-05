@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { pool } from "../../db/pool";
 import {
   DRIVER_CUSTOM_ADDITIONS_EXPR,
@@ -18,7 +18,7 @@ import { refreshVehicleRentForPeriod } from "../earnings/refreshVehicleRentForPe
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("subcontractors.settle"));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

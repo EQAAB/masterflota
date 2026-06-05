@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useAuthStore } from "../../store/authStore";
+import { useAnyPermission, useCanAccessFinance, usePermission } from "../../lib/permissions";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
 import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
@@ -23,6 +23,18 @@ const rentalSubItems = [
   { to: "/rentals/pricing", label: "Pricing" },
   { to: "/rentals/payments", label: "Payments" },
 ];
+
+function buildSettingsSubItems(opts: {
+  canUsers: boolean;
+  canRoles: boolean;
+  canAudit: boolean;
+}) {
+  const items: { to: string; label: string; exact?: boolean }[] = [];
+  if (opts.canUsers) items.push({ to: "/settings/users", label: "Users" });
+  if (opts.canRoles) items.push({ to: "/settings/roles", label: "Roles" });
+  if (opts.canAudit) items.push({ to: "/settings/audit", label: "Activity log" });
+  return items;
+}
 
 const ICON = "w-5 h-5 shrink-0 stroke-[1.75]";
 
@@ -67,6 +79,15 @@ function EarningsIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function SettingsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
 }
@@ -188,28 +209,46 @@ export interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
-  const role = useAuthStore((s) => s.user?.role);
-  const showFinanceNav = role === "admin" || role === "accountant";
+  const showFinanceNav = useCanAccessFinance();
+  const canViewSubcontractors = usePermission("subcontractors.view");
+  const canViewDrivers = usePermission("drivers.view");
+  const canViewVehicles = usePermission("vehicles.view");
+  const canViewDashboard = usePermission("dashboard.view");
+  const canViewRentals = useAnyPermission("rentals.view", "rentals.manage");
+  const canManageUsers = usePermission("users.manage");
+  const canManageRoles = usePermission("roles.manage");
+  const settingsSubItems = buildSettingsSubItems({
+    canUsers: canManageUsers,
+    canRoles: canManageRoles,
+    canAudit: canManageUsers,
+  });
+  const showSettingsNav = settingsSubItems.length > 0;
+
   const navItems = [
-    { to: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-    { to: "/drivers", label: "Drivers", icon: DriversIcon },
-    { to: "/vehicles", label: "Vehicles", icon: VehiclesIcon },
-    ...(showFinanceNav ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }] : []),
+    ...(canViewDashboard ? [{ to: "/dashboard", label: "Dashboard", icon: DashboardIcon }] : []),
+    ...(canViewDrivers ? [{ to: "/drivers", label: "Drivers", icon: DriversIcon }] : []),
+    ...(canViewVehicles ? [{ to: "/vehicles", label: "Vehicles", icon: VehiclesIcon }] : []),
+    ...(canViewSubcontractors ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }] : []),
   ];
   const [earningsOpen, setEarningsOpen] = useState(() => location.pathname.startsWith("/earnings"));
   const [rentalsOpen, setRentalsOpen] = useState(() => location.pathname.startsWith("/rentals"));
+  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings"));
   const [earningsFlyout, setEarningsFlyout] = useState(false);
   const [rentalsFlyout, setRentalsFlyout] = useState(false);
+  const [settingsFlyout, setSettingsFlyout] = useState(false);
   const earningsBtnRef = useRef<HTMLButtonElement>(null);
   const rentalsBtnRef = useRef<HTMLButtonElement>(null);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (location.pathname.startsWith("/earnings")) setEarningsOpen(true);
     if (location.pathname.startsWith("/rentals")) setRentalsOpen(true);
+    if (location.pathname.startsWith("/settings")) setSettingsOpen(true);
   }, [location.pathname]);
 
   const earningsActive = location.pathname.startsWith("/earnings");
   const rentalsActive = location.pathname.startsWith("/rentals");
+  const settingsActive = location.pathname.startsWith("/settings");
 
   return (
     <aside
@@ -255,7 +294,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             );
           })}
 
-          {showFinanceNav &&
+          {(showFinanceNav || canViewRentals) &&
             (collapsed ? (
               <>
                 <button
@@ -379,6 +418,68 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   )}
                 </div>
               </>
+            ))}
+
+          {showSettingsNav &&
+            (collapsed ? (
+              <>
+                <button
+                  ref={settingsBtnRef}
+                  type="button"
+                  title="Settings"
+                  onClick={() => setSettingsFlyout((o) => !o)}
+                  className={`${sidebarNavItem} w-full ${settingsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
+                  aria-expanded={settingsFlyout}
+                  aria-haspopup="menu"
+                >
+                  <SettingsIcon className={ICON} />
+                </button>
+                {settingsFlyout && settingsBtnRef.current && (
+                  <NavSubFlyout
+                    title="Settings"
+                    items={settingsSubItems}
+                    anchorRect={settingsBtnRef.current.getBoundingClientRect()}
+                    onClose={() => setSettingsFlyout(false)}
+                  />
+                )}
+              </>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen((o) => !o)}
+                  className={`${sidebarNavItem} w-full text-left ${
+                    settingsActive ? sidebarNavActive : sidebarNavInactive
+                  }`}
+                  aria-expanded={settingsOpen}
+                >
+                  <SettingsIcon className={ICON} />
+                  <span className="flex-1 truncate">Settings</span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {settingsOpen && (
+                  <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                    {settingsSubItems.map(({ to, label, exact }) => {
+                      const active = exact ? location.pathname === to : location.pathname.startsWith(to);
+                      return (
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                            active
+                              ? "bg-brand-mint font-medium text-ink"
+                              : "text-white/60 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <span className="truncate">{label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             ))}
         </div>
       </nav>

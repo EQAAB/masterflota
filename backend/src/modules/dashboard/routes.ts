@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { query } from "../../db/pool";
 import { handleRecentAssignments } from "../vehicles/vehicleAssignmentHistoryHandlers";
 
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("dashboard.view"));
 
 router.get("/stats", async (req, res) => {
   const orgId = req.user?.orgId;

@@ -1,18 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import { getSubcontractors } from "../../api/subcontractors";
 import { SubcontractorsList } from "../../components/subcontractors/SubcontractorsList";
 
 export function SubcontractorsListPage() {
-  const user = useAuthStore((s) => s.user);
+  const canAccess = usePermission("subcontractors.view");
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["subcontractors"],
     queryFn: () => getSubcontractors().then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return (
       <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6">
         <p className="text-ink-muted">You do not have access.</p>

@@ -34,6 +34,9 @@ import { CustomerFormPage } from "./pages/rentals/CustomerFormPage";
 import { VehicleAvailabilityPage } from "./pages/rentals/VehicleAvailabilityPage";
 import { PricingPage } from "./pages/rentals/PricingPage";
 import { PaymentsPage } from "./pages/rentals/PaymentsPage";
+import { UsersPage } from "./pages/settings/UsersPage";
+import { RolesPage } from "./pages/settings/RolesPage";
+import { AuditLogPage } from "./pages/settings/AuditLogPage";
 
 function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const token = useAuthStore((s) => s.token);
@@ -309,6 +312,30 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <VehicleDocumentsPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/settings/users",
+      element: (
+        <ProtectedRoute>
+          <UsersPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/settings/roles",
+      element: (
+        <ProtectedRoute>
+          <RolesPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/settings/audit",
+      element: (
+        <ProtectedRoute>
+          <AuditLogPage />
         </ProtectedRoute>
       ),
     },

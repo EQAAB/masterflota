@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import { useAuthStore } from "../../store/authStore";
+import { useCanAccessFinance } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
   getDebtsSummary,
@@ -49,7 +49,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export function EarningsPayoutsPage() {
-  const user = useAuthStore((s) => s.user);
+  const canAccess = useCanAccessFinance();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const driverIdFromUrl =
@@ -104,13 +104,13 @@ export function EarningsPayoutsPage() {
         driverId: driverIdFromUrl,
       }).then((r) => r.data),
     enabled:
-      (user?.role === "admin" || user?.role === "accountant") && !!weekStart && !!weekEnd,
+      canAccess && !!weekStart && !!weekEnd,
   });
 
   const debtSummaryQuery = useQuery({
     queryKey: ["earnings", "debts", "summary"],
     queryFn: () => getDebtsSummary().then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
   const payDriverMut = useMutation({
@@ -179,7 +179,7 @@ export function EarningsPayoutsPage() {
   const summary = payoutsQuery.data?.summary;
   const rows = payoutsQuery.data?.items ?? [];
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return <p className="p-6 text-ink-muted">You do not have access.</p>;
   }
 

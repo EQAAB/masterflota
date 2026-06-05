@@ -4,13 +4,7 @@ import { useAuthStore } from "../../store/authStore";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { PageHeader } from "../theme/PageHeader";
 import { ExportIcon } from "../theme/actionMenuIcons";
-
-function roleLabel(role: string | undefined): string {
-  if (role === "admin") return "Administrator";
-  if (role === "accountant") return "Accountant";
-  if (role === "driver") return "Driver";
-  return "Team member";
-}
+import { roleLabel } from "../../lib/roleLabel";
 
 function initials(firstName?: string, lastName?: string): string {
   const a = firstName?.[0] ?? "";

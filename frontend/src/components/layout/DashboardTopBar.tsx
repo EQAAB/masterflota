@@ -11,12 +11,7 @@ const PRESETS: { id: DatePreset; label: string }[] = [
   { id: "month", label: "This month" },
 ];
 
-function roleLabel(role: string | undefined): string {
-  if (role === "admin") return "Administrator";
-  if (role === "accountant") return "Accountant";
-  if (role === "driver") return "Driver";
-  return "Team member";
-}
+import { roleLabel } from "../../lib/roleLabel";
 
 function initials(firstName?: string, lastName?: string): string {
   const a = firstName?.[0] ?? "";

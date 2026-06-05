@@ -8,7 +8,7 @@ import {
   type AssignmentHistoryStatus,
   type VehicleAssignmentHistoryRow,
 } from "../../api/vehicleAssignmentHistory";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import { formatCurrency } from "../../utils/currency";
 
 type PanelMode = "driver" | "vehicle";
@@ -47,8 +47,7 @@ export function VehicleAssignmentHistoryPanel({
   entityId: string;
   title: string;
 }) {
-  const user = useAuthStore((s) => s.user);
-  const canView = user?.role === "admin" || user?.role === "accountant";
+  const canView = usePermission("vehicles.view");
 
   const [status, setStatus] = useState<AssignmentHistoryStatus>("all");
   const [from, setFrom] = useState("");
