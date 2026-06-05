@@ -7,13 +7,16 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   phone?: string | null;
-  role: "admin" | "accountant" | "driver";
+  roleId: string;
+  role: string;
+  permissions: string[];
 }
 
 interface AuthState {
   token: string | null;
   user: AuthUser | null;
   setAuth: (token: string, user: AuthUser) => void;
+  updateUser: (user: AuthUser) => void;
   clearAuth: () => void;
   logout: () => void;
 }
@@ -21,19 +24,34 @@ interface AuthState {
 const TOKEN_KEY = "fleet_auth_token";
 const USER_KEY = "fleet_auth_user";
 
+function normalizeUser(raw: AuthUser): AuthUser {
+  return {
+    ...raw,
+    permissions: Array.isArray(raw.permissions) ? raw.permissions : [],
+    roleId: raw.roleId ?? "",
+    role: raw.role ?? "viewer",
+  };
+}
+
 const persistedToken = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
 const persistedUser =
   typeof window !== "undefined" && localStorage.getItem(USER_KEY)
-    ? (JSON.parse(localStorage.getItem(USER_KEY) as string) as AuthUser)
+    ? normalizeUser(JSON.parse(localStorage.getItem(USER_KEY) as string) as AuthUser)
     : null;
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: persistedToken,
   user: persistedUser,
   setAuth: (token, user) => {
+    const normalized = normalizeUser(user);
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    set({ token, user });
+    localStorage.setItem(USER_KEY, JSON.stringify(normalized));
+    set({ token, user: normalized });
+  },
+  updateUser: (user) => {
+    const normalized = normalizeUser(user);
+    localStorage.setItem(USER_KEY, JSON.stringify(normalized));
+    set({ user: normalized });
   },
   clearAuth: () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -49,4 +67,3 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
-

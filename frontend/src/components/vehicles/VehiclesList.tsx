@@ -9,7 +9,7 @@ import {
   importVehiclesCsv,
 } from "../../api/entityCsvImport";
 import { assignDriverToVehicle } from "../../api/vehicleAssignments";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import type { useVehiclesListFilters } from "../../hooks/useVehiclesListFilters";
 import { exportVehiclesCsv } from "../../utils/exportVehiclesCsv";
@@ -58,8 +58,7 @@ export function VehiclesList({
 }: VehiclesListProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const userRole = useAuthStore((s) => s.user?.role);
-  const canDelete = userRole === "admin" || userRole === "accountant";
+  const canDelete = usePermission("vehicles.delete");
 
   const rows = vehicles ?? [];
   const totalCount = pagination?.total ?? 0;

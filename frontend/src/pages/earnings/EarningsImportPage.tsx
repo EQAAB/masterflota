@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Papa from "papaparse";
-import { useAuthStore } from "../../store/authStore";
+import { useCanAccessFinance, usePermission } from "../../lib/permissions";
 import {
   previewEarningsImport,
   commitEarningsImport,
@@ -49,7 +49,9 @@ function errMessage(e: unknown): string {
 }
 
 export function EarningsImportPage() {
-  const user = useAuthStore((s) => s.user);
+  const canAccess = useCanAccessFinance();
+  const canDeleteImport = usePermission("imports.delete");
+  const canManageSettings = usePermission("settings.manage");
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -74,7 +76,7 @@ export function EarningsImportPage() {
   const importsQuery = useQuery({
     queryKey: ["earnings", "imports"],
     queryFn: () => getEarningsImports(1, 15).then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
   const {
@@ -101,7 +103,7 @@ export function EarningsImportPage() {
   const orgImportSettingsQuery = useQuery({
     queryKey: ["earnings", "org-import-settings"],
     queryFn: () => fetchOrgImportSettings().then((r) => r.data),
-    enabled: user?.role === "admin" || user?.role === "accountant",
+    enabled: canAccess,
   });
 
   useEffect(() => {
@@ -261,7 +263,7 @@ export function EarningsImportPage() {
   const periodValid =
     periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
   }
 
@@ -295,10 +297,10 @@ export function EarningsImportPage() {
             value={glovoCommissionBaseType}
             onChange={(v) => {
               setGlovoCommissionBaseType(v);
-              if (user?.role === "admin") patchOrgImportSettingsMut.mutate(v);
+              if (canManageSettings) patchOrgImportSettingsMut.mutate(v);
             }}
             disabled={busy || patchOrgImportSettingsMut.isPending}
-            isAdmin={user?.role === "admin"}
+            isAdmin={canManageSettings}
           />
         )}
 
@@ -350,7 +352,7 @@ export function EarningsImportPage() {
           rows={importsQuery.data?.items ?? []}
           isLoading={importsQuery.isLoading}
           busy={busy}
-          isAdmin={user?.role === "admin"}
+          isAdmin={canDeleteImport}
           onResync={() => syncMut.mutate()}
           resyncPending={syncMut.isPending}
           onDelete={setDeleteImportId}

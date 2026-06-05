@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useAuthStore } from "../../../store/authStore";
+import { usePermission } from "../../../lib/permissions";
 import {
   getCommissionByBaseTypeReport,
   getDebtsAging,
@@ -16,7 +16,6 @@ import type { EarningsReportRow } from "../../../api/earnings";
 import { REPORTS_UUID_RE, reportsErrMessage } from "./reportsDisplayUtils";
 
 export function useReportsPageState() {
-  const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
   const driverIdFromUrl =
     searchParams.get("driverId")?.trim() || searchParams.get("driver_id")?.trim() || undefined;
@@ -33,7 +32,7 @@ export function useReportsPageState() {
   const [visibleRows, setVisibleRows] = useState<EarningsReportRow[]>([]);
   const previewRef = useRef<HTMLDivElement | null>(null);
 
-  const canAccess = user?.role === "admin" || user?.role === "accountant";
+  const canAccess = usePermission("reports.view");
 
   const reportFilters = {
     from: from || undefined,

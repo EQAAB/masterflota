@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
 import axios from "axios";
-import { useAuthStore } from "../../store/authStore";
+import { useCanAccessFinance } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
   getEarningsPayouts,
@@ -33,7 +33,7 @@ function errMessage(e: unknown): string {
 export function CombinedPayoutDetailsPage() {
   const { driverId } = useParams<{ driverId: string }>();
   const [searchParams] = useSearchParams();
-  const user = useAuthStore((s) => s.user);
+  const canAccess = useCanAccessFinance();
   const queryClient = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +59,7 @@ export function CombinedPayoutDetailsPage() {
         weekEnd,
         driverId: driverId!,
       }).then((r) => r.data.items[0] ?? null),
-    enabled: (user?.role === "admin" || user?.role === "accountant") && !!driverId && !!weekStart && !!weekEnd,
+    enabled: canAccess && !!driverId && !!weekStart && !!weekEnd,
   });
 
   const row = consolidatedQuery.data;
@@ -165,7 +165,7 @@ export function CombinedPayoutDetailsPage() {
     window.print();
   }
 
-  if (user?.role !== "admin" && user?.role !== "accountant") {
+  if (!canAccess) {
     return <p className="p-6 text-ink-muted">You do not have access.</p>;
   }
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { query } from "../../db/pool";
 import { handleVehicleDriverHistory } from "./vehicleAssignmentHistoryHandlers";
 import {
@@ -29,6 +29,7 @@ function resolveVehicleListOrder(query: ListSortQuery) {
 }
 
 router.use(authenticateJWT);
+router.use(requirePermission("vehicles.view"));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -258,7 +259,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-router.get("/:id/history", requireRole("admin", "accountant"), async (req, res) => {
+router.get("/:id/history", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id } = req.params;
   if (!orgId) {
@@ -295,7 +296,7 @@ router.get("/:id/history", requireRole("admin", "accountant"), async (req, res) 
   }
 });
 
-router.post("/:id/incidents", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/incidents", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id: vehicleId } = req.params;
   const body = req.body as Record<string, unknown>;
@@ -343,11 +344,11 @@ router.post("/:id/incidents", requireRole("admin", "accountant"), async (req, re
   }
 });
 
-const vehicleDriverHistory = [requireRole("admin", "accountant"), handleVehicleDriverHistory];
+const vehicleDriverHistory = [requirePermission("vehicles.edit"), handleVehicleDriverHistory];
 router.get("/:id/vehicle-assignment-history", ...vehicleDriverHistory);
 router.get("/:id/driver-history", ...vehicleDriverHistory);
 
-router.post("/:id/assign-driver", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/assign-driver", requirePermission("vehicles.assign"), async (req, res) => {
   const orgId = req.user?.orgId;
   const vehicleId = String(req.params.id);
   const body = req.body as { driverId?: string };
@@ -387,7 +388,7 @@ router.post("/:id/assign-driver", requireRole("admin", "accountant"), async (req
   }
 });
 
-router.post("/:id/unassign-driver", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/unassign-driver", requirePermission("vehicles.assign"), async (req, res) => {
   const orgId = req.user?.orgId;
   const vehicleId = String(req.params.id);
 
@@ -451,7 +452,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/", requirePermission("vehicles.create"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -531,7 +532,7 @@ router.post("/", requireRole("admin", "accountant"), async (req, res) => {
   }
 });
 
-router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
+router.put("/:id", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id } = req.params;
   if (!orgId) {
@@ -702,7 +703,7 @@ router.put("/:id", requireRole("admin", "accountant"), async (req, res) => {
   }
 });
 
-router.delete("/:id", requireRole("admin", "accountant"), async (req, res) => {
+router.delete("/:id", requirePermission("vehicles.delete"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id } = req.params;
   if (!orgId) {
@@ -747,7 +748,7 @@ router.get("/:id/maintenance", async (req, res) => {
   }
 });
 
-router.post("/:id/maintenance", requireRole("admin", "accountant"), async (req, res) => {
+router.post("/:id/maintenance", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id: vehicleId } = req.params;
   const body = req.body as Record<string, unknown>;
@@ -826,7 +827,7 @@ router.post("/:id/maintenance", requireRole("admin", "accountant"), async (req, 
   }
 });
 
-router.patch("/:vehicleId/maintenance/:maintenanceId", requireRole("admin", "accountant"), async (req, res) => {
+router.patch("/:vehicleId/maintenance/:maintenanceId", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { vehicleId, maintenanceId } = req.params;
   const body = req.body as Record<string, unknown>;

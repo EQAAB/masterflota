@@ -2184,4 +2184,229 @@ body {
   .fm-rental-customer-form__back {
     @apply inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-ink;
   }
+
+  /* Settings — Users */
+  .fm-settings-users {
+    @apply relative bg-surface-elevated;
+    background-image: radial-gradient(ellipse 90% 60% at 100% 0%, rgba(221, 245, 238, 0.35), transparent 55%);
+  }
+
+  .fm-settings-users__title-icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/60;
+  }
+
+  .fm-settings-users__header-search {
+    @apply w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-3 text-sm text-ink shadow-sm transition-shadow focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-settings-users__filter-btn {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .fm-settings-users__header-cta {
+    @apply inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200;
+    background: #0f766e;
+  }
+
+  .fm-settings-users__header-cta:hover {
+    @apply shadow-lg opacity-95;
+    background: #0d6b64;
+  }
+
+  .fm-settings-users__header-cta--cancel {
+    @apply bg-white text-slate-700 ring-1 ring-slate-200;
+  }
+
+  .fm-settings-users__header-cta--cancel:hover {
+    @apply bg-slate-50 opacity-100;
+  }
+
+  .fm-settings-users__filter-panel {
+    @apply rounded-2xl border border-border bg-white p-4 shadow-sm;
+  }
+
+  .fm-settings-users__filter-select {
+    @apply rounded-xl border border-border bg-white px-3 py-2 text-sm text-ink shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-settings-users__kpi {
+    @apply min-h-[96px] rounded-2xl border border-border bg-white p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-settings-users__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-settings-users__kpi-icon {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/50;
+  }
+
+  .fm-settings-users__add-card {
+    @apply rounded-2xl border border-border bg-white p-5 shadow-card;
+  }
+
+  .fm-settings-users__table-shell {
+    @apply overflow-hidden rounded-2xl border border-border bg-white shadow-card;
+  }
+
+  .fm-settings-users__row {
+    @apply border-b border-slate-100/90 transition-colors duration-150;
+  }
+
+  .fm-settings-users__row:hover {
+    @apply bg-slate-50/80;
+  }
+
+  .fm-settings-users__row td {
+    @apply px-5 py-4 align-middle;
+  }
+
+  .fm-settings-users__avatar {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold bg-teal-50 text-teal-900 ring-1 ring-teal-200/50;
+  }
+
+  .fm-settings-users__admin-badge {
+    @apply inline-flex rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-800 ring-1 ring-teal-200/60;
+  }
+
+  .fm-settings-users__role-select {
+    @apply max-w-[168px] rounded-lg border border-border bg-slate-50/80 px-2.5 py-1.5 text-sm text-ink focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-settings-users__status-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  .fm-settings-users__status-pill::before {
+    content: "";
+    @apply h-1.5 w-1.5 shrink-0 rounded-full;
+  }
+
+  .fm-settings-users__status-pill--active {
+    @apply bg-emerald-50 text-emerald-800 ring-emerald-200/60;
+  }
+
+  .fm-settings-users__status-pill--active::before {
+    @apply bg-emerald-500;
+  }
+
+  .fm-settings-users__status-pill--inactive {
+    @apply bg-slate-100 text-slate-600 ring-slate-200/80;
+  }
+
+  .fm-settings-users__status-pill--inactive::before {
+    @apply bg-slate-400;
+  }
+
+  .fm-settings-users__icon-btn {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors;
+  }
+
+  .fm-settings-users__pagination {
+    @apply flex flex-col gap-3 border-t border-border/60 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .fm-settings-users__page-btn {
+    @apply min-w-[2rem] rounded-lg px-2 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-slate-100 hover:text-ink disabled:opacity-40;
+  }
+
+  .fm-settings-users__page-btn--active {
+    @apply bg-brand text-white shadow-sm hover:bg-brand hover:text-white;
+  }
+
+  .fm-settings-users__modal-backdrop {
+    @apply fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4;
+  }
+
+  .fm-settings-users__modal {
+    @apply w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-card;
+  }
+
+  .fm-settings-users__mobile-card {
+    @apply rounded-2xl border border-border bg-white p-4 shadow-sm;
+  }
+
+  .fm-settings-users__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
+
+  .fm-settings-users__empty {
+    @apply px-6 py-14 text-center;
+  }
+
+  /* Settings — Roles & audit */
+  .fm-settings-roles {
+    @apply relative bg-surface-elevated;
+    background-image: radial-gradient(ellipse 90% 60% at 100% 0%, rgba(221, 245, 238, 0.35), transparent 55%);
+  }
+
+  .fm-settings-roles__title-icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/60;
+  }
+
+  .fm-settings-roles__header-cta {
+    @apply inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200;
+    background: #0f766e;
+  }
+
+  .fm-settings-roles__header-cta:hover {
+    @apply shadow-lg opacity-95;
+    background: #0d6b64;
+  }
+
+  .fm-settings-roles__kpi {
+    @apply min-h-[96px] rounded-2xl border border-border bg-white p-4 shadow-card transition-shadow duration-200;
+  }
+
+  .fm-settings-roles__kpi:hover {
+    @apply shadow-card-hover;
+  }
+
+  .fm-settings-roles__kpi-icon {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/50;
+  }
+
+  .fm-settings-roles__card {
+    @apply rounded-2xl border border-border bg-white p-5 shadow-card;
+  }
+
+  .fm-settings-roles__badge {
+    @apply inline-flex rounded-full bg-surface px-3 py-1 text-xs font-medium text-ink-muted ring-1 ring-border/60;
+  }
+
+  .fm-settings-roles__perm-module {
+    @apply rounded-xl border border-border/50 bg-slate-50/50 p-3;
+  }
+
+  .fm-settings-roles__perm-toggle {
+    @apply flex cursor-pointer items-start gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-white;
+  }
+
+  .fm-settings-roles__perm-toggle--readonly {
+    @apply cursor-default hover:bg-transparent;
+  }
+
+  .fm-settings-roles__toolbar {
+    @apply rounded-2xl border border-border bg-white p-4 shadow-sm;
+  }
+
+  .fm-settings-roles__filter-select {
+    @apply rounded-xl border border-border bg-white px-3 py-2 text-sm text-ink shadow-sm focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .fm-settings-roles__table-shell {
+    @apply overflow-hidden rounded-2xl border border-border bg-white shadow-card;
+  }
+
+  .fm-settings-roles__modal-backdrop {
+    @apply fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4;
+  }
+
+  .fm-settings-roles__modal {
+    @apply w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-card;
+  }
+
+  .fm-settings-roles__skeleton {
+    @apply animate-pulse rounded-xl bg-slate-200/60;
+  }
 }

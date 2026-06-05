@@ -1,6 +1,6 @@
 import type { PoolClient } from "pg";
 import { Router, type Request, type Response } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
 import {
@@ -90,7 +90,7 @@ async function selectPayoutDebtSnapshot(client: PoolClient, orgId: string, payou
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("payouts.view", "imports.view", "imports.create", "reports.view"));
 
 export type { EarningsStagingPayload } from "./normalizeRow";
 
@@ -114,8 +114,8 @@ router.patch("/import/org-settings", async (req, res) => {
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ message: "Only admins can change import settings" });
+  if (!req.user?.permissions.includes("settings.manage")) {
+    return res.status(403).json({ message: "Insufficient permissions" });
   }
   const raw = (req.body as { glovoCommissionBaseType?: unknown })?.glovoCommissionBaseType;
   const glovoCommissionBaseType = parseCommissionBaseType(raw);
@@ -209,7 +209,7 @@ async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
   return new DriverMatchIndex(drivers, plates);
 }
 
-router.post("/import/preview", earningsUpload.single("file"), async (req, res) => {
+router.post("/import/preview", requirePermission("imports.create"), earningsUpload.single("file"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
@@ -442,7 +442,7 @@ router.get("/import/:id/preview-rows", async (req, res) => {
   }
 });
 
-router.post("/import/commit", async (req, res) => {
+router.post("/import/commit", requirePermission("imports.create"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -556,16 +556,13 @@ router.post("/import/commit", async (req, res) => {
   }
 });
 
-router.post("/imports/:id/revert", async (req, res) => {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ message: "Only admins can revert imports" });
-  }
+router.post("/imports/:id/revert", requirePermission("imports.delete"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -619,13 +616,13 @@ async function handleDeleteEarningsImport(req: Request, res: Response) {
   }
 }
 
-router.delete("/import/:id", handleDeleteEarningsImport);
-router.delete("/imports/:id", handleDeleteEarningsImport);
+router.delete("/import/:id", requirePermission("imports.delete"), handleDeleteEarningsImport);
+router.delete("/imports/:id", requirePermission("imports.delete"), handleDeleteEarningsImport);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-router.post("/sync-vehicles", async (req, res) => {
+router.post("/sync-vehicles", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -708,7 +705,7 @@ router.put("/records/:id/recalculate", async (req, res) => {
   }
 });
 
-router.post("/records/recalculate-bulk", async (req, res) => {
+router.post("/records/recalculate-bulk", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const onlyCash = (req.body as { onlyCashCommission?: boolean } | undefined)?.onlyCashCommission ?? true;
@@ -1348,7 +1345,7 @@ router.get("/payouts/with-proration-details", (req, res) => {
   res.redirect(307, url);
 });
 
-router.patch("/payouts/bulk", async (req, res) => {
+router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -1520,7 +1517,7 @@ router.get("/payouts/consolidated", async (req, res) => {
   }
 });
 
-router.post("/payouts/pay-driver", async (req, res) => {
+router.post("/payouts/pay-driver", requirePermission("payouts.approve"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
@@ -1571,7 +1568,7 @@ router.post("/payouts/pay-driver", async (req, res) => {
   }
 });
 
-router.post("/payouts/pay-all", async (req, res) => {
+router.post("/payouts/pay-all", requirePermission("payouts.approve"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
@@ -1673,7 +1670,7 @@ router.get("/payouts/:id/platform-breakdown", async (req, res) => {
 const DEBT_ADJUST_TYPES = new Set(["adjust", "forgive", "cash_received", "carry_forward"]);
 
 /** Manual debt: `forgive` / `cash_received` reduce remaining (positive amount). `adjust`: positive amount subtracts from remaining (reduces collectible); negative amount adds (correction / increase owed). Stored `payout_adjustments.amount` remains signed delta (new − previous). */
-router.post("/payouts/:id/adjust-debt", async (req, res) => {
+router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -1930,7 +1927,7 @@ router.get("/payouts/:id/custom-fees", async (req, res) => {
   }
 });
 
-router.post("/payouts/:id/custom-fees", async (req, res) => {
+router.post("/payouts/:id/custom-fees", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -2018,7 +2015,7 @@ router.post("/payouts/:id/custom-fees", async (req, res) => {
   }
 });
 
-router.delete("/payouts/:id/custom-fees/:adjustmentId", async (req, res) => {
+router.delete("/payouts/:id/custom-fees/:adjustmentId", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -2179,7 +2176,7 @@ async function releasePayoutHoldForRow(
   return { ok: true, nextStatus: statusResult.nextStatus };
 }
 
-router.post("/payouts/release-hold/bulk", async (req, res) => {
+router.post("/payouts/release-hold/bulk", requirePermission("payouts.approve"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
@@ -2221,7 +2218,7 @@ router.post("/payouts/release-hold/bulk", async (req, res) => {
   }
 });
 
-router.post("/payouts/:id/release-hold", async (req, res) => {
+router.post("/payouts/:id/release-hold", requirePermission("payouts.approve"), async (req, res) => {
   const orgId = req.user?.orgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
@@ -2320,7 +2317,7 @@ router.get("/debts/summary", async (req, res) => {
   }
 });
 
-router.post("/debts/bulk-carry-forward", async (req, res) => {
+router.post("/debts/bulk-carry-forward", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -2723,7 +2720,7 @@ router.get("/subcontractors/settlements", async (req, res) => {
   }
 });
 
-router.post("/subcontractors/refresh-rent-charges", async (req, res) => {
+router.post("/subcontractors/refresh-rent-charges", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const { periodStart, periodEnd } = req.body as { periodStart?: string; periodEnd?: string };

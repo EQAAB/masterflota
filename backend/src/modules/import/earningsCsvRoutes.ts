@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { pool } from "../../db/pool";
 import { readOrgGlovoCommissionBase } from "../earnings/orgImportSettings";
 import { earningsUpload, entityCsvUpload } from "../../config/multer";
@@ -20,7 +20,7 @@ import { importVehiclesFromCsvTable } from "./vehicleCsvImport";
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("imports.create"));
 
 /** One-shot: stage + commit in one request (same logic as preview + commit). */
 router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => {

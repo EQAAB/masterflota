@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { query } from "../../db/pool";
 import { rentalDb } from "./rentalDb";
 import { customersRoutes } from "./customersRoutes";
@@ -13,7 +13,7 @@ import { buildContractText } from "./contractPdf";
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("rentals.view", "rentals.manage"));
 
 router.use("/customers", customersRoutes);
 router.use("/bookings", bookingsRoutes);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import {
   previewEarningsImport,
   commitEarningsImport,
@@ -46,9 +46,8 @@ export type EarningsImportModalProps = {
 };
 
 export function EarningsImportModal({ open, onClose }: EarningsImportModalProps) {
-  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-  const canImport = user?.role === "admin" || user?.role === "accountant";
+  const canImport = usePermission("imports.create");
 
   const [preview, setPreview] = useState<EarningsPreviewResponse | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);

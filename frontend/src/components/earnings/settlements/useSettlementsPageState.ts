@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getSettlementReport } from "../../../api/earnings";
 import { getSubcontractors } from "../../../api/subcontractors";
 import { bulkUpdateSubcontractorPayouts, postRefreshSubcontractorPayouts } from "../../../api/subcontractorPayouts";
-import { useAuthStore } from "../../../store/authStore";
+import { usePermission } from "../../../lib/permissions";
 import { exportSettlementCsv } from "../../../utils/exportSettlementCsv";
 import { getPreviousWeek, validatePaymentWeek } from "../../../utils/earningsImportWeek";
 import {
@@ -17,7 +17,6 @@ import {
 const ALL_SUBCONTRACTORS = "all";
 
 export function useSettlementsPageState() {
-  const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const previousWeek = useMemo(() => getPreviousWeek(), []);
@@ -30,7 +29,7 @@ export function useSettlementsPageState() {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [exportBusyKey, setExportBusyKey] = useState<string | null>(null);
 
-  const canAccess = user?.role === "admin" || user?.role === "accountant";
+  const canAccess = usePermission("subcontractors.settle");
 
   const periodValidation = useMemo(
     () => validatePaymentWeek(periodStart, periodEnd),

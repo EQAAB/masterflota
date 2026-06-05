@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { query } from "../../db/pool";
 
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireRole("admin", "accountant"));
+router.use(requirePermission("subcontractors.view"));
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const orgId = req.user?.orgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   try {
@@ -64,7 +64,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermission("subcontractors.create"), async (req, res) => {
   const orgId = req.user?.orgId;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const b = req.body as Record<string, unknown>;
@@ -111,9 +111,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermission("subcontractors.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   const b = req.body as Record<string, unknown>;

@@ -15,7 +15,7 @@ import {
   PLATFORM_ID_LABELS,
 } from "../../constants/platformIds";
 import { DriverAvatar } from "../../components/drivers/DriverAvatar";
-import { useAuthStore } from "../../store/authStore";
+import { usePermission } from "../../lib/permissions";
 import { getVehicles, type VehicleListItem } from "../../api/vehicles";
 import { assignVehicleToDriver, unassignDriverVehicle } from "../../api/vehicleAssignments";
 import { DocumentUpload } from "../../components/documents/DocumentUpload";
@@ -117,7 +117,6 @@ export function DriverDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<TabId>("profile");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [notesEdit, setNotesEdit] = useState(false);
@@ -197,8 +196,8 @@ export function DriverDetailPage() {
     },
   });
 
-  const canEdit = user?.role === "admin" || user?.role === "accountant";
-  const canDelete = user?.role === "admin" || user?.role === "accountant";
+  const canEdit = usePermission("drivers.edit");
+  const canDelete = usePermission("drivers.delete");
 
   if (!id) {
     return (
@@ -462,7 +461,7 @@ export function DriverDetailPage() {
               )}
             </section>
 
-            {(user?.role === "admin" || user?.role === "accountant") && id && (
+            {canEdit && id && (
               <VehicleAssignmentHistoryPanel mode="driver" entityId={id} title="Vehicle history" />
             )}
 

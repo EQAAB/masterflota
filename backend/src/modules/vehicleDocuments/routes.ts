@@ -1,7 +1,7 @@
 import { Router } from "express";
 import path from "path";
 import fs from "fs";
-import { authenticateJWT, requireRole } from "../../middleware/auth";
+import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { query } from "../../db/pool";
 import { vehicleDocumentsUpload } from "../../config/multer";
 
@@ -41,7 +41,7 @@ router.get("/:id/documents", async (req, res) => {
 // Upload a new vehicle document
 router.post(
   "/:id/documents",
-  requireRole("admin", "accountant"),
+  requirePermission("vehicles.edit"),
   vehicleDocumentsUpload.single("file"),
   async (req, res) => {
     const orgId = req.user?.orgId;
@@ -121,7 +121,7 @@ router.post(
 );
 
 // Delete a vehicle document
-router.delete("/:id/documents/:docId", requireRole("admin", "accountant"), async (req, res) => {
+router.delete("/:id/documents/:docId", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.user?.orgId;
   const { id: vehicleId, docId } = req.params;
 
@@ -164,7 +164,7 @@ router.delete("/:id/documents/:docId", requireRole("admin", "accountant"), async
 // Verify / unverify a vehicle document
 router.put(
   "/:id/documents/:docId/verify",
-  requireRole("admin", "accountant"),
+  requirePermission("vehicles.edit"),
   async (req, res) => {
     const orgId = req.user?.orgId;
     const userId = req.user?.sub;
