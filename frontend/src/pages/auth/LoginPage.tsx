@@ -1,11 +1,11 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import type { AuthUser } from "../../store/authStore";
-import { input, sectionLabel, btnPrimary, card, linkAccent, alertError } from "../../theme/classNames";
+import { input, sectionLabel, btnPrimary, card, alertError } from "../../theme/classNames";
 
 interface LoginResponse {
   token: string;
@@ -25,7 +25,9 @@ export function LoginPage() {
     },
     onSuccess: (data) => {
       setAuth(data.token, data.user);
-      navigate("/dashboard");
+      const isPlatformSuperAdmin =
+        data.user.role === "super_admin" && !data.user.organizationId;
+      navigate(isPlatformSuperAdmin ? "/settings/organizations" : "/dashboard");
     },
   });
 
@@ -69,12 +71,6 @@ export function LoginPage() {
             {mutation.isPending ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <p className="mt-4 text-xs text-ink-muted text-center">
-          New here?{" "}
-          <Link to="/register" className={linkAccent}>
-            Create an organization
-          </Link>
-        </p>
       </div>
     </div>
   );

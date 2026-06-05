@@ -20,9 +20,9 @@ export function UsersPageHeader({
   onToggleForm,
 }: UsersPageHeaderProps) {
   return (
-    <header className="mb-6 space-y-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
+    <header>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="fm-settings-users__title-icon" aria-hidden>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -39,8 +39,8 @@ export function UsersPageHeader({
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:shrink-0">
-          <div className="relative min-w-0 flex-1 sm:max-w-xs lg:w-56">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:ml-auto lg:w-auto lg:shrink-0">
+          <div className="relative min-w-0 w-full flex-1 lg:w-[380px] lg:max-w-[380px]">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
               fill="none"

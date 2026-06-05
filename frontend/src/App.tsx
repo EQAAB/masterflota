@@ -8,7 +8,7 @@ import { AddDriverPage } from "./pages/drivers/AddDriverPage";
 import { EditDriverPage } from "./pages/drivers/EditDriverPage";
 import { DriverDetailPage } from "./pages/drivers/DriverDetailPage";
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
-import { RegisterPage } from "./pages/register/Register";
+import { OrganizationsPage } from "./pages/settings/OrganizationsPage";
 import { VehiclesListPage } from "./pages/vehicles/VehiclesListPage";
 import { AddVehiclePage } from "./pages/vehicles/AddVehiclePage";
 import { EditVehiclePage } from "./pages/vehicles/EditVehiclePage";
@@ -50,7 +50,7 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
 export const appRouter = createBrowserRouter(
   [
     { path: "login", element: <LoginPage /> },
-    { path: "/register", element: <RegisterPage /> },
+    { path: "/register", element: <Navigate to="/login" replace /> },
     {
       path: "/dashboard",
       element: (
@@ -312,6 +312,14 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <VehicleDocumentsPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/settings/organizations",
+      element: (
+        <ProtectedRoute>
+          <OrganizationsPage />
         </ProtectedRoute>
       ),
     },

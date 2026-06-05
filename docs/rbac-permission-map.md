@@ -36,6 +36,12 @@ Permissions are loaded at login and embedded in the JWT (`permissions: string[]`
 - `roles.manage` — `/api/roles`, view permission matrix
 - `settings.manage` — org Glovo import settings PATCH
 
+### organizations (super_admin only)
+- `organizations.view` — list all organizations
+- `organizations.create` — create organization + first admin user
+
+Granted only to `super_admin` (migration 093). Org `admin` roles do not receive these permissions.
+
 ### dashboard / rentals / reports
 - `dashboard.view`, `rentals.view`, `rentals.manage`, `reports.view`
 
@@ -67,10 +73,13 @@ Permissions are loaded at login and embedded in the JWT (`permissions: string[]`
 | `/api/rentals` | `rentals.view` or `rentals.manage` |
 | `/api/users` | `users.manage` |
 | `/api/roles` | `roles.manage` or `users.manage` (list) |
+| `/api/organizations` | `super_admin` role + `organizations.view` / `organizations.create` |
 
 ## Migration
 
-Apply [`backend/sql/migrations/091_rbac_permissions.sql`](../backend/sql/migrations/091_rbac_permissions.sql), then [`backend/sql/migrations/092_user_management_extensions.sql`](../backend/sql/migrations/092_user_management_extensions.sql).
+Apply [`backend/sql/migrations/091_rbac_permissions.sql`](../backend/sql/migrations/091_rbac_permissions.sql), then [`backend/sql/migrations/092_user_management_extensions.sql`](../backend/sql/migrations/092_user_management_extensions.sql), then [`backend/sql/migrations/093_organizations_permissions.sql`](../backend/sql/migrations/093_organizations_permissions.sql).
+
+Bootstrap the first platform operator with [`backend/sql/seeds/bootstrap_super_admin.sql`](../backend/sql/seeds/bootstrap_super_admin.sql). Public self-service registration is disabled; only authenticated super admins can create organizations via Settings → Organizations.
 
 Existing users are mapped: `admin` → admin role, `accountant` → accountant, `driver` → driver.
 
@@ -81,7 +90,7 @@ Existing users are mapped: `admin` → admin role, `accountant` → accountant, 
 | Table | Purpose |
 |-------|---------|
 | `audit_logs` | User/role change audit trail (org-scoped reads via `users.manage`) |
-| `user_sessions` | Session tracking on login/register (JWT still used; hash stored for future revocation) |
+| `user_sessions` | Session tracking on login (JWT still used; hash stored for future revocation) |
 | `settings` | Org key/value settings (`settings.manage`) — coexists with `organizations.settings` JSONB |
 
 ### Additional API routes

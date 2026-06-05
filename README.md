@@ -25,7 +25,7 @@ A full-stack **Fleet & Driver Management System** for managing drivers, document
 
 Fleet Manager helps organizations:
 
-- **Authenticate** users (login/register) with JWT and role-based access (admin, accountant, driver).
+- **Authenticate** users (login only; no public registration) with JWT and role-based access (super_admin, admin, accountant, driver).
 - **Manage drivers**: list, add, edit, soft-delete, view profile and activity.
 - **Handle documents**: upload ID, license, contract files; verify, download, delete.
 - **Configure commission**: percentage, fixed amount, or hybrid per driver.
@@ -54,7 +54,7 @@ Fleet Manager/
 │   │   ├── api/              # API clients (drivers, auth, dashboard, documents)
 │   │   ├── components/       # UI, dashboard, drivers, documents
 │   │   ├── lib/              # api.ts (axios instance)
-│   │   ├── pages/            # auth, dashboard, drivers, register
+│   │   ├── pages/            # auth, dashboard, drivers, settings
 │   │   ├── store/            # authStore (Zustand)
 │   │   ├── App.tsx
 │   │   └── main.tsx
@@ -70,7 +70,7 @@ Fleet Manager/
 │   │   ├── db/                # pool (PostgreSQL)
 │   │   ├── middleware/       # auth (JWT, roles)
 │   │   ├── modules/
-│   │   │   ├── auth/         # login, register
+│   │   │   ├── auth/         # login
 │   │   │   ├── dashboard/    # stats, activity, documents
 │   │   │   ├── documents/    # upload, list, verify, download
 │   │   │   └── drivers/      # CRUD, activity, notes, soft delete
@@ -134,6 +134,15 @@ psql -U postgres -d your_database -f sql/migrations/038_commission_legs_positive
 psql -U postgres -d your_database -f sql/migrations/039_single_company_commission.sql
 psql -U postgres -d your_database -f sql/migrations/039_single_company_commission.verify.sql
 ```
+
+### Initial setup (first super admin)
+
+Public registration is disabled. Bootstrap the platform operator manually:
+
+1. Apply RBAC migrations including `091_rbac_permissions.sql` and `093_organizations_permissions.sql`.
+2. Generate a bcrypt hash: `node -e "require('bcrypt').hash('YourSecurePassword', 10).then(console.log)"` (from `backend/`).
+3. Edit and run `backend/sql/seeds/bootstrap_super_admin.sql` (sets `organization_id = NULL`, role `super_admin`).
+4. Sign in at `/login`, then use **Settings → Organizations** to create tenant organizations and their first admin users.
 
 ### 3. Frontend setup
 
@@ -248,7 +257,8 @@ npm run preview
 
 | Area        | Prefix              | Description                    |
 | ----------- | ------------------- | ------------------------------ |
-| Auth        | `/api/auth`         | Login, register                |
+| Auth        | `/api/auth`         | Login (public register disabled) |
+| Organizations | `/api/organizations` | List/create orgs (super_admin only) |
 | Drivers     | `/api/drivers`      | CRUD, activity, notes, delete  |
 | Documents   | `/api/drivers`      | Upload, list, verify, download |
 | Dashboard   | `/api/dashboard`    | Stats, status, earnings, activity |
