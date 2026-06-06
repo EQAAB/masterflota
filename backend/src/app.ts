@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import { env } from "./config/env";
 import { authRoutes } from "./modules/auth/routes";
 import { driverRoutes } from "./modules/drivers/routes";
 import { documentRoutes } from "./modules/documents/routes";
@@ -23,9 +24,14 @@ export const app = express();
 app.use(cors({
   origin: "*",
   allowedHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
-  exposedHeaders: ["Content-Type"],
+  exposedHeaders: ["Content-Type", "X-App-Version"],
 }));
 app.use(express.json());
+
+app.use((_req, res, next) => {
+  res.setHeader("X-App-Version", env.appVersion);
+  next();
+});
 
 app.use(
   "/uploads",
@@ -50,6 +56,10 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/organizations", organizationRoutes);
+
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", version: env.appVersion });
+});
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

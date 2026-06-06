@@ -2,6 +2,8 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { extractVersionFromResponse } from "../../lib/appVersion";
+import { acknowledgeServerVersion } from "../../store/appUpdateStore";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import type { AuthUser } from "../../store/authStore";
@@ -22,8 +24,10 @@ export function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post<LoginResponse>("/auth/login", { email, password });
-      return data;
+      const response = await api.post<LoginResponse>("/auth/login", { email, password });
+      const version = extractVersionFromResponse(response);
+      if (version) acknowledgeServerVersion(version);
+      return response.data;
     },
     onSuccess: (data) => {
       setAuth(data.token, data.user);

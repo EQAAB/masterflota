@@ -1,4 +1,6 @@
 import axios from "axios";
+import { extractVersionFromResponse } from "./appVersion";
+import { acknowledgeServerVersion } from "../store/appUpdateStore";
 import { useAuthStore } from "../store/authStore";
 import { useOrgStore } from "../store/orgStore";
 
@@ -28,4 +30,17 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => {
+    const version = extractVersionFromResponse(response);
+    if (version) acknowledgeServerVersion(version);
+    return response;
+  },
+  (error) => {
+    const version = extractVersionFromResponse(error.response);
+    if (version) acknowledgeServerVersion(version);
+    return Promise.reject(error);
+  },
+);
 
