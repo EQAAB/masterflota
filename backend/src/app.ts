@@ -21,7 +21,9 @@ import { organizationRoutes } from "./modules/organizations/routes";
 export const app = express();
 
 app.use(cors({
-  origin: "*"
+  origin: "*",
+  allowedHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
+  exposedHeaders: ["Content-Type"],
 }));
 app.use(express.json());
 

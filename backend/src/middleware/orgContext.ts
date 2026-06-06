@@ -4,7 +4,9 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function readHeaderOrgId(req: Request): string | null {
-  const raw = req.headers["x-organization-id"];
+  const raw =
+    req.headers["x-organization-id"] ??
+    req.headers["x-org-id"];
   const value = (Array.isArray(raw) ? raw[0] : raw)?.trim();
   if (!value) return null;
   if (!UUID_RE.test(value)) return null;
