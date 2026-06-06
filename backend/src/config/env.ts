@@ -6,6 +6,7 @@ export const env = {
   port: process.env.PORT ? Number(process.env.PORT) : 4100,
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev_jwt_secret_change_me",
+  appVersion: process.env.APP_VERSION ?? "dev",
 };
 
 if (!env.databaseUrl) {

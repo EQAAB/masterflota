@@ -2,10 +2,14 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { extractVersionFromResponse } from "../../lib/appVersion";
+import { acknowledgeServerVersion } from "../../store/appUpdateStore";
 import { api } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import type { AuthUser } from "../../store/authStore";
-import { input, sectionLabel, btnPrimary, card, alertError } from "../../theme/classNames";
+import { LoginAuthField } from "../../components/auth/LoginAuthField";
+import { FleetManagerLogoMark } from "../../components/brand/FleetManagerLogoMark";
+import { alertError, btnPrimary } from "../../theme/classNames";
 
 interface LoginResponse {
   token: string;
@@ -20,8 +24,10 @@ export function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post<LoginResponse>("/auth/login", { email, password });
-      return data;
+      const response = await api.post<LoginResponse>("/auth/login", { email, password });
+      const version = extractVersionFromResponse(response);
+      if (version) acknowledgeServerVersion(version);
+      return response.data;
     },
     onSuccess: (data) => {
       setAuth(data.token, data.user);
@@ -37,40 +43,50 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface p-4">
-      <div className={`w-full max-w-md ${card} p-8 shadow-soft-lg`}>
-        <h1 className="text-2xl font-semibold mb-2 text-ink">Fleet Manager</h1>
-        <p className="text-sm text-ink-muted mb-6">Sign in to your organization</p>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className={sectionLabel}>Email</label>
-            <input
-              type="email"
-              className={input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+    <div className="fm-login-page flex min-h-screen items-center justify-center p-4">
+      <div className="fm-login-page__card">
+        <header className="text-center">
+          <div className="fm-login-page__logo-wrap">
+            <FleetManagerLogoMark className="h-12 w-12" />
           </div>
-          <div>
-            <label className={sectionLabel}>Password</label>
-            <input
-              type="password"
-              className={input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Fleet Manager</h1>
+          <p className="mt-1 text-sm text-ink-muted">Sign in to your organization dashboard</p>
+        </header>
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-5">
+          <LoginAuthField
+            id="login-email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            autoComplete="email"
+            required
+          />
+          <LoginAuthField
+            id="login-password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+            required
+          />
           {mutation.isError && (
             <p className={alertError}>
               {(mutation.error as Error).message || "Login failed. Check your credentials."}
             </p>
           )}
-          <button type="submit" disabled={mutation.isPending} className={`w-full ${btnPrimary}`}>
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className={`fm-login-page__submit ${btnPrimary}`}
+          >
             {mutation.isPending ? "Signing in..." : "Sign in"}
           </button>
         </form>
+
+        <p className="fm-login-page__footer">Secure access for fleet operations</p>
       </div>
     </div>
   );
