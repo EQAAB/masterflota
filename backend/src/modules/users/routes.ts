@@ -4,10 +4,12 @@ import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
 import { generateStrongPassword } from "../../lib/generateStrongPassword";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("users.manage"));
 
 type UserListRow = {
@@ -33,10 +35,8 @@ type UserSnapshot = {
 };
 
 router.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query<UserListRow>(
       `SELECT u.id::text, u.email, u.first_name, u.last_name, u.phone,
@@ -68,10 +68,8 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const { email, password, firstName, lastName, phone, roleId } = req.body as {
     email?: string;
     password?: string;
@@ -136,7 +134,7 @@ router.post("/", async (req, res) => {
 });
 
 router.patch("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = String(req.params.id ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -216,7 +214,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 router.delete("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = String(req.params.id ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });

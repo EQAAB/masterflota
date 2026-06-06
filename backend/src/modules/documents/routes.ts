@@ -2,6 +2,7 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { driverDocumentsUpload } from "../../config/multer";
 import { logDriverActivity } from "../drivers/activity";
@@ -9,9 +10,10 @@ import { logDriverActivity } from "../drivers/activity";
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 
 router.get("/:id/documents", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
   if (!orgId) {
@@ -43,7 +45,7 @@ router.post(
   requirePermission("drivers.edit"),
   driverDocumentsUpload.single("file"),
   async (req, res) => {
-    const orgId = req.user?.orgId;
+    const orgId = req.effectiveOrgId;
     const userId = req.user?.sub;
     const { id } = req.params;
     const { documentType, expiryDate, notes } = req.body as {
@@ -121,7 +123,7 @@ router.post(
 );
 
 router.delete("/:id/documents/:docId", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id: driverId, docId } = req.params;
 
   if (!orgId) {
@@ -166,7 +168,7 @@ router.delete("/:id/documents/:docId", requirePermission("drivers.edit"), async 
 });
 
 router.put("/:id/documents/:docId/verify", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id: driverId, docId } = req.params;
   const { verified } = req.body as { verified?: boolean };
@@ -207,7 +209,7 @@ router.put("/:id/documents/:docId/verify", requirePermission("drivers.edit"), as
 });
 
 router.get("/:id/documents/:docId/download", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id: driverId, docId } = req.params;
 
   if (!orgId) {

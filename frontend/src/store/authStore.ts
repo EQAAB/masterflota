@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useOrgStore } from "./orgStore";
 
 export interface AuthUser {
   id: string;
@@ -56,11 +57,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearAuth: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    useOrgStore.getState().clearOrgContext();
     set({ token: null, user: null });
   },
   logout: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    useOrgStore.getState().clearOrgContext();
     set({ token: null, user: null });
     if (typeof window !== "undefined") {
       window.location.href = "login";

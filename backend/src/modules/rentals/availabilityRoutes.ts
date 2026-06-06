@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -18,8 +19,8 @@ function eachDateInclusive(from: string, to: string): string[] {
 export const availabilityRoutes = Router();
 
 availabilityRoutes.get("/summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
   if (!from || !to) return res.status(400).json({ message: "from and to query params required (YYYY-MM-DD)" });
@@ -47,8 +48,8 @@ availabilityRoutes.get("/summary", async (req, res) => {
 });
 
 availabilityRoutes.post("/blocks", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const b = req.body as Record<string, unknown>;
   const vehicleId = typeof b.vehicleId === "string" ? b.vehicleId : "";
   const from = typeof b.from === "string" ? b.from : "";
@@ -95,8 +96,8 @@ availabilityRoutes.post("/blocks", async (req, res) => {
 });
 
 availabilityRoutes.delete("/blocks", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const vehicleId = typeof req.query.vehicleId === "string" ? req.query.vehicleId : "";
   const from = typeof req.query.from === "string" ? req.query.from : "";
   const to = typeof req.query.to === "string" ? req.query.to : "";
@@ -120,8 +121,8 @@ availabilityRoutes.delete("/blocks", async (req, res) => {
 });
 
 availabilityRoutes.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
   const vehicleId = typeof req.query.vehicleId === "string" ? req.query.vehicleId : undefined;

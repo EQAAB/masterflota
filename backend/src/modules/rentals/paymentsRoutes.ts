@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,8 +27,8 @@ const PAYMENT_LIST_SELECT = `
 export const paymentsRoutes = Router();
 
 paymentsRoutes.get("/summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `SELECT
@@ -65,8 +66,8 @@ paymentsRoutes.get("/summary", async (req, res) => {
 });
 
 paymentsRoutes.get("/activity", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `${PAYMENT_LIST_SELECT}
@@ -105,8 +106,8 @@ paymentsRoutes.get("/activity", async (req, res) => {
 });
 
 paymentsRoutes.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
   const paymentType = typeof req.query.paymentType === "string" ? req.query.paymentType : undefined;
   const customerId = typeof req.query.customerId === "string" ? req.query.customerId : undefined;
@@ -163,7 +164,7 @@ paymentsRoutes.get("/", async (req, res) => {
 });
 
 paymentsRoutes.get("/booking/:bookingId", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { bookingId } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {
@@ -179,7 +180,7 @@ paymentsRoutes.get("/booking/:bookingId", async (req, res) => {
 });
 
 paymentsRoutes.post("/booking/:bookingId", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { bookingId } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(bookingId)) return res.status(400).json({ message: "Invalid booking id" });
@@ -229,7 +230,7 @@ paymentsRoutes.post("/booking/:bookingId", async (req, res) => {
 });
 
 paymentsRoutes.patch("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   const b = req.body as Record<string, unknown>;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });

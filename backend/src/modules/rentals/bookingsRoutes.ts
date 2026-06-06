@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 import { rentalDb } from "./rentalDb";
 import { checkVehicleAvailableForRental } from "./availabilityService";
 import {
@@ -23,8 +24,8 @@ const UUID_RE =
 export const bookingsRoutes = Router();
 
 bookingsRoutes.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
   const vehicleId = typeof req.query.vehicleId === "string" ? req.query.vehicleId : undefined;
   const customerId = typeof req.query.customerId === "string" ? req.query.customerId : undefined;
@@ -101,8 +102,8 @@ bookingsRoutes.get("/", async (req, res) => {
 });
 
 bookingsRoutes.post("/quote", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const b = req.body as Record<string, unknown>;
   const vehicleId = typeof b.vehicleId === "string" ? b.vehicleId : "";
   const rentalType = (b.rentalType === "weekly" || b.rentalType === "monthly" ? b.rentalType : "daily") as RentalType;
@@ -126,7 +127,7 @@ bookingsRoutes.post("/quote", async (req, res) => {
 });
 
 bookingsRoutes.get("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
@@ -154,7 +155,7 @@ bookingsRoutes.get("/:id", async (req, res) => {
 });
 
 bookingsRoutes.post("/", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const b = req.body as Record<string, unknown>;
@@ -204,7 +205,7 @@ bookingsRoutes.post("/", async (req, res) => {
 });
 
 bookingsRoutes.put("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
@@ -299,7 +300,7 @@ bookingsRoutes.put("/:id", async (req, res) => {
 });
 
 bookingsRoutes.post("/:id/confirm", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -313,7 +314,7 @@ bookingsRoutes.post("/:id/confirm", async (req, res) => {
 });
 
 bookingsRoutes.post("/:id/cancel", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
   const reason = typeof (req.body as { reason?: string })?.reason === "string" ? (req.body as { reason: string }).reason : undefined;
@@ -327,7 +328,7 @@ bookingsRoutes.post("/:id/cancel", async (req, res) => {
 });
 
 bookingsRoutes.post("/:id/pickup", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
   const mileageOut = typeof (req.body as { mileageOut?: number })?.mileageOut === "number"
@@ -343,7 +344,7 @@ bookingsRoutes.post("/:id/pickup", async (req, res) => {
 });
 
 bookingsRoutes.post("/:id/return", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
   const body = req.body as { mileageIn?: number; damageNotes?: string; damageReported?: boolean };

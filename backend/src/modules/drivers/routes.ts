@@ -2,6 +2,7 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { pool, query } from "../../db/pool";
 import { roundMoney } from "../earnings/debtAllocation";
 import {
@@ -37,6 +38,7 @@ function resolveDriverListOrder(query: ListSortQuery) {
 }
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("drivers.view"));
 
 const UUID_RE =
@@ -80,10 +82,8 @@ const DRIVER_LIST_SELECT = `
 `;
 
 router.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const { search, status, limit, offset, sort_by, sort_order } = req.query as {
     search?: string;
@@ -139,10 +139,8 @@ router.get("/", async (req, res) => {
 
 /** Optional server-side search (same matching rules as list `search`). */
 router.get("/search", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const { q, status, limit, offset, sort_by, sort_order } = req.query as {
     q?: string;
@@ -199,7 +197,7 @@ router.get("/search", async (req, res) => {
 });
 
 router.post("/:id/assign-vehicle", requirePermission("drivers.assign_vehicle"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const driverId = String(req.params.id);
   const body = req.body as { vehicleId?: string };
   const vehicleId = typeof body.vehicleId === "string" ? body.vehicleId.trim() : "";
@@ -236,7 +234,7 @@ router.post("/:id/assign-vehicle", requirePermission("drivers.assign_vehicle"), 
 });
 
 router.post("/:id/unassign-vehicle", requirePermission("drivers.assign_vehicle"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const driverId = String(req.params.id);
 
   if (!orgId) {
@@ -269,7 +267,7 @@ router.patch(
   requirePermission("drivers.edit"),
   driverProfilePhotoUpload.single("photo"),
   async (req, res) => {
-    const orgId = req.user?.orgId;
+    const orgId = req.effectiveOrgId;
     const userId = req.user?.sub;
     const { id } = req.params;
 
@@ -326,7 +324,7 @@ router.patch(
 );
 
 router.get("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
   if (!orgId) {
@@ -389,7 +387,7 @@ router.get("/:id/vehicle-assignment-history", ...driverVehicleHistory);
 router.get("/:id/vehicle-history", ...driverVehicleHistory);
 
 router.get("/:id/activity", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
   if (!orgId) {
@@ -418,7 +416,7 @@ router.get("/:id/activity", async (req, res) => {
 });
 
 router.patch("/:id/notes", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
   const { notes } = req.body as { notes?: string };
@@ -461,10 +459,8 @@ router.patch("/:id/notes", requirePermission("drivers.edit"), async (req, res) =
 });
 
 router.post("/", requirePermission("drivers.create"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const {
     firstName,
@@ -602,7 +598,7 @@ router.post("/", requirePermission("drivers.create"), async (req, res) => {
 });
 
 router.put("/:id", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
   if (!orgId) {
@@ -746,7 +742,7 @@ router.put("/:id", requirePermission("drivers.edit"), async (req, res) => {
 });
 
 router.patch("/:id/status", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   const { status } = req.body as { status?: string };
 
@@ -805,8 +801,8 @@ async function assertDriverInOrg(driverId: string, orgId: string): Promise<boole
 }
 
 router.get("/:id/recurring-fees", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const driverId = String(req.params.id ?? "");
   if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
   if (!(await assertDriverInOrg(driverId, orgId))) {
@@ -825,7 +821,7 @@ router.get("/:id/recurring-fees", requirePermission("drivers.edit"), async (req,
 });
 
 router.post("/:id/recurring-fees", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
   const driverId = String(req.params.id ?? "");
@@ -900,7 +896,7 @@ router.post("/:id/recurring-fees", requirePermission("drivers.edit"), async (req
 });
 
 router.patch("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const driverId = String(req.params.id ?? "");
@@ -1006,7 +1002,7 @@ router.patch("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), as
 });
 
 router.delete("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   const driverId = String(req.params.id ?? "");
@@ -1045,7 +1041,7 @@ router.delete("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), a
 });
 
 router.delete("/:id", requirePermission("drivers.delete"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
 

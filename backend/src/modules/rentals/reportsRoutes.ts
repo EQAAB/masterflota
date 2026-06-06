@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 
 export const reportsRoutes = Router();
 
 reportsRoutes.get("/revenue", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
   const to = typeof req.query.to === "string" ? req.query.to : undefined;
   const monthStart = from ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
@@ -46,8 +47,8 @@ reportsRoutes.get("/revenue", async (req, res) => {
 });
 
 reportsRoutes.get("/overdue", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `SELECT b.*, c.legal_name AS customer_name, v.license_plate

@@ -19,6 +19,7 @@ import {
   type UsersFilters,
 } from "../../components/settings/users/usersListUtils";
 import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
+import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { useAnyPermission } from "../../lib/permissions";
 import { dashboardPage } from "../../theme/classNames";
 
@@ -158,6 +159,7 @@ export function UsersPage() {
   }
 
   return (
+    <OrgContextGate>
     <div className="fm-settings-users flex min-h-full flex-1 flex-col">
       <div className={`${dashboardPage} fm-settings-users__page`}>
         <UsersPageHeader
@@ -249,5 +251,6 @@ export function UsersPage() {
         />
       )}
     </div>
+    </OrgContextGate>
   );
 }

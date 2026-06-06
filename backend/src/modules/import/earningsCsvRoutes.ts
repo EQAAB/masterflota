@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { pool } from "../../db/pool";
 import { readOrgGlovoCommissionBase } from "../earnings/orgImportSettings";
 import { earningsUpload, entityCsvUpload } from "../../config/multer";
@@ -20,11 +21,12 @@ import { importVehiclesFromCsvTable } from "./vehicleCsvImport";
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("imports.create"));
 
 /** One-shot: stage + commit in one request (same logic as preview + commit). */
 router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -126,10 +128,8 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
 });
 
 router.post("/drivers-csv", entityCsvUpload.single("file"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   if (!req.file?.buffer) {
     return res.status(400).json({ message: "file is required" });
   }
@@ -168,10 +168,8 @@ router.post("/drivers-csv", entityCsvUpload.single("file"), async (req, res) => 
 });
 
 router.post("/vehicles-csv", entityCsvUpload.single("file"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   if (!req.file?.buffer) {
     return res.status(400).json({ message: "file is required" });
   }

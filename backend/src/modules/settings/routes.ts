@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("settings.manage"));
 
 const VALID_TYPES = new Set(["string", "number", "boolean", "json"]);
@@ -38,10 +40,8 @@ function serializeSetting(row: SettingRow) {
 }
 
 router.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query<SettingRow>(
       `SELECT id::text, key, value, value_type, created_at::text, updated_at::text
@@ -57,7 +57,7 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/:key", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const key = String(req.params.key ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -81,7 +81,7 @@ router.get("/:key", async (req, res) => {
 });
 
 router.put("/:key", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const key = String(req.params.key ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
