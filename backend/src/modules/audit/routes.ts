@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("users.manage"));
 
 type AuditRow = {
@@ -23,10 +25,8 @@ type AuditRow = {
 };
 
 router.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));

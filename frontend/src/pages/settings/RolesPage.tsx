@@ -8,6 +8,7 @@ import {
   updateRolePermissions,
 } from "../../api/roles";
 import { CreateRoleModal, type CreateRoleForm } from "../../components/settings/roles/CreateRoleModal";
+import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { RoleCard } from "../../components/settings/roles/RoleCard";
 import { RolesKpiRow } from "../../components/settings/roles/RolesKpiRow";
 import { RolesPageHeader } from "../../components/settings/roles/RolesPageHeader";
@@ -94,6 +95,7 @@ export function RolesPage() {
   }
 
   return (
+    <OrgContextGate>
     <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
       <div className={dashboardPage}>
         <RolesPageHeader onCreate={() => setShowCreate(true)} canManage={canManage} />
@@ -130,5 +132,6 @@ export function RolesPage() {
         isPending={createMut.isPending}
       />
     </div>
+    </OrgContextGate>
   );
 }

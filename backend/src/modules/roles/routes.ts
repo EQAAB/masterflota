@@ -2,10 +2,12 @@ import { Router } from "express";
 import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 
 type RoleRow = {
   id: string;
@@ -110,7 +112,7 @@ router.post("/", requirePermission("roles.manage"), async (req, res) => {
     await client.query("COMMIT");
 
     await writeAuditLog({
-      orgId: req.user?.orgId ?? null,
+      orgId: req.effectiveOrgId ?? null,
       userId: req.user?.sub ?? null,
       action: "role.created",
       entityType: "role",
@@ -199,7 +201,7 @@ router.patch("/:id", requirePermission("roles.manage"), async (req, res) => {
 
     const after = updated.rows[0];
     await writeAuditLog({
-      orgId: req.user?.orgId ?? null,
+      orgId: req.effectiveOrgId ?? null,
       userId: req.user?.sub ?? null,
       action: "role.updated",
       entityType: "role",
@@ -255,7 +257,7 @@ router.delete("/:id", requirePermission("roles.manage"), async (req, res) => {
     await client.query("COMMIT");
 
     await writeAuditLog({
-      orgId: req.user?.orgId ?? null,
+      orgId: req.effectiveOrgId ?? null,
       userId: req.user?.sub ?? null,
       action: "role.deleted",
       entityType: "role",
@@ -323,7 +325,7 @@ router.patch("/:id/permissions", requirePermission("roles.manage"), async (req, 
 
     const newPerms = permRes.rows.map((p) => p.name).sort();
     await writeAuditLog({
-      orgId: req.user?.orgId ?? null,
+      orgId: req.effectiveOrgId ?? null,
       userId: req.user?.sub ?? null,
       action: "role.permissions_updated",
       entityType: "role",

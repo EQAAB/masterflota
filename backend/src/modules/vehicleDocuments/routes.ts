@@ -2,16 +2,18 @@ import { Router } from "express";
 import path from "path";
 import fs from "fs";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { vehicleDocumentsUpload } from "../../config/multer";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 
 // List all documents for a vehicle
 router.get("/:id/documents", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
   if (!orgId) {
@@ -44,7 +46,7 @@ router.post(
   requirePermission("vehicles.edit"),
   vehicleDocumentsUpload.single("file"),
   async (req, res) => {
-    const orgId = req.user?.orgId;
+    const orgId = req.effectiveOrgId;
     const userId = req.user?.sub;
     const { id } = req.params;
     const { documentType, documentNumber, expiryDate, issueDate, notes } = req.body as {
@@ -122,7 +124,7 @@ router.post(
 
 // Delete a vehicle document
 router.delete("/:id/documents/:docId", requirePermission("vehicles.edit"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id: vehicleId, docId } = req.params;
 
   if (!orgId) {
@@ -166,7 +168,7 @@ router.put(
   "/:id/documents/:docId/verify",
   requirePermission("vehicles.edit"),
   async (req, res) => {
-    const orgId = req.user?.orgId;
+    const orgId = req.effectiveOrgId;
     const userId = req.user?.sub;
     const { id: vehicleId, docId } = req.params;
     const { verified } = req.body as { verified?: boolean };
@@ -203,7 +205,7 @@ router.put(
 
 // Download a vehicle document file
 router.get("/:id/documents/:docId/download", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id: vehicleId, docId } = req.params;
 
   if (!orgId) {
@@ -242,10 +244,8 @@ router.get("/:id/documents/:docId/download", async (req, res) => {
 
 // Expiry warnings for vehicle documents (e.g. next 30 days)
 router.get("/documents/expiring", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   try {
     const { rows } = await query(

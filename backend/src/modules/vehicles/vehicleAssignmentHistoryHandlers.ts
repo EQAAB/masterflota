@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import {
   listAssignmentHistoryByDriver,
@@ -11,13 +12,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function handleDriverVehicleHistory(req: Request, res: Response): Promise<void> {
-  const orgId = req.user?.orgId;
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const driverId = String(req.params.id);
 
-  if (!orgId) {
-    res.status(400).json({ message: "User is not associated with an organization" });
-    return;
-  }
   if (!UUID_RE.test(driverId)) {
     res.status(400).json({ message: "Invalid driver id" });
     return;
@@ -44,13 +42,10 @@ export async function handleDriverVehicleHistory(req: Request, res: Response): P
 }
 
 export async function handleVehicleDriverHistory(req: Request, res: Response): Promise<void> {
-  const orgId = req.user?.orgId;
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const vehicleId = String(req.params.id);
 
-  if (!orgId) {
-    res.status(400).json({ message: "User is not associated with an organization" });
-    return;
-  }
   if (!UUID_RE.test(vehicleId)) {
     res.status(400).json({ message: "Invalid vehicle id" });
     return;
@@ -76,11 +71,8 @@ export async function handleVehicleDriverHistory(req: Request, res: Response): P
 }
 
 export async function handleRecentAssignments(req: Request, res: Response): Promise<void> {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    res.status(400).json({ message: "User is not associated with an organization" });
-    return;
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const limitRaw = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : 5;
   const limit = Number.isFinite(limitRaw) ? limitRaw : 5;

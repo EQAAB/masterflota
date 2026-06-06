@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { Router, type Request, type Response } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
 import {
@@ -90,15 +91,14 @@ async function selectPayoutDebtSnapshot(client: PoolClient, orgId: string, payou
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("payouts.view", "imports.view", "imports.create", "reports.view"));
 
 export type { EarningsStagingPayload } from "./normalizeRow";
 
 router.get("/import/org-settings", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const glovoCommissionBaseType = await readOrgGlovoCommissionBase(orgId);
     return res.json({ glovoCommissionBaseType });
@@ -110,10 +110,8 @@ router.get("/import/org-settings", async (req, res) => {
 });
 
 router.patch("/import/org-settings", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   if (!req.user?.permissions.includes("settings.manage")) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
@@ -210,7 +208,7 @@ async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
 }
 
 router.post("/import/preview", requirePermission("imports.create"), earningsUpload.single("file"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -370,10 +368,8 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
 });
 
 router.get("/import/:id/preview-rows", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const { id: importId } = req.params;
   const offset = Math.max(0, parseInt(String(req.query.offset ?? "0"), 10) || 0);
   const limitIn = parseInt(String(req.query.limit ?? "500"), 10) || 500;
@@ -443,10 +439,8 @@ router.get("/import/:id/preview-rows", async (req, res) => {
 });
 
 router.post("/import/commit", requirePermission("imports.create"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const body = req.body as {
     importId?: string;
     platform?: string;
@@ -557,7 +551,7 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
 });
 
 router.post("/imports/:id/revert", requirePermission("imports.delete"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -593,10 +587,8 @@ router.post("/imports/:id/revert", requirePermission("imports.delete"), async (r
 });
 
 async function handleDeleteEarningsImport(req: Request, res: Response) {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const id = String(req.params.id ?? "");
   if (!id) {
     return res.status(400).json({ message: "Import id is required" });
@@ -623,8 +615,8 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 router.post("/sync-vehicles", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const body = req.body as { importId?: unknown; driverId?: unknown };
   const importId =
@@ -676,8 +668,8 @@ router.post("/sync-vehicles", requirePermission("payouts.adjust"), async (req, r
 });
 
 router.put("/records/:id/recalculate", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const { id } = req.params;
   try {
     const result = await pool.query<{
@@ -706,8 +698,8 @@ router.put("/records/:id/recalculate", async (req, res) => {
 });
 
 router.post("/records/recalculate-bulk", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const onlyCash = (req.body as { onlyCashCommission?: boolean } | undefined)?.onlyCashCommission ?? true;
   try {
     const result = await pool.query<{ id: string }>(
@@ -730,8 +722,8 @@ router.post("/records/recalculate-bulk", requirePermission("payouts.adjust"), as
 });
 
 router.get("/imports", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize ?? "20"), 10) || 20));
   const offset = (page - 1) * pageSize;
@@ -762,8 +754,8 @@ router.get("/imports", async (req, res) => {
 });
 
 router.get("/overview", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const [pendingRes, earnings30Res, avgPaidRes, monthlyRes] = await Promise.all([
       query<{ t: string | null }>(
@@ -825,8 +817,8 @@ router.get("/overview", async (req, res) => {
 });
 
 router.get("/records/payout-integrity", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query<{
       id: string;
@@ -1158,8 +1150,8 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
 }
 
 router.get("/payouts", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
   const pageSize = Math.min(200, Math.max(1, parseInt(String(req.query.pageSize ?? "25"), 10) || 25));
@@ -1175,8 +1167,8 @@ router.get("/payouts", async (req, res) => {
 });
 
 router.get("/payouts/search", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
   const pageSize = Math.min(200, Math.max(1, parseInt(String(req.query.pageSize ?? "25"), 10) || 25));
@@ -1192,8 +1184,8 @@ router.get("/payouts/search", async (req, res) => {
 });
 
 router.get("/reports", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const limitRaw = parseInt(String(req.query.limit ?? String(REPORT_MAX_ROWS)), 10);
   const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(REPORT_MAX_ROWS, limitRaw)) : REPORT_MAX_ROWS;
@@ -1219,8 +1211,8 @@ router.get("/reports", async (req, res) => {
 
 /** Aggregated fleet commission by stored commission_base_type (filtered like /reports). */
 router.get("/reports/commission-by-base-type", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const filters = parsePayoutReportFilters(req.query as PayoutFilterQuery);
   try {
     const { whereSql, params } = buildPayoutReportWhereClause(orgId, filters);
@@ -1260,8 +1252,8 @@ router.get("/reports/commission-by-base-type", async (req, res) => {
 });
 
 router.get("/payouts/assignment-details", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
   const pageSize = Math.min(200, Math.max(1, parseInt(String(req.query.pageSize ?? "25"), 10) || 25));
@@ -1346,8 +1338,8 @@ router.get("/payouts/with-proration-details", (req, res) => {
 });
 
 router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const body = req.body as {
     ids?: unknown;
@@ -1458,8 +1450,8 @@ router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, 
 });
 
 router.get("/payouts/consolidated", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const weekStart = String(req.query.weekStart ?? "").slice(0, 10);
   const weekEnd = String(req.query.weekEnd ?? "").slice(0, 10);
@@ -1518,7 +1510,7 @@ router.get("/payouts/consolidated", async (req, res) => {
 });
 
 router.post("/payouts/pay-driver", requirePermission("payouts.approve"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -1569,7 +1561,7 @@ router.post("/payouts/pay-driver", requirePermission("payouts.approve"), async (
 });
 
 router.post("/payouts/pay-all", requirePermission("payouts.approve"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -1603,8 +1595,8 @@ router.post("/payouts/pay-all", requirePermission("payouts.approve"), async (req
 });
 
 router.get("/payouts/:id/platform-breakdown", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const payoutId = String(req.params.id ?? "");
   if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
@@ -1671,7 +1663,7 @@ const DEBT_ADJUST_TYPES = new Set(["adjust", "forgive", "cash_received", "carry_
 
 /** Manual debt: `forgive` / `cash_received` reduce remaining (positive amount). `adjust`: positive amount subtracts from remaining (reduces collectible); negative amount adds (correction / increase owed). Stored `payout_adjustments.amount` remains signed delta (new − previous). */
 router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -1870,8 +1862,8 @@ router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), asy
 const CUSTOM_FEE_TYPES = new Set<CustomFeeType>(["deduction", "addition"]);
 
 router.get("/payouts/:id/custom-fees", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const payoutId = String(req.params.id ?? "");
   if (!UUID_RE.test(payoutId)) return res.status(400).json({ message: "Invalid payout id" });
@@ -1928,7 +1920,7 @@ router.get("/payouts/:id/custom-fees", async (req, res) => {
 });
 
 router.post("/payouts/:id/custom-fees", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
 
@@ -2016,8 +2008,8 @@ router.post("/payouts/:id/custom-fees", requirePermission("payouts.adjust"), asy
 });
 
 router.delete("/payouts/:id/custom-fees/:adjustmentId", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const payoutId = String(req.params.id ?? "");
   const adjustmentId = String(req.params.adjustmentId ?? "");
@@ -2177,7 +2169,7 @@ async function releasePayoutHoldForRow(
 }
 
 router.post("/payouts/release-hold/bulk", requirePermission("payouts.approve"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -2219,7 +2211,7 @@ router.post("/payouts/release-hold/bulk", requirePermission("payouts.approve"), 
 });
 
 router.post("/payouts/:id/release-hold", requirePermission("payouts.approve"), async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId || !userId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
@@ -2268,8 +2260,8 @@ router.post("/payouts/:id/release-hold", requirePermission("payouts.approve"), a
 });
 
 router.get("/debts/summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   try {
     const totalRes = await pool.query<{ s: string; c: string }>(
@@ -2318,8 +2310,8 @@ router.get("/debts/summary", async (req, res) => {
 });
 
 router.post("/debts/bulk-carry-forward", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const body = req.body as { driverIds?: unknown; from?: unknown; to?: unknown };
   const from =
@@ -2379,8 +2371,8 @@ router.post("/debts/bulk-carry-forward", requirePermission("payouts.adjust"), as
 });
 
 router.get("/debts/aging", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   try {
     const { rows } = await pool.query<{ bucket: string; total: string; row_count: string }>(
@@ -2416,8 +2408,8 @@ router.get("/debts/aging", async (req, res) => {
 });
 
 router.get("/debts/collection-summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const from =
     typeof req.query.from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.from) ? req.query.from : null;
@@ -2465,8 +2457,8 @@ router.get("/debts/collection-summary", async (req, res) => {
 });
 
 router.get("/debts/history/:driverId", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const driverId = String(req.params.driverId ?? "");
   if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
@@ -2530,8 +2522,8 @@ router.get("/debts/history/:driverId", async (req, res) => {
 });
 
 router.get("/reports/export", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const formatRaw =
     req.query.format != null && String(req.query.format).trim() !== "" ? String(req.query.format) : "csv";
@@ -2629,8 +2621,8 @@ router.get("/reports/export", async (req, res) => {
 });
 
 router.get("/subcontractors/settlements", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const q = req.query as { periodStart?: string; periodEnd?: string; subcontractorId?: string };
   const isoDate = /^\d{4}-\d{2}-\d{2}$/;
   const defaults = getPreviousWeek();
@@ -2721,8 +2713,8 @@ router.get("/subcontractors/settlements", async (req, res) => {
 });
 
 router.post("/subcontractors/refresh-rent-charges", requirePermission("payouts.adjust"), async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const { periodStart, periodEnd } = req.body as { periodStart?: string; periodEnd?: string };
   if (!periodStart || !periodEnd) {
     return res.status(400).json({ message: "periodStart and periodEnd are required" });
@@ -2749,8 +2741,8 @@ router.post("/subcontractors/refresh-rent-charges", requirePermission("payouts.a
 });
 
 router.get("/vehicle-rent-validation", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const periodStart =
     typeof req.query.periodStart === "string" ? req.query.periodStart.slice(0, 10) : null;

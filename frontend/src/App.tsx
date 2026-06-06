@@ -2,12 +2,18 @@ import React from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import { AppLayout } from "./components/layout/AppLayout";
+import {
+  DefaultAppRedirect,
+  FleetRouteGuard,
+  PlatformRouteGuard,
+} from "./components/layout/PlatformRouteGuard";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { DriversListPage } from "./pages/drivers/DriversListPage";
 import { AddDriverPage } from "./pages/drivers/AddDriverPage";
 import { EditDriverPage } from "./pages/drivers/EditDriverPage";
 import { DriverDetailPage } from "./pages/drivers/DriverDetailPage";
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
+import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
 import { OrganizationsPage } from "./pages/settings/OrganizationsPage";
 import { VehiclesListPage } from "./pages/vehicles/VehiclesListPage";
 import { AddVehiclePage } from "./pages/vehicles/AddVehiclePage";
@@ -46,273 +52,297 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function ProtectedFleetRoute({ children }: { children: React.ReactElement }) {
+  return (
+    <ProtectedRoute>
+      <FleetRouteGuard>{children}</FleetRouteGuard>
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedPlatformRoute({ children }: { children: React.ReactElement }) {
+  return (
+    <ProtectedRoute>
+      <PlatformRouteGuard>{children}</PlatformRouteGuard>
+    </ProtectedRoute>
+  );
+}
+
 /** Data router (required for `useBlocker`, e.g. unsaved import navigation guard). */
 export const appRouter = createBrowserRouter(
   [
     { path: "login", element: <LoginPage /> },
     { path: "/register", element: <Navigate to="/login" replace /> },
     {
+      path: "/platform",
+      element: (
+        <ProtectedPlatformRoute>
+          <PlatformDashboardPage />
+        </ProtectedPlatformRoute>
+      ),
+    },
+    {
       path: "/dashboard",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <DashboardPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/drivers",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <DriversListPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/drivers/new",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <AddDriverPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/drivers/:id/edit",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EditDriverPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/drivers/:id",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <DriverDetailPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/vehicles",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <VehiclesListPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/vehicles/new",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <AddVehiclePage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/vehicles/:id/edit",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EditVehiclePage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EarningsOverviewPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/import",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EarningsImportPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/design/payout-details-comparison",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <PayoutDetailsLayoutComparisonPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/payouts/:driverId",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <CombinedPayoutDetailsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/payouts",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EarningsPayoutsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/reports",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <EarningsReportsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/subcontractors/settlements",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <SubcontractorSettlementsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/earnings/subcontractors/settlements/:id",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <SubcontractorSettlementDetailPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/subcontractors",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <SubcontractorsListPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/subcontractors/new",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <SubcontractorFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/subcontractors/:id/edit",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <SubcontractorFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <RentalDashboardPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/bookings/new",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <BookingFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/bookings/:id/edit",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <BookingFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/bookings/:id",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <BookingDetailPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/bookings",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <BookingsListPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/calendar",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <RentalCalendarPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/customers/new",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <CustomerFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/customers/:id/edit",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <CustomerFormPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/customers",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <CustomersListPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/availability",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <VehicleAvailabilityPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/pricing",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <PricingPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/payments",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <PaymentsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/vehicles/:id",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <VehicleDetailPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
       path: "/vehicles/:id/documents",
       element: (
-        <ProtectedRoute>
+        <ProtectedFleetRoute>
           <VehicleDocumentsPage />
-        </ProtectedRoute>
+        </ProtectedFleetRoute>
       ),
     },
     {
@@ -347,7 +377,7 @@ export const appRouter = createBrowserRouter(
         </ProtectedRoute>
       ),
     },
-    { path: "*", element: <Navigate to="/dashboard" replace /> },
+    { path: "*", element: <DefaultAppRedirect /> },
   ],
   { basename: "/fleet" },
 );

@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useAnyPermission, useCanAccessFinance, usePermission } from "../../lib/permissions";
+import { isPlatformMode } from "../../lib/platform";
+import { useAuthStore } from "../../store/authStore";
+import { useOrgStore } from "../../store/orgStore";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
 import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
@@ -211,6 +214,10 @@ export interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
+  const activeOrgId = useOrgStore((s) => s.activeOrgId);
+  const platformMode = isPlatformMode(user, activeOrgId);
+  const homePath = platformMode ? "/platform" : "/dashboard";
   const showFinanceNav = useCanAccessFinance();
   const canViewSubcontractors = usePermission("subcontractors.view");
   const canViewDrivers = usePermission("drivers.view");
@@ -227,12 +234,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     canAudit: canManageUsers,
   });
   const showSettingsNav = settingsSubItems.length > 0;
+  const showFleetNav = !platformMode;
 
   const navItems = [
-    ...(canViewDashboard ? [{ to: "/dashboard", label: "Dashboard", icon: DashboardIcon }] : []),
-    ...(canViewDrivers ? [{ to: "/drivers", label: "Drivers", icon: DriversIcon }] : []),
-    ...(canViewVehicles ? [{ to: "/vehicles", label: "Vehicles", icon: VehiclesIcon }] : []),
-    ...(canViewSubcontractors ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }] : []),
+    ...(platformMode
+      ? [{ to: "/platform", label: "Platform", icon: DashboardIcon }]
+      : canViewDashboard
+        ? [{ to: "/dashboard", label: "Dashboard", icon: DashboardIcon }]
+        : []),
+    ...(showFleetNav && canViewDrivers ? [{ to: "/drivers", label: "Drivers", icon: DriversIcon }] : []),
+    ...(showFleetNav && canViewVehicles ? [{ to: "/vehicles", label: "Vehicles", icon: VehiclesIcon }] : []),
+    ...(showFleetNav && canViewSubcontractors
+      ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }]
+      : []),
   ];
   const [earningsOpen, setEarningsOpen] = useState(() => location.pathname.startsWith("/earnings"));
   const [rentalsOpen, setRentalsOpen] = useState(() => location.pathname.startsWith("/rentals"));
@@ -248,11 +262,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     if (location.pathname.startsWith("/earnings")) setEarningsOpen(true);
     if (location.pathname.startsWith("/rentals")) setRentalsOpen(true);
     if (location.pathname.startsWith("/settings")) setSettingsOpen(true);
+    if (location.pathname.startsWith("/platform")) setSettingsOpen(false);
   }, [location.pathname]);
 
   const earningsActive = location.pathname.startsWith("/earnings");
   const rentalsActive = location.pathname.startsWith("/rentals");
   const settingsActive = location.pathname.startsWith("/settings");
+  const platformActive = location.pathname.startsWith("/platform");
 
   return (
     <aside
@@ -260,13 +276,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     >
       <div className="relative z-10 flex h-14 shrink-0 items-center border-b border-white/10 px-3">
         {!collapsed && (
-          <Link to="/dashboard" className="flex min-w-0 flex-1 items-center gap-2.5">
+          <Link to={homePath} className="flex min-w-0 flex-1 items-center gap-2.5">
             <LogoMark />
             <span className="truncate font-semibold text-white">Fleet Manager</span>
           </Link>
         )}
         {collapsed && (
-          <Link to="/dashboard" className="mx-auto" title="Fleet Manager">
+          <Link to={homePath} className="mx-auto" title="Fleet Manager">
             <LogoMark />
           </Link>
         )}
@@ -285,7 +301,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <div className="relative z-10 space-y-0.5 p-1">
           {navItems.map(({ to, label, icon }) => {
             const isActive =
-              location.pathname === to || (to !== "/dashboard" && location.pathname.startsWith(to));
+              location.pathname === to ||
+              (to !== "/dashboard" && to !== "/platform" && location.pathname.startsWith(to)) ||
+              (to === "/platform" && platformActive);
             return (
               <SidebarNavItem
                 key={to}
@@ -298,7 +316,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             );
           })}
 
-          {(showFinanceNav || canViewRentals) &&
+          {showFleetNav && (showFinanceNav || canViewRentals) &&
             (collapsed ? (
               <>
                 <button

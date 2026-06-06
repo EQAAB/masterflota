@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -7,8 +8,8 @@ const UUID_RE =
 export const pricingRoutes = Router();
 
 pricingRoutes.get("/summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `SELECT
@@ -50,8 +51,8 @@ pricingRoutes.get("/summary", async (req, res) => {
 });
 
 pricingRoutes.get("/insights", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows: rented } = await query(
       `SELECT v.license_plate, v.make, v.model, COUNT(b.id)::int AS booking_count
@@ -110,8 +111,8 @@ pricingRoutes.get("/insights", async (req, res) => {
 });
 
 pricingRoutes.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const vehicleId = typeof req.query.vehicleId === "string" ? req.query.vehicleId : undefined;
   const vehicleQ = typeof req.query.vehicleQ === "string" ? req.query.vehicleQ.trim() : undefined;
   try {
@@ -148,8 +149,8 @@ pricingRoutes.get("/", async (req, res) => {
 });
 
 pricingRoutes.post("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const b = req.body as Record<string, unknown>;
   try {
     const { rows } = await query(
@@ -180,7 +181,7 @@ pricingRoutes.post("/", async (req, res) => {
 });
 
 pricingRoutes.put("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { rentalDb } from "./rentalDb";
 import { customersRoutes } from "./customersRoutes";
@@ -13,6 +14,7 @@ import { buildContractText } from "./contractPdf";
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("rentals.view", "rentals.manage"));
 
 router.use("/customers", customersRoutes);
@@ -23,8 +25,8 @@ router.use("/payments", paymentsRoutes);
 router.use("/reports", reportsRoutes);
 
 router.get("/dashboard", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
@@ -188,7 +190,7 @@ router.get("/dashboard", async (req, res) => {
 });
 
 router.get("/bookings/:id/contract", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {

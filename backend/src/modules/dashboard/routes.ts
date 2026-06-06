@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { handleRecentAssignments } from "../vehicles/vehicleAssignmentHistoryHandlers";
 
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("dashboard.view"));
 
 router.get("/stats", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   try {
     const [
@@ -100,10 +100,8 @@ router.get("/stats", async (req, res) => {
 });
 
 router.get("/drivers/status", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   try {
     const { rows } = await query<{ employment_status: string; count: string }>(
@@ -124,10 +122,8 @@ router.get("/drivers/status", async (req, res) => {
 });
 
 router.get("/documents", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query<{ document_type: string; total: string; verified: string }>(
       `SELECT d.document_type,
@@ -157,10 +153,8 @@ router.get("/documents", async (req, res) => {
 router.get("/recent-assignments", handleRecentAssignments);
 
 router.get("/activity", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) {
-    return res.status(400).json({ message: "User is not associated with an organization" });
-  }
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `SELECT a.id, a.driver_id, a.activity_type, a.activity_description, a.performed_by, a.created_at

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { createOrganization, fetchOrganizations } from "../../api/organizations";
+import { enterOrganizationWithCache } from "../../lib/orgContextActions";
 import { PasswordInput } from "../../components/theme/PasswordInput";
 import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
 import { usePermission } from "../../lib/permissions";
@@ -37,6 +39,7 @@ const emptyForm: CreateOrgForm = {
 export function OrganizationsPage() {
   const canCreate = usePermission("organizations.create");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
@@ -229,6 +232,7 @@ export function OrganizationsPage() {
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Created</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,6 +243,18 @@ export function OrganizationsPage() {
                     <td className="px-4 py-3 text-ink-muted">{org.phone ?? "—"}</td>
                     <td className="px-4 py-3 text-ink-muted">
                       {new Date(org.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        className={btnSecondary}
+                        onClick={() => {
+                          enterOrganizationWithCache(queryClient, org.id, org.name);
+                          navigate("/dashboard");
+                        }}
+                      >
+                        Enter
+                      </button>
                     </td>
                   </tr>
                 ))}

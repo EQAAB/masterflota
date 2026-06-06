@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
+import { requireOrgId } from "../../middleware/orgContext";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -7,8 +8,8 @@ const UUID_RE =
 export const customersRoutes = Router();
 
 customersRoutes.get("/summary", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   try {
     const { rows } = await query(
       `SELECT
@@ -34,8 +35,8 @@ customersRoutes.get("/summary", async (req, res) => {
 });
 
 customersRoutes.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const activeOnly = req.query.active !== "false";
   const customerType =
@@ -104,7 +105,7 @@ customersRoutes.get("/", async (req, res) => {
 });
 
 customersRoutes.get("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
@@ -122,8 +123,8 @@ customersRoutes.get("/:id", async (req, res) => {
 });
 
 customersRoutes.post("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
   const b = req.body as Record<string, unknown>;
   const legalName = typeof b.legalName === "string" ? b.legalName.trim() : "";
   if (!legalName) return res.status(400).json({ message: "legalName is required" });
@@ -155,7 +156,7 @@ customersRoutes.post("/", async (req, res) => {
 });
 
 customersRoutes.put("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
@@ -198,7 +199,7 @@ customersRoutes.put("/:id", async (req, res) => {
 });
 
 customersRoutes.delete("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });

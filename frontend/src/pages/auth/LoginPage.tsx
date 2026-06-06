@@ -27,7 +27,7 @@ export function LoginPage() {
       setAuth(data.token, data.user);
       const isPlatformSuperAdmin =
         data.user.role === "super_admin" && !data.user.organizationId;
-      navigate(isPlatformSuperAdmin ? "/settings/organizations" : "/dashboard");
+      navigate(isPlatformSuperAdmin ? "/platform" : "/dashboard");
     },
   });
 

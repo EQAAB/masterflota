@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAuditLogs } from "../../api/audit";
+import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { usePermission } from "../../lib/permissions";
 import { btnSecondary, dashboardPage } from "../../theme/classNames";
 
@@ -48,6 +49,7 @@ export function AuditLogPage() {
   }
 
   return (
+    <OrgContextGate>
     <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
       <div className={dashboardPage}>
         <header className="mb-6">
@@ -155,5 +157,6 @@ export function AuditLogPage() {
         </div>
       </div>
     </div>
+    </OrgContextGate>
   );
 }

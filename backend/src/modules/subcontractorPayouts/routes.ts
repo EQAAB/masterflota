@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { pool } from "../../db/pool";
 import {
   DRIVER_CUSTOM_ADDITIONS_EXPR,
@@ -18,6 +19,7 @@ import { refreshVehicleRentForPeriod } from "../earnings/refreshVehicleRentForPe
 const router = Router();
 
 router.use(authenticateJWT);
+router.use(attachOrgContext);
 router.use(requirePermission("subcontractors.settle"));
 
 const UUID_RE =
@@ -33,8 +35,8 @@ function parsePeriodDates(periodStart: unknown, periodEnd: unknown): { start: st
 }
 
 router.get("/", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const period = parsePeriodDates(req.query.periodStart, req.query.periodEnd);
   if (!period) {
@@ -82,8 +84,8 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/refresh", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const body = req.body as { periodStart?: string; periodEnd?: string };
   const period = parsePeriodDates(body.periodStart, body.periodEnd);
@@ -118,8 +120,8 @@ router.post("/refresh", async (req, res) => {
 });
 
 router.patch("/bulk", async (req, res) => {
-  const orgId = req.user?.orgId;
-  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
 
   const body = req.body as {
     ids?: unknown;
@@ -224,7 +226,7 @@ function num(v: string | null | undefined): number {
 }
 
 router.get("/:id/detail", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
@@ -365,7 +367,7 @@ router.get("/:id/detail", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
-  const orgId = req.user?.orgId;
+  const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
