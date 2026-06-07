@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
-import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { authenticateJWT, requirePermission, isPlatformSuperAdminUser } from "../../middleware/auth";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
 const router = Router();
@@ -28,11 +28,15 @@ function serializeRole(r: RoleRow, permissions: string[]) {
   };
 }
 
-router.get("/", requirePermission("roles.manage", "users.manage"), async (_req, res) => {
+router.get("/", requirePermission("roles.manage", "users.manage"), async (req, res) => {
   try {
+    const platformSuperAdmin = req.user ? isPlatformSuperAdminUser(req.user) : false;
     const { rows: roles } = await query<RoleRow>(
-      `SELECT id::text, name, description, is_system_role, is_default
-       FROM roles ORDER BY name`,
+      platformSuperAdmin
+        ? `SELECT id::text, name, description, is_system_role, is_default
+           FROM roles ORDER BY name`
+        : `SELECT id::text, name, description, is_system_role, is_default
+           FROM roles WHERE name <> 'super_admin' ORDER BY name`,
     );
     const { rows: perms } = await query<{ role_id: string; permission_name: string }>(
       `SELECT rp.role_id::text, p.name AS permission_name

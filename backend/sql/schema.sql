@@ -93,6 +93,34 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 
+CREATE OR REPLACE FUNCTION enforce_user_org_role_consistency()
+RETURNS TRIGGER AS $$
+DECLARE
+  role_name text;
+BEGIN
+  SELECT name INTO role_name FROM roles WHERE id = NEW.role_id;
+  IF role_name IS NULL THEN
+    RAISE EXCEPTION 'Invalid role_id';
+  END IF;
+
+  IF role_name = 'super_admin' AND NEW.organization_id IS NOT NULL THEN
+    RAISE EXCEPTION 'super_admin users must not belong to an organization';
+  END IF;
+
+  IF NEW.organization_id IS NULL AND role_name <> 'super_admin' THEN
+    RAISE EXCEPTION 'Only super_admin users may have a null organization_id';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_users_org_role_consistency ON users;
+CREATE TRIGGER trg_users_org_role_consistency
+  BEFORE INSERT OR UPDATE OF role_id, organization_id ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION enforce_user_org_role_consistency();
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,

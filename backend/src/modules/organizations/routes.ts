@@ -3,12 +3,12 @@ import bcrypt from "bcrypt";
 import { pool } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
 import { generateStrongPassword } from "../../lib/generateStrongPassword";
-import { authenticateJWT, requirePermission, requireSuperAdmin } from "../../middleware/auth";
+import { authenticateJWT, requirePermission, requirePlatformSuperAdmin } from "../../middleware/auth";
 
 const router = Router();
 
 router.use(authenticateJWT);
-router.use(requireSuperAdmin);
+router.use(requirePlatformSuperAdmin);
 
 router.get("/", requirePermission("organizations.view"), async (_req, res) => {
   const client = await pool.connect();

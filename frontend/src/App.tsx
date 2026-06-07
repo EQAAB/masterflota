@@ -349,7 +349,9 @@ export const appRouter = createBrowserRouter(
       path: "/settings/organizations",
       element: (
         <ProtectedRoute>
-          <OrganizationsPage />
+          <PlatformRouteGuard>
+            <OrganizationsPage />
+          </PlatformRouteGuard>
         </ProtectedRoute>
       ),
     },

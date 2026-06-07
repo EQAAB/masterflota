@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
 import { generateStrongPassword } from "../../lib/generateStrongPassword";
+import { assertRoleAssignableByCaller, RoleAssignmentError } from "../../lib/roleGuards";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
@@ -94,6 +95,14 @@ router.post("/", async (req, res) => {
     if (!roleCheck.rows[0]) {
       return res.status(400).json({ message: "Invalid role" });
     }
+    try {
+      await assertRoleAssignableByCaller(roleId, req.user!);
+    } catch (err) {
+      if (err instanceof RoleAssignmentError) {
+        return res.status(err.statusCode).json({ message: err.message });
+      }
+      throw err;
+    }
     const emailLower = email.toLowerCase();
     const existing = await query<{ id: string }>(
       `SELECT id::text FROM users WHERE email = $1 LIMIT 1`,
@@ -170,6 +179,15 @@ router.patch("/:id", async (req, res) => {
       if (!roleCheck.rows[0]) {
         await client.query("ROLLBACK");
         return res.status(400).json({ message: "Invalid role" });
+      }
+      try {
+        await assertRoleAssignableByCaller(roleId, req.user!);
+      } catch (err) {
+        await client.query("ROLLBACK");
+        if (err instanceof RoleAssignmentError) {
+          return res.status(err.statusCode).json({ message: err.message });
+        }
+        throw err;
       }
     }
     await client.query(
