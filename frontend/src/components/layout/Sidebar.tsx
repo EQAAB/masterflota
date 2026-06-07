@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useAnyPermission, useCanAccessFinance, usePermission } from "../../lib/permissions";
-import { isPlatformMode } from "../../lib/platform";
+import { isPlatformMode, isPlatformSuperAdmin } from "../../lib/platform";
 import { useAuthStore } from "../../store/authStore";
 import { useOrgStore } from "../../store/orgStore";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
@@ -224,7 +224,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewVehicles = usePermission("vehicles.view");
   const canViewDashboard = usePermission("dashboard.view");
   const canViewRentals = useAnyPermission("rentals.view", "rentals.manage");
-  const canManageOrganizations = usePermission("organizations.create");
+  const canManageOrganizations =
+    isPlatformSuperAdmin(user) &&
+    isPlatformMode(user, activeOrgId) &&
+    usePermission("organizations.create");
   const canManageUsers = usePermission("users.manage");
   const canManageRoles = usePermission("roles.manage");
   const settingsSubItems = buildSettingsSubItems({

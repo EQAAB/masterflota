@@ -50,15 +50,22 @@ export function requirePermission(...names: string[]) {
   };
 }
 
-export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+export function isPlatformSuperAdminUser(user: AuthPayload): boolean {
+  return user.role === "super_admin" && user.orgId == null;
+}
+
+export function requirePlatformSuperAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  if (req.user.role !== "super_admin") {
-    return res.status(403).json({ message: "Super admin access required" });
+  if (!isPlatformSuperAdminUser(req.user)) {
+    return res.status(403).json({ message: "Platform super admin access required" });
   }
   return next();
 }
+
+/** @deprecated Use requirePlatformSuperAdmin */
+export const requireSuperAdmin = requirePlatformSuperAdmin;
 
 export function requireAllPermissions(...names: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {

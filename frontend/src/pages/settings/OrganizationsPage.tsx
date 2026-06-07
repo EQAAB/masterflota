@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { createOrganization, fetchOrganizations } from "../../api/organizations";
 import { enterOrganizationWithCache } from "../../lib/orgContextActions";
+import { isPlatformSuperAdmin } from "../../lib/platform";
+import { useAuthStore } from "../../store/authStore";
 import { PasswordInput } from "../../components/theme/PasswordInput";
 import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
 import { usePermission } from "../../lib/permissions";
@@ -37,9 +39,14 @@ const emptyForm: CreateOrgForm = {
 };
 
 export function OrganizationsPage() {
+  const user = useAuthStore((s) => s.user);
   const canCreate = usePermission("organizations.create");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  if (!isPlatformSuperAdmin(user)) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateOrgForm>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);

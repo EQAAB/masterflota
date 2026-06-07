@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { isPlatformSuperAdminUser } from "./auth";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,9 +27,7 @@ export function attachOrgContext(req: Request, res: Response, next: NextFunction
 
   const headerOrg = readHeaderOrgId(req);
   const jwtOrg = req.user.orgId ?? null;
-  const isPlatformSuperAdmin = req.user.role === "super_admin" && jwtOrg === null;
-
-  if (isPlatformSuperAdmin) {
+  if (isPlatformSuperAdminUser(req.user)) {
     req.effectiveOrgId = headerOrg;
     return next();
   }

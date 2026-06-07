@@ -20,6 +20,8 @@ import {
 } from "../../components/settings/users/usersListUtils";
 import { TemporaryPasswordAlert } from "../../components/theme/TemporaryPasswordAlert";
 import { OrgContextGate } from "../../components/layout/OrgContextGate";
+import { useAuthStore } from "../../store/authStore";
+import { assignableOrgRoles } from "../../lib/roleFilters";
 import { useAnyPermission } from "../../lib/permissions";
 import { dashboardPage } from "../../theme/classNames";
 
@@ -42,6 +44,7 @@ const emptyForm: AddUserForm = {
 
 export function UsersPage() {
   const canManage = useAnyPermission("users.manage");
+  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -103,7 +106,10 @@ export function UsersPage() {
   });
 
   const allUsers = usersQuery.data ?? [];
-  const roles = rolesQuery.data ?? [];
+  const roles = useMemo(
+    () => assignableOrgRoles(rolesQuery.data ?? [], user),
+    [rolesQuery.data, user],
+  );
 
   const effectiveFilters = useMemo(
     () => ({ ...filters, q: debouncedQ }),
