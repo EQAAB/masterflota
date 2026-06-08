@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
+import { validateActiveSession } from "../lib/userSession";
 import { hasAllPermissions, hasAnyPermission } from "../modules/auth/permissions";
 
 export interface AuthPayload {
@@ -18,7 +19,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+export async function authenticateJWT(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Missing authorization token" });
@@ -29,6 +30,13 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
   try {
     const decoded = jwt.verify(token, env.jwtSecret) as AuthPayload;
     if (!decoded.roleId || !decoded.role || !Array.isArray(decoded.permissions)) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    if (!decoded.jti || !decoded.sub) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    const sessionValid = await validateActiveSession(decoded.sub, decoded.jti);
+    if (!sessionValid) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
     req.user = decoded;

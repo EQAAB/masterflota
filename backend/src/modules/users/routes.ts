@@ -4,6 +4,7 @@ import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
 import { generateStrongPassword } from "../../lib/generateStrongPassword";
 import { assertRoleAssignableByCaller, RoleAssignmentError } from "../../lib/roleGuards";
+import { revokeAllUserSessions } from "../../lib/userSession";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
@@ -209,6 +210,9 @@ router.patch("/:id", async (req, res) => {
     await client.query("COMMIT");
 
     const after = afterRes.rows[0];
+    if (isActive === false) {
+      await revokeAllUserSessions(userId);
+    }
     await writeAuditLog({
       orgId,
       userId: req.user?.sub ?? null,
@@ -256,6 +260,7 @@ router.delete("/:id", async (req, res) => {
     if (!rows[0]) {
       return res.status(404).json({ message: "User not found" });
     }
+    await revokeAllUserSessions(userId);
     await writeAuditLog({
       orgId,
       userId: req.user?.sub ?? null,
