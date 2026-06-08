@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { query } from "../../db/pool";
 import { env } from "../../config/env";
-import { createUserSession, hashSessionToken, newSessionJti } from "../../lib/userSession";
+import { createUserSession, hashSessionToken, newSessionJti, revokeUserSession } from "../../lib/userSession";
 import { authenticateJWT, type AuthPayload } from "../../middleware/auth";
 import { loadUserPermissions } from "./permissions";
 
@@ -194,6 +194,22 @@ router.delete("/sessions/:id", authenticateJWT, async (req, res) => {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Revoke session error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/logout", authenticateJWT, async (req, res) => {
+  const userId = req.user?.sub;
+  const jti = req.user?.jti;
+  if (!userId || !jti) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    await revokeUserSession(userId, jti);
+    return res.status(204).send();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Logout error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });

@@ -31,6 +31,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function isLoginRequest(url: string | undefined): boolean {
+  if (!url) return false;
+  const path = url.startsWith("http") ? new URL(url).pathname : url;
+  return path.includes("/auth/login");
+}
+
+function redirectToLoginIfNeeded(): void {
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.endsWith("/login")) return;
+  window.location.href = "login";
+}
+
 api.interceptors.response.use(
   (response) => {
     const version = extractVersionFromResponse(response);
@@ -40,6 +52,12 @@ api.interceptors.response.use(
   (error) => {
     const version = extractVersionFromResponse(error.response);
     if (version) acknowledgeServerVersion(version);
+
+    if (error.response?.status === 401 && !isLoginRequest(error.config?.url)) {
+      useAuthStore.getState().clearAuth();
+      redirectToLoginIfNeeded();
+    }
+
     return Promise.reject(error);
   },
 );
