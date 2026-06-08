@@ -10,6 +10,7 @@ import {
 
 type PricingMobileCardProps = {
   row: RentalPricing;
+  canManage?: boolean;
   onExpand: () => void;
   onActionMenuToggle: (id: string, el: HTMLElement) => void;
   isMenuOpen: boolean;
@@ -17,6 +18,7 @@ type PricingMobileCardProps = {
 
 export function PricingMobileCard({
   row,
+  canManage = true,
   onExpand,
   onActionMenuToggle,
   isMenuOpen,
@@ -34,22 +36,24 @@ export function PricingMobileCard({
           <p className="mt-1 font-semibold text-ink">{vehicleDisplayName(row)}</p>
           <p className="text-xs text-slate-500">{vehicleMeta(row)}</p>
         </div>
-        <button
-          type="button"
-          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-          aria-label="Actions"
-          aria-expanded={isMenuOpen}
-          onClick={(e) => {
-            e.stopPropagation();
-            onActionMenuToggle(row.id, e.currentTarget);
-          }}
-        >
-          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-            <circle cx="12" cy="5" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="12" cy="19" r="1.5" />
-          </svg>
-        </button>
+        {canManage ? (
+          <button
+            type="button"
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+            aria-label="Actions"
+            aria-expanded={isMenuOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              onActionMenuToggle(row.id, e.currentTarget);
+            }}
+          >
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="5" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="12" cy="19" r="1.5" />
+            </svg>
+          </button>
+        ) : null}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <span className={pricingStatusClass(status)}>{pricingStatusLabel(status)}</span>

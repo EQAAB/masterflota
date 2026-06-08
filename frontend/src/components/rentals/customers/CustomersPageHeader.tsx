@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 export function CustomersPageHeader() {
+  const canManage = useCanManageRentals();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -16,9 +18,11 @@ export function CustomersPageHeader() {
           Companies and individuals who rent your fleet — bookings, revenue, and contact details in one place.
         </p>
       </div>
-      <Link to="/rentals/customers/new" className={`${btnPrimary} fm-rental-customers__header-cta shrink-0`}>
-        Add customer
-      </Link>
+      {canManage && (
+        <Link to="/rentals/customers/new" className={`${btnPrimary} fm-rental-customers__header-cta shrink-0`}>
+          Add customer
+        </Link>
+      )}
     </header>
   );
 }

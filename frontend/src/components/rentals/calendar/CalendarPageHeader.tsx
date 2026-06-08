@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 import type { CalendarViewMode } from "./calendarUtils";
 
@@ -8,6 +9,7 @@ type CalendarPageHeaderProps = {
 };
 
 export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderProps) {
+  const canManage = useCanManageRentals();
   return (
     <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
@@ -33,9 +35,11 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
             </button>
           ))}
         </div>
-        <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
-          New booking
-        </Link>
+        {canManage && (
+          <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
+            New booking
+          </Link>
+        )}
       </div>
     </header>
   );

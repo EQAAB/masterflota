@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import type { RentalCustomer } from "../../../api/rentals";
 import { getRentalBookings } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
@@ -15,6 +16,7 @@ type CustomerDetailDrawerProps = {
 };
 
 export function CustomerDetailDrawer({ customer, onClose }: CustomerDetailDrawerProps) {
+  const canManage = useCanManageRentals();
   const bookingsQuery = useQuery({
     queryKey: ["rentals", "bookings", "customer-drawer", customer?.id],
     queryFn: () =>
@@ -138,12 +140,14 @@ export function CustomerDetailDrawer({ customer, onClose }: CustomerDetailDrawer
         </div>
 
         <div className="flex flex-col gap-2 border-t border-slate-200 p-5 sm:flex-row">
-          <Link
-            to={`/rentals/customers/${customer.id}/edit`}
-            className={`${btnPrimary} flex-1 text-center`}
-          >
-            Edit customer
-          </Link>
+          {canManage && (
+            <Link
+              to={`/rentals/customers/${customer.id}/edit`}
+              className={`${btnPrimary} flex-1 text-center`}
+            >
+              Edit customer
+            </Link>
+          )}
           <Link
             to={`/rentals/bookings?customerId=${customer.id}`}
             className={`${btnSecondary} flex-1 text-center`}

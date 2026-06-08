@@ -18,6 +18,7 @@ import {
   vehicleTypeOptions,
   type PricingFilters,
 } from "../../components/rentals/pricing/pricingListUtils";
+import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -30,6 +31,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function PricingPage() {
+  const canManage = useCanManageRentals();
   const [filters, setFilters] = useState<PricingFilters>({
     q: "",
     vehicleType: "",
@@ -86,7 +88,7 @@ export function PricingPage() {
   return (
     <div className="fm-rental-pricing flex min-h-full flex-1 flex-col bg-surface-elevated">
       <div className={dashboardPage}>
-        <PricingPageHeader onAdd={openAdd} onExport={() => exportPricingCsv(filtered)} />
+        <PricingPageHeader canManage={canManage} onAdd={openAdd} onExport={() => exportPricingCsv(filtered)} />
 
         <PricingKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
 
@@ -106,6 +108,7 @@ export function PricingPage() {
         <PricingTable
           rows={filtered}
           loading={pricingQuery.isLoading}
+          canManage={canManage}
           onAdd={openAdd}
           onEdit={openEdit}
         />

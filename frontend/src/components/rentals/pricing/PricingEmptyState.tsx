@@ -1,10 +1,11 @@
 import { btnPrimary } from "../../../theme/classNames";
 
 type PricingEmptyStateProps = {
+  canManage?: boolean;
   onAdd: () => void;
 };
 
-export function PricingEmptyState({ onAdd }: PricingEmptyStateProps) {
+export function PricingEmptyState({ canManage = true, onAdd }: PricingEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -16,9 +17,11 @@ export function PricingEmptyState({ onAdd }: PricingEmptyStateProps) {
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         Add pricing rules to start managing rental rates, deposits, and seasonal plans.
       </p>
-      <button type="button" className={`${btnPrimary} mt-6`} onClick={onAdd}>
-        Add pricing rule
-      </button>
+      {canManage ? (
+        <button type="button" className={`${btnPrimary} mt-6`} onClick={onAdd}>
+          Add pricing rule
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -8,7 +8,10 @@ import { CustomerDetailDrawer } from "./CustomerDetailDrawer";
 import { CustomerMobileCard } from "./CustomerMobileCard";
 import { CustomerTableRow } from "./CustomerTableRow";
 import { CustomersEmptyState } from "./CustomersEmptyState";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { buildCustomerActionMenuItems } from "./buildCustomerActionMenuItems";
+
+const MANAGE_CUSTOMER_MENU_IDS = new Set(["edit", "archive"]);
 
 type CustomersTableProps = {
   customers: RentalCustomer[];
@@ -17,6 +20,7 @@ type CustomersTableProps = {
 
 export function CustomersTable({ customers, loading }: CustomersTableProps) {
   const navigate = useNavigate();
+  const canManage = useCanManageRentals();
   const queryClient = useQueryClient();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -55,7 +59,7 @@ export function CustomersTable({ customers, loading }: CustomersTableProps) {
 
   const menuItems = useMemo(() => {
     if (!openCustomer) return [];
-    return buildCustomerActionMenuItems({
+    const items = buildCustomerActionMenuItems({
       customer: openCustomer,
       onViewProfile: () => {
         closeMenu();
@@ -73,7 +77,8 @@ export function CustomersTable({ customers, loading }: CustomersTableProps) {
         void handleArchive(openCustomer);
       },
     });
-  }, [openCustomer, closeMenu, navigate, handleArchive]);
+    return canManage ? items : items.filter((item) => !MANAGE_CUSTOMER_MENU_IDS.has(item.id));
+  }, [openCustomer, closeMenu, navigate, handleArchive, canManage]);
 
   if (loading) {
     return (

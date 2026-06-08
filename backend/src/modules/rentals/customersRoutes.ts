@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const customersRoutes = Router();
 
-customersRoutes.get("/summary", async (req, res) => {
+customersRoutes.get("/summary", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -34,7 +35,7 @@ customersRoutes.get("/summary", async (req, res) => {
   }
 });
 
-customersRoutes.get("/", async (req, res) => {
+customersRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
@@ -104,7 +105,7 @@ customersRoutes.get("/", async (req, res) => {
   }
 });
 
-customersRoutes.get("/:id", async (req, res) => {
+customersRoutes.get("/:id", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -122,7 +123,7 @@ customersRoutes.get("/:id", async (req, res) => {
   }
 });
 
-customersRoutes.post("/", async (req, res) => {
+customersRoutes.post("/", requireRentalsManage, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const b = req.body as Record<string, unknown>;
@@ -155,7 +156,7 @@ customersRoutes.post("/", async (req, res) => {
   }
 });
 
-customersRoutes.put("/:id", async (req, res) => {
+customersRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -198,7 +199,7 @@ customersRoutes.put("/:id", async (req, res) => {
   }
 });
 
-customersRoutes.delete("/:id", async (req, res) => {
+customersRoutes.delete("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });

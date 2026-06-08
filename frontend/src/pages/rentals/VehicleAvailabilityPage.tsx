@@ -17,6 +17,7 @@ import {
   vehicleTypeOptions,
   type AvailabilityFilters,
 } from "../../components/rentals/availability/availabilityListUtils";
+import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -29,6 +30,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function VehicleAvailabilityPage() {
+  const canManage = useCanManageRentals();
   const initialRange = useMemo(() => defaultRange(30), []);
   const [from, setFrom] = useState(initialRange.from);
   const [to, setTo] = useState(initialRange.to);
@@ -101,6 +103,7 @@ export function VehicleAvailabilityPage() {
             if (v === "list") setFocusVehicleId(undefined);
           }}
           onBlockDates={() => openBlockModal()}
+          canManage={canManage}
         />
 
         <AvailabilityKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
@@ -128,6 +131,7 @@ export function VehicleAvailabilityPage() {
                 from={from}
                 to={to}
                 loading={availQuery.isLoading}
+                canManage={canManage}
                 onBlockDates={openBlockModal}
                 onViewCalendar={handleViewCalendar}
               />

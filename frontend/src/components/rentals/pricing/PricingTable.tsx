@@ -11,11 +11,12 @@ import { PricingTableRow } from "./PricingTableRow";
 type PricingTableProps = {
   rows: RentalPricing[];
   loading?: boolean;
+  canManage?: boolean;
   onAdd: () => void;
   onEdit: (row: RentalPricing) => void;
 };
 
-export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps) {
+export function PricingTable({ rows, loading, canManage = true, onAdd, onEdit }: PricingTableProps) {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -103,7 +104,7 @@ export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps
   if (rows.length === 0) {
     return (
       <div className="fm-rental-pricing__table-card">
-        <PricingEmptyState onAdd={onAdd} />
+        <PricingEmptyState canManage={canManage} onAdd={onAdd} />
       </div>
     );
   }
@@ -121,7 +122,7 @@ export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps
               <th className="px-4 py-3.5">Deposit</th>
               <th className="px-4 py-3.5">Availability</th>
               <th className="px-4 py-3.5">Pricing status</th>
-              <th className="px-4 py-3.5 text-right">Actions</th>
+              {canManage ? <th className="px-4 py-3.5 text-right">Actions</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -130,6 +131,7 @@ export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps
                 key={row.id}
                 row={row}
                 expanded={expandedId === row.id}
+                canManage={canManage}
                 onToggleExpand={() =>
                   setExpandedId((id) => (id === row.id ? null : row.id))
                 }
@@ -146,6 +148,7 @@ export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps
           <PricingMobileCard
             key={row.id}
             row={row}
+            canManage={canManage}
             onExpand={() => setExpandedId((id) => (id === row.id ? null : row.id))}
             onActionMenuToggle={handleActionMenuToggle}
             isMenuOpen={openMenuId === row.id}
@@ -153,13 +156,15 @@ export function PricingTable({ rows, loading, onAdd, onEdit }: PricingTableProps
         ))}
       </div>
 
-      <ActionMenuDropdown
-        open={!!openMenuId && !!menuAnchor}
-        anchorEl={menuAnchor}
-        items={menuItems}
-        align="right"
-        onClose={closeMenu}
-      />
+      {canManage ? (
+        <ActionMenuDropdown
+          open={!!openMenuId && !!menuAnchor}
+          anchorEl={menuAnchor}
+          items={menuItems}
+          align="right"
+          onClose={closeMenu}
+        />
+      ) : null}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 import { rentalDb } from "./rentalDb";
 import { checkVehicleAvailableForRental } from "./availabilityService";
 import {
@@ -15,6 +16,11 @@ import {
   parseFormMeta,
   quotePayload,
 } from "./bookingFormMeta";
+import {
+  assertRentalCustomerInOrg,
+  assertVehicleInOrg,
+  RentalOrgScopeError,
+} from "./rentalOrgGuards";
 import { resolvePricing } from "./pricingService";
 import type { RentalType } from "./rentalTypes";
 
@@ -23,7 +29,7 @@ const UUID_RE =
 
 export const bookingsRoutes = Router();
 
-bookingsRoutes.get("/", async (req, res) => {
+bookingsRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
@@ -101,7 +107,7 @@ bookingsRoutes.get("/", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/quote", async (req, res) => {
+bookingsRoutes.post("/quote", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const b = req.body as Record<string, unknown>;
@@ -126,7 +132,7 @@ bookingsRoutes.post("/quote", async (req, res) => {
   }
 });
 
-bookingsRoutes.get("/:id", async (req, res) => {
+bookingsRoutes.get("/:id", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -154,7 +160,7 @@ bookingsRoutes.get("/:id", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/", async (req, res) => {
+bookingsRoutes.post("/", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -168,6 +174,8 @@ bookingsRoutes.post("/", async (req, res) => {
     return res.status(400).json({ message: "customerId, vehicleId, startAt, endAt required" });
   }
   try {
+    await assertRentalCustomerInOrg(customerId, orgId, { requireActive: true });
+    await assertVehicleInOrg(vehicleId, orgId);
     const conflict = await checkVehicleAvailableForRental(rentalDb, orgId, vehicleId, startAt, endAt);
     if (conflict) return res.status(409).json({ message: conflict.message, code: conflict.code });
 
@@ -199,12 +207,15 @@ bookingsRoutes.post("/", async (req, res) => {
     );
     return res.status(201).json(rows[0]);
   } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     console.error("Create rental booking error", err);
     return res.status(500).json({ message: err instanceof Error ? err.message : "Internal server error" });
   }
 });
 
-bookingsRoutes.put("/:id", async (req, res) => {
+bookingsRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -244,6 +255,14 @@ bookingsRoutes.put("/:id", async (req, res) => {
     const finalStart = startAt ?? existing[0].start_at;
     const finalEnd = endAt ?? existing[0].end_at;
 
+    const customerId =
+      typeof b.customerId === "string" && UUID_RE.test(b.customerId)
+        ? b.customerId
+        : existing[0].customer_id;
+
+    await assertRentalCustomerInOrg(customerId, orgId);
+    await assertVehicleInOrg(vehicleId, orgId);
+
     const conflict = await checkVehicleAvailableForRental(
       rentalDb,
       orgId,
@@ -257,11 +276,6 @@ bookingsRoutes.put("/:id", async (req, res) => {
     const priced = await resolvePricing(rentalDb, orgId, vehicleId, rentalType, finalStart, finalEnd);
     const formMeta = parseFormMeta(b);
     const snapshot = mergeSnapshotWithFormMeta(priced.snapshot, formMeta);
-
-    const customerId =
-      typeof b.customerId === "string" && UUID_RE.test(b.customerId)
-        ? b.customerId
-        : existing[0].customer_id;
 
     const { rows } = await query(
       `UPDATE rental_bookings SET
@@ -294,12 +308,15 @@ bookingsRoutes.put("/:id", async (req, res) => {
     if (!rows[0]) return res.status(404).json({ message: "Booking not found or not editable" });
     return res.json(rows[0]);
   } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     console.error("Update rental booking error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
 
-bookingsRoutes.post("/:id/confirm", async (req, res) => {
+bookingsRoutes.post("/:id/confirm", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -313,7 +330,7 @@ bookingsRoutes.post("/:id/confirm", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/cancel", async (req, res) => {
+bookingsRoutes.post("/:id/cancel", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -327,7 +344,7 @@ bookingsRoutes.post("/:id/cancel", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/pickup", async (req, res) => {
+bookingsRoutes.post("/:id/pickup", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -343,7 +360,7 @@ bookingsRoutes.post("/:id/pickup", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/return", async (req, res) => {
+bookingsRoutes.post("/:id/return", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;

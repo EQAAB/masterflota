@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import { btnPrimary } from "../../../theme/classNames";
 
-export function AvailabilityEmptyState() {
+type AvailabilityEmptyStateProps = {
+  canManage?: boolean;
+};
+
+export function AvailabilityEmptyState({ canManage = true }: AvailabilityEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-border/80 bg-white px-6 py-16 text-center shadow-card">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -17,9 +21,11 @@ export function AvailabilityEmptyState() {
         <Link to="/vehicles" className={btnPrimary}>
           Manage fleet
         </Link>
-        <Link to="/rentals/bookings/new" className="text-sm font-medium text-brand hover:underline">
-          New booking
-        </Link>
+        {canManage ? (
+          <Link to="/rentals/bookings/new" className="text-sm font-medium text-brand hover:underline">
+            New booking
+          </Link>
+        ) : null}
       </div>
     </div>
   );

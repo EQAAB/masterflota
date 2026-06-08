@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type PricingPageHeaderProps = {
+  canManage?: boolean;
   onAdd: () => void;
   onExport: () => void;
 };
 
-export function PricingPageHeader({ onAdd, onExport }: PricingPageHeaderProps) {
+export function PricingPageHeader({ canManage = true, onAdd, onExport }: PricingPageHeaderProps) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -25,9 +26,11 @@ export function PricingPageHeader({ onAdd, onExport }: PricingPageHeaderProps) {
         <button type="button" className={btnSecondary} onClick={onExport}>
           Export
         </button>
-        <button type="button" className={`${btnPrimary} fm-rental-pricing__header-cta`} onClick={onAdd}>
-          Add pricing rule
-        </button>
+        {canManage && (
+          <button type="button" className={`${btnPrimary} fm-rental-pricing__header-cta`} onClick={onAdd}>
+            Add pricing rule
+          </button>
+        )}
       </div>
     </header>
   );

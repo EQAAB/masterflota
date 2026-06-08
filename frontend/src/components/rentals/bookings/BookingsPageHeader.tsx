@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 export function BookingsPageHeader() {
+  const canManage = useCanManageRentals();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -16,9 +18,11 @@ export function BookingsPageHeader() {
           Manage rental contracts and pickup/return workflow.
         </p>
       </div>
-      <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
-        New booking
-      </Link>
+      {canManage && (
+        <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
+          New booking
+        </Link>
+      )}
     </header>
   );
 }

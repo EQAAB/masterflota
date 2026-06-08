@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary } from "../../../theme/classNames";
 
 export function CustomersEmptyState() {
+  const canManage = useCanManageRentals();
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -18,9 +20,11 @@ export function CustomersEmptyState() {
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         Add companies or individuals who rent from your fleet. Their bookings and revenue will show up here.
       </p>
-      <Link to="/rentals/customers/new" className={`${btnPrimary} mt-6`}>
-        Add customer
-      </Link>
+      {canManage && (
+        <Link to="/rentals/customers/new" className={`${btnPrimary} mt-6`}>
+          Add customer
+        </Link>
+      )}
     </div>
   );
 }

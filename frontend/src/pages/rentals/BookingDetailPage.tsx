@@ -12,6 +12,7 @@ import {
   type RentalPayment,
 } from "../../api/rentals";
 import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
+import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { bookingStatusClass, formatBookingStatus } from "../../components/rentals/rentalStatus";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
@@ -26,6 +27,7 @@ export function BookingDetailPage() {
   const [payAmount, setPayAmount] = useState("");
   const [payType, setPayType] = useState<RentalPayment["payment_type"]>("rent");
   const [contractLoading, setContractLoading] = useState(false);
+  const canManage = useCanManageRentals();
 
   const bookingQuery = useQuery({
     queryKey: ["rentals", "booking", id],
@@ -118,7 +120,7 @@ export function BookingDetailPage() {
             </div>
           </dl>
           <div className="mt-4 flex flex-wrap gap-2">
-            {b.status === "draft" && (
+            {canManage && b.status === "draft" && (
               <>
                 <button type="button" className={btnPrimary} disabled={confirmMut.isPending} onClick={() => confirmMut.mutate()}>
                   Confirm
@@ -128,7 +130,7 @@ export function BookingDetailPage() {
                 </Link>
               </>
             )}
-            {b.status === "confirmed" && (
+            {canManage && b.status === "confirmed" && (
               <div className="flex flex-wrap items-end gap-2">
                 <label className="text-xs text-slate-500">
                   Mileage out
@@ -144,7 +146,7 @@ export function BookingDetailPage() {
                 </button>
               </div>
             )}
-            {b.status === "active" && (
+            {canManage && b.status === "active" && (
               <div className="w-full space-y-2">
                 <label className="block text-xs text-slate-500">
                   Mileage in
@@ -166,7 +168,7 @@ export function BookingDetailPage() {
                 </button>
               </div>
             )}
-            {(b.status === "draft" || b.status === "confirmed") && (
+            {canManage && (b.status === "draft" || b.status === "confirmed") && (
               <button type="button" className={btnSecondary} disabled={cancelMut.isPending} onClick={() => cancelMut.mutate()}>
                 Cancel booking
               </button>
@@ -187,34 +189,36 @@ export function BookingDetailPage() {
             ))}
             {(b.payments ?? []).length === 0 && <li className="text-slate-500">No payments recorded.</li>}
           </ul>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <select
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              value={payType}
-              onChange={(e) => setPayType(e.target.value)}
-            >
-              <option value="rent">Rent</option>
-              <option value="deposit">Deposit</option>
-              <option value="deposit_refund">Deposit refund</option>
-              <option value="extra">Extra</option>
-              <option value="damage">Damage</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Amount"
-              className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
-            />
-            <button
-              type="button"
-              className={btnPrimary}
-              disabled={payMut.isPending || !payAmount}
-              onClick={() => payMut.mutate()}
-            >
-              Record payment
-            </button>
-          </div>
+          {canManage && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <select
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                value={payType}
+                onChange={(e) => setPayType(e.target.value)}
+              >
+                <option value="rent">Rent</option>
+                <option value="deposit">Deposit</option>
+                <option value="deposit_refund">Deposit refund</option>
+                <option value="extra">Extra</option>
+                <option value="damage">Damage</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Amount"
+                className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+              <button
+                type="button"
+                className={btnPrimary}
+                disabled={payMut.isPending || !payAmount}
+                onClick={() => payMut.mutate()}
+              >
+                Record payment
+              </button>
+            </div>
+          )}
           <button
             type="button"
             className={`${btnSecondary} mt-4 inline-flex`}
