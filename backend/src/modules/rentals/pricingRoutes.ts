@@ -191,7 +191,7 @@ pricingRoutes.post("/", requireRentalsManage, async (req, res) => {
 
 pricingRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   const b = req.body as Record<string, unknown>;

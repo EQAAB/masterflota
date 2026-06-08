@@ -134,7 +134,7 @@ bookingsRoutes.post("/quote", requireRentalsView, async (req, res) => {
 
 bookingsRoutes.get("/:id", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   try {
@@ -217,7 +217,7 @@ bookingsRoutes.post("/", requireRentalsManage, async (req, res) => {
 
 bookingsRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   const b = req.body as Record<string, unknown>;
@@ -319,7 +319,7 @@ bookingsRoutes.put("/:id", requireRentalsManage, async (req, res) => {
 bookingsRoutes.post("/:id/confirm", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {
     const row = await confirmBooking(rentalDb, orgId, id, userId);
@@ -333,7 +333,7 @@ bookingsRoutes.post("/:id/confirm", requireRentalsManage, async (req, res) => {
 bookingsRoutes.post("/:id/cancel", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   const reason = typeof (req.body as { reason?: string })?.reason === "string" ? (req.body as { reason: string }).reason : undefined;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {
@@ -347,7 +347,7 @@ bookingsRoutes.post("/:id/cancel", requireRentalsManage, async (req, res) => {
 bookingsRoutes.post("/:id/pickup", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   const mileageOut = typeof (req.body as { mileageOut?: number })?.mileageOut === "number"
     ? (req.body as { mileageOut: number }).mileageOut
     : undefined;
@@ -363,7 +363,7 @@ bookingsRoutes.post("/:id/pickup", requireRentalsManage, async (req, res) => {
 bookingsRoutes.post("/:id/return", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   const body = req.body as { mileageIn?: number; damageNotes?: string; damageReported?: boolean };
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {

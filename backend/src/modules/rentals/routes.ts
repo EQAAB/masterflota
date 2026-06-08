@@ -191,7 +191,7 @@ router.get("/dashboard", requireRentalsView, async (req, res) => {
 
 router.get("/bookings/:id/contract", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {
     const text = await buildContractText(rentalDb, orgId, id);

@@ -166,7 +166,7 @@ paymentsRoutes.get("/", requireRentalsView, async (req, res) => {
 
 paymentsRoutes.get("/booking/:bookingId", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { bookingId } = req.params;
+  const bookingId = String(req.params.bookingId ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   try {
     const { rows } = await query(
@@ -182,7 +182,7 @@ paymentsRoutes.get("/booking/:bookingId", requireRentalsView, async (req, res) =
 
 paymentsRoutes.post("/booking/:bookingId", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { bookingId } = req.params;
+  const bookingId = String(req.params.bookingId ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(bookingId)) return res.status(400).json({ message: "Invalid booking id" });
   const b = req.body as Record<string, unknown>;
@@ -232,7 +232,7 @@ paymentsRoutes.post("/booking/:bookingId", requireRentalsManage, async (req, res
 
 paymentsRoutes.patch("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   const b = req.body as Record<string, unknown>;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
