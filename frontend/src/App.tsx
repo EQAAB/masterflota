@@ -7,6 +7,7 @@ import {
   FleetRouteGuard,
   PlatformRouteGuard,
 } from "./components/layout/PlatformRouteGuard";
+import { RentalsManageRouteGuard } from "./components/layout/RentalsManageRouteGuard";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { DriversListPage } from "./pages/drivers/DriversListPage";
 import { AddDriverPage } from "./pages/drivers/AddDriverPage";
@@ -245,7 +246,9 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/bookings/new",
       element: (
         <ProtectedFleetRoute>
-          <BookingFormPage />
+          <RentalsManageRouteGuard>
+            <BookingFormPage />
+          </RentalsManageRouteGuard>
         </ProtectedFleetRoute>
       ),
     },
@@ -253,7 +256,9 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/bookings/:id/edit",
       element: (
         <ProtectedFleetRoute>
-          <BookingFormPage />
+          <RentalsManageRouteGuard>
+            <BookingFormPage />
+          </RentalsManageRouteGuard>
         </ProtectedFleetRoute>
       ),
     },
@@ -285,7 +290,9 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/customers/new",
       element: (
         <ProtectedFleetRoute>
-          <CustomerFormPage />
+          <RentalsManageRouteGuard>
+            <CustomerFormPage />
+          </RentalsManageRouteGuard>
         </ProtectedFleetRoute>
       ),
     },
@@ -293,7 +300,9 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/customers/:id/edit",
       element: (
         <ProtectedFleetRoute>
-          <CustomerFormPage />
+          <RentalsManageRouteGuard>
+            <CustomerFormPage />
+          </RentalsManageRouteGuard>
         </ProtectedFleetRoute>
       ),
     },

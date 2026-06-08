@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,7 +27,7 @@ const PAYMENT_LIST_SELECT = `
 
 export const paymentsRoutes = Router();
 
-paymentsRoutes.get("/summary", async (req, res) => {
+paymentsRoutes.get("/summary", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -65,7 +66,7 @@ paymentsRoutes.get("/summary", async (req, res) => {
   }
 });
 
-paymentsRoutes.get("/activity", async (req, res) => {
+paymentsRoutes.get("/activity", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -105,7 +106,7 @@ paymentsRoutes.get("/activity", async (req, res) => {
   }
 });
 
-paymentsRoutes.get("/", async (req, res) => {
+paymentsRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
@@ -163,7 +164,7 @@ paymentsRoutes.get("/", async (req, res) => {
   }
 });
 
-paymentsRoutes.get("/booking/:bookingId", async (req, res) => {
+paymentsRoutes.get("/booking/:bookingId", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { bookingId } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -179,7 +180,7 @@ paymentsRoutes.get("/booking/:bookingId", async (req, res) => {
   }
 });
 
-paymentsRoutes.post("/booking/:bookingId", async (req, res) => {
+paymentsRoutes.post("/booking/:bookingId", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { bookingId } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -229,7 +230,7 @@ paymentsRoutes.post("/booking/:bookingId", async (req, res) => {
   }
 });
 
-paymentsRoutes.patch("/:id", async (req, res) => {
+paymentsRoutes.patch("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   const b = req.body as Record<string, unknown>;

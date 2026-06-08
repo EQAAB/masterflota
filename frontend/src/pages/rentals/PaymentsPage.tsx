@@ -18,6 +18,7 @@ import {
   filterAndSortPayments,
   type PaymentsFilters,
 } from "../../components/rentals/payments/paymentsListUtils";
+import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -30,6 +31,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function PaymentsPage() {
+  const canManage = useCanManageRentals();
   const [filters, setFilters] = useState<PaymentsFilters>({
     q: "",
     status: "",
@@ -103,7 +105,7 @@ export function PaymentsPage() {
   return (
     <div className="fm-rental-payments flex min-h-full flex-1 flex-col bg-surface-elevated">
       <div className={dashboardPage}>
-        <PaymentsPageHeader onRecord={openRecord} onExport={() => exportPaymentsCsv(filtered)} />
+        <PaymentsPageHeader canManage={canManage} onRecord={openRecord} onExport={() => exportPaymentsCsv(filtered)} />
 
         <PaymentsKpiRow summary={summaryQuery.data} loading={summaryQuery.isLoading} />
 
@@ -125,6 +127,7 @@ export function PaymentsPage() {
         <PaymentsTable
           rows={filtered}
           loading={paymentsQuery.isLoading}
+          canManage={canManage}
           onRecord={openRecord}
           onEdit={openEdit}
         />

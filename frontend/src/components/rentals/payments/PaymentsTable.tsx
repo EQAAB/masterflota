@@ -11,11 +11,14 @@ import { PaymentsEmptyState } from "./PaymentsEmptyState";
 type PaymentsTableProps = {
   rows: RentalPaymentListItem[];
   loading?: boolean;
+  canManage?: boolean;
   onRecord: () => void;
   onEdit: (row: RentalPaymentListItem) => void;
 };
 
-export function PaymentsTable({ rows, loading, onRecord, onEdit }: PaymentsTableProps) {
+const MANAGE_PAYMENT_MENU_IDS = new Set(["edit", "paid", "refund"]);
+
+export function PaymentsTable({ rows, loading, canManage = true, onRecord, onEdit }: PaymentsTableProps) {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -65,7 +68,7 @@ export function PaymentsTable({ rows, loading, onRecord, onEdit }: PaymentsTable
 
   const menuItems = useMemo(() => {
     if (!openRow) return [];
-    return buildPaymentActionMenuItems({
+    const items = buildPaymentActionMenuItems({
       row: openRow,
       onViewInvoice: () => {
         closeMenu();
@@ -82,7 +85,8 @@ export function PaymentsTable({ rows, loading, onRecord, onEdit }: PaymentsTable
         onEdit(openRow);
       },
     });
-  }, [openRow, closeMenu, onEdit, handleMarkPaid, handleRefund]);
+    return canManage ? items : items.filter((item) => !MANAGE_PAYMENT_MENU_IDS.has(item.id));
+  }, [openRow, closeMenu, onEdit, handleMarkPaid, handleRefund, canManage]);
 
   if (loading) {
     return (
@@ -97,7 +101,7 @@ export function PaymentsTable({ rows, loading, onRecord, onEdit }: PaymentsTable
   if (rows.length === 0) {
     return (
       <div className="fm-rental-payments__table-card">
-        <PaymentsEmptyState onRecord={onRecord} />
+        <PaymentsEmptyState canManage={canManage} onRecord={onRecord} />
       </div>
     );
   }

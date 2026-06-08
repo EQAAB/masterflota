@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { authenticateJWT } from "../../middleware/auth";
+import { requireRentalsView } from "./rentalAuth";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { rentalDb } from "./rentalDb";
@@ -15,7 +16,6 @@ const router = Router();
 
 router.use(authenticateJWT);
 router.use(attachOrgContext);
-router.use(requirePermission("rentals.view", "rentals.manage"));
 
 router.use("/customers", customersRoutes);
 router.use("/bookings", bookingsRoutes);
@@ -24,7 +24,7 @@ router.use("/pricing", pricingRoutes);
 router.use("/payments", paymentsRoutes);
 router.use("/reports", reportsRoutes);
 
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -189,7 +189,7 @@ router.get("/dashboard", async (req, res) => {
   }
 });
 
-router.get("/bookings/:id/contract", async (req, res) => {
+router.get("/bookings/:id/contract", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });

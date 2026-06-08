@@ -23,6 +23,7 @@ type AvailabilityVehicleCardProps = {
   blocks: RentalAvailabilityBlock[];
   from: string;
   to: string;
+  canManage?: boolean;
   onBlockDates: (vehicleId: string) => void;
   onViewCalendar: (vehicleId: string) => void;
 };
@@ -33,6 +34,7 @@ export function AvailabilityVehicleCard({
   blocks,
   from,
   to,
+  canManage = true,
   onBlockDates,
   onViewCalendar,
 }: AvailabilityVehicleCardProps) {
@@ -89,19 +91,23 @@ export function AvailabilityVehicleCard({
             >
               Calendar
             </button>
-            <Link
-              to={`/rentals/bookings/new?vehicleId=${vehicle.id}`}
-              className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-brand-mint/30"
-            >
-              Book
-            </Link>
-            <button
-              type="button"
-              className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"
-              onClick={() => onBlockDates(vehicle.id)}
-            >
-              Block
-            </button>
+            {canManage ? (
+              <>
+                <Link
+                  to={`/rentals/bookings/new?vehicleId=${vehicle.id}`}
+                  className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-brand-mint/30"
+                >
+                  Book
+                </Link>
+                <button
+                  type="button"
+                  className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"
+                  onClick={() => onBlockDates(vehicle.id)}
+                >
+                  Block
+                </button>
+              </>
+            ) : null}
             <Link
               to={`/vehicles/${vehicle.id}`}
               className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"

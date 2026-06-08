@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -18,7 +19,7 @@ function eachDateInclusive(from: string, to: string): string[] {
 
 export const availabilityRoutes = Router();
 
-availabilityRoutes.get("/summary", async (req, res) => {
+availabilityRoutes.get("/summary", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
@@ -47,7 +48,7 @@ availabilityRoutes.get("/summary", async (req, res) => {
   }
 });
 
-availabilityRoutes.post("/blocks", async (req, res) => {
+availabilityRoutes.post("/blocks", requireRentalsManage, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const b = req.body as Record<string, unknown>;
@@ -95,7 +96,7 @@ availabilityRoutes.post("/blocks", async (req, res) => {
   }
 });
 
-availabilityRoutes.delete("/blocks", async (req, res) => {
+availabilityRoutes.delete("/blocks", requireRentalsManage, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const vehicleId = typeof req.query.vehicleId === "string" ? req.query.vehicleId : "";
@@ -120,7 +121,7 @@ availabilityRoutes.delete("/blocks", async (req, res) => {
   }
 });
 
-availabilityRoutes.get("/", async (req, res) => {
+availabilityRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;

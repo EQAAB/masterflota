@@ -1,10 +1,11 @@
 import { btnPrimary } from "../../../theme/classNames";
 
 type PaymentsEmptyStateProps = {
+  canManage?: boolean;
   onRecord: () => void;
 };
 
-export function PaymentsEmptyState({ onRecord }: PaymentsEmptyStateProps) {
+export function PaymentsEmptyState({ canManage = true, onRecord }: PaymentsEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
@@ -16,9 +17,11 @@ export function PaymentsEmptyState({ onRecord }: PaymentsEmptyStateProps) {
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         Payments from rental bookings will appear here.
       </p>
-      <button type="button" className={`${btnPrimary} mt-6`} onClick={onRecord}>
-        Record payment
-      </button>
+      {canManage ? (
+        <button type="button" className={`${btnPrimary} mt-6`} onClick={onRecord}>
+          Record payment
+        </button>
+      ) : null}
     </div>
   );
 }

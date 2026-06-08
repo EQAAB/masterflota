@@ -6,7 +6,10 @@ import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { BookingTableRow } from "./BookingTableRow";
 import { BookingsEmptyState } from "./BookingsEmptyState";
 import { buildBookingActionMenuItems } from "./buildBookingActionMenuItems";
+import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import type { BookingsDensity } from "./bookingsListUtils";
+
+const MANAGE_BOOKING_MENU_IDS = new Set(["edit", "complete", "cancel"]);
 
 type BookingsTableProps = {
   bookings: RentalBooking[];
@@ -16,6 +19,7 @@ type BookingsTableProps = {
 
 export function BookingsTable({ bookings, loading, density }: BookingsTableProps) {
   const navigate = useNavigate();
+  const canManage = useCanManageRentals();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -40,7 +44,7 @@ export function BookingsTable({ bookings, loading, density }: BookingsTableProps
 
   const menuItems = useMemo(() => {
     if (!openBooking) return [];
-    return buildBookingActionMenuItems({
+    const items = buildBookingActionMenuItems({
       booking: openBooking,
       onView: () => {
         closeMenu();
@@ -63,7 +67,8 @@ export function BookingsTable({ bookings, loading, density }: BookingsTableProps
         navigate(`/rentals/bookings/${openBooking.id}`);
       },
     });
-  }, [openBooking, closeMenu, navigate]);
+    return canManage ? items : items.filter((item) => !MANAGE_BOOKING_MENU_IDS.has(item.id));
+  }, [openBooking, closeMenu, navigate, canManage]);
 
   if (loading) {
     return (

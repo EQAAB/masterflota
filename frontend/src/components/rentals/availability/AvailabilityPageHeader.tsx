@@ -11,6 +11,7 @@ type AvailabilityPageHeaderProps = {
   view: AvailabilityViewMode;
   onViewChange: (v: AvailabilityViewMode) => void;
   onBlockDates: () => void;
+  canManage?: boolean;
 };
 
 export function AvailabilityPageHeader({
@@ -21,6 +22,7 @@ export function AvailabilityPageHeader({
   view,
   onViewChange,
   onBlockDates,
+  canManage = true,
 }: AvailabilityPageHeaderProps) {
   return (
     <header className="mb-6 space-y-4">
@@ -69,12 +71,16 @@ export function AvailabilityPageHeader({
               Calendar
             </button>
           </div>
-          <button type="button" className={btnSecondary} onClick={onBlockDates}>
-            Block dates
-          </button>
-          <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-availability__header-cta`}>
-            Add booking
-          </Link>
+          {canManage ? (
+            <>
+              <button type="button" className={btnSecondary} onClick={onBlockDates}>
+                Block dates
+              </button>
+              <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-availability__header-cta`}>
+                Add booking
+              </Link>
+            </>
+          ) : null}
         </div>
       </div>
     </header>

@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsView } from "./rentalAuth";
 
 export const reportsRoutes = Router();
 
-reportsRoutes.get("/revenue", async (req, res) => {
+reportsRoutes.get("/revenue", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const from = typeof req.query.from === "string" ? req.query.from : undefined;
@@ -46,7 +47,7 @@ reportsRoutes.get("/revenue", async (req, res) => {
   }
 });
 
-reportsRoutes.get("/overdue", async (req, res) => {
+reportsRoutes.get("/overdue", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {

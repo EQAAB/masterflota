@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 import { rentalDb } from "./rentalDb";
 import { checkVehicleAvailableForRental } from "./availabilityService";
 import {
@@ -23,7 +24,7 @@ const UUID_RE =
 
 export const bookingsRoutes = Router();
 
-bookingsRoutes.get("/", async (req, res) => {
+bookingsRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const status = typeof req.query.status === "string" ? req.query.status : undefined;
@@ -101,7 +102,7 @@ bookingsRoutes.get("/", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/quote", async (req, res) => {
+bookingsRoutes.post("/quote", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const b = req.body as Record<string, unknown>;
@@ -126,7 +127,7 @@ bookingsRoutes.post("/quote", async (req, res) => {
   }
 });
 
-bookingsRoutes.get("/:id", async (req, res) => {
+bookingsRoutes.get("/:id", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -154,7 +155,7 @@ bookingsRoutes.get("/:id", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/", async (req, res) => {
+bookingsRoutes.post("/", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -204,7 +205,7 @@ bookingsRoutes.post("/", async (req, res) => {
   }
 });
 
-bookingsRoutes.put("/:id", async (req, res) => {
+bookingsRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
@@ -299,7 +300,7 @@ bookingsRoutes.put("/:id", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/confirm", async (req, res) => {
+bookingsRoutes.post("/:id/confirm", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -313,7 +314,7 @@ bookingsRoutes.post("/:id/confirm", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/cancel", async (req, res) => {
+bookingsRoutes.post("/:id/cancel", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -327,7 +328,7 @@ bookingsRoutes.post("/:id/cancel", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/pickup", async (req, res) => {
+bookingsRoutes.post("/:id/pickup", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;
@@ -343,7 +344,7 @@ bookingsRoutes.post("/:id/pickup", async (req, res) => {
   }
 });
 
-bookingsRoutes.post("/:id/return", async (req, res) => {
+bookingsRoutes.post("/:id/return", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = req.user?.sub;
   const { id } = req.params;

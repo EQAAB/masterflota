@@ -18,6 +18,7 @@ import {
 type PricingTableRowProps = {
   row: RentalPricing;
   expanded: boolean;
+  canManage?: boolean;
   onToggleExpand: () => void;
   onActionMenuToggle: (id: string, el: HTMLElement) => void;
   isMenuOpen: boolean;
@@ -26,6 +27,7 @@ type PricingTableRowProps = {
 export function PricingTableRow({
   row,
   expanded,
+  canManage = true,
   onToggleExpand,
   onActionMenuToggle,
   isMenuOpen,
@@ -94,25 +96,27 @@ export function PricingTableRow({
         <td>
           <span className={pricingStatusClass(status)}>{pricingStatusLabel(status)}</span>
         </td>
-        <td className="text-right" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-            aria-label="Actions"
-            aria-expanded={isMenuOpen}
-            onClick={(e) => onActionMenuToggle(row.id, e.currentTarget)}
-          >
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <circle cx="12" cy="5" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="12" cy="19" r="1.5" />
-            </svg>
-          </button>
-        </td>
+        {canManage ? (
+          <td className="text-right" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+              aria-label="Actions"
+              aria-expanded={isMenuOpen}
+              onClick={(e) => onActionMenuToggle(row.id, e.currentTarget)}
+            >
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <circle cx="12" cy="5" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="19" r="1.5" />
+              </svg>
+            </button>
+          </td>
+        ) : null}
       </tr>
       {expanded ? (
         <tr>
-          <td colSpan={8} className="!p-0">
+          <td colSpan={canManage ? 8 : 7} className="!p-0">
             <PricingExpandPanel row={row} />
           </td>
         </tr>

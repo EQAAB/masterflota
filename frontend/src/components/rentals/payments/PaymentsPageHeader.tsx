@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type PaymentsPageHeaderProps = {
+  canManage?: boolean;
   onRecord: () => void;
   onExport: () => void;
 };
 
-export function PaymentsPageHeader({ onRecord, onExport }: PaymentsPageHeaderProps) {
+export function PaymentsPageHeader({ canManage = true, onRecord, onExport }: PaymentsPageHeaderProps) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -25,9 +26,11 @@ export function PaymentsPageHeader({ onRecord, onExport }: PaymentsPageHeaderPro
         <button type="button" className={btnSecondary} onClick={onExport}>
           Export
         </button>
-        <button type="button" className={`${btnPrimary} fm-rental-payments__header-cta`} onClick={onRecord}>
-          Record payment
-        </button>
+        {canManage && (
+          <button type="button" className={`${btnPrimary} fm-rental-payments__header-cta`} onClick={onRecord}>
+            Record payment
+          </button>
+        )}
       </div>
     </header>
   );

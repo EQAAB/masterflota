@@ -13,6 +13,7 @@ type AvailabilityVehicleListProps = {
   from: string;
   to: string;
   loading?: boolean;
+  canManage?: boolean;
   onBlockDates: (vehicleId: string) => void;
   onViewCalendar: (vehicleId: string) => void;
 };
@@ -24,6 +25,7 @@ export function AvailabilityVehicleList({
   from,
   to,
   loading,
+  canManage = true,
   onBlockDates,
   onViewCalendar,
 }: AvailabilityVehicleListProps) {
@@ -38,7 +40,7 @@ export function AvailabilityVehicleList({
   }
 
   if (vehicles.length === 0) {
-    return <AvailabilityEmptyState />;
+    return <AvailabilityEmptyState canManage={canManage} />;
   }
 
   return (
@@ -51,6 +53,7 @@ export function AvailabilityVehicleList({
           blocks={blocks}
           from={from}
           to={to}
+          canManage={canManage}
           onBlockDates={onBlockDates}
           onViewCalendar={onViewCalendar}
         />
