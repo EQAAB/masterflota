@@ -107,7 +107,7 @@ customersRoutes.get("/", requireRentalsView, async (req, res) => {
 
 customersRoutes.get("/:id", requireRentalsView, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   try {
@@ -158,7 +158,7 @@ customersRoutes.post("/", requireRentalsManage, async (req, res) => {
 
 customersRoutes.put("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   const b = req.body as Record<string, unknown>;
@@ -201,7 +201,7 @@ customersRoutes.put("/:id", requireRentalsManage, async (req, res) => {
 
 customersRoutes.delete("/:id", requireRentalsManage, async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
   if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
   try {
