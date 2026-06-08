@@ -12,7 +12,7 @@ const router = Router();
 router.use(authenticateJWT);
 router.use(attachOrgContext);
 
-router.get("/:id/documents", async (req, res) => {
+router.get("/:id/documents", requirePermission("drivers.view"), async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
@@ -208,7 +208,7 @@ router.put("/:id/documents/:docId/verify", requirePermission("drivers.edit"), as
   }
 });
 
-router.get("/:id/documents/:docId/download", async (req, res) => {
+router.get("/:id/documents/:docId/download", requirePermission("drivers.view"), async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id: driverId, docId } = req.params;
 

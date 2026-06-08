@@ -12,7 +12,7 @@ router.use(authenticateJWT);
 router.use(attachOrgContext);
 
 // List all documents for a vehicle
-router.get("/:id/documents", async (req, res) => {
+router.get("/:id/documents", requirePermission("vehicles.view"), async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
 
@@ -204,7 +204,7 @@ router.put(
 );
 
 // Download a vehicle document file
-router.get("/:id/documents/:docId/download", async (req, res) => {
+router.get("/:id/documents/:docId/download", requirePermission("vehicles.view"), async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id: vehicleId, docId } = req.params;
 

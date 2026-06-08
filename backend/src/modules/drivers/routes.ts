@@ -14,6 +14,7 @@ import {
 import { recomputeDriverOpenPayoutsAfterRecurringChange } from "../earnings/driverPayoutCustomFees";
 import { logDriverActivity } from "./activity";
 import { driverProfilePhotoUpload } from "../../config/multer";
+import { resolveDriverPhotoAbsolutePath, photoContentType } from "../../lib/driverPhotoFile";
 import { handleDriverVehicleHistory } from "../vehicles/vehicleAssignmentHistoryHandlers";
 import {
   runAssignVehicleTransaction,
@@ -322,6 +323,40 @@ router.patch(
     }
   },
 );
+
+router.get("/:id/photo", async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const { id } = req.params;
+
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  try {
+    const { rows } = await query<{ profile_photo_url: string | null }>(
+      `SELECT profile_photo_url FROM drivers
+       WHERE id = $1 AND organization_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
+       LIMIT 1`,
+      [id, orgId],
+    );
+    const driver = rows[0];
+    if (!driver?.profile_photo_url) {
+      return res.status(404).json({ message: "Profile photo not found" });
+    }
+
+    const absolutePath = resolveDriverPhotoAbsolutePath(driver.profile_photo_url);
+    if (!absolutePath) {
+      return res.status(404).json({ message: "Profile photo not found" });
+    }
+
+    res.setHeader("Content-Type", photoContentType(absolutePath));
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    return res.sendFile(absolutePath);
+  } catch (err) {
+    console.error("Get driver photo error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 router.get("/:id", async (req, res) => {
   const orgId = req.effectiveOrgId;

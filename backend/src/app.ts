@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
 import { env } from "./config/env";
 import { authRoutes } from "./modules/auth/routes";
 import { driverRoutes } from "./modules/drivers/routes";
@@ -32,13 +31,6 @@ app.use((_req, res, next) => {
   res.setHeader("X-App-Version", env.appVersion);
   next();
 });
-
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"), {
-    maxAge: "1d",
-  }),
-);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/drivers", driverRoutes);
