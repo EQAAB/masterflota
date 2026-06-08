@@ -2,6 +2,7 @@ import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
 import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
+import { assertVehicleInOrg, RentalOrgScopeError } from "./rentalOrgGuards";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -153,7 +154,11 @@ pricingRoutes.post("/", requireRentalsManage, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const b = req.body as Record<string, unknown>;
+  const vehicleId = typeof b.vehicleId === "string" ? b.vehicleId : "";
   try {
+    if (vehicleId && UUID_RE.test(vehicleId)) {
+      await assertVehicleInOrg(vehicleId, orgId);
+    }
     const { rows } = await query(
       `INSERT INTO rental_pricing (
          organization_id, vehicle_id, vehicle_type,
@@ -176,6 +181,9 @@ pricingRoutes.post("/", requireRentalsManage, async (req, res) => {
     );
     return res.status(201).json(rows[0]);
   } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     console.error("Create rental pricing error", err);
     return res.status(500).json({ message: "Internal server error" });
   }

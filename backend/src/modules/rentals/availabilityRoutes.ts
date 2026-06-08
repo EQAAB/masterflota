@@ -2,6 +2,7 @@ import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
 import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
+import { assertVehicleInOrg, RentalOrgScopeError } from "./rentalOrgGuards";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -60,6 +61,7 @@ availabilityRoutes.post("/blocks", requireRentalsManage, async (req, res) => {
   if (!from || !to || from > to) return res.status(400).json({ message: "from and to required (YYYY-MM-DD)" });
 
   try {
+    await assertVehicleInOrg(vehicleId, orgId);
     const startAt = new Date(`${from}T00:00:00.000Z`);
     const endAt = new Date(`${to}T23:59:59.999Z`);
     const { rows: overlaps } = await query<{ booking_number: string }>(
@@ -91,6 +93,9 @@ availabilityRoutes.post("/blocks", requireRentalsManage, async (req, res) => {
     }
     return res.status(201).json({ vehicleId, from, to, daysBlocked: dates.length });
   } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     console.error("Create availability block error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
@@ -106,6 +111,7 @@ availabilityRoutes.delete("/blocks", requireRentalsManage, async (req, res) => {
   if (!from || !to) return res.status(400).json({ message: "from and to required (YYYY-MM-DD)" });
 
   try {
+    await assertVehicleInOrg(vehicleId, orgId);
     await query(
       `UPDATE vehicle_availability
        SET is_available = true, notes = NULL, updated_at = NOW()
@@ -116,6 +122,9 @@ availabilityRoutes.delete("/blocks", requireRentalsManage, async (req, res) => {
     );
     return res.status(204).send();
   } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     console.error("Clear availability blocks error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
