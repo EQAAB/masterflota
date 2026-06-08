@@ -1,6 +1,8 @@
-import { getDriverPhotoUrl } from "../../utils/photo";
+import { getDriverPhotoApiPath } from "../../utils/photo";
+import { useAuthenticatedImageUrl } from "../../hooks/useAuthenticatedImageUrl";
 
 interface DriverAvatarProps {
+  driverId: string;
   profilePhotoUrl?: string | null;
   firstName: string;
   lastName: string;
@@ -22,16 +24,21 @@ function getInitials(firstName: string, lastName: string): string {
 }
 
 export function DriverAvatar({
+  driverId,
   profilePhotoUrl,
   firstName,
   lastName,
   size = "md",
   className = "",
 }: DriverAvatarProps) {
-  const photoUrl = getDriverPhotoUrl(profilePhotoUrl);
+  const hasPhoto = Boolean(profilePhotoUrl?.trim());
+  const { url: photoUrl, error } = useAuthenticatedImageUrl(
+    getDriverPhotoApiPath(driverId),
+    hasPhoto,
+  );
   const sizeClass = sizeClasses[size];
 
-  if (photoUrl) {
+  if (hasPhoto && photoUrl && !error) {
     return (
       <img
         src={photoUrl}

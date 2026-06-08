@@ -190,6 +190,7 @@ export function DriversTable({
                   <td className={`${tableCell} align-middle`}>
                     <Link to={`/drivers/${driver.id}`} className="group flex min-w-0 items-center gap-3">
                       <DriverAvatar
+                        driverId={driver.id}
                         profilePhotoUrl={driver.profile_photo_url}
                         firstName={driver.first_name}
                         lastName={driver.last_name}

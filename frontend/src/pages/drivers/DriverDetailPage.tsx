@@ -240,6 +240,7 @@ export function DriverDetailPage() {
             <div className="relative shrink-0">
               <div className="inline-flex rounded-2xl bg-brand-mint/35 p-1.5 shadow-sm">
                 <DriverAvatar
+                  driverId={d.id}
                   profilePhotoUrl={d.profile_photo_url}
                   firstName={d.first_name}
                   lastName={d.last_name}

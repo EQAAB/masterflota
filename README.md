@@ -282,7 +282,7 @@ A full API reference (endpoints, request/response shapes, errors) can be added h
 - **Frontend:** Run `npm run build` and serve the `frontend/dist` folder with Nginx, a CDN, or a static host. Set `VITE_API_URL` at build time to your production API URL.
 - **Database:** Use a managed PostgreSQL service; run `schema.sql` and migrations on the production DB.
   - **Subcontractor module (in order):** `051`–`061`, `062_remove_subcontractor_commission_rate.sql` (run `npm run migrate:060-062` in `backend/`; verify scripts should return empty result sets). Settlements: **Commission** = `SUM(driver_payouts.company_commission)`; `subcontractor_payouts` has no commission columns; `subcontractors` has no `commission_rate` (use each driver’s rate). After deploy, use **Refresh settlements** on active periods. Re-import sub-managed earnings if rows were computed with the old subcontractor-level rate override.
-- **Uploads:** Ensure `backend/uploads` exists and is writable; for multi-instance setups, use a shared store (e.g. S3) and adjust the app accordingly.
+- **Uploads:** Ensure `backend/uploads` exists and is writable. Uploads are **not** served publicly; driver photos and documents are accessed only through authenticated API routes (`GET /api/drivers/:id/photo`, document download endpoints). Do not expose `/uploads` via Nginx or a static alias. For multi-instance setups, use a shared store (e.g. S3) and adjust the app accordingly.
 
 ---
 

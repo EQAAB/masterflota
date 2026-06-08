@@ -25,6 +25,7 @@ export function VehicleDriverCell({ vehicle }: { vehicle: VehicleListItem }) {
     return (
       <Link to={`/drivers/${vehicle.current_driver_id}`} className="group flex min-w-0 items-center gap-2.5">
         <DriverAvatar
+          driverId={vehicle.current_driver_id!}
           profilePhotoUrl={vehicle.driver_profile_photo_url}
           firstName={vehicle.driver_first_name ?? ""}
           lastName={vehicle.driver_last_name ?? ""}

@@ -1,19 +1,7 @@
 /**
- * Base URL for uploads (same origin as API, without /api).
- * Backend serves uploads at GET /uploads/...
+ * Authenticated API path for a driver profile photo.
+ * Requires JWT + org context; fetch via useAuthenticatedImageUrl or api.get blob.
  */
-function getUploadsBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL ?? "http://103.131.215.13:4100/api";
-  return apiUrl.replace(/\/api\/?$/, "");
-}
-
-/**
- * Full URL for a driver profile photo (relative path from DB).
- * Returns null if path is empty.
- */
-export function getDriverPhotoUrl(profilePhotoUrl: string | null | undefined): string | null {
-  if (!profilePhotoUrl?.trim()) return null;
-  const base = getUploadsBaseUrl();
-  const path = profilePhotoUrl.startsWith("/") ? profilePhotoUrl.slice(1) : profilePhotoUrl;
-  return `${base}/${path}`;
+export function getDriverPhotoApiPath(driverId: string): string {
+  return `/drivers/${driverId}/photo`;
 }
