@@ -157,7 +157,7 @@ npm install
 
 ### Backend (`.env` in `backend/`)
 
-Create `backend/.env` with:
+Create `backend/.env` (copy from `backend/.env.example`):
 
 ```env
 # Server
@@ -166,15 +166,22 @@ PORT=4100
 # Database (required for production)
 DATABASE_URL=postgresql://user:password@localhost:5432/fleet_manager
 
-# JWT (use a long random string in production)
-JWT_SECRET=your_jwt_secret_change_in_production
+# JWT — use a long random string (e.g. openssl rand -base64 48)
+JWT_SECRET=replace_with_long_random_secret_at_least_32_chars
+
+# Optional: set in production for deploy versioning
+APP_VERSION=dev
 ```
 
 | Variable       | Description                    | Default (if omitted)     |
 | -------------- | ------------------------------ | ------------------------ |
 | `PORT`         | API server port                | `4100`                   |
 | `DATABASE_URL` | PostgreSQL connection string   | *(required for DB access)* |
-| `JWT_SECRET`   | Secret for signing JWT tokens  | `dev_jwt_secret_change_me` |
+| `JWT_SECRET`   | Secret for signing JWT tokens  | `dev_jwt_secret_change_me` (development only; logs a warning) |
+| `APP_VERSION`  | API version exposed to clients | `dev`                    |
+| `NODE_ENV`     | Runtime environment            | *(unset = development)*  |
+
+**Production:** Set `NODE_ENV=production` and a strong `JWT_SECRET` (minimum 32 characters, not a default/placeholder). The API **refuses to start** if `JWT_SECRET` is missing or insecure when `NODE_ENV=production`.
 
 ### Frontend (optional)
 
@@ -278,7 +285,7 @@ A full API reference (endpoints, request/response shapes, errors) can be added h
 
 ## Deployment
 
-- **Backend:** Run `npm run build` then `npm start`; set `PORT`, `DATABASE_URL`, and `JWT_SECRET` in the production environment. Ensure PostgreSQL is reachable and migrations are applied.
+- **Backend:** Run `npm run build` then `npm start`; set `NODE_ENV=production`, `PORT`, `DATABASE_URL`, and a strong `JWT_SECRET` (32+ characters) in the production environment. The server exits on startup if `JWT_SECRET` is missing or insecure in production. Ensure PostgreSQL is reachable and migrations are applied.
 - **Frontend:** Run `npm run build` and serve the `frontend/dist` folder with Nginx, a CDN, or a static host. Set `VITE_API_URL` at build time to your production API URL.
 - **Database:** Use a managed PostgreSQL service; run `schema.sql` and migrations on the production DB.
   - **Subcontractor module (in order):** `051`–`061`, `062_remove_subcontractor_commission_rate.sql` (run `npm run migrate:060-062` in `backend/`; verify scripts should return empty result sets). Settlements: **Commission** = `SUM(driver_payouts.company_commission)`; `subcontractor_payouts` has no commission columns; `subcontractors` has no `commission_rate` (use each driver’s rate). After deploy, use **Refresh settlements** on active periods. Re-import sub-managed earnings if rows were computed with the old subcontractor-level rate override.
