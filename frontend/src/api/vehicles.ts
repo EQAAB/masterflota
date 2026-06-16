@@ -117,6 +117,9 @@ export interface PaginatedResponse<T> {
 
 export type VehiclePlatformFilter = "all" | "bolt" | "glovo" | "bolt_glovo" | "uber" | "wolt";
 
+/** Max vehicles loaded for rental dropdowns / booking form (GET /vehicles). */
+export const RENTAL_VEHICLE_DROPDOWN_LIMIT = 500;
+
 export interface GetVehiclesParams {
   search?: string;
   status?: string;

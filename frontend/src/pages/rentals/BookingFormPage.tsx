@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { getVehicles } from "../../api/vehicles";
+import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../api/vehicles";
 import {
   createRentalBooking,
   getRentalBooking,
@@ -66,7 +66,7 @@ export function BookingFormPage() {
   });
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles", "list-rental-booking"],
-    queryFn: () => getVehicles({ limit: 200 }).then((r) => r.data.data),
+    queryFn: () => getVehicles({ limit: RENTAL_VEHICLE_DROPDOWN_LIMIT }).then((r) => r.data.data),
   });
   const existingQuery = useQuery({
     queryKey: ["rentals", "booking", id],

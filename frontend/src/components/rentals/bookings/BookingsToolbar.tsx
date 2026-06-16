@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getVehicles } from "../../../api/vehicles";
+import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../../api/vehicles";
 import { btnSecondary } from "../../../theme/classNames";
 import type { BookingsDensity } from "./bookingsListUtils";
 
@@ -31,7 +31,7 @@ export function BookingsToolbar({
 }: BookingsToolbarProps) {
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles", "bookings-filter"],
-    queryFn: () => getVehicles({ limit: 200 }).then((r) => r.data.data),
+    queryFn: () => getVehicles({ limit: RENTAL_VEHICLE_DROPDOWN_LIMIT }).then((r) => r.data.data),
   });
 
   return (

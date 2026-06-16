@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getRentalCustomers } from "../../../api/rentals";
-import { getVehicles } from "../../../api/vehicles";
+import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../../api/vehicles";
 import type { CalendarFilters } from "./calendarUtils";
 
 type CalendarFilterBarProps = {
@@ -11,7 +11,7 @@ type CalendarFilterBarProps = {
 export function CalendarFilterBar({ filters, onChange }: CalendarFilterBarProps) {
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles", "calendar-filter"],
-    queryFn: () => getVehicles({ limit: 200 }).then((r) => r.data.data),
+    queryFn: () => getVehicles({ limit: RENTAL_VEHICLE_DROPDOWN_LIMIT }).then((r) => r.data.data),
   });
   const customersQuery = useQuery({
     queryKey: ["rentals", "customers", "calendar-filter"],
