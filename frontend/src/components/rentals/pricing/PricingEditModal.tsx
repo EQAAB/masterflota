@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RentalPricing } from "../../../api/rentals";
 import { createRentalPricing, updateRentalPricing } from "../../../api/rentals";
-import { getVehicles } from "../../../api/vehicles";
+import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../../api/vehicles";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type PricingEditModalProps = {
@@ -26,7 +26,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
 
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles", "pricing-modal"],
-    queryFn: () => getVehicles({ limit: 200 }).then((r) => r.data.data),
+    queryFn: () => getVehicles({ limit: RENTAL_VEHICLE_DROPDOWN_LIMIT }).then((r) => r.data.data),
     enabled: open,
   });
 
