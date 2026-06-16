@@ -1,5 +1,6 @@
 import type { QueryResultRow } from "pg";
 import { insertVehicleHistory } from "../vehicles/vehicleHistory";
+import { syncVehicleFleetStatus } from "../vehicles/vehicleFleetStatus";
 import {
   checkVehicleAvailableForRental,
   clearAvailabilityForBooking,
@@ -104,6 +105,7 @@ export async function confirmBooking(
   const updated = rows[0]!;
 
   await syncAvailabilityForBooking(db, orgId, booking.vehicle_id, bookingId, startAt, endAt, true);
+  await syncVehicleFleetStatus(db, orgId, booking.vehicle_id);
 
   await insertVehicleHistory(db, {
     orgId,
@@ -144,6 +146,7 @@ export async function cancelBooking(
   const updated = rows[0]!;
 
   await clearAvailabilityForBooking(db, orgId, booking.vehicle_id, bookingId);
+  await syncVehicleFleetStatus(db, orgId, booking.vehicle_id);
 
   await insertVehicleHistory(db, {
     orgId,
@@ -189,11 +192,7 @@ export async function pickupBooking(
   );
   const updated = rows[0]!;
 
-  await db.query(
-    `UPDATE vehicles SET status = 'rented', updated_at = NOW()
-     WHERE id = $1::uuid AND organization_id = $2::uuid AND current_driver_id IS NULL`,
-    [booking.vehicle_id, orgId],
-  );
+  await syncVehicleFleetStatus(db, orgId, booking.vehicle_id);
 
   await insertVehicleHistory(db, {
     orgId,
@@ -247,13 +246,7 @@ export async function returnBooking(
     [booking.vehicle_id],
   );
 
-  if (!vRows[0]?.current_driver_id) {
-    await db.query(
-      `UPDATE vehicles SET status = 'available', updated_at = NOW()
-       WHERE id = $1::uuid AND organization_id = $2::uuid`,
-      [booking.vehicle_id, orgId],
-    );
-  }
+  await syncVehicleFleetStatus(db, orgId, booking.vehicle_id);
 
   await insertVehicleHistory(db, {
     orgId,
