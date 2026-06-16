@@ -425,7 +425,7 @@ router.post("/:id/unassign-driver", requirePermission("vehicles.assign"), async 
 
 router.get("/:id", async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
@@ -530,7 +530,7 @@ router.post("/", requirePermission("vehicles.create"), async (req, res) => {
 
 router.put("/:id", requirePermission("vehicles.edit"), async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }
@@ -599,9 +599,9 @@ router.put("/:id", requirePermission("vehicles.edit"), async (req, res) => {
         insurance_expiry = $14,
         registration_expiry = $15,
         status = COALESCE($16, status),
-        notes = $18,
+        notes = $17,
         updated_at = NOW()
-      WHERE id = $19 AND organization_id = $20
+      WHERE id = $18 AND organization_id = $19
       RETURNING *
       `,
       [
@@ -701,7 +701,7 @@ router.put("/:id", requirePermission("vehicles.edit"), async (req, res) => {
 
 router.delete("/:id", requirePermission("vehicles.delete"), async (req, res) => {
   const orgId = req.effectiveOrgId;
-  const { id } = req.params;
+  const id = String(req.params.id ?? "");
   if (!orgId) {
     return res.status(400).json({ message: "User is not associated with an organization" });
   }

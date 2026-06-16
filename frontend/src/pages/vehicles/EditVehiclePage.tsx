@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getVehicleById,
@@ -85,6 +86,17 @@ export function EditVehiclePage() {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle", id] });
       setTimeout(() => navigate("/vehicles"), 1500);
+    },
+    onError: (err: unknown) => {
+      if (axios.isAxiosError(err)) {
+        const msg =
+          typeof err.response?.data?.message === "string"
+            ? err.response.data.message
+            : "Failed to update vehicle.";
+        setFormError(msg);
+        return;
+      }
+      setFormError(err instanceof Error ? err.message : "Failed to update vehicle.");
     },
   });
 
