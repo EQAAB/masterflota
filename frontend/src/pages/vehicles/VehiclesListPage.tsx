@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { getVehicles, deleteVehicle, type VehicleListItem } from "../../api/vehicles";
 import { VehiclesList } from "../../components/vehicles/VehiclesList";
 import { useListSort } from "../../hooks/useListSort";
@@ -10,6 +11,7 @@ import { btnSecondary, btnDangerOutline } from "../../theme/classNames";
 export function VehiclesListPage() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<VehicleListItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { sortParams, getHeaderProps } = useListSort();
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const filters = useVehiclesListFilters();
@@ -58,8 +60,21 @@ export function VehiclesListPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       setDeleteTarget(null);
+      setDeleteError(null);
+    },
+    onError: (err: unknown) => {
+      if (axios.isAxiosError(err) && typeof err.response?.data?.message === "string") {
+        setDeleteError(err.response.data.message);
+        return;
+      }
+      setDeleteError("Failed to delete vehicle.");
     },
   });
+
+  const handleDeleteRequest = (vehicle: VehicleListItem) => {
+    setDeleteError(null);
+    setDeleteTarget(vehicle);
+  };
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-surface-elevated">
@@ -74,7 +89,7 @@ export function VehiclesListPage() {
         onPageChange={setPage}
         onLimitChange={setLimit}
         filters={filters}
-        onDeleteRequest={setDeleteTarget}
+        onDeleteRequest={handleDeleteRequest}
       />
 
       {deleteTarget && (
@@ -83,8 +98,14 @@ export function VehiclesListPage() {
             <h3 className="text-lg font-semibold text-ink">Delete vehicle?</h3>
             <p className="mt-2 text-sm text-ink-muted">
               {deleteTarget.make} {deleteTarget.model} ({deleteTarget.license_plate}) will be
-              permanently deleted. Rentals and maintenance records will be removed.
+              permanently deleted. Maintenance records and related data will be removed. This vehicle
+              cannot be deleted while rental bookings exist.
             </p>
+            {deleteError && (
+              <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+                {deleteError}
+              </p>
+            )}
             <div className="mt-5 flex gap-2">
               <button
                 type="button"

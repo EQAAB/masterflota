@@ -8,6 +8,10 @@ import {
   runUnassignVehicleTransaction,
 } from "./vehicleAssignmentService";
 import { insertVehicleHistoryQuery, listVehicleHistory } from "./vehicleHistory";
+import {
+  assertVehicleHasNoRentalBookings,
+  VehicleDeleteBlockedError,
+} from "./vehicleDeleteGuards";
 import { parseListSort, type ListSortQuery } from "../../lib/listSort";
 
 const router = Router();
@@ -707,6 +711,8 @@ router.delete("/:id", requirePermission("vehicles.delete"), async (req, res) => 
   }
 
   try {
+    await assertVehicleHasNoRentalBookings(id, orgId);
+
     const { rows } = await query(
       "DELETE FROM vehicles WHERE id = $1 AND organization_id = $2 RETURNING id",
       [id, orgId],
@@ -714,6 +720,15 @@ router.delete("/:id", requirePermission("vehicles.delete"), async (req, res) => 
     if (!rows[0]) return res.status(404).json({ message: "Vehicle not found" });
     return res.json({ id: rows[0].id });
   } catch (err) {
+    if (err instanceof VehicleDeleteBlockedError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    const pg = err as { code?: string };
+    if (pg.code === "23503") {
+      return res.status(409).json({
+        message: "Cannot delete this vehicle because it is linked to rental bookings.",
+      });
+    }
     console.error("Delete vehicle error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
