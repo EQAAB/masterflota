@@ -6,6 +6,7 @@ import {
   recordVehicleAssignment,
 } from "./vehicleAssignmentHistory";
 import { driverDisplayName, insertVehicleHistory } from "./vehicleHistory";
+import { syncVehicleFleetStatus } from "./vehicleFleetStatus";
 
 export type AssignVehicleParams = {
   orgId: string;
@@ -31,11 +32,11 @@ async function clearVehicleDriverLink(
   await client.query(
     `UPDATE vehicles
      SET current_driver_id = NULL,
-         status = CASE WHEN status = 'rented' THEN 'available' ELSE status END,
          updated_at = NOW()
      WHERE id = $1::uuid AND organization_id = $2::uuid`,
     [vehicleId, orgId],
   );
+  await syncVehicleFleetStatus(client, orgId, vehicleId);
 }
 
 async function clearDriverVehicleLink(
