@@ -11,6 +11,7 @@ type AvailabilityPageHeaderProps = {
   view: AvailabilityViewMode;
   onViewChange: (v: AvailabilityViewMode) => void;
   onBlockDates: () => void;
+  onQuickWeekly?: () => void;
   canManage?: boolean;
 };
 
@@ -22,6 +23,7 @@ export function AvailabilityPageHeader({
   view,
   onViewChange,
   onBlockDates,
+  onQuickWeekly,
   canManage = true,
 }: AvailabilityPageHeaderProps) {
   return (
@@ -76,8 +78,13 @@ export function AvailabilityPageHeader({
               <button type="button" className={btnSecondary} onClick={onBlockDates}>
                 Block dates
               </button>
-              <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-availability__header-cta`}>
-                Add booking
+              {onQuickWeekly ? (
+                <button type="button" className={btnPrimary} onClick={onQuickWeekly}>
+                  Quick weekly rental
+                </button>
+              ) : null}
+              <Link to="/rentals/bookings/new" className={`${btnSecondary} fm-rental-availability__header-cta`}>
+                Advanced booking
               </Link>
             </>
           ) : null}

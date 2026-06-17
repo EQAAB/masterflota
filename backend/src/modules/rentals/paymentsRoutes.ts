@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
+import {
+  createRentalPayment,
+  parseRentalPaymentStatus,
+  parseRentalPaymentType,
+} from "./rentalPaymentService";
+import { rentalDb } from "./rentalDb";
 import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
 
 const UUID_RE =
@@ -188,43 +194,24 @@ paymentsRoutes.post("/booking/:bookingId", requireRentalsManage, async (req, res
   const b = req.body as Record<string, unknown>;
   const amount = Number(b.amount);
   if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ message: "amount required" });
-  const paymentType =
-    b.paymentType === "deposit" ||
-    b.paymentType === "deposit_refund" ||
-    b.paymentType === "extra" ||
-    b.paymentType === "damage"
-      ? b.paymentType
-      : "rent";
-  const status = b.status === "paid" || b.status === "failed" || b.status === "refunded" ? b.status : "pending";
+  const paymentType = parseRentalPaymentType(b.paymentType);
+  const status = parseRentalPaymentStatus(b.status);
   try {
-    const { rows: booking } = await query(
-      `SELECT id FROM rental_bookings WHERE id = $1::uuid AND organization_id = $2::uuid`,
-      [bookingId, orgId],
-    );
-    if (!booking[0]) return res.status(404).json({ message: "Booking not found" });
-
-    const { rows } = await query(
-      `INSERT INTO rental_payments (
-         organization_id, booking_id, payment_type, amount, currency, status, paid_at, method, reference, notes
-       ) VALUES ($1::uuid, $2::uuid, $3::varchar, $4, COALESCE($5::varchar, 'RON'), $6::varchar,
-         CASE WHEN $6::varchar = 'paid' THEN COALESCE($7::timestamptz, NOW()) ELSE $7::timestamptz END,
-         $8::varchar, $9::varchar, $10)
-       RETURNING *`,
-      [
-        orgId,
-        bookingId,
-        paymentType,
-        amount,
-        b.currency ?? "RON",
-        status,
-        b.paidAt ?? null,
-        b.method ?? null,
-        b.reference ?? null,
-        b.notes ?? null,
-      ],
-    );
-    return res.status(201).json(rows[0]);
+    const row = await createRentalPayment(rentalDb, orgId, bookingId, {
+      amount,
+      paymentType,
+      status,
+      currency: typeof b.currency === "string" ? b.currency : "RON",
+      paidAt: typeof b.paidAt === "string" ? b.paidAt : null,
+      method: typeof b.method === "string" ? b.method : null,
+      reference: typeof b.reference === "string" ? b.reference : null,
+      notes: typeof b.notes === "string" ? b.notes : null,
+    });
+    return res.status(201).json(row);
   } catch (err) {
+    if (err instanceof Error && err.message === "Booking not found") {
+      return res.status(404).json({ message: err.message });
+    }
     console.error("Create rental payment error", err);
     return res.status(500).json({ message: "Internal server error" });
   }

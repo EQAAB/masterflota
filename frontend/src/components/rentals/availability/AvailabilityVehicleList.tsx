@@ -16,6 +16,7 @@ type AvailabilityVehicleListProps = {
   canManage?: boolean;
   onBlockDates: (vehicleId: string) => void;
   onViewCalendar: (vehicleId: string) => void;
+  onQuickWeekly?: (vehicleId: string) => void;
 };
 
 export function AvailabilityVehicleList({
@@ -28,6 +29,7 @@ export function AvailabilityVehicleList({
   canManage = true,
   onBlockDates,
   onViewCalendar,
+  onQuickWeekly,
 }: AvailabilityVehicleListProps) {
   if (loading) {
     return (
@@ -56,6 +58,7 @@ export function AvailabilityVehicleList({
           canManage={canManage}
           onBlockDates={onBlockDates}
           onViewCalendar={onViewCalendar}
+          onQuickWeekly={onQuickWeekly}
         />
       ))}
     </div>

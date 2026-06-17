@@ -11,6 +11,7 @@ import { pricingRoutes } from "./pricingRoutes";
 import { paymentsRoutes } from "./paymentsRoutes";
 import { reportsRoutes } from "./reportsRoutes";
 import { buildContractText } from "./contractPdf";
+import { DUE_THIS_WEEK_BOOKING_SELECT } from "./dueThisWeekQuery";
 
 const router = Router();
 
@@ -138,6 +139,8 @@ router.get("/dashboard", requireRentalsView, async (req, res) => {
       [orgId],
     );
 
+    const { rows: dueThisWeek } = await query(`${DUE_THIS_WEEK_BOOKING_SELECT} LIMIT 8`, [orgId]);
+
     const { rows: calendarDays } = await query(
       `SELECT DISTINCT (d::date) AS booking_date
        FROM rental_bookings b,
@@ -181,6 +184,7 @@ router.get("/dashboard", requireRentalsView, async (req, res) => {
         has_active_booking: c.has_active_booking,
       })),
       upcoming_payments: upcomingPayments,
+      due_this_week: dueThisWeek,
       calendar_days: calendarDays.map((d) => d.booking_date),
     });
   } catch (err) {

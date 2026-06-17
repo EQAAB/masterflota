@@ -9,9 +9,16 @@ type CalendarMonthGridProps = {
   bookings: RentalAvailabilityBooking[];
   loading?: boolean;
   onSelectBooking: (b: RentalAvailabilityBooking) => void;
+  onQuickBook?: (startAt: string) => void;
 };
 
-export function CalendarMonthGrid({ cursorDate, bookings, loading, onSelectBooking }: CalendarMonthGridProps) {
+export function CalendarMonthGrid({
+  cursorDate,
+  bookings,
+  loading,
+  onSelectBooking,
+  onQuickBook,
+}: CalendarMonthGridProps) {
   const cells = buildMonthCells(cursorDate);
 
   if (loading) {
@@ -38,6 +45,7 @@ export function CalendarMonthGrid({ cursorDate, bookings, loading, onSelectBooki
             inMonth={cell.inMonth}
             bookings={bookings}
             onSelectBooking={onSelectBooking}
+            onQuickBook={onQuickBook}
           />
         ))}
       </div>

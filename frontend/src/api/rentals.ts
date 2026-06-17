@@ -230,7 +230,32 @@ export type RentalDashboard = {
   recent_bookings?: RentalDashboardBookingRow[];
   recent_customers?: RentalDashboardCustomerRow[];
   upcoming_payments?: RentalDashboardPaymentRow[];
+  due_this_week?: RentalDueThisWeekRow[];
   calendar_days?: string[];
+};
+
+export type RentalDueThisWeekRow = RentalBooking & {
+  customer_name?: string;
+  license_plate?: string;
+  make?: string;
+  model?: string;
+  rent_payment_state?: "paid" | "partial" | "unpaid";
+};
+
+export type QuickWeeklyRentalBody = {
+  customerId: string;
+  vehicleId: string;
+  startAt?: string;
+  endAt?: string;
+  paymentAmount?: number;
+  recordPayment?: boolean;
+  mileageOut?: number;
+  skipPickup?: boolean;
+};
+
+export type RenewWeeklyBookingBody = {
+  paymentAmount?: number;
+  recordPayment?: boolean;
 };
 
 export function getRentalDashboard() {
@@ -316,6 +341,18 @@ export function returnRentalBooking(
   body: { mileageIn?: number; damageNotes?: string; damageReported?: boolean },
 ) {
   return api.post<RentalBooking>(`/rentals/bookings/${id}/return`, body);
+}
+
+export function quickWeeklyRental(body: QuickWeeklyRentalBody) {
+  return api.post<RentalBooking>("/rentals/bookings/quick-weekly", body);
+}
+
+export function renewWeeklyBooking(id: string, body: RenewWeeklyBookingBody = {}) {
+  return api.post<RentalBooking>(`/rentals/bookings/${id}/renew-week`, body);
+}
+
+export function getRentalsDueThisWeek() {
+  return api.get<RentalDueThisWeekRow[]>("/rentals/reports/due-this-week");
 }
 
 export type RentalAvailabilityVehicle = {

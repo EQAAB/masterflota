@@ -1,8 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import type { RentalCustomer } from "../../../api/rentals";
 import { getRentalBookings } from "../../../api/rentals";
+import { QuickWeeklyRentalModal } from "../QuickWeeklyRentalModal";
+import { useQuickWeeklyRentalModal } from "../../../hooks/useQuickWeeklyRentalModal";
 import { formatCurrency } from "../../../utils/currency";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -16,7 +19,9 @@ type CustomerDetailDrawerProps = {
 };
 
 export function CustomerDetailDrawer({ customer, onClose }: CustomerDetailDrawerProps) {
+  const navigate = useNavigate();
   const canManage = useCanManageRentals();
+  const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const bookingsQuery = useQuery({
     queryKey: ["rentals", "bookings", "customer-drawer", customer?.id],
     queryFn: () =>
@@ -141,12 +146,21 @@ export function CustomerDetailDrawer({ customer, onClose }: CustomerDetailDrawer
 
         <div className="flex flex-col gap-2 border-t border-slate-200 p-5 sm:flex-row">
           {canManage && (
-            <Link
-              to={`/rentals/customers/${customer.id}/edit`}
-              className={`${btnPrimary} flex-1 text-center`}
-            >
-              Edit customer
-            </Link>
+            <>
+              <button
+                type="button"
+                className={`${btnPrimary} flex-1`}
+                onClick={() => openQuickWeeklyRental({ customerId: customer.id })}
+              >
+                Quick weekly rental
+              </button>
+              <Link
+                to={`/rentals/customers/${customer.id}/edit`}
+                className={`${btnSecondary} flex-1 text-center`}
+              >
+                Edit customer
+              </Link>
+            </>
           )}
           <Link
             to={`/rentals/bookings?customerId=${customer.id}`}
@@ -156,6 +170,17 @@ export function CustomerDetailDrawer({ customer, onClose }: CustomerDetailDrawer
           </Link>
         </div>
       </aside>
+      <QuickWeeklyRentalModal
+        open={quickWeeklyModal.open}
+        onClose={closeQuickWeeklyRental}
+        initialCustomerId={quickWeeklyModal.customerId}
+        initialVehicleId={quickWeeklyModal.vehicleId}
+        initialStartAt={quickWeeklyModal.startAt}
+        onSuccess={(bookingId) => {
+          closeQuickWeeklyRental();
+          navigate(`/rentals/bookings/${bookingId}`);
+        }}
+      />
     </>
   );
 }

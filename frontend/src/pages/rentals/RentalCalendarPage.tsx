@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { getRentalAvailability, getRentalDashboard } from "../../api/rentals";
 import type { RentalAvailabilityBooking, RentalBooking } from "../../api/rentals";
+import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
 import { BookingsKpiRow } from "../../components/rentals/bookings/BookingsKpiRow";
 import { BookingCalendarDrawer } from "../../components/rentals/calendar/BookingCalendarDrawer";
 import { CalendarFilterBar } from "../../components/rentals/calendar/CalendarFilterBar";
@@ -14,6 +16,7 @@ import { CalendarSidePanel } from "../../components/rentals/calendar/CalendarSid
 import { CalendarWeekGrid } from "../../components/rentals/calendar/CalendarWeekGrid";
 import type { CalendarFilters, CalendarViewMode } from "../../components/rentals/calendar/calendarUtils";
 import { monthRange, weekRange } from "../../components/rentals/calendar/calendarUtils";
+import { useQuickWeeklyRentalModal } from "../../hooks/useQuickWeeklyRentalModal";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -39,6 +42,8 @@ function useMediaListDefault(): boolean {
 }
 
 export function RentalCalendarPage() {
+  const navigate = useNavigate();
+  const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const isNarrow = useMediaListDefault();
   const [view, setView] = useState<CalendarViewMode>(() => (isNarrow ? "list" : "month"));
   const [cursorDate, setCursorDate] = useState(() => new Date());
@@ -144,6 +149,7 @@ export function RentalCalendarPage() {
                 bookings={bookings}
                 loading={loading}
                 onSelectBooking={setSelectedBooking}
+                onQuickBook={(startAt) => openQuickWeeklyRental({ startAt })}
               />
             )}
             {effectiveView === "week" && (
@@ -169,6 +175,14 @@ export function RentalCalendarPage() {
       </div>
 
       <BookingCalendarDrawer booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
+      <QuickWeeklyRentalModal
+        open={quickWeeklyModal.open}
+        onClose={closeQuickWeeklyRental}
+        initialCustomerId={quickWeeklyModal.customerId}
+        initialVehicleId={quickWeeklyModal.vehicleId}
+        initialStartAt={quickWeeklyModal.startAt}
+        onSuccess={(bookingId) => navigate(`/rentals/bookings/${bookingId}`)}
+      />
     </div>
   );
 }

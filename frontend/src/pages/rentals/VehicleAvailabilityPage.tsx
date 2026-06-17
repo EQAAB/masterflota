@@ -11,6 +11,7 @@ import { AvailabilitySidePanel } from "../../components/rentals/availability/Ava
 import { AvailabilityToolbar } from "../../components/rentals/availability/AvailabilityToolbar";
 import { AvailabilityVehicleList } from "../../components/rentals/availability/AvailabilityVehicleList";
 import { BlockDatesModal } from "../../components/rentals/availability/BlockDatesModal";
+import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
 import {
   defaultRange,
   filterAndSortVehicles,
@@ -18,6 +19,7 @@ import {
   type AvailabilityFilters,
 } from "../../components/rentals/availability/availabilityListUtils";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
+import { useQuickWeeklyRentalModal } from "../../hooks/useQuickWeeklyRentalModal";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -31,6 +33,7 @@ function useDebounce<T>(value: T, ms: number): T {
 
 export function VehicleAvailabilityPage() {
   const canManage = useCanManageRentals();
+  const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const initialRange = useMemo(() => defaultRange(30), []);
   const [from, setFrom] = useState(initialRange.from);
   const [to, setTo] = useState(initialRange.to);
@@ -103,6 +106,7 @@ export function VehicleAvailabilityPage() {
             if (v === "list") setFocusVehicleId(undefined);
           }}
           onBlockDates={() => openBlockModal()}
+          onQuickWeekly={canManage ? () => openQuickWeeklyRental({}) : undefined}
           canManage={canManage}
         />
 
@@ -134,6 +138,7 @@ export function VehicleAvailabilityPage() {
                 canManage={canManage}
                 onBlockDates={openBlockModal}
                 onViewCalendar={handleViewCalendar}
+                onQuickWeekly={(vehicleId) => openQuickWeeklyRental({ vehicleId })}
               />
             ) : (
               <AvailabilityCalendarView
@@ -166,6 +171,14 @@ export function VehicleAvailabilityPage() {
           setBlockModalOpen(false);
           setBlockVehicleId(undefined);
         }}
+      />
+      <QuickWeeklyRentalModal
+        open={quickWeeklyModal.open}
+        onClose={closeQuickWeeklyRental}
+        initialCustomerId={quickWeeklyModal.customerId}
+        initialVehicleId={quickWeeklyModal.vehicleId}
+        initialStartAt={quickWeeklyModal.startAt}
+        onSuccess={closeQuickWeeklyRental}
       />
     </div>
   );

@@ -58,6 +58,67 @@ export async function loadBooking(
   return rows[0] ?? null;
 }
 
+export type CreateDraftBookingInput = {
+  customerId: string;
+  vehicleId: string;
+  rentalType: RentalType;
+  startAt: Date;
+  endAt: Date;
+  pricingSnapshot?: Record<string, unknown>;
+};
+
+export async function createDraftBooking(
+  db: Db,
+  orgId: string,
+  userId: string | undefined,
+  input: CreateDraftBookingInput,
+): Promise<BookingRow> {
+  const conflict = await checkVehicleAvailableForRental(
+    db,
+    orgId,
+    input.vehicleId,
+    input.startAt,
+    input.endAt,
+  );
+  if (conflict) throw new Error(conflict.message);
+
+  const priced = await resolvePricing(
+    db,
+    orgId,
+    input.vehicleId,
+    input.rentalType,
+    input.startAt,
+    input.endAt,
+  );
+  const snapshot = input.pricingSnapshot
+    ? { ...priced.snapshot, ...input.pricingSnapshot }
+    : priced.snapshot;
+
+  const bookingNumber = await nextBookingNumber(db, orgId);
+  const { rows } = await db.query<BookingRow>(
+    `INSERT INTO rental_bookings (
+       organization_id, booking_number, customer_id, vehicle_id, rental_type,
+       start_at, end_at, status, pricing_snapshot, subtotal, deposit_amount, total_amount, created_by
+     ) VALUES ($1, $2, $3::uuid, $4::uuid, $5, $6, $7, 'draft', $8::jsonb, $9, $10, $11, $12::uuid)
+     RETURNING *`,
+    [
+      orgId,
+      bookingNumber,
+      input.customerId,
+      input.vehicleId,
+      input.rentalType,
+      input.startAt,
+      input.endAt,
+      JSON.stringify(snapshot),
+      priced.subtotal,
+      priced.deposit,
+      priced.total,
+      userId ?? null,
+    ],
+  );
+  return rows[0]!;
+}
+
 export async function confirmBooking(
   db: Db,
   orgId: string,

@@ -32,7 +32,7 @@ export function OverdueAlertBanner({ count, items }: OverdueAlertBannerProps) {
               {b.booking_number} · {b.license_plate}
             </span>
             <Link to={`/rentals/bookings/${b.id}`} className="shrink-0 font-medium text-brand hover:underline">
-              Resolve
+              {b.rental_type === "weekly" ? "Renew or return" : "Resolve"}
             </Link>
           </li>
         ))}

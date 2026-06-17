@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
 import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary } from "../../../theme/classNames";
 
-export function RentalDashboardHeader() {
+type RentalDashboardHeaderProps = {
+  onQuickWeekly?: () => void;
+};
+
+export function RentalDashboardHeader({ onQuickWeekly }: RentalDashboardHeaderProps) {
   const canManage = useCanManageRentals();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -13,9 +16,13 @@ export function RentalDashboardHeader() {
         </p>
       </div>
       {canManage && (
-        <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-dashboard__cta shrink-0`}>
-          New booking
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {onQuickWeekly && (
+            <button type="button" className={btnPrimary} onClick={onQuickWeekly}>
+              Quick weekly rental
+            </button>
+          )}
+        </div>
       )}
     </header>
   );
