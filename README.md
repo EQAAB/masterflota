@@ -192,13 +192,20 @@ APP_VERSION=dev
 VITE_API_URL=http://localhost:4100/api
 ```
 
-**Production build (`npm run build`):** `VITE_API_URL` is **required** and must point at your deployed API:
+**Production build (`npm run build`):** `VITE_API_URL` is **required** and must point at your deployed API.
 
-```env
-VITE_API_URL=http://103.131.215.13:4100/api
+On the production server (one-time setup):
+
+```bash
+cd frontend
+cp .env.production.example .env.production
+# Edit .env.production if your API URL differs
+npm run build
 ```
 
-Example build command:
+`.env.production` is gitignored — create it on each server from [`.env.production.example`](frontend/.env.production.example). After that, plain `npm run build` works.
+
+Alternative without a file:
 
 ```bash
 VITE_API_URL=http://103.131.215.13:4100/api npm run build
