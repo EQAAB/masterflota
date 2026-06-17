@@ -1,33 +1,56 @@
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import type { VehicleListItem } from "../../../api/vehicles";
+import { getVehicleById, getVehicles, type VehicleListItem } from "../../../api/vehicles";
 import type { RentalQuote } from "../../../api/rentals";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { formatCurrency } from "../../../utils/currency";
 
 type VehicleSelectFieldProps = {
-  vehicles: VehicleListItem[];
+  vehicles?: VehicleListItem[];
   value: string;
   onChange: (id: string) => void;
   quote: RentalQuote | null;
   quoteLoading?: boolean;
   disabled?: boolean;
+  serverSearch?: boolean;
 };
 
 export function VehicleSelectField({
-  vehicles,
+  vehicles = [],
   value,
   onChange,
   quote,
   quoteLoading,
   disabled,
+  serverSearch = false,
 }: VehicleSelectFieldProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const debouncedQuery = useDebounce(query.trim(), 300);
 
-  const selected = vehicles.find((v) => v.id === value) ?? null;
+  const listVehicle = vehicles.find((v) => v.id === value) ?? null;
+
+  const fetchedVehicleQuery = useQuery({
+    queryKey: ["vehicles", value],
+    queryFn: () => getVehicleById(value).then((r) => r.data),
+    enabled: serverSearch && !!value && !listVehicle,
+  });
+
+  const selected = listVehicle ?? fetchedVehicleQuery.data ?? null;
+
+  const serverSearchQuery = useQuery({
+    queryKey: ["vehicles", "search", debouncedQuery],
+    queryFn: () => getVehicles({ search: debouncedQuery, limit: 25 }).then((r) => r.data.data),
+    enabled: serverSearch && debouncedQuery.length >= 1,
+  });
 
   const filtered = useMemo(() => {
+    if (serverSearch) {
+      if (!debouncedQuery) return [];
+      return serverSearchQuery.data ?? [];
+    }
     const q = query.trim().toLowerCase();
     if (!q) return vehicles.slice(0, 12);
     return vehicles
@@ -38,7 +61,7 @@ export function VehicleSelectField({
           v.model.toLowerCase().includes(q),
       )
       .slice(0, 12);
-  }, [vehicles, query]);
+  }, [serverSearch, debouncedQuery, serverSearchQuery.data, vehicles, query]);
 
   const select = (v: VehicleListItem) => {
     onChange(v.id);
@@ -52,6 +75,10 @@ export function VehicleSelectField({
 
   const unavailable = quote && !quote.available;
   const availableNow = quote?.available && !quoteLoading;
+  const searchPlaceholder = serverSearch
+    ? "Type plate, make, or model to search…"
+    : "Search plate, make, or model…";
+  const showSearchLoading = serverSearch && query.trim().length >= 1 && serverSearchQuery.isFetching;
 
   return (
     <div ref={rootRef} className="relative">
@@ -113,7 +140,7 @@ export function VehicleSelectField({
             type="search"
             disabled={disabled}
             className="fm-rental-booking-form__input mt-1.5"
-            placeholder="Search plate, make, or model…"
+            placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -135,7 +162,10 @@ export function VehicleSelectField({
               }
             }}
           />
-          {open && filtered.length > 0 && (
+          {open && showSearchLoading && (
+            <p className="mt-1 text-xs text-slate-500">Searching…</p>
+          )}
+          {open && !showSearchLoading && filtered.length > 0 && (
             <ul className="fm-rental-booking-form__combobox-list" role="listbox">
               {filtered.map((v, i) => (
                 <li
@@ -157,6 +187,13 @@ export function VehicleSelectField({
               ))}
             </ul>
           )}
+          {open &&
+            !showSearchLoading &&
+            serverSearch &&
+            debouncedQuery.length >= 1 &&
+            filtered.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500">No vehicles found.</p>
+            )}
         </>
       )}
     </div>

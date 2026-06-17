@@ -13,6 +13,7 @@ export const VEHICLE_HISTORY_EVENT_TYPES = [
   "rental_pickup",
   "rental_return",
   "rental_cancelled",
+  "rental_renewed",
 ] as const;
 
 export type VehicleHistoryEventType = (typeof VEHICLE_HISTORY_EVENT_TYPES)[number];

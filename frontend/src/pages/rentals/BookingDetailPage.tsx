@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   cancelRentalBooking,
@@ -8,9 +8,11 @@ import {
   downloadRentalContract,
   getRentalBooking,
   pickupRentalBooking,
+  renewWeeklyBooking,
   returnRentalBooking,
   type RentalPayment,
 } from "../../api/rentals";
+import { addDaysToDate } from "../../components/rentals/booking-form/bookingFormUtils";
 import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { bookingStatusClass, formatBookingStatus } from "../../components/rentals/rentalStatus";
@@ -26,7 +28,9 @@ export function BookingDetailPage() {
   const [damageNotes, setDamageNotes] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payType, setPayType] = useState<RentalPayment["payment_type"]>("rent");
+  const [renewAmount, setRenewAmount] = useState("");
   const [contractLoading, setContractLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const canManage = useCanManageRentals();
 
   const bookingQuery = useQuery({
@@ -35,6 +39,17 @@ export function BookingDetailPage() {
     enabled: !!id,
   });
 
+  const b = bookingQuery.data;
+  const weeklyRate = useMemo(() => {
+    const snap = b?.pricing_snapshot as { weekly_rate?: number } | undefined;
+    return Number(snap?.weekly_rate ?? 0);
+  }, [b?.pricing_snapshot]);
+
+  const nextEndDate = useMemo(() => {
+    if (!b?.end_at) return "";
+    return addDaysToDate(b.end_at.slice(0, 10), 7);
+  }, [b?.end_at]);
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["rentals"] });
   };
@@ -42,6 +57,9 @@ export function BookingDetailPage() {
   const confirmMut = useMutation({
     mutationFn: () => confirmRentalBooking(id!),
     onSuccess: invalidate,
+    onError: (err: unknown) => {
+      setActionError(extractError(err) ?? "Failed to confirm booking");
+    },
   });
   const cancelMut = useMutation({
     mutationFn: () => cancelRentalBooking(id!, "Cancelled by user"),
@@ -49,10 +67,12 @@ export function BookingDetailPage() {
       invalidate();
       navigate("/rentals/bookings");
     },
+    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to cancel"),
   });
   const pickupMut = useMutation({
     mutationFn: () => pickupRentalBooking(id!, mileageOut ? Number(mileageOut) : undefined),
     onSuccess: invalidate,
+    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to record pickup"),
   });
   const returnMut = useMutation({
     mutationFn: () =>
@@ -62,6 +82,7 @@ export function BookingDetailPage() {
         damageReported: !!damageNotes,
       }),
     onSuccess: invalidate,
+    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to return vehicle"),
   });
   const payMut = useMutation({
     mutationFn: () =>
@@ -74,11 +95,26 @@ export function BookingDetailPage() {
       setPayAmount("");
       invalidate();
     },
+    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to record payment"),
+  });
+  const renewMut = useMutation({
+    mutationFn: () =>
+      renewWeeklyBooking(id!, {
+        paymentAmount: Number(renewAmount) || undefined,
+        recordPayment: true,
+      }),
+    onSuccess: () => {
+      setActionError(null);
+      invalidate();
+    },
+    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to renew booking"),
   });
 
-  const b = bookingQuery.data;
   if (bookingQuery.isLoading) return <p className="p-8">Loading…</p>;
   if (!b) return <p className="p-8 text-rose-700">Booking not found.</p>;
+
+  const showRenew =
+    canManage && b.rental_type === "weekly" && (b.status === "active" || b.status === "confirmed");
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
@@ -88,6 +124,10 @@ export function BookingDetailPage() {
         backTo="/rentals/bookings"
         backLabel="Bookings"
       />
+
+      {actionError && (
+        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{actionError}</p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
@@ -176,66 +216,106 @@ export function BookingDetailPage() {
           </div>
         </article>
 
-        <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-ink">Payments</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {(b.payments ?? []).map((p) => (
-              <li key={p.id} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2">
-                <span className="capitalize">
-                  {p.payment_type} · {p.status}
-                </span>
-                <span className="tabular-nums font-medium">{formatCurrency(Number(p.amount))}</span>
-              </li>
-            ))}
-            {(b.payments ?? []).length === 0 && <li className="text-slate-500">No payments recorded.</li>}
-          </ul>
-          {canManage && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <select
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                value={payType}
-                onChange={(e) => setPayType(e.target.value)}
-              >
-                <option value="rent">Rent</option>
-                <option value="deposit">Deposit</option>
-                <option value="deposit_refund">Deposit refund</option>
-                <option value="extra">Extra</option>
-                <option value="damage">Damage</option>
-              </select>
-              <input
-                type="number"
-                placeholder="Amount"
-                className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
+        <div className="space-y-6">
+          {showRenew && (
+            <article className="rounded-2xl border border-brand/20 bg-brand-mint/10 p-5 shadow-sm">
+              <h2 className="font-semibold text-ink">Renew 1 week</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Extends rental to <strong>{nextEndDate}</strong> and records weekly payment.
+              </p>
+              <label className="mt-4 block text-sm">
+                <span className="font-medium text-ink">Payment amount</span>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  value={renewAmount || (weeklyRate > 0 ? String(weeklyRate) : "")}
+                  onChange={(e) => setRenewAmount(e.target.value)}
+                />
+              </label>
               <button
                 type="button"
-                className={btnPrimary}
-                disabled={payMut.isPending || !payAmount}
-                onClick={() => payMut.mutate()}
+                className={`${btnPrimary} mt-4`}
+                disabled={renewMut.isPending || b.status !== "active"}
+                onClick={() => renewMut.mutate()}
+                title={b.status !== "active" ? "Pickup required before renew" : undefined}
               >
-                Record payment
+                {renewMut.isPending ? "Renewing…" : "Renew & record payment"}
               </button>
-            </div>
+              {b.status !== "active" && (
+                <p className="mt-2 text-xs text-slate-500">Complete pickup before renewing.</p>
+              )}
+            </article>
           )}
-          <button
-            type="button"
-            className={`${btnSecondary} mt-4 inline-flex`}
-            disabled={contractLoading}
-            onClick={async () => {
-              setContractLoading(true);
-              try {
-                await downloadRentalContract(id!);
-              } finally {
-                setContractLoading(false);
-              }
-            }}
-          >
-            {contractLoading ? "Downloading…" : "Download contract"}
-          </button>
-        </article>
+
+          <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+            <h2 className="font-semibold text-ink">Payments</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {(b.payments ?? []).map((p) => (
+                <li key={p.id} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2">
+                  <span className="capitalize">
+                    {p.payment_type} · {p.status}
+                  </span>
+                  <span className="tabular-nums font-medium">{formatCurrency(Number(p.amount))}</span>
+                </li>
+              ))}
+              {(b.payments ?? []).length === 0 && <li className="text-slate-500">No payments recorded.</li>}
+            </ul>
+            {canManage && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <select
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  value={payType}
+                  onChange={(e) => setPayType(e.target.value as RentalPayment["payment_type"])}
+                >
+                  <option value="rent">Rent</option>
+                  <option value="deposit">Deposit</option>
+                  <option value="deposit_refund">Deposit refund</option>
+                  <option value="extra">Extra</option>
+                  <option value="damage">Damage</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Amount"
+                  className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  disabled={payMut.isPending || !payAmount}
+                  onClick={() => payMut.mutate()}
+                >
+                  Record payment
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className={`${btnSecondary} mt-4 inline-flex`}
+              disabled={contractLoading}
+              onClick={async () => {
+                setContractLoading(true);
+                try {
+                  await downloadRentalContract(id!);
+                } finally {
+                  setContractLoading(false);
+                }
+              }}
+            >
+              {contractLoading ? "Downloading…" : "Download contract"}
+            </button>
+          </article>
+        </div>
       </div>
     </div>
   );
+}
+
+function extractError(err: unknown): string | null {
+  if (err && typeof err === "object" && "response" in err) {
+    const msg = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+    return typeof msg === "string" ? msg : null;
+  }
+  return err instanceof Error ? err.message : null;
 }

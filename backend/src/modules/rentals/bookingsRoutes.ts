@@ -23,6 +23,7 @@ import {
 } from "./rentalOrgGuards";
 import { resolvePricing } from "./pricingService";
 import type { RentalType } from "./rentalTypes";
+import { runRenewWeeklyBooking, runStartWeeklyRentalQuick } from "./weeklyRentalWorkflow";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -129,6 +130,48 @@ bookingsRoutes.post("/quote", requireRentalsView, async (req, res) => {
   } catch (err) {
     console.error("Quote rental error", err);
     return res.status(500).json({ message: err instanceof Error ? err.message : "Internal server error" });
+  }
+});
+
+bookingsRoutes.post("/quick-weekly", requireRentalsManage, async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const userId = req.user?.sub;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const b = req.body as Record<string, unknown>;
+  const customerId = typeof b.customerId === "string" ? b.customerId : "";
+  const vehicleId = typeof b.vehicleId === "string" ? b.vehicleId : "";
+  if (!UUID_RE.test(customerId) || !UUID_RE.test(vehicleId)) {
+    return res.status(400).json({ message: "customerId and vehicleId required" });
+  }
+  const startAt = b.startAt ? new Date(String(b.startAt)) : undefined;
+  const endAt = b.endAt ? new Date(String(b.endAt)) : undefined;
+  if (startAt && Number.isNaN(startAt.getTime())) {
+    return res.status(400).json({ message: "Invalid startAt" });
+  }
+  if (endAt && Number.isNaN(endAt.getTime())) {
+    return res.status(400).json({ message: "Invalid endAt" });
+  }
+  const paymentAmount = b.paymentAmount != null ? Number(b.paymentAmount) : undefined;
+  const mileageOut = typeof b.mileageOut === "number" ? b.mileageOut : undefined;
+  try {
+    const row = await runStartWeeklyRentalQuick(orgId, userId, {
+      customerId,
+      vehicleId,
+      startAt,
+      endAt,
+      paymentAmount: paymentAmount != null && Number.isFinite(paymentAmount) ? paymentAmount : undefined,
+      recordPayment: b.recordPayment !== false,
+      mileageOut,
+      skipPickup: b.skipPickup === true,
+    });
+    return res.status(201).json(row);
+  } catch (err) {
+    if (err instanceof RentalOrgScopeError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    const msg = err instanceof Error ? err.message : "Internal server error";
+    const status = msg.includes("Overlaps") || msg.includes("assigned") ? 409 : 400;
+    return res.status(status).json({ message: msg });
   }
 });
 
@@ -313,6 +356,27 @@ bookingsRoutes.put("/:id", requireRentalsManage, async (req, res) => {
     }
     console.error("Update rental booking error", err);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+bookingsRoutes.post("/:id/renew-week", requireRentalsManage, async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const userId = req.user?.sub;
+  const id = String(req.params.id ?? "");
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  if (!UUID_RE.test(id)) return res.status(400).json({ message: "Invalid id" });
+  const b = req.body as Record<string, unknown>;
+  const paymentAmount = b.paymentAmount != null ? Number(b.paymentAmount) : undefined;
+  try {
+    const row = await runRenewWeeklyBooking(orgId, userId, id, {
+      paymentAmount: paymentAmount != null && Number.isFinite(paymentAmount) ? paymentAmount : undefined,
+      recordPayment: b.recordPayment !== false,
+    });
+    return res.json(row);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal server error";
+    const status = msg.includes("Overlaps") ? 409 : 400;
+    return res.status(status).json({ message: msg });
   }
 });
 

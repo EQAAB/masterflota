@@ -6,6 +6,7 @@ import {
   createRentalBooking,
   getRentalBooking,
   getRentalCustomers,
+  quickWeeklyRental,
   quoteRental,
   updateRentalBooking,
   type RentalQuote,
@@ -30,6 +31,14 @@ import {
   splitIsoToDateTime,
 } from "../../components/rentals/booking-form/bookingFormUtils";
 
+const RENTAL_TYPE_STORAGE_KEY = "fm.rentalType";
+
+function readDefaultRentalType(): "daily" | "weekly" | "monthly" {
+  const stored = localStorage.getItem(RENTAL_TYPE_STORAGE_KEY);
+  if (stored === "daily" || stored === "weekly" || stored === "monthly") return stored;
+  return "weekly";
+}
+
 export function BookingFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
@@ -38,7 +47,8 @@ export function BookingFormPage() {
 
   const [customerId, setCustomerId] = useState(searchParams.get("customerId") ?? "");
   const [vehicleId, setVehicleId] = useState(searchParams.get("vehicleId") ?? "");
-  const [rentalType, setRentalType] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [rentalType, setRentalType] = useState<"daily" | "weekly" | "monthly">(readDefaultRentalType);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const startParam = searchParams.get("startAt");
   const initialPickup = startParam ? parseStartAtParam(startParam) : { date: "", time: "10:00" };
@@ -98,6 +108,13 @@ export function BookingFormPage() {
     setSelectedExtras(meta.selectedExtras);
     setDiscountAmount(meta.discountAmount);
   }, [existing]);
+
+  useEffect(() => {
+    localStorage.setItem(RENTAL_TYPE_STORAGE_KEY, rentalType);
+    if (rentalType === "weekly" && pickupDate) {
+      setReturnDate(addDaysToDate(pickupDate, 7));
+    }
+  }, [rentalType, pickupDate]);
 
   const startIso = useMemo(
     () => combineDateAndTime(pickupDate, pickupTime),
@@ -192,6 +209,21 @@ export function BookingFormPage() {
     },
   });
 
+  const quickStartMut = useMutation({
+    mutationFn: () =>
+      quickWeeklyRental({
+        customerId,
+        vehicleId,
+        startAt: startIso!,
+        endAt: endIso!,
+        recordPayment: false,
+        skipPickup: false,
+      }),
+    onSuccess: (res) => {
+      navigate(`/rentals/bookings/${res.data.id}`);
+    },
+  });
+
   const canSubmit =
     !!customerId &&
     !!vehicleId &&
@@ -210,6 +242,11 @@ export function BookingFormPage() {
   const handleSaveDraft = () => {
     if (!customerId || !vehicleId || !startIso || !endIso || !isDraft) return;
     saveMut.mutate(false);
+  };
+
+  const handleStartNow = () => {
+    if (!customerId || !vehicleId || !startIso || !endIso || !isDraft) return;
+    quickStartMut.mutate();
   };
 
   const rentalDays = quote?.days ?? null;
@@ -285,32 +322,44 @@ export function BookingFormPage() {
               </div>
             </BookingFormCard>
 
-            <BookingFormCard
-              title="Booking details"
-              description="Optional pickup information, notes, and pricing adjustments."
+            <button
+              type="button"
+              className="text-sm font-medium text-brand hover:underline"
+              onClick={() => setShowMoreOptions((v) => !v)}
             >
-              <BookingDetailsSection
-                pickupLocation={pickupLocation}
-                returnLocation={returnLocation}
-                driverNotes={driverNotes}
-                internalNotes={internalNotes}
-                discountAmount={discountAmount}
-                onPickupLocation={setPickupLocation}
-                onReturnLocation={setReturnLocation}
-                onDriverNotes={setDriverNotes}
-                onInternalNotes={setInternalNotes}
-                onDiscountAmount={setDiscountAmount}
-                disabled={formDisabled}
-              />
-            </BookingFormCard>
+              {showMoreOptions ? "Hide more options" : "More options"}
+            </button>
 
-            <BookingFormCard title="Extra services" description="Add optional services to this rental.">
-              <ExtraServicesChips
-                selected={selectedExtras}
-                onChange={setSelectedExtras}
-                disabled={formDisabled}
-              />
-            </BookingFormCard>
+            {showMoreOptions && (
+              <>
+                <BookingFormCard
+                  title="Booking details"
+                  description="Optional pickup information, notes, and pricing adjustments."
+                >
+                  <BookingDetailsSection
+                    pickupLocation={pickupLocation}
+                    returnLocation={returnLocation}
+                    driverNotes={driverNotes}
+                    internalNotes={internalNotes}
+                    discountAmount={discountAmount}
+                    onPickupLocation={setPickupLocation}
+                    onReturnLocation={setReturnLocation}
+                    onDriverNotes={setDriverNotes}
+                    onInternalNotes={setInternalNotes}
+                    onDiscountAmount={setDiscountAmount}
+                    disabled={formDisabled}
+                  />
+                </BookingFormCard>
+
+                <BookingFormCard title="Extra services" description="Add optional services to this rental.">
+                  <ExtraServicesChips
+                    selected={selectedExtras}
+                    onChange={setSelectedExtras}
+                    disabled={formDisabled}
+                  />
+                </BookingFormCard>
+              </>
+            )}
           </div>
 
           <BookingSummarySidebar
@@ -328,8 +377,10 @@ export function BookingFormPage() {
           isEdit={isEdit}
           onCancel={() => navigate(isEdit ? `/rentals/bookings/${id}` : "/rentals/bookings")}
           onSaveDraft={handleSaveDraft}
+          onStartNow={!isEdit ? handleStartNow : undefined}
           saveDraftPending={saveMut.isPending}
           createPending={saveMut.isPending}
+          startNowPending={quickStartMut.isPending}
           disabled={!canSubmit}
         />
       </form>
@@ -342,6 +393,11 @@ export function BookingFormPage() {
       {saveMut.isError && (
         <p className="mt-2 text-sm text-rose-700" role="alert">
           Could not save booking. Check required fields and availability.
+        </p>
+      )}
+      {quickStartMut.isError && (
+        <p className="mt-2 text-sm text-rose-700" role="alert">
+          Could not start weekly rental. Check availability and try again.
         </p>
       )}
     </div>

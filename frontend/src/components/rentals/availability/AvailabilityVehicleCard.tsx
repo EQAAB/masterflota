@@ -26,6 +26,7 @@ type AvailabilityVehicleCardProps = {
   canManage?: boolean;
   onBlockDates: (vehicleId: string) => void;
   onViewCalendar: (vehicleId: string) => void;
+  onQuickWeekly?: (vehicleId: string) => void;
 };
 
 export function AvailabilityVehicleCard({
@@ -37,6 +38,7 @@ export function AvailabilityVehicleCard({
   canManage = true,
   onBlockDates,
   onViewCalendar,
+  onQuickWeekly,
 }: AvailabilityVehicleCardProps) {
   const segments = buildDaySegments(vehicle, bookings, blocks, from, to);
   const displayStatus = deriveVehicleDisplayStatus(vehicle, segments, bookings);
@@ -93,12 +95,13 @@ export function AvailabilityVehicleCard({
             </button>
             {canManage ? (
               <>
-                <Link
-                  to={`/rentals/bookings/new?vehicleId=${vehicle.id}`}
+                <button
+                  type="button"
                   className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-brand-mint/30"
+                  onClick={() => onQuickWeekly?.(vehicle.id)}
                 >
                   Book
-                </Link>
+                </button>
                 <button
                   type="button"
                   className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"

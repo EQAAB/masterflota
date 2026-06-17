@@ -1,29 +1,52 @@
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import type { RentalCustomer } from "../../../api/rentals";
+import { getRentalCustomer, getRentalCustomers, type RentalCustomer } from "../../../api/rentals";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
 
 type CustomerSelectFieldProps = {
-  customers: RentalCustomer[];
+  customers?: RentalCustomer[];
   value: string;
   onChange: (id: string) => void;
   disabled?: boolean;
+  serverSearch?: boolean;
 };
 
 export function CustomerSelectField({
-  customers,
+  customers = [],
   value,
   onChange,
   disabled,
+  serverSearch = false,
 }: CustomerSelectFieldProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const debouncedQuery = useDebounce(query.trim(), 300);
 
-  const selected = customers.find((c) => c.id === value) ?? null;
+  const listCustomer = customers.find((c) => c.id === value) ?? null;
+
+  const fetchedCustomerQuery = useQuery({
+    queryKey: ["rentals", "customers", value],
+    queryFn: () => getRentalCustomer(value).then((r) => r.data),
+    enabled: serverSearch && !!value && !listCustomer,
+  });
+
+  const selected = listCustomer ?? fetchedCustomerQuery.data ?? null;
+
+  const serverSearchQuery = useQuery({
+    queryKey: ["rentals", "customers", "search", debouncedQuery],
+    queryFn: () => getRentalCustomers({ q: debouncedQuery }).then((r) => r.data),
+    enabled: serverSearch && debouncedQuery.length >= 1,
+  });
 
   const filtered = useMemo(() => {
+    if (serverSearch) {
+      if (!debouncedQuery) return [];
+      return (serverSearchQuery.data ?? []).slice(0, 25);
+    }
     const q = query.trim().toLowerCase();
     if (!q) return customers.slice(0, 12);
     return customers
@@ -34,13 +57,18 @@ export function CustomerSelectField({
           (c.phone?.toLowerCase().includes(q) ?? false),
       )
       .slice(0, 12);
-  }, [customers, query]);
+  }, [serverSearch, debouncedQuery, serverSearchQuery.data, customers, query]);
 
   const select = (c: RentalCustomer) => {
     onChange(c.id);
     setQuery("");
     setOpen(false);
   };
+
+  const searchPlaceholder = serverSearch
+    ? "Type name, email, or phone to search…"
+    : "Search by name, email, or phone…";
+  const showSearchLoading = serverSearch && query.trim().length >= 1 && serverSearchQuery.isFetching;
 
   return (
     <div ref={rootRef} className="relative">
@@ -72,7 +100,7 @@ export function CustomerSelectField({
             type="search"
             disabled={disabled}
             className="fm-rental-booking-form__input mt-1.5"
-            placeholder="Search by name, email, or phone…"
+            placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -94,7 +122,10 @@ export function CustomerSelectField({
               }
             }}
           />
-          {open && filtered.length > 0 && (
+          {open && showSearchLoading && (
+            <p className="mt-1 text-xs text-slate-500">Searching…</p>
+          )}
+          {open && !showSearchLoading && filtered.length > 0 && (
             <ul className="fm-rental-booking-form__combobox-list" role="listbox">
               {filtered.map((c, i) => (
                 <li
@@ -119,6 +150,13 @@ export function CustomerSelectField({
               ))}
             </ul>
           )}
+          {open &&
+            !showSearchLoading &&
+            serverSearch &&
+            debouncedQuery.length >= 1 &&
+            filtered.length === 0 && (
+              <p className="mt-1 text-xs text-slate-500">No customers found.</p>
+            )}
         </>
       )}
       <Link

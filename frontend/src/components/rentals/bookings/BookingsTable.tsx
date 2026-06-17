@@ -15,9 +15,10 @@ type BookingsTableProps = {
   bookings: RentalBooking[];
   loading?: boolean;
   density: BookingsDensity;
+  onRenewNavigate?: (bookingId: string) => void;
 };
 
-export function BookingsTable({ bookings, loading, density }: BookingsTableProps) {
+export function BookingsTable({ bookings, loading, density, onRenewNavigate }: BookingsTableProps) {
   const navigate = useNavigate();
   const canManage = useCanManageRentals();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -66,9 +67,15 @@ export function BookingsTable({ bookings, loading, density }: BookingsTableProps
         closeMenu();
         navigate(`/rentals/bookings/${openBooking.id}`);
       },
+      onRenew: onRenewNavigate
+        ? () => {
+            closeMenu();
+            onRenewNavigate(openBooking.id);
+          }
+        : undefined,
     });
     return canManage ? items : items.filter((item) => !MANAGE_BOOKING_MENU_IDS.has(item.id));
-  }, [openBooking, closeMenu, navigate, canManage]);
+  }, [openBooking, closeMenu, navigate, canManage, onRenewNavigate]);
 
   if (loading) {
     return (

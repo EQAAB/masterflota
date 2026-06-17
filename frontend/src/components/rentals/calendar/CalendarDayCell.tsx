@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { bookingsForDay, toDateKey } from "./calendarUtils";
 import { CalendarEventCard } from "./CalendarEventCard";
@@ -11,9 +10,17 @@ type CalendarDayCellProps = {
   inMonth: boolean;
   bookings: RentalAvailabilityBooking[];
   onSelectBooking: (b: RentalAvailabilityBooking) => void;
+  onQuickBook?: (dateKey: string) => void;
 };
 
-export function CalendarDayCell({ date, dateKey, inMonth, bookings, onSelectBooking }: CalendarDayCellProps) {
+export function CalendarDayCell({
+  date,
+  dateKey,
+  inMonth,
+  bookings,
+  onSelectBooking,
+  onQuickBook,
+}: CalendarDayCellProps) {
   const todayKey = toDateKey(new Date());
   const isToday = dateKey === todayKey;
   const dayBookings = bookingsForDay(bookings, dateKey);
@@ -29,14 +36,17 @@ export function CalendarDayCell({ date, dateKey, inMonth, bookings, onSelectBook
       <div className="fm-rental-calendar__cell-date">
         <span className={isToday ? "text-brand-dark" : ""}>{date.getDate()}</span>
         {inMonth && (
-          <Link
-            to={`/rentals/bookings/new?startAt=${dateKey}T09:00`}
+          <button
+            type="button"
             className="fm-rental-calendar__cell-add"
-            title="Add booking"
-            onClick={(e) => e.stopPropagation()}
+            title="Quick weekly rental"
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickBook?.(`${dateKey}T09:00`);
+            }}
           >
             +
-          </Link>
+          </button>
         )}
       </div>
       <div className="space-y-0.5">

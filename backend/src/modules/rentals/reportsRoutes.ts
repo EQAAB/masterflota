@@ -2,6 +2,7 @@ import { Router } from "express";
 import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
 import { requireRentalsView } from "./rentalAuth";
+import { DUE_THIS_WEEK_BOOKING_SELECT } from "./dueThisWeekQuery";
 
 export const reportsRoutes = Router();
 
@@ -43,6 +44,18 @@ reportsRoutes.get("/revenue", requireRentalsView, async (req, res) => {
     });
   } catch (err) {
     console.error("Rental revenue report error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+reportsRoutes.get("/due-this-week", requireRentalsView, async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+  try {
+    const { rows } = await query(`${DUE_THIS_WEEK_BOOKING_SELECT} LIMIT 50`, [orgId]);
+    return res.json(rows);
+  } catch (err) {
+    console.error("Due this week rentals error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getRentalBookings, getRentalDashboard } from "../../api/rentals";
+import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
 import { BookingsKpiRow } from "../../components/rentals/bookings/BookingsKpiRow";
 import { BookingsPageHeader } from "../../components/rentals/bookings/BookingsPageHeader";
 import { BookingsTable } from "../../components/rentals/bookings/BookingsTable";
@@ -12,6 +13,7 @@ import {
   saveBookingsDensity,
   type BookingsDensity,
 } from "../../components/rentals/bookings/bookingsListUtils";
+import { useQuickWeeklyRentalModal } from "../../hooks/useQuickWeeklyRentalModal";
 import { dashboardPage } from "../../theme/classNames";
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -24,6 +26,8 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function BookingsListPage() {
+  const navigate = useNavigate();
+  const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const [searchParams] = useSearchParams();
   const initialStatus = searchParams.get("status") ?? "";
   const initialCustomerId = searchParams.get("customerId") ?? "";
@@ -77,7 +81,7 @@ export function BookingsListPage() {
   return (
     <div className="fm-rental-bookings flex min-h-full flex-1 flex-col bg-surface-elevated">
       <div className={dashboardPage}>
-        <BookingsPageHeader />
+        <BookingsPageHeader onQuickWeekly={() => openQuickWeeklyRental()} />
 
         <BookingsKpiRow dashboard={dashboardQuery.data} bookings={bookings} loading={loading} />
 
@@ -96,8 +100,21 @@ export function BookingsListPage() {
           </p>
         )}
 
-        <BookingsTable bookings={bookings} loading={bookingsQuery.isLoading} density={density} />
+        <BookingsTable
+          bookings={bookings}
+          loading={bookingsQuery.isLoading}
+          density={density}
+          onRenewNavigate={(bookingId) => navigate(`/rentals/bookings/${bookingId}`)}
+        />
       </div>
+      <QuickWeeklyRentalModal
+        open={quickWeeklyModal.open}
+        onClose={closeQuickWeeklyRental}
+        initialCustomerId={quickWeeklyModal.customerId}
+        initialVehicleId={quickWeeklyModal.vehicleId}
+        initialStartAt={quickWeeklyModal.startAt}
+        onSuccess={(bookingId) => navigate(`/rentals/bookings/${bookingId}`)}
+      />
     </div>
   );
 }

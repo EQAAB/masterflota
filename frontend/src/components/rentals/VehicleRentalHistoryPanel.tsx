@@ -1,11 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getRentalBookings } from "../../api/rentals";
+import { QuickWeeklyRentalModal } from "./QuickWeeklyRentalModal";
+import { useQuickWeeklyRentalModal } from "../../hooks/useQuickWeeklyRentalModal";
+import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { bookingStatusClass, formatBookingStatus } from "./rentalStatus";
 import { formatCurrency } from "../../utils/currency";
-import { btnSecondary } from "../../theme/classNames";
+import { btnPrimary } from "../../theme/classNames";
 
 export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) {
+  const navigate = useNavigate();
+  const canManage = useCanManageRentals();
+  const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const { data, isLoading } = useQuery({
     queryKey: ["rentals", "bookings", "vehicle", vehicleId],
     queryFn: () => getRentalBookings({ vehicleId }).then((r) => r.data),
@@ -22,9 +28,15 @@ export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) 
             B2B/B2C customer rentals — separate from driver payroll rent.
           </p>
         </div>
-        <Link to={`/rentals/bookings/new?vehicleId=${vehicleId}`} className={`${btnSecondary} !text-xs`}>
-          New rental booking
-        </Link>
+        {canManage && (
+          <button
+            type="button"
+            className={`${btnPrimary} !text-xs`}
+            onClick={() => openQuickWeeklyRental({ vehicleId })}
+          >
+            Quick weekly rental
+          </button>
+        )}
       </div>
 
       {active && (
@@ -57,6 +69,14 @@ export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) 
           </li>
         ))}
       </ul>
+      <QuickWeeklyRentalModal
+        open={quickWeeklyModal.open}
+        onClose={closeQuickWeeklyRental}
+        initialCustomerId={quickWeeklyModal.customerId}
+        initialVehicleId={quickWeeklyModal.vehicleId ?? vehicleId}
+        initialStartAt={quickWeeklyModal.startAt}
+        onSuccess={(bookingId) => navigate(`/rentals/bookings/${bookingId}`)}
+      />
     </section>
   );
 }
