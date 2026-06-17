@@ -4,8 +4,18 @@ import { acknowledgeServerVersion } from "../store/appUpdateStore";
 import { useAuthStore } from "../store/authStore";
 import { useOrgStore } from "../store/orgStore";
 
-export const apiBaseURL =
-  import.meta.env.VITE_API_URL ?? "http://103.131.215.13:4100/api";
+function resolveApiBaseURL(): string {
+  const fromEnv = import.meta.env.VITE_API_URL as string | undefined;
+  if (fromEnv?.trim()) return fromEnv.trim();
+
+  if (import.meta.env.DEV) return "/api";
+
+  throw new Error(
+    "VITE_API_URL is required for production builds. Set it in frontend/.env or your CI/deploy environment.",
+  );
+}
+
+export const apiBaseURL = resolveApiBaseURL();
 
 export const api = axios.create({
   baseURL: apiBaseURL,

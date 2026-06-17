@@ -182,7 +182,12 @@ export type VehicleHistoryEventType =
   | "maintenance"
   | "incident"
   | "rent_changed"
-  | "rent_collected";
+  | "rent_collected"
+  | "rental_booked"
+  | "rental_pickup"
+  | "rental_return"
+  | "rental_cancelled"
+  | "rental_renewed";
 
 export interface VehicleHistoryEvent {
   id: string;
