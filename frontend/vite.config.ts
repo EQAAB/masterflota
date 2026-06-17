@@ -1,9 +1,11 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
-  if (mode === "production" && !process.env.VITE_API_URL?.trim()) {
+  const env = loadEnv(mode, process.cwd(), "");
+
+  if (mode === "production" && !env.VITE_API_URL?.trim()) {
     throw new Error(
-      "VITE_API_URL must be set for production builds (e.g. http://103.131.215.13:4100/api)",
+      "VITE_API_URL must be set for production builds. Copy .env.production.example to .env.production on the server, or pass VITE_API_URL when building.",
     );
   }
 

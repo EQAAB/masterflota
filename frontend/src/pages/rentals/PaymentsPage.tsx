@@ -16,6 +16,7 @@ import {
   customerOptions,
   exportPaymentsCsv,
   filterAndSortPayments,
+  todayRentCollectedFilters,
   type PaymentsFilters,
 } from "../../components/rentals/payments/paymentsListUtils";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
@@ -71,8 +72,8 @@ export function PaymentsPage() {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ["rentals", "payments", "summary"],
-    queryFn: () => getRentalPaymentsSummary().then((r) => r.data),
+    queryKey: ["rentals", "payments", "summary", queryParams],
+    queryFn: () => getRentalPaymentsSummary(queryParams).then((r) => r.data),
   });
 
   const activityQuery = useQuery({
@@ -115,7 +116,11 @@ export function PaymentsPage() {
           filters={filters}
           onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
           customers={customers}
-          resultCount={filtered.length}
+          visibleCount={filtered.length}
+          filteredCount={summaryQuery.data?.filtered_count}
+          filteredTotal={Number(summaryQuery.data?.filtered_total_amount ?? 0)}
+          summaryLoading={summaryQuery.isLoading || summaryQuery.isFetching}
+          onTodayPreset={() => setFilters((f) => ({ ...f, ...todayRentCollectedFilters() }))}
         />
 
         {paymentsQuery.isError && (

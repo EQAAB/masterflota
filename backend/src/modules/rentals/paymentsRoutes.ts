@@ -8,6 +8,11 @@ import {
 } from "./rentalPaymentService";
 import { rentalDb } from "./rentalDb";
 import { requireRentalsManage, requireRentalsView } from "./rentalAuth";
+import {
+  appendPaymentListFilters,
+  parsePaymentListFilters,
+  PAYMENT_LIST_JOINS,
+} from "./paymentListFilters";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -36,6 +41,7 @@ export const paymentsRoutes = Router();
 paymentsRoutes.get("/summary", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
+  const listFilters = parsePaymentListFilters(req.query as Record<string, unknown>);
   try {
     const { rows } = await query(
       `SELECT
@@ -59,12 +65,25 @@ paymentsRoutes.get("/summary", requireRentalsView, async (req, res) => {
     const prev = Number(row.prev_mtd_revenue ?? 0);
     let revenue_trend_pct: number | null = null;
     if (prev > 0) revenue_trend_pct = Math.round(((mtd - prev) / prev) * 1000) / 10;
+
+    const filteredParams: unknown[] = [orgId];
+    let filteredSql = `SELECT
+         COUNT(*)::int AS filtered_count,
+         COALESCE(SUM(p.amount), 0)::numeric AS filtered_total_amount
+       ${PAYMENT_LIST_JOINS}
+       WHERE p.organization_id = $1::uuid`;
+    filteredSql = appendPaymentListFilters(filteredSql, filteredParams, listFilters);
+    const { rows: filteredRows } = await query(filteredSql, filteredParams);
+    const filtered = filteredRows[0] as Record<string, unknown>;
+
     return res.json({
       total_revenue: Number(row.total_revenue ?? 0),
       paid_count: Number(row.paid_count ?? 0),
       pending_count: Number(row.pending_count ?? 0),
       mtd_revenue: mtd,
       revenue_trend_pct,
+      filtered_count: Number(filtered.filtered_count ?? 0),
+      filtered_total_amount: Number(filtered.filtered_total_amount ?? 0),
     });
   } catch (err) {
     console.error("Payments summary error", err);
@@ -115,52 +134,11 @@ paymentsRoutes.get("/activity", requireRentalsView, async (req, res) => {
 paymentsRoutes.get("/", requireRentalsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
-  const status = typeof req.query.status === "string" ? req.query.status : undefined;
-  const paymentType = typeof req.query.paymentType === "string" ? req.query.paymentType : undefined;
-  const customerId = typeof req.query.customerId === "string" ? req.query.customerId : undefined;
-  const from = typeof req.query.from === "string" ? req.query.from : undefined;
-  const to = typeof req.query.to === "string" ? req.query.to : undefined;
-  const q = typeof req.query.q === "string" ? req.query.q.trim() : undefined;
+  const listFilters = parsePaymentListFilters(req.query as Record<string, unknown>);
   try {
     const params: unknown[] = [orgId];
-    let i = 2;
     let sql = `${PAYMENT_LIST_SELECT} WHERE p.organization_id = $1::uuid`;
-
-    if (status) {
-      sql += ` AND p.status = $${i}`;
-      params.push(status);
-      i++;
-    }
-    if (paymentType) {
-      sql += ` AND p.payment_type = $${i}`;
-      params.push(paymentType);
-      i++;
-    }
-    if (customerId && UUID_RE.test(customerId)) {
-      sql += ` AND b.customer_id = $${i}::uuid`;
-      params.push(customerId);
-      i++;
-    }
-    if (from) {
-      sql += ` AND COALESCE(p.paid_at, p.created_at) >= $${i}::timestamptz`;
-      params.push(`${from}T00:00:00.000Z`);
-      i++;
-    }
-    if (to) {
-      sql += ` AND COALESCE(p.paid_at, p.created_at) <= $${i}::timestamptz`;
-      params.push(`${to}T23:59:59.999Z`);
-      i++;
-    }
-    if (q) {
-      sql += ` AND (
-        b.booking_number ILIKE '%' || $${i} || '%'
-        OR c.legal_name ILIKE '%' || $${i} || '%'
-        OR p.reference ILIKE '%' || $${i} || '%'
-      )`;
-      params.push(q);
-      i++;
-    }
-
+    sql = appendPaymentListFilters(sql, params, listFilters);
     sql += ` ORDER BY p.created_at DESC LIMIT 200`;
     const { rows } = await query(sql, params);
     return res.json(rows);

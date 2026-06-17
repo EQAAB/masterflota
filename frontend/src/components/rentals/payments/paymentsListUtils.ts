@@ -11,6 +11,22 @@ export type PaymentsFilters = {
   sort: "date" | "amount" | "customer";
 };
 
+export function todayDateInputValue(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function todayRentCollectedFilters(): Partial<PaymentsFilters> {
+  const today = todayDateInputValue();
+  return {
+    from: today,
+    to: today,
+    status: "paid",
+    paymentType: "rent",
+  };
+}
+
 export function formatPaymentDateTime(iso: string | null | undefined): { date: string; time: string } {
   if (!iso) return { date: "—", time: "" };
   const d = new Date(iso);

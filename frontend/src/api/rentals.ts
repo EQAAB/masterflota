@@ -113,6 +113,8 @@ export type RentalPaymentsSummary = {
   pending_count: number;
   mtd_revenue: number;
   revenue_trend_pct: number | null;
+  filtered_count: number;
+  filtered_total_amount: number;
 };
 
 export type RentalPaymentsActivityItem = {
@@ -456,8 +458,15 @@ export function getRentalPayments(params?: {
   return api.get<RentalPaymentListItem[]>("/rentals/payments", { params });
 }
 
-export function getRentalPaymentsSummary() {
-  return api.get<RentalPaymentsSummary>("/rentals/payments/summary");
+export function getRentalPaymentsSummary(params?: {
+  status?: string;
+  paymentType?: string;
+  customerId?: string;
+  from?: string;
+  to?: string;
+  q?: string;
+}) {
+  return api.get<RentalPaymentsSummary>("/rentals/payments/summary", { params });
 }
 
 export function getRentalPaymentsActivity() {

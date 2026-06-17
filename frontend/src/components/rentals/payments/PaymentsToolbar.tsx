@@ -1,13 +1,30 @@
 import type { PaymentsFilters } from "./paymentsListUtils";
+import { formatCurrency } from "../../../utils/currency";
+import { btnSecondary } from "../../../theme/classNames";
 
 type PaymentsToolbarProps = {
   filters: PaymentsFilters;
   onChange: (patch: Partial<PaymentsFilters>) => void;
   customers: Array<{ id: string; name: string }>;
-  resultCount: number;
+  visibleCount: number;
+  filteredCount?: number;
+  filteredTotal?: number;
+  summaryLoading?: boolean;
+  onTodayPreset: () => void;
 };
 
-export function PaymentsToolbar({ filters, onChange, customers, resultCount }: PaymentsToolbarProps) {
+export function PaymentsToolbar({
+  filters,
+  onChange,
+  customers,
+  visibleCount,
+  filteredCount = 0,
+  filteredTotal = 0,
+  summaryLoading,
+  onTodayPreset,
+}: PaymentsToolbarProps) {
+  const truncated = filteredCount > visibleCount;
+
   return (
     <div className="fm-rental-payments__toolbar mb-5 space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -30,9 +47,9 @@ export function PaymentsToolbar({ filters, onChange, customers, resultCount }: P
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
-        <p className="text-xs text-ink-muted lg:shrink-0">
-          {resultCount} payment{resultCount === 1 ? "" : "s"}
-        </p>
+        <button type="button" className={`${btnSecondary} !text-xs`} onClick={onTodayPreset}>
+          Today
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -102,6 +119,24 @@ export function PaymentsToolbar({ filters, onChange, customers, resultCount }: P
           <option value="amount">Sort: Amount</option>
           <option value="customer">Sort: Customer</option>
         </select>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm">
+        {summaryLoading ? (
+          <p className="text-slate-500">Calculating totals…</p>
+        ) : (
+          <>
+            <p className="font-semibold text-ink">
+              {filteredCount} payment{filteredCount === 1 ? "" : "s"} · Total{" "}
+              {formatCurrency(filteredTotal)}
+            </p>
+            {truncated && (
+              <p className="mt-1 text-xs text-slate-600">
+                Showing {visibleCount} of {filteredCount} — export CSV for the visible list
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
