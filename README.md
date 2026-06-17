@@ -183,16 +183,28 @@ APP_VERSION=dev
 
 **Production:** Set `NODE_ENV=production` and a strong `JWT_SECRET` (minimum 32 characters, not a default/placeholder). The API **refuses to start** if `JWT_SECRET` is missing or insecure when `NODE_ENV=production`.
 
-### Frontend (optional)
+### Frontend
 
-Create `frontend/.env` if you need to point the app at a different API:
+**Local development (`npm run dev`):** No env file is required. The app calls `/api`, which Vite proxies to `http://localhost:4100`. Override with `frontend/.env.local` if needed:
 
 ```env
-# API base URL (used by Vite as import.meta.env.VITE_API_URL)
+# Optional — only if you need a non-default API URL during dev
 VITE_API_URL=http://localhost:4100/api
 ```
 
-If not set, the frontend defaults to `http://localhost:4100/api`.
+**Production build (`npm run build`):** `VITE_API_URL` is **required** and must point at your deployed API:
+
+```env
+VITE_API_URL=http://103.131.215.13:4100/api
+```
+
+Example build command:
+
+```bash
+VITE_API_URL=http://103.131.215.13:4100/api npm run build
+```
+
+The build fails with a clear error if `VITE_API_URL` is missing.
 
 ---
 

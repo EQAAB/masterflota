@@ -65,6 +65,54 @@ function IconRentCollected({ className }: { className?: string }) {
   );
 }
 
+function IconRentalBooked({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function IconRentalPickup({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+    </svg>
+  );
+}
+
+function IconRentalReturn({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+    </svg>
+  );
+}
+
+function IconRentalCancelled({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
+
+function IconRentalRenewed({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  );
+}
+
+const DEFAULT_EVENT_VISUAL: EventVisualConfig = {
+  label: "Event",
+  iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
+  iconTextClass: "text-slate-600",
+  badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
+  Icon: IconStatus,
+};
+
 export const EVENT_TYPE_OPTIONS: { value: "" | VehicleHistoryEventType; label: string }[] = [
   { value: "", label: "All events" },
   { value: "assigned", label: "Assigned" },
@@ -74,6 +122,11 @@ export const EVENT_TYPE_OPTIONS: { value: "" | VehicleHistoryEventType; label: s
   { value: "incident", label: "Incident" },
   { value: "rent_changed", label: "Rent changed" },
   { value: "rent_collected", label: "Rent collected" },
+  { value: "rental_booked", label: "Rental booked" },
+  { value: "rental_pickup", label: "Rental pickup" },
+  { value: "rental_return", label: "Rental return" },
+  { value: "rental_cancelled", label: "Rental cancelled" },
+  { value: "rental_renewed", label: "Rental renewed" },
 ];
 
 export const EVENT_VISUALS: Record<VehicleHistoryEventType, EventVisualConfig> = {
@@ -126,10 +179,48 @@ export const EVENT_VISUALS: Record<VehicleHistoryEventType, EventVisualConfig> =
     badgeClass: "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/70",
     Icon: IconRentCollected,
   },
+  rental_booked: {
+    label: "Rental booked",
+    iconBgClass: "bg-sky-50 ring-1 ring-sky-200/80",
+    iconTextClass: "text-sky-700",
+    badgeClass: "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70",
+    Icon: IconRentalBooked,
+  },
+  rental_pickup: {
+    label: "Rental pickup",
+    iconBgClass: "bg-brand-mint ring-1 ring-brand/20",
+    iconTextClass: "text-brand-dark",
+    badgeClass: "bg-brand-mint/70 text-brand-dark ring-1 ring-brand/15",
+    Icon: IconRentalPickup,
+  },
+  rental_return: {
+    label: "Rental return",
+    iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
+    iconTextClass: "text-slate-600",
+    badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
+    Icon: IconRentalReturn,
+  },
+  rental_cancelled: {
+    label: "Rental cancelled",
+    iconBgClass: "bg-red-50 ring-1 ring-red-200/80",
+    iconTextClass: "text-red-700",
+    badgeClass: "bg-red-50 text-red-800 ring-1 ring-red-200/70",
+    Icon: IconRentalCancelled,
+  },
+  rental_renewed: {
+    label: "Rental renewed",
+    iconBgClass: "bg-violet-50 ring-1 ring-violet-200/80",
+    iconTextClass: "text-violet-700",
+    badgeClass: "bg-violet-50 text-violet-800 ring-1 ring-violet-200/70",
+    Icon: IconRentalRenewed,
+  },
 };
 
-export function getEventVisual(type: VehicleHistoryEventType): EventVisualConfig {
-  return EVENT_VISUALS[type];
+export function getEventVisual(type: VehicleHistoryEventType | string): EventVisualConfig {
+  return EVENT_VISUALS[type as VehicleHistoryEventType] ?? {
+    ...DEFAULT_EVENT_VISUAL,
+    label: type.replace(/_/g, " "),
+  };
 }
 
 export function formatEventDate(iso: string): string {
