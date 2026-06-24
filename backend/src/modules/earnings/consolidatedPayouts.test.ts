@@ -42,4 +42,14 @@ describe("buildConsolidatedPayoutSearchClause", () => {
   it("returns null for blank search", () => {
     expect(buildConsolidatedPayoutSearchClause("  ", 4)).toBeNull();
   });
+
+  it("matches payout and driver platform identifiers", () => {
+    const clause = buildConsolidatedPayoutSearchClause("BOLT-12345", 5);
+    expect(clause).not.toBeNull();
+    expect(clause!.sql).toContain("dp.platform_id ILIKE $5");
+    expect(clause!.sql).toContain("dp.id::text ILIKE $5");
+    expect(clause!.sql).toContain("d.bolt_driver_id ILIKE $5");
+    expect(clause!.sql).toContain("d.glovo_courier_id ILIKE $5");
+    expect(clause!.param).toBe("%BOLT-12345%");
+  });
 });
