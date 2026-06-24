@@ -57,7 +57,7 @@ export function PayoutUnifiedToolbar({
           </label>
           <input
             type="search"
-            placeholder="Name, phone…"
+            placeholder="Name, phone, platform ID…"
             className={filterInputClass}
             value={q}
             onChange={(e) => onQChange(e.target.value)}

@@ -248,8 +248,23 @@ export function buildConsolidatedPayoutSearchClause(
 ): { sql: string; param: string } | null {
   const trimmed = q.trim();
   if (!trimmed) return null;
+  const p = `$${paramIndex}`;
   return {
-    sql: `AND (d.first_name ILIKE $${paramIndex} OR d.last_name ILIKE $${paramIndex} OR d.phone ILIKE $${paramIndex} OR CONCAT(d.first_name, ' ', d.last_name) ILIKE $${paramIndex})`,
+    sql: `AND (
+      d.first_name ILIKE ${p}
+      OR d.last_name ILIKE ${p}
+      OR d.phone ILIKE ${p}
+      OR CONCAT(d.first_name, ' ', d.last_name) ILIKE ${p}
+      OR dp.platform_id ILIKE ${p}
+      OR dp.id::text ILIKE ${p}
+      OR d.uber_driver_id ILIKE ${p}
+      OR d.bolt_driver_id ILIKE ${p}
+      OR d.glovo_courier_id ILIKE ${p}
+      OR d.bolt_courier_id ILIKE ${p}
+      OR d.bolt_taxi_driver_uuid::text ILIKE ${p}
+      OR d.wolt_courier_id ILIKE ${p}
+      OR COALESCE(dp.vehicle_rental_fee::text, '') ILIKE ${p}
+    )`,
     param: `%${trimmed}%`,
   };
 }
