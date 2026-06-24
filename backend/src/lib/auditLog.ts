@@ -1,5 +1,6 @@
 import type { Request } from "express";
 import { query } from "../db/pool";
+import { clientIp } from "./clientIp";
 
 export type AuditLogInput = {
   orgId: string | null;
@@ -11,15 +12,6 @@ export type AuditLogInput = {
   newValue?: unknown;
   req?: Request;
 };
-
-function clientIp(req?: Request): string | null {
-  if (!req) return null;
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) {
-    return forwarded.split(",")[0]?.trim() ?? null;
-  }
-  return req.socket.remoteAddress ?? null;
-}
 
 export async function writeAuditLog(input: AuditLogInput): Promise<void> {
   const { orgId, userId, action, entityType, entityId, oldValue, newValue, req } = input;

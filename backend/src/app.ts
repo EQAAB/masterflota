@@ -16,6 +16,7 @@ import { userRoutes } from "./modules/users/routes";
 import { roleRoutes } from "./modules/roles/routes";
 import { settingsRoutes } from "./modules/settings/routes";
 import { auditRoutes } from "./modules/audit/routes";
+import { loginEventRoutes } from "./modules/loginEvents/routes";
 import { organizationRoutes } from "./modules/organizations/routes";
 
 export const app = express();
@@ -47,6 +48,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/audit-logs", auditRoutes);
+app.use("/api/login-events", loginEventRoutes);
 app.use("/api/organizations", organizationRoutes);
 
 app.get("/api/health", (_req, res) => {

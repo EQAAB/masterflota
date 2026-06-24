@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { query } from "../../db/pool";
 import { env } from "../../config/env";
 import { createUserSession, hashSessionToken, newSessionJti, revokeUserSession } from "../../lib/userSession";
+import { recordLoginEvent } from "../../lib/loginEvent";
 import { authenticateJWT, type AuthPayload } from "../../middleware/auth";
 import { loadUserPermissions } from "./permissions";
 
@@ -53,8 +54,16 @@ async function issueToken(user: UserRow, req: Parameters<typeof createUserSessio
   const payload = await buildAuthPayload(user, jti);
   if (!payload) return null;
   const token = jwt.sign(payload, env.jwtSecret, { expiresIn: "8h" });
-  await createUserSession(user.id, jti, req);
-  return { token, payload };
+  const sessionId = await createUserSession(user.id, jti, req);
+  return { token, payload, sessionId };
+}
+
+function loginEventUser(user: UserRow) {
+  return {
+    id: user.id,
+    organization_id: user.organization_id,
+    email: user.email,
+  };
 }
 
 router.post("/register", (_req, res) => {
@@ -70,19 +79,45 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Email and password are required" });
   }
 
+  const normalizedEmail = email.toLowerCase();
+
   try {
     const { rows } = await query<UserRow>(
       "SELECT * FROM users WHERE email = $1 LIMIT 1",
-      [email.toLowerCase()],
+      [normalizedEmail],
     );
     const user = rows[0];
 
-    if (!user || !user.is_active) {
+    if (!user) {
+      await recordLoginEvent({
+        eventType: "login.failed",
+        email: normalizedEmail,
+        failureReason: "unknown_email",
+        req,
+      });
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (!user.is_active) {
+      await recordLoginEvent({
+        eventType: "login.failed",
+        email: normalizedEmail,
+        user: loginEventUser(user),
+        failureReason: "inactive_user",
+        req,
+      });
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
+      await recordLoginEvent({
+        eventType: "login.failed",
+        email: normalizedEmail,
+        user: loginEventUser(user),
+        failureReason: "invalid_credentials",
+        req,
+      });
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -90,6 +125,14 @@ router.post("/login", async (req, res) => {
     if (!issued) {
       return res.status(500).json({ message: "Failed to load user permissions" });
     }
+
+    await recordLoginEvent({
+      eventType: "login.success",
+      email: normalizedEmail,
+      user: loginEventUser(user),
+      req,
+      sessionId: issued.sessionId,
+    });
 
     return res.json({
       token: issued.token,
@@ -181,6 +224,12 @@ router.delete("/sessions/:id", authenticateJWT, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
   try {
+    const { rows: userRows } = await query<UserRow>(
+      "SELECT id, organization_id, email FROM users WHERE id = $1::uuid LIMIT 1",
+      [userId],
+    );
+    const actor = userRows[0];
+
     const { rows } = await query<{ id: string }>(
       `DELETE FROM user_sessions
        WHERE id = $1::uuid AND user_id = $2::uuid
@@ -190,6 +239,17 @@ router.delete("/sessions/:id", authenticateJWT, async (req, res) => {
     if (!rows[0]) {
       return res.status(404).json({ message: "Session not found" });
     }
+
+    if (actor) {
+      await recordLoginEvent({
+        eventType: "session.revoked",
+        email: actor.email,
+        user: loginEventUser(actor),
+        req,
+        sessionId: rows[0].id,
+      });
+    }
+
     return res.status(204).send();
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -205,7 +265,23 @@ router.post("/logout", authenticateJWT, async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
   try {
+    const { rows: userRows } = await query<UserRow>(
+      "SELECT id, organization_id, email FROM users WHERE id = $1::uuid LIMIT 1",
+      [userId],
+    );
+    const user = userRows[0];
+
     await revokeUserSession(userId, jti);
+
+    if (user) {
+      await recordLoginEvent({
+        eventType: "logout.success",
+        email: user.email,
+        user: loginEventUser(user),
+        req,
+      });
+    }
+
     return res.status(204).send();
   } catch (err) {
     // eslint-disable-next-line no-console

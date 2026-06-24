@@ -44,6 +44,7 @@ import { PaymentsPage } from "./pages/rentals/PaymentsPage";
 import { UsersPage } from "./pages/settings/UsersPage";
 import { RolesPage } from "./pages/settings/RolesPage";
 import { AuditLogPage } from "./pages/settings/AuditLogPage";
+import { LoginEventsPage } from "./pages/settings/LoginEventsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const token = useAuthStore((s) => s.token);
@@ -385,6 +386,14 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <AuditLogPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/settings/login-events",
+      element: (
+        <ProtectedRoute>
+          <LoginEventsPage />
         </ProtectedRoute>
       ),
     },

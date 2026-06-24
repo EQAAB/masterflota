@@ -38,6 +38,7 @@ function buildSettingsSubItems(opts: {
   if (opts.canUsers) items.push({ to: "/settings/users", label: "Users" });
   if (opts.canRoles) items.push({ to: "/settings/roles", label: "Roles" });
   if (opts.canAudit) items.push({ to: "/settings/audit", label: "Activity log" });
+  if (opts.canAudit) items.push({ to: "/settings/login-events", label: "Login activity" });
   return items;
 }
 
