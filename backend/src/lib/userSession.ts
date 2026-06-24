@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "crypto";
 import type { Request } from "express";
 import { query } from "../db/pool";
+import { clientIp } from "./clientIp";
 
 const JWT_TTL_HOURS = 8;
 
@@ -16,27 +17,20 @@ export function sessionExpiresAt(): Date {
   return new Date(Date.now() + JWT_TTL_HOURS * 60 * 60 * 1000);
 }
 
-function clientIp(req?: Request): string | null {
-  if (!req) return null;
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) {
-    return forwarded.split(",")[0]?.trim() ?? null;
-  }
-  return req.socket.remoteAddress ?? null;
-}
-
 export async function createUserSession(
   userId: string,
   jti: string,
   req?: Request,
-): Promise<void> {
+): Promise<string> {
   const tokenHash = hashSessionToken(jti);
   const expiresAt = sessionExpiresAt();
-  await query(
+  const { rows } = await query<{ id: string }>(
     `INSERT INTO user_sessions (user_id, token, ip_address, user_agent, expires_at)
-     VALUES ($1::uuid, $2, $3::inet, $4, $5)`,
+     VALUES ($1::uuid, $2, $3::inet, $4, $5)
+     RETURNING id::text`,
     [userId, tokenHash, clientIp(req), req?.headers["user-agent"] ?? null, expiresAt],
   );
+  return rows[0]!.id;
 }
 
 export async function validateActiveSession(userId: string, jti: string): Promise<boolean> {
