@@ -4,6 +4,7 @@ import {
   formatFeeStepHint,
   formatFeeStepLabel,
   type FeeDisplayItem,
+  type FeeLadderStepDef,
 } from "./payoutFeeBreakdown";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
@@ -25,6 +26,7 @@ export type PlatformEarningsCardProps = {
   feeItems?: FeeDisplayItem[];
   feeAnchorHint?: string;
   feesLoading?: boolean;
+  vehicleRentSteps?: FeeLadderStepDef[];
 };
 
 function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
@@ -38,21 +40,45 @@ function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
   );
 }
 
+function VehicleRentLineRows({ steps }: { steps?: FeeLadderStepDef[] }) {
+  if (!steps?.length) return null;
+  return (
+    <>
+      {steps.map((step) => (
+        <LineRow
+          key={step.label}
+          label={step.label}
+          value={formatCurrency(step.amount)}
+          variant="deduction"
+          hint={step.hint}
+        />
+      ))}
+    </>
+  );
+}
+
 function FeeLineRows({
   line,
   feeItems,
   feeAnchorHint,
   feesLoading,
+  vehicleRentSteps,
 }: {
   line: PlatformBreakdownLine;
   feeItems?: FeeDisplayItem[];
   feeAnchorHint?: string;
   feesLoading?: boolean;
+  vehicleRentSteps?: FeeLadderStepDef[];
 }) {
   const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
 
   if (feesLoading) {
-    return <LineRow label="Fleet fees" value="…" hint="Loading fee breakdown…" />;
+    return (
+      <>
+        <LineRow label="Fleet fees" value="…" hint="Loading fee breakdown…" />
+        <VehicleRentLineRows steps={vehicleRentSteps} />
+      </>
+    );
   }
 
   if (feeItems && feeItems.length > 0) {
@@ -70,40 +96,54 @@ function FeeLineRows({
             />
           );
         })}
+        <VehicleRentLineRows steps={vehicleRentSteps} />
       </>
     );
   }
 
   if (feeAnchorHint) {
-    return <LineRow label="Recurring fees" value="—" hint={feeAnchorHint} />;
+    return (
+      <>
+        <LineRow label="Recurring fees" value="—" hint={feeAnchorHint} />
+        <VehicleRentLineRows steps={vehicleRentSteps} />
+      </>
+    );
   }
 
   if (Math.abs(weeklyFeesDelta) > 0.02) {
     return (
-      <LineRow
-        label="Fleet fees & adjustments"
-        value={formatCurrency(weeklyFeesDelta)}
-        variant="deduction"
-        hint="Recurring/custom fees on this platform leg"
-      />
+      <>
+        <LineRow
+          label="Fleet fees & adjustments"
+          value={formatCurrency(weeklyFeesDelta)}
+          variant="deduction"
+          hint="Recurring/custom fees on this platform leg"
+        />
+        <VehicleRentLineRows steps={vehicleRentSteps} />
+      </>
     );
   }
 
-  return null;
+  return <VehicleRentLineRows steps={vehicleRentSteps} />;
 }
 
 function PlatformCalculationStrip({
   line,
   feeItems,
   feesLoading,
+  vehicleRentSteps,
 }: {
   line: PlatformBreakdownLine;
   feeItems?: FeeDisplayItem[];
   feesLoading?: boolean;
+  vehicleRentSteps?: FeeLadderStepDef[];
 }) {
   const weeklyFees = Math.abs(line.rawNet - line.netPayoutFromPlatform);
   const fleetFeesTotal = feeItems && feeItems.length > 0 ? feeItemsTotalAbs(feeItems) : weeklyFees;
+  const rentTotal = vehicleRentSteps?.reduce((s, step) => s + Math.abs(step.amount), 0) ?? 0;
   const hasFleetFees = feesLoading || fleetFeesTotal > 0.02;
+  const hasRent = rentTotal > 0.02;
+  const hasDeductionsAfterPlatform = hasFleetFees || hasRent;
   const fleetFeesLabel =
     feeItems && feeItems.length > 1
       ? `Fleet fees (${feeItems.length})`
@@ -139,15 +179,34 @@ function PlatformCalculationStrip({
             {formatCurrency(line.netPayoutFromPlatform)}
           </span>
         </span>
-        {hasFleetFees && (
+        {hasDeductionsAfterPlatform && (
           <>
-            <span className="fm-payout-detail-calc-strip__op">−</span>
-            <span className="fm-payout-detail-calc-strip__item">
-              <span className="fm-payout-detail-calc-strip__label">{fleetFeesLabel}</span>
-              <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
-                {feesLoading ? "…" : formatCurrency(fleetFeesTotal)}
-              </span>
-            </span>
+            {hasFleetFees && (
+              <>
+                <span className="fm-payout-detail-calc-strip__op">−</span>
+                <span className="fm-payout-detail-calc-strip__item">
+                  <span className="fm-payout-detail-calc-strip__label">{fleetFeesLabel}</span>
+                  <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
+                    {feesLoading ? "…" : formatCurrency(fleetFeesTotal)}
+                  </span>
+                </span>
+              </>
+            )}
+            {hasRent && (
+              <>
+                <span className="fm-payout-detail-calc-strip__op">−</span>
+                <span className="fm-payout-detail-calc-strip__item">
+                  <span className="fm-payout-detail-calc-strip__label">
+                    {vehicleRentSteps!.length > 1
+                      ? `Vehicle rent (${vehicleRentSteps!.length})`
+                      : (vehicleRentSteps![0]?.label ?? "Vehicle rent")}
+                  </span>
+                  <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
+                    {formatCurrency(rentTotal)}
+                  </span>
+                </span>
+              </>
+            )}
           </>
         )}
         <span className="fm-payout-detail-calc-strip__op">=</span>
@@ -189,12 +248,14 @@ function WideRightColumn({
   feeItems,
   feeAnchorHint,
   feesLoading,
+  vehicleRentSteps,
 }: {
   line: PlatformBreakdownLine;
   showNetPayoutRow: boolean;
   feeItems?: FeeDisplayItem[];
   feeAnchorHint?: string;
   feesLoading?: boolean;
+  vehicleRentSteps?: FeeLadderStepDef[];
 }) {
   return (
     <>
@@ -216,6 +277,7 @@ function WideRightColumn({
         feeItems={feeItems}
         feeAnchorHint={feeAnchorHint}
         feesLoading={feesLoading}
+        vehicleRentSteps={vehicleRentSteps}
       />
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
@@ -234,6 +296,7 @@ function CompactBody({
   feeItems,
   feeAnchorHint,
   feesLoading,
+  vehicleRentSteps,
 }: {
   line: PlatformBreakdownLine;
   showLegShare: boolean;
@@ -241,6 +304,7 @@ function CompactBody({
   feeItems?: FeeDisplayItem[];
   feeAnchorHint?: string;
   feesLoading?: boolean;
+  vehicleRentSteps?: FeeLadderStepDef[];
 }) {
   const platformLabel = earningsPlatformLabel(line.platform);
 
@@ -260,6 +324,7 @@ function CompactBody({
         feeItems={feeItems}
         feeAnchorHint={feeAnchorHint}
         feesLoading={feesLoading}
+        vehicleRentSteps={vehicleRentSteps}
       />
       <LineRow
         label="Raw net (this platform)"
@@ -301,6 +366,7 @@ export function PlatformEarningsCard({
   feeItems,
   feeAnchorHint,
   feesLoading,
+  vehicleRentSteps,
 }: PlatformEarningsCardProps) {
   const isWide = layout === "wide";
 
@@ -330,11 +396,17 @@ export function PlatformEarningsCard({
                 feeItems={feeItems}
                 feeAnchorHint={feeAnchorHint}
                 feesLoading={feesLoading}
+                vehicleRentSteps={vehicleRentSteps}
               />
               <CommissionBox line={line} />
             </div>
           </div>
-          <PlatformCalculationStrip line={line} feeItems={feeItems} feesLoading={feesLoading} />
+          <PlatformCalculationStrip
+            line={line}
+            feeItems={feeItems}
+            feesLoading={feesLoading}
+            vehicleRentSteps={vehicleRentSteps}
+          />
         </>
       ) : (
         <>
@@ -346,6 +418,7 @@ export function PlatformEarningsCard({
               feeItems={feeItems}
               feeAnchorHint={feeAnchorHint}
               feesLoading={feesLoading}
+              vehicleRentSteps={vehicleRentSteps}
             />
           </div>
           <CommissionBox line={line} />
