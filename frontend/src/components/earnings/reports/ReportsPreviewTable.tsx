@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import type { EarningsReportRow, PayoutRentEntry } from "../../../api/earnings";
 import { formatCurrency } from "../../../utils/currency";
+import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import { commissionBaseTypeLabel } from "../../../utils/commissionBaseLabels";
 import { btnGhost, card, input, tableRow, tableRowExpandedAccent } from "../../../theme/classNames";
 import { reportStatusBadgeClass } from "./reportsDisplayUtils";
@@ -91,7 +92,11 @@ function vehicleRentBreakdown(row: EarningsReportRow): string | undefined {
 }
 
 function driverSubline(row: EarningsReportRow): string {
-  return row.phone?.trim() || "No phone";
+  const platform = earningsPlatformLabel(row.earnings_platform);
+  const phone = row.phone?.trim();
+  if (platform !== "—" && phone) return `${platform} · ${phone}`;
+  if (platform !== "—") return platform;
+  return phone || "No phone";
 }
 
 function ChevronIcon({ className, expanded }: { className?: string; expanded: boolean }) {
@@ -122,6 +127,7 @@ function ReportsRowDetailsPanel({ row }: { row: EarningsReportRow }) {
     <div className="border-t border-border/60 bg-surface/30 px-3 py-3 sm:px-4">
       <p className="mb-3 text-xs font-semibold text-ink-muted">Payout breakdown</p>
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        <DetailField label="Platform" value={earningsPlatformLabel(row.earnings_platform)} />
         <DetailField label="Income" value={formatCurrency(asNumber(row.income))} />
         <DetailField label="Tips" value={formatCurrency(asNumber(row.tips))} />
         <DetailField label="Platform fees" value={formatCurrency(asNumber(row.total_platform_fees))} />
@@ -390,6 +396,8 @@ export function ReportsPreviewTable({
             r.last_name,
             r.phone ?? "",
             r.platform_id ?? "",
+            r.earnings_platform ?? "",
+            earningsPlatformLabel(r.earnings_platform),
             r.payment_status,
             r.period_start_label,
             r.period_end_label,

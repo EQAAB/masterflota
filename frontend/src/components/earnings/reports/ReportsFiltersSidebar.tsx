@@ -309,7 +309,9 @@ export function ReportsFiltersSidebar({
         >
           <option value="">All platforms</option>
           <option value="glovo">Glovo</option>
-          <option value="bolt_courier">Bolt Delivery</option>
+          <option value="bolt">Bolt</option>
+          <option value="bolt_taxi">Bolt Taxi</option>
+          <option value="uber">Uber</option>
         </FilterSelect>
       </div>
 
