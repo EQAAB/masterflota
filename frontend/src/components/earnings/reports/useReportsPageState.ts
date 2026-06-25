@@ -14,6 +14,7 @@ import {
 } from "../../../api/earnings";
 import type { EarningsReportRow } from "../../../api/earnings";
 import { REPORTS_UUID_RE, reportsErrMessage } from "./reportsDisplayUtils";
+import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 
 export function useReportsPageState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,6 +121,7 @@ export function useReportsPageState() {
       const csv = Papa.unparse(
         sourceRows.map((r) => ({
           driver: r.driver_name,
+          platform: earningsPlatformLabel(r.earnings_platform),
           platform_id: r.platform_id ?? "",
           period: `${r.period_start_label} - ${r.period_end_label}`,
           total_revenue: r.total_gross_earnings ?? "",

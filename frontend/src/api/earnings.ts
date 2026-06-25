@@ -127,6 +127,8 @@ export interface EarningsReportRow {
   driver_id: string;
   driver_name: string;
   platform_id: string | null;
+  /** driver_payouts.platform (glovo | bolt | uber | bolt_taxi) */
+  earnings_platform?: string | null;
   payment_period_start: string;
   payment_period_end: string;
   period_start_label: string;
