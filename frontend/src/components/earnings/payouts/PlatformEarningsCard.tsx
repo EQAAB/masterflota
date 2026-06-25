@@ -1,4 +1,10 @@
 import type { PlatformBreakdownLine } from "./payoutBreakdownUtils";
+import {
+  feeItemsTotalAbs,
+  formatFeeStepHint,
+  formatFeeStepLabel,
+  type FeeDisplayItem,
+} from "./payoutFeeBreakdown";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import { formatRatePctFromFraction } from "./payoutRowUtils";
@@ -16,6 +22,9 @@ export type PlatformEarningsCardProps = {
   layout: "wide" | "compact";
   showLegShare: boolean;
   showNetPayoutRow: boolean;
+  feeItems?: FeeDisplayItem[];
+  feeAnchorHint?: string;
+  feesLoading?: boolean;
 };
 
 function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
@@ -29,9 +38,78 @@ function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
   );
 }
 
-function PlatformCalculationStrip({ line }: { line: PlatformBreakdownLine }) {
+function FeeLineRows({
+  line,
+  feeItems,
+  feeAnchorHint,
+  feesLoading,
+}: {
+  line: PlatformBreakdownLine;
+  feeItems?: FeeDisplayItem[];
+  feeAnchorHint?: string;
+  feesLoading?: boolean;
+}) {
+  const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
+
+  if (feesLoading) {
+    return <LineRow label="Fleet fees" value="…" hint="Loading fee breakdown…" />;
+  }
+
+  if (feeItems && feeItems.length > 0) {
+    return (
+      <>
+        {feeItems.map((item) => {
+          const isPositive = item.signedAmount > 0.02;
+          return (
+            <LineRow
+              key={item.id}
+              label={formatFeeStepLabel(item)}
+              value={formatCurrency(item.signedAmount)}
+              variant={isPositive ? "positive" : "deduction"}
+              hint={formatFeeStepHint(item)}
+            />
+          );
+        })}
+      </>
+    );
+  }
+
+  if (feeAnchorHint) {
+    return <LineRow label="Recurring fees" value="—" hint={feeAnchorHint} />;
+  }
+
+  if (Math.abs(weeklyFeesDelta) > 0.02) {
+    return (
+      <LineRow
+        label="Fleet fees & adjustments"
+        value={formatCurrency(weeklyFeesDelta)}
+        variant="deduction"
+        hint="Recurring/custom fees on this platform leg"
+      />
+    );
+  }
+
+  return null;
+}
+
+function PlatformCalculationStrip({
+  line,
+  feeItems,
+  feesLoading,
+}: {
+  line: PlatformBreakdownLine;
+  feeItems?: FeeDisplayItem[];
+  feesLoading?: boolean;
+}) {
   const weeklyFees = Math.abs(line.rawNet - line.netPayoutFromPlatform);
-  const hasWeeklyFees = weeklyFees > 0.02;
+  const fleetFeesTotal = feeItems && feeItems.length > 0 ? feeItemsTotalAbs(feeItems) : weeklyFees;
+  const hasFleetFees = feesLoading || fleetFeesTotal > 0.02;
+  const fleetFeesLabel =
+    feeItems && feeItems.length > 1
+      ? `Fleet fees (${feeItems.length})`
+      : feeItems?.length === 1
+        ? formatFeeStepLabel(feeItems[0]!)
+        : "Fleet fees";
 
   return (
     <div className="fm-payout-detail-calc-strip" aria-label="Platform payout calculation summary">
@@ -61,13 +139,13 @@ function PlatformCalculationStrip({ line }: { line: PlatformBreakdownLine }) {
             {formatCurrency(line.netPayoutFromPlatform)}
           </span>
         </span>
-        {hasWeeklyFees && (
+        {hasFleetFees && (
           <>
             <span className="fm-payout-detail-calc-strip__op">−</span>
             <span className="fm-payout-detail-calc-strip__item">
-              <span className="fm-payout-detail-calc-strip__label">Weekly fees & charges</span>
+              <span className="fm-payout-detail-calc-strip__label">{fleetFeesLabel}</span>
               <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
-                {formatCurrency(weeklyFees)}
+                {feesLoading ? "…" : formatCurrency(fleetFeesTotal)}
               </span>
             </span>
           </>
@@ -105,9 +183,19 @@ function EarningsLeftColumn({ line }: { line: PlatformBreakdownLine }) {
   );
 }
 
-function WideRightColumn({ line, showNetPayoutRow }: { line: PlatformBreakdownLine; showNetPayoutRow: boolean }) {
-  const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
-
+function WideRightColumn({
+  line,
+  showNetPayoutRow,
+  feeItems,
+  feeAnchorHint,
+  feesLoading,
+}: {
+  line: PlatformBreakdownLine;
+  showNetPayoutRow: boolean;
+  feeItems?: FeeDisplayItem[];
+  feeAnchorHint?: string;
+  feesLoading?: boolean;
+}) {
   return (
     <>
       <LineRow label="Cash balance deducted" value={formatCurrency(-line.cashBalance)} variant="deduction" />
@@ -123,14 +211,12 @@ function WideRightColumn({ line, showNetPayoutRow }: { line: PlatformBreakdownLi
         value={formatCurrency(line.netPayoutFromPlatform)}
         bold
       />
-      {Math.abs(weeklyFeesDelta) > 0.02 && (
-        <LineRow
-          label="Weekly fees & charges"
-          value={formatCurrency(weeklyFeesDelta)}
-          variant="deduction"
-          hint="Recurring/custom fees on this platform leg"
-        />
-      )}
+      <FeeLineRows
+        line={line}
+        feeItems={feeItems}
+        feeAnchorHint={feeAnchorHint}
+        feesLoading={feesLoading}
+      />
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
           <span>Final platform payout</span>
@@ -145,13 +231,18 @@ function CompactBody({
   line,
   showLegShare,
   showNetPayoutRow,
+  feeItems,
+  feeAnchorHint,
+  feesLoading,
 }: {
   line: PlatformBreakdownLine;
   showLegShare: boolean;
   showNetPayoutRow: boolean;
+  feeItems?: FeeDisplayItem[];
+  feeAnchorHint?: string;
+  feesLoading?: boolean;
 }) {
   const platformLabel = earningsPlatformLabel(line.platform);
-  const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
 
   return (
     <>
@@ -164,20 +255,18 @@ function CompactBody({
         <span>Operational net ({platformLabel})</span>
         <span className="tabular-nums">{formatCurrency(line.netPayoutFromPlatform)}</span>
       </div>
+      <FeeLineRows
+        line={line}
+        feeItems={feeItems}
+        feeAnchorHint={feeAnchorHint}
+        feesLoading={feesLoading}
+      />
       <LineRow
         label="Raw net (this platform)"
         value={formatCurrency(line.rawNet)}
         variant={line.isDebtPlatform ? "deduction" : "neutral"}
         bold
       />
-      {Math.abs(weeklyFeesDelta) > 0.02 && (
-        <LineRow
-          label="Weekly fees & charges"
-          value={formatCurrency(weeklyFeesDelta)}
-          variant="deduction"
-          hint="Recurring/custom fees on this platform leg"
-        />
-      )}
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
           <span>Net payout from {platformLabel}</span>
@@ -209,6 +298,9 @@ export function PlatformEarningsCard({
   layout,
   showLegShare,
   showNetPayoutRow,
+  feeItems,
+  feeAnchorHint,
+  feesLoading,
 }: PlatformEarningsCardProps) {
   const isWide = layout === "wide";
 
@@ -232,16 +324,29 @@ export function PlatformEarningsCard({
               <EarningsLeftColumn line={line} />
             </div>
             <div className="fm-payout-detail-platform-card__body fm-payout-detail-platform-card__body--col">
-              <WideRightColumn line={line} showNetPayoutRow={showNetPayoutRow} />
+              <WideRightColumn
+                line={line}
+                showNetPayoutRow={showNetPayoutRow}
+                feeItems={feeItems}
+                feeAnchorHint={feeAnchorHint}
+                feesLoading={feesLoading}
+              />
               <CommissionBox line={line} />
             </div>
           </div>
-          <PlatformCalculationStrip line={line} />
+          <PlatformCalculationStrip line={line} feeItems={feeItems} feesLoading={feesLoading} />
         </>
       ) : (
         <>
           <div className="fm-payout-detail-platform-card__body">
-            <CompactBody line={line} showLegShare={showLegShare} showNetPayoutRow={showNetPayoutRow} />
+            <CompactBody
+              line={line}
+              showLegShare={showLegShare}
+              showNetPayoutRow={showNetPayoutRow}
+              feeItems={feeItems}
+              feeAnchorHint={feeAnchorHint}
+              feesLoading={feesLoading}
+            />
           </div>
           <CommissionBox line={line} />
         </>

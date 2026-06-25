@@ -6,6 +6,12 @@ import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import { toNum } from "./payoutRowUtils";
 import { computeUnifiedBreakdown, formatPeriodParts } from "./payoutBreakdownUtils";
+import {
+  buildLegFeeDisplayItems,
+  buildWeekFeeLadderSteps,
+  feeResidualDelta,
+  type WeekFeeBreakdown,
+} from "./payoutFeeBreakdown";
 import { LineRow, PlatformLogo } from "./payoutDetailUi";
 import { PlatformEarningsCard } from "./PlatformEarningsCard";
 
@@ -13,6 +19,7 @@ export type CombinedPayoutDetailsContentProps = {
   row: ConsolidatedDriverPayout;
   payoutItems: PayoutListItem[];
   detailsById: Map<string, PayoutAssignmentDetail>;
+  weekFeeBreakdown?: WeekFeeBreakdown;
   isPaying?: boolean;
   onPay?: () => void;
   onOpenDebtActions?: (payout: PayoutListItem) => void;
@@ -54,7 +61,7 @@ function SummaryStep({
   hint,
 }: {
   step: number;
-  kind: "neutral" | "deduction" | "total" | "final" | "final-debt";
+  kind: "neutral" | "deduction" | "positive" | "loading" | "total" | "final" | "final-debt";
   prefix?: "-" | "=" | "";
   label: string;
   value: ReactNode;
@@ -69,7 +76,11 @@ function SummaryStep({
           ? "fm-payout-detail-step fm-payout-detail-step--total"
           : kind === "deduction"
             ? "fm-payout-detail-step fm-payout-detail-step--deduct"
-            : "fm-payout-detail-step";
+            : kind === "positive"
+              ? "fm-payout-detail-step"
+              : kind === "loading"
+                ? "fm-payout-detail-step opacity-70"
+                : "fm-payout-detail-step";
   const valueClass =
     kind === "final"
       ? "text-emerald-900 font-bold"
@@ -79,7 +90,11 @@ function SummaryStep({
           ? "text-violet-950 font-semibold"
           : kind === "deduction"
             ? "text-rose-700 font-semibold"
-            : "text-ink font-medium";
+            : kind === "positive"
+              ? "text-emerald-800 font-semibold"
+              : kind === "loading"
+                ? "text-slate-400 font-medium"
+                : "text-ink font-medium";
   return (
     <div className={rowClass}>
       <div className="fm-payout-detail-step__left min-w-0">
@@ -94,7 +109,9 @@ function SummaryStep({
           </div>
         </div>
       </div>
-      <span className={`fm-payout-detail-step__value tabular-nums shrink-0 ${valueClass}`}>{value}</span>
+      <span className={`fm-payout-detail-step__value tabular-nums shrink-0 ${valueClass}`}>
+        {kind === "loading" ? "…" : value}
+      </span>
     </div>
   );
 }
@@ -251,6 +268,7 @@ export function CombinedPayoutDetailsContent({
   row,
   payoutItems,
   detailsById,
+  weekFeeBreakdown,
   isPaying,
   onPay,
   onOpenDebtActions,
@@ -279,11 +297,31 @@ export function CombinedPayoutDetailsContent({
     .map((p) => `${earningsPlatformLabel(p.platform)} ${formatCurrency(p.netPayoutFromPlatform)}`)
     .join("  +  ");
 
+  const recurringAnchorHint =
+    weekFeeBreakdown?.anchorPlatform && weekFeeBreakdown.items.some((i) => i.source === "recurring")
+      ? `Recurring fees deducted on ${earningsPlatformLabel(weekFeeBreakdown.anchorPlatform)}.`
+      : undefined;
+
   /** Short ladder: what the driver actually gets paid. */
   const finalPayoutSteps = useMemo(() => {
-    type StepKind = "neutral" | "deduction" | "total" | "final" | "final-debt";
-    type StepDef = { kind: StepKind; prefix?: "-" | "=" | ""; label: string; amount: number; hint?: string };
+    type StepKind = "neutral" | "deduction" | "positive" | "loading" | "total" | "final" | "final-debt";
+    type StepDef = {
+      kind: StepKind;
+      prefix?: "-" | "=" | "";
+      label: string;
+      amount: number;
+      hint?: string;
+    };
     const steps: StepDef[] = [];
+
+    const mapFeeSteps = (feeSteps: ReturnType<typeof buildWeekFeeLadderSteps>): StepDef[] =>
+      feeSteps.map((s) => ({
+        kind: s.kind,
+        prefix: s.prefix,
+        label: s.label,
+        amount: s.amount,
+        hint: s.hint,
+      }));
 
     if (breakdown.platforms.length === 1) {
       const p = breakdown.platforms[0]!;
@@ -296,15 +334,13 @@ export function CombinedPayoutDetailsContent({
         hint: "Net income after fleet/subscription and cash balance.",
       });
 
-      if (Math.abs(weeklyFees) > 0.02) {
-        steps.push({
-          kind: "deduction",
-          prefix: "-",
-          label: "Weekly fees & charges",
-          amount: weeklyFees,
-          hint: "Recurring/custom fees on this platform.",
-        });
-      }
+      steps.push(
+        ...mapFeeSteps(
+          buildWeekFeeLadderSteps(weekFeeBreakdown, {
+            fallbackDelta: weeklyFees,
+          }),
+        ),
+      );
 
       if (breakdown.customFeeVehicleRent > 0.02) {
         steps.push({
@@ -350,6 +386,15 @@ export function CombinedPayoutDetailsContent({
       });
     }
 
+    steps.push(
+      ...mapFeeSteps(
+        buildWeekFeeLadderSteps(weekFeeBreakdown, {
+          fallbackDelta: breakdown.weeklyChargesDelta,
+          recurringAnchorHint,
+        }),
+      ),
+    );
+
     const combinedHint =
       breakdown.platforms.length > 1 && breakdown.crossPlatformDebtOffset > 0.02
         ? `${formatCurrency(breakdown.totalPositiveRaw)} earnings offset ${formatCurrency(breakdown.crossPlatformDebtOffset)} of ${formatCurrency(Math.abs(breakdown.totalNegativeRaw))} platform debt`
@@ -384,11 +429,11 @@ export function CombinedPayoutDetailsContent({
     });
 
     return steps;
-  }, [breakdown, isDebtPayout]);
+  }, [breakdown, isDebtPayout, weekFeeBreakdown, recurringAnchorHint]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
   const detailedEarningsSteps = useMemo(() => {
-    type StepKind = "neutral" | "deduction" | "total" | "final" | "final-debt";
+    type StepKind = "neutral" | "deduction" | "positive" | "loading" | "total" | "final" | "final-debt";
     type StepDef = {
       kind: StepKind;
       prefix?: "-" | "=" | "";
@@ -456,7 +501,38 @@ export function CombinedPayoutDetailsContent({
         hint: "Applied once on combined platform net payout",
       },
     );
-    if (Math.abs(breakdown.weeklyChargesDelta) > 0.02) {
+    const feeSteps = buildWeekFeeLadderSteps(weekFeeBreakdown, {
+      fallbackDelta: breakdown.weeklyChargesDelta,
+      recurringAnchorHint,
+    });
+    for (const feeStep of feeSteps) {
+      steps.push({
+        kind: feeStep.kind,
+        prefix: feeStep.prefix,
+        label: feeStep.label,
+        amount: feeStep.amount,
+        hint: feeStep.hint,
+      });
+    }
+    if (
+      weekFeeBreakdown &&
+      !weekFeeBreakdown.isLoading &&
+      weekFeeBreakdown.items.length > 0
+    ) {
+      const residual = feeResidualDelta(breakdown.weeklyChargesDelta, weekFeeBreakdown.items);
+      if (Math.abs(residual) > 0.02) {
+        steps.push({
+          kind: "deduction",
+          prefix: "-",
+          label: "Other adjustments",
+          amount: residual,
+          hint: "Vehicle rent, pooling, or rounding not shown as named fees",
+        });
+      }
+    } else if (
+      Math.abs(breakdown.weeklyChargesDelta) > 0.02 &&
+      (!weekFeeBreakdown || (!weekFeeBreakdown.isLoading && weekFeeBreakdown.items.length === 0))
+    ) {
       steps.push({
         kind: "deduction",
         prefix: "-",
@@ -472,7 +548,7 @@ export function CombinedPayoutDetailsContent({
       amount: breakdown.weekRawNet,
     });
     return steps;
-  }, [breakdown, cashBreakdownHint, platformNetHint]);
+  }, [breakdown, cashBreakdownHint, platformNetHint, weekFeeBreakdown, recurringAnchorHint]);
 
   const sortedPlatforms = useMemo(
     () =>
@@ -581,7 +657,11 @@ export function CombinedPayoutDetailsContent({
 
       {/* Platform cards */}
       <div className={platformsGridClass}>
-        {sortedPlatforms.map((line) => (
+        {sortedPlatforms.map((line) => {
+          const legFees = weekFeeBreakdown
+            ? buildLegFeeDisplayItems(line.payoutId, weekFeeBreakdown)
+            : undefined;
+          return (
           <PlatformEarningsCard
             key={line.payoutId}
             line={line}
@@ -589,8 +669,12 @@ export function CombinedPayoutDetailsContent({
             layout={platformLayout}
             showLegShare={showLegShare}
             showNetPayoutRow={showNetPayoutRow}
+            feeItems={legFees?.items}
+            feeAnchorHint={legFees?.anchorHint}
+            feesLoading={weekFeeBreakdown?.isLoading}
           />
-        ))}
+          );
+        })}
       </div>
 
       {showCrossPlatformOffset && (

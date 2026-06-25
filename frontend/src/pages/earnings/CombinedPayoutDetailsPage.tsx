@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
 import axios from "axios";
@@ -7,6 +7,7 @@ import { useCanAccessFinance } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
   getEarningsPayouts,
+  getPayoutCustomFees,
   getPayoutsAssignmentDetails,
   postPayDriverConsolidated,
   type PayoutListItem,
@@ -14,6 +15,7 @@ import {
 import { CombinedPayoutDetailsContent } from "../../components/earnings/payouts/CombinedPayoutDetailsContent";
 import { PayoutDetailsPageHeader } from "../../components/earnings/payouts/PayoutDetailsPageHeader";
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
+import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
@@ -99,6 +101,26 @@ export function CombinedPayoutDetailsPage() {
     () => new Map((detailsQuery.data ?? []).map((d) => [d.payout_id, d] as const)),
     [detailsQuery.data],
   );
+
+  const feeQueries = useQueries({
+    queries: payoutItems.map((p) => ({
+      queryKey: ["earnings", "payout-custom-fees", p.id] as const,
+      queryFn: () => getPayoutCustomFees(p.id).then((r) => r.data),
+      enabled: payoutItems.length > 0,
+      staleTime: 30_000,
+    })),
+  });
+
+  const weekFeeBreakdown = useMemo(() => {
+    const feesByPayoutId = new Map(
+      payoutItems.flatMap((p, i) => {
+        const data = feeQueries[i]?.data;
+        return data ? ([[p.id, data]] as const) : [];
+      }),
+    );
+    const isLoading = payoutItems.length > 0 && feeQueries.some((q) => q.isLoading);
+    return buildWeekFeeBreakdown(payoutItems, feesByPayoutId, isLoading);
+  }, [payoutItems, feeQueries]);
 
   const payMut = useMutation({
     mutationFn: () => postPayDriverConsolidated({ driverId: driverId!, weekStart, weekEnd }),
@@ -209,6 +231,7 @@ export function CombinedPayoutDetailsPage() {
           row={row}
           payoutItems={payoutItems}
           detailsById={detailsById}
+          weekFeeBreakdown={weekFeeBreakdown}
           isPaying={payMut.isPending}
           onPay={() => setPayConfirmOpen(true)}
           onOpenDebtActions={setDebtModalRow}
