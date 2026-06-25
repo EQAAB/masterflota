@@ -28,6 +28,10 @@ export type ConsolidatedDriverPayoutRow = {
   platforms: string[];
   platform_payout_ids: string[];
   platform_lines: ConsolidatedPlatformLine[];
+  /** Max remaining collectible debt across platform legs. */
+  remaining_debt: string;
+  /** Sum of manual debt reductions this week (forgive, cash, adjust). */
+  week_debt_adjusted_total: string;
   /** payable | paid | debt | hold | partial | mixed */
   consolidated_status: string;
   can_pay: boolean;
@@ -52,14 +56,22 @@ type PayoutLegRow = {
   vehicle_rental_fee: string | null;
   cross_platform_debt_offset: string | null;
   week_debt_platforms: string[] | null;
+  remaining_debt_amount: string | null;
   payment_status: string;
 };
 
 export function deriveConsolidatedStatus(
   total: number,
   statuses: string[],
+  remainingDebt = 0,
 ): { consolidated_status: string; can_pay: boolean } {
   if (total < 0) {
+    const rem = roundMoney(remainingDebt);
+    const hasHold = statuses.some((s) => s === "hold");
+    const hasDebtLeg = statuses.some((s) => s === "debt");
+    if (rem <= 0.02 && hasHold && !hasDebtLeg) {
+      return { consolidated_status: "hold", can_pay: false };
+    }
     return { consolidated_status: "debt", can_pay: false };
   }
   const allPaid = statuses.every((s) => s === "paid" || s === "approved");
@@ -89,6 +101,7 @@ export function deriveConsolidatedStatus(
 function buildConsolidatedRows(
   legs: PayoutLegRow[],
   payments: Map<string, { id: string; paid_at: string }>,
+  adjustmentsByDriver: Map<string, number> = new Map(),
 ): ConsolidatedDriverPayoutRow[] {
   const byDriver = new Map<string, PayoutLegRow[]>();
   for (const leg of legs) {
@@ -130,8 +143,12 @@ function buildConsolidatedRows(
     const debtPlatforms = [
       ...new Set(driverLegs.flatMap((l) => l.week_debt_platforms ?? []).filter(Boolean)),
     ].sort();
+    const remainingDebt = roundMoney(
+      driverLegs.reduce((m, l) => Math.max(m, Number(l.remaining_debt_amount ?? "0")), 0),
+    );
+    const weekDebtAdjustedTotal = roundMoney(adjustmentsByDriver.get(driverId) ?? 0);
     const statuses = driverLegs.map((l) => l.payment_status);
-    const { consolidated_status, can_pay } = deriveConsolidatedStatus(total, statuses);
+    const { consolidated_status, can_pay } = deriveConsolidatedStatus(total, statuses, remainingDebt);
 
     const payKey = `${driverId}|${first.payment_period_start}|${first.payment_period_end}`;
     const existingPay = payments.get(payKey);
@@ -153,6 +170,8 @@ function buildConsolidatedRows(
       platforms: [...new Set(driverLegs.map((l) => l.platform))].sort(),
       platform_payout_ids: driverLegs.map((l) => l.id),
       platform_lines: platformLines,
+      remaining_debt: remainingDebt.toFixed(2),
+      week_debt_adjusted_total: weekDebtAdjustedTotal.toFixed(2),
       consolidated_status,
       can_pay,
       driver_payment_id: existingPay?.id ?? null,
@@ -205,7 +224,8 @@ export async function listConsolidatedPayouts(
             dp.net_driver_payout::text, dp.raw_net_amount::text,
             dp.total_gross_earnings::text, dp.company_commission::text,
             dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
-            dp.cross_platform_debt_offset::text, dp.week_debt_platforms
+            dp.cross_platform_debt_offset::text, dp.week_debt_platforms,
+            dp.remaining_debt_amount::text
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid
@@ -217,6 +237,44 @@ export async function listConsolidatedPayouts(
      ORDER BY d.last_name, d.first_name, dp.platform`,
     params,
   );
+
+  const adjExtra: string[] = [];
+  const adjParams: unknown[] = [orgId, ps, pe];
+  let adjP = 4;
+  if (options?.driverId) {
+    adjExtra.push(`AND dp.driver_id = $${adjP++}::uuid`);
+    adjParams.push(options.driverId);
+  }
+
+  const { rows: adjRows } = await client.query<{ driver_id: string; week_debt_adjusted_total: string }>(
+    `SELECT dp.driver_id::text,
+            COALESCE(SUM(
+              CASE
+                WHEN pa.adjustment_type = 'carry_forward' THEN 0
+                WHEN pa.applied_amount IS NOT NULL AND pa.applied_amount::numeric > 0.02
+                  THEN pa.applied_amount::numeric
+                WHEN pa.previous_remaining_debt IS NOT NULL AND pa.new_remaining_debt IS NOT NULL
+                  THEN GREATEST(0, pa.previous_remaining_debt::numeric - pa.new_remaining_debt::numeric)
+                WHEN pa.amount::numeric < -0.02 THEN ABS(pa.amount::numeric)
+                ELSE 0
+              END
+            ), 0)::text AS week_debt_adjusted_total
+     FROM payout_adjustments pa
+     INNER JOIN driver_payouts dp ON dp.id = pa.payout_id AND dp.organization_id = pa.organization_id
+     INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
+     WHERE pa.organization_id = $1::uuid
+       AND dp.payment_period_start = $2::date
+       AND dp.payment_period_end = $3::date
+       AND d.subcontractor_id IS NULL
+       AND dp.subcontractor_payout_id IS NULL
+       ${adjExtra.join("\n       ")}
+     GROUP BY dp.driver_id`,
+    adjParams,
+  );
+  const adjustmentsByDriver = new Map<string, number>();
+  for (const ar of adjRows) {
+    adjustmentsByDriver.set(ar.driver_id, roundMoney(Number(ar.week_debt_adjusted_total)));
+  }
 
   const { rows: payRows } = await client.query<{ id: string; driver_id: string; paid_at: string }>(
     `SELECT id::text, driver_id::text, paid_at::text
@@ -231,7 +289,7 @@ export async function listConsolidatedPayouts(
     payments.set(`${pr.driver_id}|${ps}|${pe}`, { id: pr.id, paid_at: pr.paid_at });
   }
 
-  let consolidated = buildConsolidatedRows(legs, payments);
+  let consolidated = buildConsolidatedRows(legs, payments, adjustmentsByDriver);
 
   if (options?.status?.trim()) {
     const filter = options.status.trim().toLowerCase();
@@ -296,7 +354,8 @@ export async function payDriverConsolidated(
             dp.net_driver_payout::text, dp.raw_net_amount::text,
             dp.total_gross_earnings::text, dp.company_commission::text,
             dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
-            dp.cross_platform_debt_offset::text, dp.week_debt_platforms
+            dp.cross_platform_debt_offset::text, dp.week_debt_platforms,
+            dp.remaining_debt_amount::text
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid
