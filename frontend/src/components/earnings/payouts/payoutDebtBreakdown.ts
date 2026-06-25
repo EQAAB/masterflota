@@ -1,4 +1,4 @@
-import type { DebtAdjustType, PayoutDebtAdjustment } from "../../../api/earnings";
+import type { ConsolidatedDriverPayout, DebtAdjustType, PayoutDebtAdjustment } from "../../../api/earnings";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import type { FeeLadderStepDef } from "./payoutFeeBreakdown";
 
@@ -150,4 +150,30 @@ export function buildDebtAdjustmentCardLines(
       hint: formatDebtRemainingHint(adj),
     };
   });
+}
+
+export function shouldShowListDebtContext(row: Pick<
+  ConsolidatedDriverPayout,
+  "consolidated_status" | "total_amount" | "remaining_debt" | "week_debt_adjusted_total"
+>): boolean {
+  const total = toNum(row.total_amount);
+  const remaining = toNum(row.remaining_debt);
+  const adjusted = toNum(row.week_debt_adjusted_total);
+  const status = row.consolidated_status;
+  return (
+    status === "debt" ||
+    status === "hold" ||
+    total < -0.02 ||
+    remaining > 0.02 ||
+    adjusted > 0.02
+  );
+}
+
+export function formatListRemainingDebtLine(remaining: number): string {
+  return `Remaining: ${round2(remaining).toFixed(2)} RON`;
+}
+
+export function formatListDebtAdjustmentSummary(adjustedTotal: number): string | null {
+  if (adjustedTotal <= 0.02) return null;
+  return `Adjusted −${round2(adjustedTotal).toFixed(2)} RON this week`;
 }

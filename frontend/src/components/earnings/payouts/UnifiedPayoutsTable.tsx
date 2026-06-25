@@ -14,6 +14,12 @@ import { PayoutPagination } from "./PayoutPagination";
 
 import { formatConsolidatedPeriod } from "./payoutBreakdownUtils";
 
+import {
+  formatListDebtAdjustmentSummary,
+  formatListRemainingDebtLine,
+  shouldShowListDebtContext,
+} from "./payoutDebtBreakdown";
+
 
 
 type UnifiedPayoutsTableProps = {
@@ -444,6 +450,12 @@ export function UnifiedPayoutsTable({
 
                 const vehicleRent = toNum(row.total_vehicle_rent);
 
+                const showDebtContext = shouldShowListDebtContext(row);
+
+                const remainingDebt = toNum(row.remaining_debt);
+
+                const adjustmentLine = formatListDebtAdjustmentSummary(toNum(row.week_debt_adjusted_total));
+
                 return (
 
                   <tr
@@ -555,6 +567,26 @@ export function UnifiedPayoutsTable({
                         {STATUS_LABELS[row.consolidated_status] ?? row.consolidated_status}
 
                       </span>
+
+                      {showDebtContext && (
+
+                        <p className="mt-1 text-[10px] leading-snug text-ink-muted tabular-nums">
+
+                          {formatListRemainingDebtLine(remainingDebt)}
+
+                        </p>
+
+                      )}
+
+                      {adjustmentLine && (
+
+                        <p className="mt-0.5 text-[10px] leading-snug text-emerald-700 tabular-nums">
+
+                          {adjustmentLine}
+
+                        </p>
+
+                      )}
 
                     </td>
 

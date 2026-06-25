@@ -4,6 +4,9 @@ import {
   buildDebtAdjustmentLadderSteps,
   debtAdjustmentReductionAmount,
   formatDebtAdjustmentLabel,
+  formatListDebtAdjustmentSummary,
+  formatListRemainingDebtLine,
+  shouldShowListDebtContext,
 } from "./payoutDebtBreakdown";
 
 function adj(partial: Partial<PayoutDebtAdjustment> & Pick<PayoutDebtAdjustment, "id" | "adjustment_type">): PayoutDebtAdjustment {
@@ -80,5 +83,32 @@ describe("buildDebtAdjustmentLadderSteps", () => {
       true,
     );
     expect(steps[0]?.label).toContain("Uber");
+  });
+});
+
+describe("list debt summary helpers", () => {
+  it("shows context for debt status or negative net", () => {
+    expect(
+      shouldShowListDebtContext({
+        consolidated_status: "payable",
+        total_amount: "-50",
+        remaining_debt: "0",
+        week_debt_adjusted_total: "0",
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowListDebtContext({
+        consolidated_status: "payable",
+        total_amount: "100",
+        remaining_debt: "0",
+        week_debt_adjusted_total: "0",
+      }),
+    ).toBe(false);
+  });
+
+  it("formats remaining and adjustment lines", () => {
+    expect(formatListRemainingDebtLine(150)).toBe("Remaining: 150.00 RON");
+    expect(formatListDebtAdjustmentSummary(200)).toBe("Adjusted −200.00 RON this week");
+    expect(formatListDebtAdjustmentSummary(0)).toBeNull();
   });
 });

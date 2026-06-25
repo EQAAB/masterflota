@@ -256,6 +256,10 @@ export interface ConsolidatedDriverPayout {
   platforms: string[];
   platform_payout_ids: string[];
   platform_lines: ConsolidatedPlatformLine[];
+  /** Max remaining collectible debt across platform legs. */
+  remaining_debt?: string;
+  /** Sum of manual debt reductions this week. */
+  week_debt_adjusted_total?: string;
   consolidated_status: string;
   can_pay: boolean;
   driver_payment_id: string | null;
