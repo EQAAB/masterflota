@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import type { ConsolidatedDriverPayout, PayoutAssignmentDetail, PayoutListItem } from "../../../api/earnings";
+import type { ConsolidatedDriverPayout, PayoutAssignmentDetail, PayoutDebtAdjustment, PayoutListItem } from "../../../api/earnings";
 import { btnSecondary } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
@@ -15,6 +15,10 @@ import {
   type FeeLadderStepDef,
   type WeekFeeBreakdown,
 } from "./payoutFeeBreakdown";
+import {
+  buildDebtAdjustmentCardLines,
+  buildDebtAdjustmentLadderSteps,
+} from "./payoutDebtBreakdown";
 import { LineRow, PlatformLogo } from "./payoutDetailUi";
 import { PlatformEarningsCard } from "./PlatformEarningsCard";
 
@@ -23,6 +27,8 @@ export type CombinedPayoutDetailsContentProps = {
   payoutItems: PayoutListItem[];
   detailsById: Map<string, PayoutAssignmentDetail>;
   weekFeeBreakdown?: WeekFeeBreakdown;
+  weekDebtAdjustments?: PayoutDebtAdjustment[];
+  weekDebtAdjustmentsLoading?: boolean;
   isPaying?: boolean;
   onPay?: () => void;
   onOpenDebtActions?: (payout: PayoutListItem) => void;
@@ -272,6 +278,8 @@ export function CombinedPayoutDetailsContent({
   payoutItems,
   detailsById,
   weekFeeBreakdown,
+  weekDebtAdjustments = [],
+  weekDebtAdjustmentsLoading = false,
   isPaying,
   onPay,
   onOpenDebtActions,
@@ -314,6 +322,20 @@ export function CombinedPayoutDetailsContent({
         rentEntries: normalizeRentEntries(rentPayout?.rent_entries),
       }),
     [breakdown.customFeeVehicleRent, vehicleDetail?.license_plate, rentPayout?.rent_entries],
+  );
+
+  const platformCountForDebt = breakdown.platforms.length;
+  const debtAdjustmentSteps = useMemo(
+    () =>
+      buildDebtAdjustmentLadderSteps(weekDebtAdjustments, platformCountForDebt > 1, {
+        isLoading: weekDebtAdjustmentsLoading,
+      }),
+    [weekDebtAdjustments, platformCountForDebt, weekDebtAdjustmentsLoading],
+  );
+
+  const debtAdjustmentCardLines = useMemo(
+    () => buildDebtAdjustmentCardLines(weekDebtAdjustments, platformCountForDebt > 1),
+    [weekDebtAdjustments, platformCountForDebt],
   );
 
   /** Short ladder: what the driver actually gets paid. */
@@ -369,6 +391,8 @@ export function CombinedPayoutDetailsContent({
           hint: "Paid from this week's earnings toward prior debt",
         });
       }
+
+      steps.push(...mapLadderSteps(debtAdjustmentSteps));
 
       steps.push({
         kind: isDebtPayout ? "final-debt" : "final",
@@ -429,6 +453,8 @@ export function CombinedPayoutDetailsContent({
       });
     }
 
+    steps.push(...mapLadderSteps(debtAdjustmentSteps));
+
     steps.push({
       kind: isDebtPayout ? "final-debt" : "final",
       prefix: "=",
@@ -438,7 +464,14 @@ export function CombinedPayoutDetailsContent({
     });
 
     return steps;
-  }, [breakdown, isDebtPayout, weekFeeBreakdown, recurringAnchorHint, vehicleRentSteps]);
+  }, [
+    breakdown,
+    isDebtPayout,
+    weekFeeBreakdown,
+    recurringAnchorHint,
+    vehicleRentSteps,
+    debtAdjustmentSteps,
+  ]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
   const detailedEarningsSteps = useMemo(() => {
@@ -898,6 +931,34 @@ export function CombinedPayoutDetailsContent({
           />
           <LineRow label="Debt applied" value={formatCurrency(debtApplied)} />
           <LineRow label="Remaining debt" value={formatCurrency(remainingDebt)} variant={remainingDebt > 0 ? "deduction" : "neutral"} />
+          {weekDebtAdjustmentsLoading && (
+            <p className="mt-2 text-xs text-slate-500">Loading adjustments…</p>
+          )}
+          {!weekDebtAdjustmentsLoading && debtAdjustmentCardLines.length > 0 && (
+            <div className="mt-3 border-t border-slate-200/80 pt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+                Adjustments this week
+              </p>
+              <ul className="space-y-2">
+                {debtAdjustmentCardLines.map((line) => (
+                  <li key={line.id} className="text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-medium text-ink">{line.label}</span>
+                      <span className="tabular-nums text-ink shrink-0">{line.amountLabel}</span>
+                    </div>
+                    {line.hint && (
+                      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{line.hint}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {onOpenDebtActions && actionPayout && (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Use <span className="font-medium text-ink">Adjust debt</span> in the actions menu to add more.
+                </p>
+              )}
+            </div>
+          )}
           <LineRow label="Status" value={statusLabel} />
           {row.consolidated_status === "paid" && row.paid_at && (
             <LineRow label="Paid on" value={row.paid_at.slice(0, 10)} />
