@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
 import axios from "axios";
 import { useCanAccessFinance } from "../../lib/permissions";
@@ -15,6 +15,7 @@ import {
 } from "../../api/earnings";
 import { CombinedPayoutDetailsContent } from "../../components/earnings/payouts/CombinedPayoutDetailsContent";
 import { PayoutDetailsPageHeader } from "../../components/earnings/payouts/PayoutDetailsPageHeader";
+import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWeekNavigator";
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
 import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
@@ -36,6 +37,7 @@ function errMessage(e: unknown): string {
 export function CombinedPayoutDetailsPage() {
   const { driverId } = useParams<{ driverId: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const canAccess = useCanAccessFinance();
   const queryClient = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
@@ -54,6 +56,13 @@ export function CombinedPayoutDetailsPage() {
 
   const backUrl = `/earnings/payouts?from=${encodeURIComponent(weekStart)}&to=${encodeURIComponent(weekEnd)}`;
 
+  function handleWeekChange(start: string, end: string) {
+    if (!driverId) return;
+    navigate(
+      `/earnings/payouts/${driverId}?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`,
+    );
+  }
+
   const consolidatedQuery = useQuery({
     queryKey: ["earnings", "payouts", "unified", "detail", driverId, weekStart, weekEnd],
     queryFn: () =>
@@ -64,6 +73,18 @@ export function CombinedPayoutDetailsPage() {
       }).then((r) => r.data.items[0] ?? null),
     enabled: canAccess && !!driverId && !!weekStart && !!weekEnd,
   });
+
+  const weekNavigator = (
+    <div className="border-b border-border/80 bg-white px-4 py-2 sm:px-6 print:hidden">
+      <PayoutWeekNavigator
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        showDateInputs={false}
+        disabled={consolidatedQuery.isFetching}
+        onWeekChange={handleWeekChange}
+      />
+    </div>
+  );
 
   const row = consolidatedQuery.data;
 
@@ -206,19 +227,25 @@ export function CombinedPayoutDetailsPage() {
 
   if (consolidatedQuery.isLoading || (row && payoutsQuery.isLoading)) {
     return (
-      <div className="flex flex-1 items-center justify-center p-12">
-        <p className="text-sm text-slate-500">Loading combined payout details…</p>
+      <div className="flex flex-col flex-1 overflow-auto bg-[#f4f6f8]">
+        {weekNavigator}
+        <div className="flex flex-1 items-center justify-center p-12">
+          <p className="text-sm text-slate-500">Loading combined payout details…</p>
+        </div>
       </div>
     );
   }
 
   if (!row) {
     return (
-      <div className="mx-auto max-w-[1600px] p-6 sm:p-8">
-        <Link to={backUrl} className={`${btnSecondary} !text-xs mb-4`}>
-          ← Back to payouts
-        </Link>
-        <p className="text-sm text-rose-700">No combined payout found for this driver and period.</p>
+      <div className="flex flex-col flex-1 overflow-auto bg-[#f4f6f8]">
+        {weekNavigator}
+        <div className="mx-auto max-w-[1600px] p-6 sm:p-8">
+          <Link to={backUrl} className={`${btnSecondary} !text-xs mb-4`}>
+            ← Back to payouts
+          </Link>
+          <p className="text-sm text-rose-700">No combined payout found for this driver and period.</p>
+        </div>
       </div>
     );
   }
@@ -235,6 +262,8 @@ export function CombinedPayoutDetailsPage() {
         downloadDisabled={!payoutItems.length}
         onDownloadReport={handleDownloadReport}
       />
+
+      {weekNavigator}
 
       <div ref={printRef} className="mx-auto w-full max-w-[1400px] flex-1 space-y-6 p-6 sm:space-y-8">
         {error && <div className={alertError}>{error}</div>}
