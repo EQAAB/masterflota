@@ -1594,6 +1594,63 @@ router.post("/payouts/pay-all", requirePermission("payouts.approve"), async (req
   }
 });
 
+router.get("/payouts/debt-adjustments", async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const driverId =
+    typeof req.query.driverId === "string" && UUID_RE.test(req.query.driverId)
+      ? req.query.driverId
+      : null;
+  const from =
+    typeof req.query.from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.from)
+      ? req.query.from
+      : null;
+  const to =
+    typeof req.query.to === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.to)
+      ? req.query.to
+      : null;
+
+  if (!driverId) return res.status(400).json({ message: "driverId is required" });
+  if (!from || !to) return res.status(400).json({ message: "from and to (YYYY-MM-DD) are required" });
+
+  try {
+    const { rows } = await pool.query<{
+      id: string;
+      payout_id: string;
+      amount: string;
+      reason: string | null;
+      adjustment_type: string;
+      created_at: string;
+      previous_remaining_debt: string | null;
+      new_remaining_debt: string | null;
+      applied_amount: string | null;
+      platform: string;
+    }>(
+      `SELECT pa.id::text, pa.payout_id::text, pa.amount::text, pa.reason, pa.adjustment_type,
+              pa.created_at::text,
+              pa.previous_remaining_debt::text AS previous_remaining_debt,
+              pa.new_remaining_debt::text AS new_remaining_debt,
+              pa.applied_amount::text AS applied_amount,
+              dp.platform
+       FROM payout_adjustments pa
+       INNER JOIN driver_payouts dp ON dp.id = pa.payout_id AND dp.organization_id = pa.organization_id
+       WHERE pa.organization_id = $1::uuid
+         AND dp.driver_id = $2::uuid
+         AND dp.payment_period_start = $3::date
+         AND dp.payment_period_end = $4::date
+       ORDER BY pa.created_at ASC, pa.id ASC`,
+      [orgId, driverId, from, to],
+    );
+
+    return res.json({ items: rows });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("payout debt-adjustments error", err);
+    return res.status(500).json({ message: "Failed to load debt adjustments" });
+  }
+});
+
 router.get("/payouts/:id/platform-breakdown", async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;

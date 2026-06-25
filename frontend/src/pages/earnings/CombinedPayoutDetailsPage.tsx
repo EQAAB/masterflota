@@ -8,6 +8,7 @@ import {
   getConsolidatedPayouts,
   getEarningsPayouts,
   getPayoutCustomFees,
+  getPayoutWeekDebtAdjustments,
   getPayoutsAssignmentDetails,
   postPayDriverConsolidated,
   type PayoutListItem,
@@ -122,6 +123,18 @@ export function CombinedPayoutDetailsPage() {
     return buildWeekFeeBreakdown(payoutItems, feesByPayoutId, isLoading);
   }, [payoutItems, feeQueries]);
 
+  const debtAdjustmentsQuery = useQuery({
+    queryKey: ["earnings", "payout-debt-adjustments", driverId, weekStart, weekEnd],
+    queryFn: () =>
+      getPayoutWeekDebtAdjustments({
+        driverId: driverId!,
+        from: weekStart,
+        to: weekEnd,
+      }).then((r) => r.data.items),
+    enabled: !!row && !!driverId && !!weekStart && !!weekEnd,
+    staleTime: 30_000,
+  });
+
   const payMut = useMutation({
     mutationFn: () => postPayDriverConsolidated({ driverId: driverId!, weekStart, weekEnd }),
     onSuccess: () => {
@@ -232,6 +245,8 @@ export function CombinedPayoutDetailsPage() {
           payoutItems={payoutItems}
           detailsById={detailsById}
           weekFeeBreakdown={weekFeeBreakdown}
+          weekDebtAdjustments={debtAdjustmentsQuery.data ?? []}
+          weekDebtAdjustmentsLoading={debtAdjustmentsQuery.isLoading}
           isPaying={payMut.isPending}
           onPay={() => setPayConfirmOpen(true)}
           onOpenDebtActions={setDebtModalRow}

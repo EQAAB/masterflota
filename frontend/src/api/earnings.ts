@@ -528,6 +528,23 @@ export interface DriverPayoutCustomFeesResponse {
   weekly_fee_anchor_platform?: string | null;
 }
 
+export interface PayoutDebtAdjustment {
+  id: string;
+  payout_id: string;
+  adjustment_type: DebtAdjustType;
+  amount: string;
+  reason: string | null;
+  created_at: string;
+  previous_remaining_debt: string | null;
+  new_remaining_debt: string | null;
+  applied_amount: string | null;
+  platform?: string | null;
+}
+
+export function getPayoutWeekDebtAdjustments(params: { driverId: string; from: string; to: string }) {
+  return api.get<{ items: PayoutDebtAdjustment[] }>("/earnings/payouts/debt-adjustments", { params });
+}
+
 export function getPayoutCustomFees(payoutId: string) {
   return api.get<DriverPayoutCustomFeesResponse>(
     `/earnings/payouts/${encodeURIComponent(payoutId)}/custom-fees`,
