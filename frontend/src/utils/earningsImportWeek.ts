@@ -36,6 +36,34 @@ export function getPreviousWeek(today = new Date()): { start: string; end: strin
   return { start: localIsoDate(prevMonday), end: localIsoDate(prevSunday) };
 }
 
+/** Shift a Monday–Sunday pay period by whole weeks. Returns null if dates are invalid. */
+export function shiftPaymentWeek(
+  start: string,
+  end: string,
+  weeks: -1 | 1,
+): { start: string; end: string } | null {
+  const startD = parseLocalIsoDate(start);
+  const endD = parseLocalIsoDate(end);
+  if (!startD || !endD) return null;
+
+  const delta = weeks * 7;
+  const newStart = new Date(startD);
+  newStart.setDate(newStart.getDate() + delta);
+  const newEnd = new Date(endD);
+  newEnd.setDate(newEnd.getDate() + delta);
+  return { start: localIsoDate(newStart), end: localIsoDate(newEnd) };
+}
+
+/** False when advancing one week would include the current or a future calendar week. */
+export function canAdvancePaymentWeek(start: string, end: string, today = new Date()): boolean {
+  const shifted = shiftPaymentWeek(start, end, 1);
+  if (!shifted) return false;
+  const endD = parseLocalIsoDate(shifted.end);
+  if (!endD) return false;
+  const thisMonday = startOfWeekMonday(today);
+  return endD < thisMonday;
+}
+
 export type PaymentWeekValidation = {
   valid: boolean;
   errors: string[];

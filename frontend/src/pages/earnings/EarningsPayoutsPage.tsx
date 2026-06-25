@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
@@ -12,13 +12,13 @@ import {
 import type { PayoutListItem } from "../../api/earnings";
 import { PayoutPageSummary } from "../../components/earnings/payouts/PayoutPageSummary";
 import { PayoutUnifiedToolbar } from "../../components/earnings/payouts/PayoutUnifiedToolbar";
+import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWeekNavigator";
 import { UnifiedPayoutsTable } from "../../components/earnings/payouts/UnifiedPayoutsTable";
 import { getPreviousWeek } from "../../utils/earningsImportWeek";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 import {
-  filterInputClass,
   payoutFilterBtnSecondary,
 } from "../../components/earnings/payouts/PayoutFiltersCard";
 import { alertError, alertSuccess, btnSecondary } from "../../theme/classNames";
@@ -81,6 +81,18 @@ export function EarningsPayoutsPage() {
     if (urlFrom && /^\d{4}-\d{2}-\d{2}$/.test(urlFrom)) setWeekStart(urlFrom);
     if (urlTo && /^\d{4}-\d{2}-\d{2}$/.test(urlTo)) setWeekEnd(urlTo);
   }, [searchParams]);
+
+  const applyWeek = useCallback(
+    (start: string, end: string) => {
+      setWeekStart(start);
+      setWeekEnd(end);
+      const next = new URLSearchParams(searchParams);
+      next.set("from", start);
+      next.set("to", end);
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams],
+  );
 
   const payoutsQuery = useQuery({
     queryKey: [
@@ -201,23 +213,12 @@ export function EarningsPayoutsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-xl border border-border/70 bg-slate-50/80 px-2 py-1">
-              <input
-                type="date"
-                aria-label="Week start"
-                className={`${filterInputClass} !h-9 !min-h-0 !w-[8.5rem] !border-0 !bg-transparent !shadow-none`}
-                value={weekStart}
-                onChange={(e) => setWeekStart(e.target.value)}
-              />
-              <span className="text-ink-muted">–</span>
-              <input
-                type="date"
-                aria-label="Week end"
-                className={`${filterInputClass} !h-9 !min-h-0 !w-[8.5rem] !border-0 !bg-transparent !shadow-none`}
-                value={weekEnd}
-                onChange={(e) => setWeekEnd(e.target.value)}
-              />
-            </div>
+            <PayoutWeekNavigator
+              weekStart={weekStart}
+              weekEnd={weekEnd}
+              onWeekChange={applyWeek}
+              disabled={payoutsQuery.isFetching}
+            />
             <button
               type="button"
               className={`${btnSecondary} !min-h-[36px] !text-xs`}
@@ -283,8 +284,8 @@ export function EarningsPayoutsPage() {
             onPlatformChange={setPlatform}
             weekStart={weekStart}
             weekEnd={weekEnd}
-            onWeekStartChange={setWeekStart}
-            onWeekEndChange={setWeekEnd}
+            onWeekStartChange={(start) => applyWeek(start, weekEnd)}
+            onWeekEndChange={(end) => applyWeek(weekStart, end)}
             activeChips={activeChips}
           />
         )}
