@@ -4,12 +4,15 @@ import type { ConsolidatedDriverPayout, PayoutAssignmentDetail, PayoutListItem }
 import { btnSecondary } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
-import { toNum } from "./payoutRowUtils";
+import { normalizeRentEntries, toNum } from "./payoutRowUtils";
 import { computeUnifiedBreakdown, formatPeriodParts } from "./payoutBreakdownUtils";
 import {
   buildLegFeeDisplayItems,
+  buildVehicleRentLadderSteps,
   buildWeekFeeLadderSteps,
   feeResidualDelta,
+  findPayoutWithVehicleRent,
+  type FeeLadderStepDef,
   type WeekFeeBreakdown,
 } from "./payoutFeeBreakdown";
 import { LineRow, PlatformLogo } from "./payoutDetailUi";
@@ -302,6 +305,17 @@ export function CombinedPayoutDetailsContent({
       ? `Recurring fees deducted on ${earningsPlatformLabel(weekFeeBreakdown.anchorPlatform)}.`
       : undefined;
 
+  const rentPayout = useMemo(() => findPayoutWithVehicleRent(payoutItems), [payoutItems]);
+  const vehicleRentSteps = useMemo(
+    () =>
+      buildVehicleRentLadderSteps({
+        totalRent: breakdown.customFeeVehicleRent,
+        licensePlate: vehicleDetail?.license_plate,
+        rentEntries: normalizeRentEntries(rentPayout?.rent_entries),
+      }),
+    [breakdown.customFeeVehicleRent, vehicleDetail?.license_plate, rentPayout?.rent_entries],
+  );
+
   /** Short ladder: what the driver actually gets paid. */
   const finalPayoutSteps = useMemo(() => {
     type StepKind = "neutral" | "deduction" | "positive" | "loading" | "total" | "final" | "final-debt";
@@ -314,14 +328,17 @@ export function CombinedPayoutDetailsContent({
     };
     const steps: StepDef[] = [];
 
-    const mapFeeSteps = (feeSteps: ReturnType<typeof buildWeekFeeLadderSteps>): StepDef[] =>
-      feeSteps.map((s) => ({
+    const mapLadderSteps = (ladderSteps: FeeLadderStepDef[]): StepDef[] =>
+      ladderSteps.map((s) => ({
         kind: s.kind,
         prefix: s.prefix,
         label: s.label,
         amount: s.amount,
         hint: s.hint,
       }));
+
+    const mapFeeSteps = (feeSteps: ReturnType<typeof buildWeekFeeLadderSteps>): StepDef[] =>
+      mapLadderSteps(feeSteps);
 
     if (breakdown.platforms.length === 1) {
       const p = breakdown.platforms[0]!;
@@ -340,17 +357,8 @@ export function CombinedPayoutDetailsContent({
             fallbackDelta: weeklyFees,
           }),
         ),
+        ...mapLadderSteps(vehicleRentSteps),
       );
-
-      if (breakdown.customFeeVehicleRent > 0.02) {
-        steps.push({
-          kind: "deduction",
-          prefix: "-",
-          label: "Custom fee / vehicle rent",
-          amount: -breakdown.customFeeVehicleRent,
-          hint: "Vehicle rent applied once on platform payout.",
-        });
-      }
 
       if (breakdown.totalDebtApplied > 0.02) {
         steps.push({
@@ -393,6 +401,7 @@ export function CombinedPayoutDetailsContent({
           recurringAnchorHint,
         }),
       ),
+      ...mapLadderSteps(vehicleRentSteps),
     );
 
     const combinedHint =
@@ -429,7 +438,7 @@ export function CombinedPayoutDetailsContent({
     });
 
     return steps;
-  }, [breakdown, isDebtPayout, weekFeeBreakdown, recurringAnchorHint]);
+  }, [breakdown, isDebtPayout, weekFeeBreakdown, recurringAnchorHint, vehicleRentSteps]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
   const detailedEarningsSteps = useMemo(() => {
@@ -493,13 +502,6 @@ export function CombinedPayoutDetailsContent({
         amount: breakdown.totalNetPayoutAllPlatforms,
         hint: platformNetHint,
       },
-      {
-        kind: "deduction",
-        prefix: "-",
-        label: "Custom fee / vehicle rent on all platform payout",
-        amount: -breakdown.customFeeVehicleRent,
-        hint: "Applied once on combined platform net payout",
-      },
     );
     const feeSteps = buildWeekFeeLadderSteps(weekFeeBreakdown, {
       fallbackDelta: breakdown.weeklyChargesDelta,
@@ -514,19 +516,32 @@ export function CombinedPayoutDetailsContent({
         hint: feeStep.hint,
       });
     }
+    for (const rentStep of vehicleRentSteps) {
+      steps.push({
+        kind: rentStep.kind,
+        prefix: rentStep.prefix,
+        label: rentStep.label,
+        amount: rentStep.amount,
+        hint: rentStep.hint,
+      });
+    }
     if (
       weekFeeBreakdown &&
       !weekFeeBreakdown.isLoading &&
-      weekFeeBreakdown.items.length > 0
+      (weekFeeBreakdown.items.length > 0 || breakdown.customFeeVehicleRent > 0.02)
     ) {
-      const residual = feeResidualDelta(breakdown.weeklyChargesDelta, weekFeeBreakdown.items);
+      const residual = Math.round(
+        (feeResidualDelta(breakdown.weeklyChargesDelta, weekFeeBreakdown.items) +
+          breakdown.customFeeVehicleRent) *
+          100,
+      ) / 100;
       if (Math.abs(residual) > 0.02) {
         steps.push({
           kind: "deduction",
           prefix: "-",
           label: "Other adjustments",
           amount: residual,
-          hint: "Vehicle rent, pooling, or rounding not shown as named fees",
+          hint: "Cross-platform pooling or rounding",
         });
       }
     } else if (
@@ -548,7 +563,7 @@ export function CombinedPayoutDetailsContent({
       amount: breakdown.weekRawNet,
     });
     return steps;
-  }, [breakdown, cashBreakdownHint, platformNetHint, weekFeeBreakdown, recurringAnchorHint]);
+  }, [breakdown, cashBreakdownHint, platformNetHint, weekFeeBreakdown, recurringAnchorHint, vehicleRentSteps]);
 
   const sortedPlatforms = useMemo(
     () =>
@@ -661,6 +676,8 @@ export function CombinedPayoutDetailsContent({
           const legFees = weekFeeBreakdown
             ? buildLegFeeDisplayItems(line.payoutId, weekFeeBreakdown)
             : undefined;
+          const legVehicleRentSteps =
+            rentPayout?.id === line.payoutId ? vehicleRentSteps : undefined;
           return (
           <PlatformEarningsCard
             key={line.payoutId}
@@ -672,6 +689,7 @@ export function CombinedPayoutDetailsContent({
             feeItems={legFees?.items}
             feeAnchorHint={legFees?.anchorHint}
             feesLoading={weekFeeBreakdown?.isLoading}
+            vehicleRentSteps={legVehicleRentSteps}
           />
           );
         })}
@@ -900,7 +918,7 @@ export function CombinedPayoutDetailsContent({
           <LineRow label="Weekly rent" value={breakdown.customFeeVehicleRent > 0.02 && weeklyRent > 0 ? formatCurrency(weeklyRent) : "—"} />
           {breakdown.customFeeVehicleRent > 0.02 ? (
             <p className="mt-2 text-xs font-medium text-emerald-700">
-              Vehicle rent included after platform payout calculation
+              Shown in payout calculation above
             </p>
           ) : (
             <p className="mt-2 text-xs text-slate-500">No vehicle rent applied this period</p>

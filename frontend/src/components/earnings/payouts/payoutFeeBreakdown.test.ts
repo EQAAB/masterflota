@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { DriverPayoutCustomFeesResponse, PayoutListItem } from "../../../api/earnings";
 import {
   buildLegFeeDisplayItems,
+  buildVehicleRentLadderSteps,
   buildWeekFeeDisplayItems,
   feeSignedAmount,
+  findPayoutWithVehicleRent,
+  formatVehicleRentLabel,
   pickAnchorPayoutItem,
 } from "./payoutFeeBreakdown";
 
@@ -145,5 +148,56 @@ describe("buildLegFeeDisplayItems", () => {
     const boltLeg = buildLegFeeDisplayItems("bolt-id", week);
     expect(boltLeg.items).toHaveLength(0);
     expect(boltLeg.anchorHint).toContain("Uber");
+  });
+});
+
+describe("formatVehicleRentLabel", () => {
+  it("includes plate when provided", () => {
+    expect(formatVehicleRentLabel("B-123-ABC")).toBe("Vehicle rent (B-123-ABC)");
+    expect(formatVehicleRentLabel(null)).toBe("Vehicle rent");
+  });
+});
+
+describe("findPayoutWithVehicleRent", () => {
+  it("returns leg with highest vehicle_rental_fee", () => {
+    const items = [
+      { ...payout("u", "uber"), vehicle_rental_fee: "0" },
+      { ...payout("b", "bolt"), vehicle_rental_fee: "250" },
+    ] as PayoutListItem[];
+    expect(findPayoutWithVehicleRent(items)?.id).toBe("b");
+  });
+});
+
+describe("buildVehicleRentLadderSteps", () => {
+  it("returns empty when no rent", () => {
+    expect(buildVehicleRentLadderSteps({ totalRent: 0 })).toEqual([]);
+  });
+
+  it("returns single step with plate label", () => {
+    const steps = buildVehicleRentLadderSteps({
+      totalRent: 200,
+      licensePlate: "B-99-XYZ",
+    });
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({
+      label: "Vehicle rent (B-99-XYZ)",
+      amount: -200,
+    });
+  });
+
+  it("splits multiple rent entries", () => {
+    const steps = buildVehicleRentLadderSteps({
+      totalRent: 300,
+      licensePlate: "B-1",
+      rentEntries: [
+        { id: "1", vehicle_rental_id: null, entry_type: "current_week", amount: "200", description: null },
+        { id: "2", vehicle_rental_id: null, entry_type: "overdue", amount: "100", description: "Prior week" },
+      ],
+    });
+    expect(steps).toHaveLength(2);
+    expect(steps[0]?.label).toContain("This week");
+    expect(steps[0]?.amount).toBe(-200);
+    expect(steps[1]?.label).toContain("Overdue");
+    expect(steps[1]?.hint).toBe("Prior week");
   });
 });

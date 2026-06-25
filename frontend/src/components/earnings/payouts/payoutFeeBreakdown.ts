@@ -1,5 +1,11 @@
-import type { DriverPayoutCustomFee, DriverPayoutCustomFeesResponse, PayoutListItem } from "../../../api/earnings";
+import type {
+  DriverPayoutCustomFee,
+  DriverPayoutCustomFeesResponse,
+  PayoutListItem,
+  PayoutRentEntry,
+} from "../../../api/earnings";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
+import { rentEntryTypeLabel } from "./payoutRowUtils";
 
 /** Anchor platform priority for weekly recurring fee deduction (matches backend). */
 export const WEEKLY_FEE_ANCHOR_PLATFORMS = ["glovo", "uber", "bolt_taxi", "bolt"] as const;
@@ -232,4 +238,75 @@ export function buildWeekFeeLadderSteps(
   }
 
   return [];
+}
+
+function payoutRentAmount(p: PayoutListItem): number {
+  const n = Number(p.vehicle_rental_fee ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function findPayoutWithVehicleRent(payoutItems: PayoutListItem[]): PayoutListItem | undefined {
+  if (payoutItems.length === 0) return undefined;
+  return payoutItems.reduce((best, p) =>
+    payoutRentAmount(p) > payoutRentAmount(best) ? p : best,
+  );
+}
+
+export function formatVehicleRentLabel(licensePlate?: string | null): string {
+  const plate = licensePlate?.trim();
+  return plate ? `Vehicle rent (${plate})` : "Vehicle rent";
+}
+
+export type VehicleRentLadderInput = {
+  totalRent: number;
+  licensePlate?: string | null;
+  rentEntries?: PayoutRentEntry[];
+};
+
+export function buildVehicleRentLadderSteps(input: VehicleRentLadderInput): FeeLadderStepDef[] {
+  const { totalRent, licensePlate, rentEntries = [] } = input;
+  if (totalRent <= 0.02) return [];
+
+  const entries = rentEntries.filter((e) => Math.abs(Number(e.amount) || 0) > 0.02);
+
+  if (entries.length > 1) {
+    return entries.map((e, index) => ({
+      kind: "deduction" as const,
+      prefix: "-" as const,
+      label: `Vehicle rent — ${rentEntryTypeLabel(e.entry_type)}`,
+      amount: -round2(Math.abs(Number(e.amount) || 0)),
+      hint:
+        e.description?.trim() ||
+        (index === 0 && licensePlate?.trim()
+          ? `Plate ${licensePlate.trim()}`
+          : "Weekly vehicle assignment rent"),
+    }));
+  }
+
+  if (entries.length === 1) {
+    const entry = entries[0]!;
+    return [
+      {
+        kind: "deduction",
+        prefix: "-",
+        label: `Vehicle rent — ${rentEntryTypeLabel(entry.entry_type)}`,
+        amount: -round2(Math.abs(Number(entry.amount) || 0)),
+        hint:
+          entry.description?.trim() ||
+          (licensePlate?.trim()
+            ? `Plate ${licensePlate.trim()}`
+            : "Weekly vehicle assignment rent"),
+      },
+    ];
+  }
+
+  return [
+    {
+      kind: "deduction",
+      prefix: "-",
+      label: formatVehicleRentLabel(licensePlate),
+      amount: -round2(totalRent),
+      hint: "Weekly vehicle assignment rent",
+    },
+  ];
 }
