@@ -12,7 +12,7 @@ import { formatCurrency } from "../../../utils/currency";
 
 import { PayoutPagination } from "./PayoutPagination";
 
-import { formatConsolidatedPeriod, tableTaxDisplay } from "./payoutBreakdownUtils";
+import { formatConsolidatedPeriod } from "./payoutBreakdownUtils";
 
 
 
@@ -420,7 +420,7 @@ export function UnifiedPayoutsTable({
 
                 <th className={`${tableCell} !py-3 text-right`}>Fleet / sub</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Taxes</th>
+                <th className={`${tableCell} !py-3 text-right`}>Vehicle rent</th>
 
                 <th className={`${tableCell} !py-3 text-right`}>Net payout</th>
 
@@ -442,7 +442,7 @@ export function UnifiedPayoutsTable({
 
                 const isDebt = row.consolidated_status === "debt" || total < 0;
 
-                const taxDisplay = tableTaxDisplay(row);
+                const vehicleRent = toNum(row.total_vehicle_rent);
 
                 return (
 
@@ -524,9 +524,9 @@ export function UnifiedPayoutsTable({
 
                     </td>
 
-                    <td className={`${tableCell} !py-3.5 text-right tabular-nums text-rose-700/90`}>
+                    <td className={`${tableCell} !py-3.5 text-right tabular-nums text-ink-muted`}>
 
-                      {taxDisplay != null ? formatCurrency(taxDisplay) : "—"}
+                      {vehicleRent > 0.02 ? formatCurrency(vehicleRent) : "—"}
 
                     </td>
 

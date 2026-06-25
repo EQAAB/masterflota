@@ -6,6 +6,7 @@ import {
   sumWeeklyRecurringFees,
   syncRecurringFeesToDriverWeek,
 } from "./driverWeeklyFees";
+import { isFrozenPayoutStatus, OPEN_PAYOUT_STATUS_SQL } from "./payoutFreeze";
 
 export type CustomFeeType = "deduction" | "addition";
 
@@ -75,10 +76,13 @@ export async function applyPayoutCustomFeesToRawNet(
     vehicle_rental_fee: string | null;
     payment_period_start: string;
     payment_period_end: string;
+    payment_status: string;
+    raw_net_amount: string | null;
   }>(
     `SELECT driver_id::text, total_net_earnings::text, company_commission::text, total_daily_cash::text,
             account_opening_fee::text, vehicle_rental_fee::text,
-            payment_period_start::text, payment_period_end::text
+            payment_period_start::text, payment_period_end::text,
+            payment_status, raw_net_amount::text
      FROM driver_payouts
      WHERE id = $1::uuid AND organization_id = $2::uuid
      FOR UPDATE`,
@@ -86,6 +90,10 @@ export async function applyPayoutCustomFeesToRawNet(
   );
   const row = pr.rows[0];
   if (!row) return 0;
+
+  if (isFrozenPayoutStatus(row.payment_status)) {
+    return roundMoney(Number(row.raw_net_amount ?? "0"));
+  }
 
   const periodStart = row.payment_period_start.slice(0, 10);
   const periodEnd = row.payment_period_end.slice(0, 10);
@@ -178,6 +186,7 @@ export async function applyWeeklyCustomFeesToRawNet(
       `SELECT id::text FROM driver_payouts
        WHERE organization_id = $1::uuid AND driver_id = $2::uuid
          AND payment_period_start = $3::date AND payment_period_end = $4::date
+         AND ${OPEN_PAYOUT_STATUS_SQL}
        ORDER BY id`,
       [orgId, driverId, ps, pe],
     );

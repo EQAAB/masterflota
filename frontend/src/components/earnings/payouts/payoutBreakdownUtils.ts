@@ -223,20 +223,6 @@ export function computeUnifiedBreakdown(
   };
 }
 
-/** Implied non-fleet deductions on list row (vehicle rent + gap to net), not income tax. */
-export function tableTaxDisplay(row: ConsolidatedDriverPayout): number | null {
-  const vehicleRent = toNum(row.total_vehicle_rent ?? "0");
-  const net = toNum(row.total_amount);
-  const platformNet = round2(toNum(row.total_gross) - toNum(row.total_platform_fees ?? "0") - toNum(row.total_fees));
-  const gap = round2(Math.max(0, platformNet - vehicleRent - net));
-  if (vehicleRent <= 0 && gap <= 0.02) return null;
-  return round2(vehicleRent + gap);
-}
-
-export function tableTaxRateLabel(_items: PayoutListItem[]): string {
-  return "Deductions";
-}
-
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }

@@ -4,6 +4,7 @@ import {
   distributeWeekNetToLegs,
   type WeekPlatformLeg,
 } from "./crossPlatformDebt";
+import { filterOpenWeekLegs, isFrozenPayoutStatus, OPEN_PAYOUT_STATUS_SQL } from "./payoutFreeze";
 
 export function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
@@ -151,14 +152,18 @@ export async function applyWeekDebtCarryForward(
   const weekRows = weekRes.rows;
   if (!weekRows.length) return;
 
-  const weekIds = weekRows.map((r) => r.id);
-  const legs: WeekPlatformLeg[] = weekRows.map((r) => ({
+  const allLegs: WeekPlatformLeg[] = weekRows.map((r) => ({
     payoutId: r.id,
     platform: r.platform,
     rawNet: roundMoney(Number(r.raw_net_amount ?? "0")),
     existingRemainingDebt: roundMoney(Number(r.remaining_debt_amount ?? "0")),
     currentPaymentStatus: r.payment_status,
   }));
+
+  const legs = filterOpenWeekLegs(allLegs);
+  if (!legs.length) return;
+
+  const weekIds = weekRows.map((r) => r.id);
 
   const pool = computeWeekDebtPool(legs);
   const anchor = legs.reduce((a, b) => {
@@ -235,6 +240,7 @@ export async function applyWeekDebtCarryForward(
   });
 
   for (const leg of legs) {
+    if (isFrozenPayoutStatus(leg.currentPaymentStatus)) continue;
     const row = allocation.get(leg.payoutId);
     if (!row) continue;
     const holdReasonSql =
@@ -331,7 +337,8 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
   await client.query(
     `UPDATE driver_payouts
      SET debt_applied_amount = 0
-     WHERE organization_id = $1::uuid AND driver_id = $2::uuid`,
+     WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+       AND ${OPEN_PAYOUT_STATUS_SQL}`,
     [orgId, driverId],
   );
 
@@ -359,7 +366,8 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
          WHEN payment_status IN ('paid', 'approved', 'hold') THEN payment_status
          ELSE 'pending'
        END
-     WHERE organization_id = $1::uuid AND driver_id = $2::uuid`,
+     WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+       AND ${OPEN_PAYOUT_STATUS_SQL}`,
     [orgId, driverId],
   );
 
@@ -367,6 +375,7 @@ export async function recomputeDriverDebtAllocation(client: PoolClient, orgId: s
     `SELECT DISTINCT payment_period_start::text, payment_period_end::text
      FROM driver_payouts
      WHERE organization_id = $1::uuid AND driver_id = $2::uuid
+       AND ${OPEN_PAYOUT_STATUS_SQL}
      ORDER BY payment_period_start, payment_period_end`,
     [orgId, driverId],
   );
