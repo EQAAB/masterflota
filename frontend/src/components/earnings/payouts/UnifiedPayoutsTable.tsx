@@ -19,6 +19,11 @@ import {
   formatListRemainingDebtLine,
   shouldShowListDebtContext,
 } from "./payoutDebtBreakdown";
+import {
+  formatListOutstandingLoanLine,
+  formatPlannedLoanRepaymentHint,
+  shouldShowListLoanContext,
+} from "./payoutLoanBreakdown";
 
 
 
@@ -43,6 +48,8 @@ type UnifiedPayoutsTableProps = {
   onPayAll: () => void | Promise<void>;
 
   onOpenDebtActions?: (row: PayoutListItem) => void;
+
+  onOpenLoanActions?: (row: ConsolidatedDriverPayout) => void;
 
   onOpenCustomFees?: (row: PayoutListItem) => void;
 
@@ -136,6 +143,8 @@ function RowActionsMenu({
 
   onPay,
 
+  onOpenLoanActions,
+
   disabled,
 
 }: {
@@ -147,6 +156,8 @@ function RowActionsMenu({
   weekEnd: string;
 
   onPay: () => void;
+
+  onOpenLoanActions?: (row: ConsolidatedDriverPayout) => void;
 
   disabled: boolean;
 
@@ -266,6 +277,32 @@ function RowActionsMenu({
 
             )}
 
+            {onOpenLoanActions && shouldShowListLoanContext(row) && (
+
+              <button
+
+                type="button"
+
+                className="block w-full px-3 py-1.5 text-left text-xs text-ink hover:bg-slate-50"
+
+                onClick={(e) => {
+
+                  e.stopPropagation();
+
+                  setOpen(false);
+
+                  onOpenLoanActions(row);
+
+                }}
+
+              >
+
+                Loan repayment
+
+              </button>
+
+            )}
+
           </div>
 
         </>
@@ -299,6 +336,8 @@ export function UnifiedPayoutsTable({
   onPayDriver,
 
   onPayAll,
+
+  onOpenLoanActions,
 
 }: UnifiedPayoutsTableProps) {
 
@@ -456,6 +495,12 @@ export function UnifiedPayoutsTable({
 
                 const adjustmentLine = formatListDebtAdjustmentSummary(toNum(row.week_debt_adjusted_total));
 
+                const outstandingLoan = toNum(row.outstanding_loan_balance);
+
+                const loanLine = formatListOutstandingLoanLine(outstandingLoan);
+
+                const plannedLoanLine = formatPlannedLoanRepaymentHint(row, weekStart);
+
                 return (
 
                   <tr
@@ -588,6 +633,26 @@ export function UnifiedPayoutsTable({
 
                       )}
 
+                      {loanLine && (
+
+                        <p className="mt-0.5 text-[10px] leading-snug text-sky-800 tabular-nums">
+
+                          {loanLine}
+
+                        </p>
+
+                      )}
+
+                      {plannedLoanLine && (
+
+                        <p className="mt-0.5 text-[10px] leading-snug text-sky-700">
+
+                          {plannedLoanLine}
+
+                        </p>
+
+                      )}
+
                     </td>
 
                     <td className={`${tableCell} !py-3.5 text-right`} onClick={(e) => e.stopPropagation()}>
@@ -627,6 +692,8 @@ export function UnifiedPayoutsTable({
                           weekEnd={weekEnd}
 
                           disabled={isPaying}
+
+                          onOpenLoanActions={onOpenLoanActions}
 
                           onPay={() => setPayConfirm({ kind: "one", driverId: row.driver_id })}
 

@@ -17,7 +17,9 @@ import { UnifiedPayoutsTable } from "../../components/earnings/payouts/UnifiedPa
 import { getPreviousWeek } from "../../utils/earningsImportWeek";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
+import { LoanRepaymentModal } from "../../components/earnings/LoanRepaymentModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
+import type { ConsolidatedDriverPayout } from "../../api/earnings";
 import {
   payoutFilterBtnSecondary,
 } from "../../components/earnings/payouts/PayoutFiltersCard";
@@ -68,6 +70,7 @@ export function EarningsPayoutsPage() {
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
   const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
+  const [loanModalRow, setLoanModalRow] = useState<ConsolidatedDriverPayout | null>(null);
   const [releaseHoldMsg, setReleaseHoldMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -307,6 +310,7 @@ export function EarningsPayoutsPage() {
             await payAllMut.mutateAsync();
           }}
           onOpenDebtActions={(row) => setDebtModalRow(row)}
+          onOpenLoanActions={(row) => setLoanModalRow(row)}
           onOpenCustomFees={(row) => setCustomFeesModalRow(row)}
           onOpenReleaseHold={(row) => setReleaseHoldRow(row)}
         />
@@ -338,6 +342,15 @@ export function EarningsPayoutsPage() {
             void queryClient.invalidateQueries({ queryKey: ["earnings"] });
             setReleaseHoldMsg("Hold released successfully.");
           }}
+        />
+
+        <LoanRepaymentModal
+          row={loanModalRow}
+          weekStart={weekStart}
+          weekEnd={weekEnd}
+          open={loanModalRow != null}
+          onClose={() => setLoanModalRow(null)}
+          onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
         />
       </div>
     </div>

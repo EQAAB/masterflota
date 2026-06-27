@@ -20,7 +20,9 @@ export type ActivityType =
   | "vehicle_rental_roll_forward"
   | "recurring_fee_create"
   | "recurring_fee_update"
-  | "recurring_fee_delete";
+  | "recurring_fee_delete"
+  | "loan_create"
+  | "loan_repayment";
 
 export async function logDriverActivity(
   driverId: string,

@@ -22,6 +22,7 @@ import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
 import { DriverRecurringFeesPanel } from "../../components/drivers/DriverRecurringFeesPanel";
+import { DriverLoansPanel } from "../../components/drivers/DriverLoansPanel";
 
 type TabId = "profile" | "documents" | "activity";
 
@@ -514,6 +515,8 @@ export function DriverDetailPage() {
             </section>
 
             {id && <DriverRecurringFeesPanel driverId={id} canEdit={canEdit} />}
+
+            {id && <DriverLoansPanel driverId={id} canEdit={canEdit} />}
 
             <section className={cardClass}>
               <h2 className={sectionTitleClass}>Payout history</h2>
