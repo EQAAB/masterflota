@@ -18,6 +18,11 @@ export type RentalCustomer = {
   completed_rentals?: number;
   total_bookings?: number;
   lifetime_revenue?: string | number;
+  current_vehicle_id?: string | null;
+  current_vehicle_license_plate?: string | null;
+  current_vehicle_make?: string | null;
+  current_vehicle_model?: string | null;
+  extra_active_vehicles?: number;
 };
 
 export type RentalCustomersSummary = {

@@ -1,5 +1,6 @@
 import type { RentalCustomer } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
+import { Link } from "react-router-dom";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
 import {
   customerStatusBadgeClass,
@@ -7,6 +8,13 @@ import {
   customerTypeBadgeClass,
 } from "../rentalStatus";
 import { customerRevenue, formatCustomerSince } from "./customersListUtils";
+import {
+  customerHasActiveVehicle,
+  formatCustomerVehicleExtra,
+  formatCustomerVehicleLabel,
+  formatCustomerVehiclePlate,
+  getCustomerVehicleLinkId,
+} from "../../../utils/customerVehicleDisplay";
 
 type CustomerMobileCardProps = {
   customer: RentalCustomer;
@@ -23,6 +31,11 @@ export function CustomerMobileCard({
 }: CustomerMobileCardProps) {
   const active = c.active_bookings ?? 0;
   const since = formatCustomerSince(c.created_at);
+  const vehicleLabel = formatCustomerVehicleLabel(c);
+  const vehiclePlate = formatCustomerVehiclePlate(c);
+  const vehicleExtra = formatCustomerVehicleExtra(c);
+  const vehicleId = getCustomerVehicleLinkId(c);
+  const hasVehicle = customerHasActiveVehicle(c);
 
   return (
     <article className="fm-rental-customers__mobile-card" onClick={onOpen} role="button" tabIndex={0}>
@@ -62,6 +75,23 @@ export function CustomerMobileCard({
           {customerStatusLabel(c.is_active, active)}
         </span>
       </div>
+
+      {hasVehicle && vehicleLabel && (
+        <div className="mt-2 text-sm" onClick={(e) => e.stopPropagation()}>
+          {vehicleId ? (
+            <Link to={`/vehicles/${vehicleId}`} className="text-ink hover:text-brand">
+              <span className="font-medium">{vehicleLabel}</span>
+              {vehiclePlate && <span className="ml-1 text-xs text-slate-500 tabular-nums">({vehiclePlate})</span>}
+            </Link>
+          ) : (
+            <p className="text-ink">
+              <span className="font-medium">{vehicleLabel}</span>
+              {vehiclePlate && <span className="ml-1 text-xs text-slate-500 tabular-nums">({vehiclePlate})</span>}
+            </p>
+          )}
+          {vehicleExtra && <p className="text-xs text-sky-700">{vehicleExtra}</p>}
+        </div>
+      )}
 
       <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
         <div>

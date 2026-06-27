@@ -49,53 +49,93 @@ customersRoutes.get("/", requireRentalsView, async (req, res) => {
   const sort = typeof req.query.sort === "string" ? req.query.sort : "name";
   const orderClause =
     sort === "revenue"
-      ? "lifetime_revenue DESC NULLS LAST"
+      ? "sub.lifetime_revenue DESC NULLS LAST"
       : sort === "bookings"
-        ? "total_bookings DESC NULLS LAST"
+        ? "sub.total_bookings DESC NULLS LAST"
         : sort === "created"
-          ? "c.created_at DESC"
-          : "c.legal_name ASC";
+          ? "sub.created_at DESC"
+          : "sub.legal_name ASC";
 
   try {
     const params: unknown[] = [orgId];
     let i = 2;
-    let sql = `
-      SELECT c.*,
-        COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed'))::int AS active_bookings,
-        COUNT(b.id) FILTER (WHERE b.status = 'completed')::int AS completed_rentals,
-        COUNT(b.id)::int AS total_bookings,
-        COALESCE(SUM(CASE WHEN p.payment_type = 'rent' AND p.status = 'paid' THEN p.amount ELSE 0 END), 0)::numeric AS lifetime_revenue
-      FROM rental_customers c
-      LEFT JOIN rental_bookings b ON b.customer_id = c.id AND b.organization_id = c.organization_id
-      LEFT JOIN rental_payments p ON p.booking_id = b.id
-      WHERE c.organization_id = $1::uuid`;
+    let innerWhere = `WHERE c.organization_id = $1::uuid`;
 
-    if (activeOnly) sql += ` AND c.is_active = true`;
+    if (activeOnly) innerWhere += ` AND c.is_active = true`;
     if (customerType) {
-      sql += ` AND c.customer_type = $${i}`;
+      innerWhere += ` AND c.customer_type = $${i}`;
       params.push(customerType);
       i++;
     }
     if (q) {
-      sql += ` AND (
+      innerWhere += ` AND (
         c.legal_name ILIKE '%' || $${i} || '%'
         OR c.contact_name ILIKE '%' || $${i} || '%'
         OR c.email ILIKE '%' || $${i} || '%'
         OR c.phone ILIKE '%' || $${i} || '%'
+        OR EXISTS (
+          SELECT 1 FROM rental_bookings bq
+          JOIN vehicles vq ON vq.id = bq.vehicle_id
+          WHERE bq.customer_id = c.id
+            AND bq.organization_id = c.organization_id
+            AND bq.status IN ('active', 'confirmed')
+            AND vq.license_plate ILIKE '%' || $${i} || '%'
+        )
       )`;
       params.push(q);
       i++;
     }
 
-    sql += ` GROUP BY c.id`;
-
+    let havingClause = "";
     if (hasActiveRental === true) {
-      sql += ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) > 0`;
+      havingClause = ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) > 0`;
     } else if (hasActiveRental === false) {
-      sql += ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) = 0`;
+      havingClause = ` HAVING COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed')) = 0`;
     }
 
-    sql += ` ORDER BY ${orderClause}`;
+    const sql = `
+      SELECT sub.*,
+        cur_vehicle.current_vehicle_id,
+        cur_vehicle.current_vehicle_license_plate,
+        cur_vehicle.current_vehicle_make,
+        cur_vehicle.current_vehicle_model,
+        COALESCE(cur_vehicle.extra_active_vehicles, 0)::int AS extra_active_vehicles
+      FROM (
+        SELECT c.*,
+          COUNT(b.id) FILTER (WHERE b.status IN ('active', 'confirmed'))::int AS active_bookings,
+          COUNT(b.id) FILTER (WHERE b.status = 'completed')::int AS completed_rentals,
+          COUNT(b.id)::int AS total_bookings,
+          COALESCE(SUM(CASE WHEN p.payment_type = 'rent' AND p.status = 'paid' THEN p.amount ELSE 0 END), 0)::numeric AS lifetime_revenue
+        FROM rental_customers c
+        LEFT JOIN rental_bookings b ON b.customer_id = c.id AND b.organization_id = c.organization_id
+        LEFT JOIN rental_payments p ON p.booking_id = b.id
+        ${innerWhere}
+        GROUP BY c.id
+        ${havingClause}
+      ) sub
+      LEFT JOIN LATERAL (
+        SELECT
+          v.id::text AS current_vehicle_id,
+          v.license_plate AS current_vehicle_license_plate,
+          v.make AS current_vehicle_make,
+          v.model AS current_vehicle_model,
+          GREATEST(
+            (SELECT COUNT(*)::int
+             FROM rental_bookings b2
+             WHERE b2.customer_id = sub.id
+               AND b2.organization_id = sub.organization_id
+               AND b2.status IN ('active', 'confirmed')) - 1,
+            0
+          ) AS extra_active_vehicles
+        FROM rental_bookings b
+        INNER JOIN vehicles v ON v.id = b.vehicle_id
+        WHERE b.customer_id = sub.id
+          AND b.organization_id = sub.organization_id
+          AND b.status IN ('active', 'confirmed')
+        ORDER BY b.start_at DESC
+        LIMIT 1
+      ) cur_vehicle ON true
+      ORDER BY ${orderClause}`;
 
     const { rows } = await query(sql, params);
     return res.json(rows);

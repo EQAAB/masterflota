@@ -101,12 +101,13 @@ export function CustomersTable({ customers, loading }: CustomersTableProps) {
   return (
     <>
       <div className="hidden lg:block fm-rental-customers__table-card overflow-x-auto">
-        <table className="w-full min-w-[1000px] text-sm">
+        <table className="w-full min-w-[1100px] text-sm">
           <thead>
             <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               <th className="px-4 py-3.5">Customer</th>
               <th className="px-4 py-3.5">Type</th>
               <th className="px-4 py-3.5">Contact</th>
+              <th className="px-4 py-3.5">Vehicle</th>
               <th className="px-4 py-3.5">Active bookings</th>
               <th className="px-4 py-3.5">Total rentals</th>
               <th className="px-4 py-3.5">Revenue</th>
