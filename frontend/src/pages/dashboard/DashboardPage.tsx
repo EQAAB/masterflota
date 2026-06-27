@@ -137,7 +137,7 @@ export function DashboardPage() {
           <EmptyState
             title="Failed to load dashboard"
             description="We couldn't fetch your fleet metrics. Check your connection and try again."
-            action={{ label: "Go to drivers", href: "/drivers" }}
+            action={{ label: "Go to drivers", to: "/drivers" }}
           />
         </div>
       </div>

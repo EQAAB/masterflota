@@ -86,7 +86,7 @@ export function VehiclesTable({
         <EmptyState
           title="No vehicles yet"
           description="Add your first vehicle to start managing fleet assignments and availability."
-          action={{ label: "Add Vehicle", href: "/vehicles/new" }}
+          action={{ label: "Add Vehicle", to: "/vehicles/new" }}
           className="border-0 py-16"
         />
       </div>
