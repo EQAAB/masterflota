@@ -91,7 +91,7 @@ export function DriversTable({
         <EmptyState
           title="No drivers yet"
           description="Add your first driver to start managing fleet assignments and payouts."
-          action={{ label: "Add driver", href: "/drivers/new" }}
+          action={{ label: "Add driver", to: "/drivers/new" }}
           className="border-0 py-16"
         />
       </div>

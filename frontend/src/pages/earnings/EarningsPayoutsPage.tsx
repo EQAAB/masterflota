@@ -20,6 +20,8 @@ import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { LoanRepaymentModal } from "../../components/earnings/LoanRepaymentModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 import type { ConsolidatedDriverPayout } from "../../api/earnings";
+import { getLoansSummary } from "../../api/driverLoans";
+import { LoanFleetSummaryStrip } from "../../components/drivers/LoanFleetSummaryStrip";
 import {
   payoutFilterBtnSecondary,
 } from "../../components/earnings/payouts/PayoutFiltersCard";
@@ -125,6 +127,12 @@ export function EarningsPayoutsPage() {
   const debtSummaryQuery = useQuery({
     queryKey: ["earnings", "debts", "summary"],
     queryFn: () => getDebtsSummary().then((r) => r.data),
+    enabled: canAccess,
+  });
+
+  const loansSummaryQuery = useQuery({
+    queryKey: ["drivers", "loans", "summary"],
+    queryFn: () => getLoansSummary().then((r) => r.data),
     enabled: canAccess,
   });
 
@@ -269,6 +277,20 @@ export function EarningsPayoutsPage() {
           </div>
         )}
 
+        {loansSummaryQuery.data && (
+          <LoanFleetSummaryStrip
+            data={loansSummaryQuery.data}
+            action={
+              <Link
+                to="/drivers"
+                className="text-xs font-medium text-sky-800 hover:underline"
+              >
+                View drivers
+              </Link>
+            }
+          />
+        )}
+
         <PayoutPageSummary
           driverCount={summary?.driver_count ?? 0}
           pendingCount={summary?.payable_count ?? 0}
@@ -350,7 +372,10 @@ export function EarningsPayoutsPage() {
           weekEnd={weekEnd}
           open={loanModalRow != null}
           onClose={() => setLoanModalRow(null)}
-          onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
+          onSuccess={() => {
+            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
+            void queryClient.invalidateQueries({ queryKey: ["drivers", "loans", "summary"] });
+          }}
         />
       </div>
     </div>

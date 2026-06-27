@@ -70,7 +70,7 @@ export function SubcontractorsTable({
         <EmptyState
           title="No subcontractors yet"
           description="Add your first subcontractor to start managing B2B fleet partnerships."
-          action={{ label: "Add subcontractor", href: "/subcontractors/new" }}
+          action={{ label: "Add subcontractor", to: "/subcontractors/new" }}
           className="border-0 py-16"
         />
       </div>

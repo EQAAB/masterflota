@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DriverListItem } from "../../api/drivers";
 import { updateDriver } from "../../api/drivers";
+import { getLoansSummary } from "../../api/driverLoans";
 import {
   formatCsvImportSummaryMessage,
   importDriversCsv,
@@ -17,6 +18,7 @@ import { DriversFilterBar } from "./DriversFilterBar";
 import { DriversPageHeader } from "./DriversPageHeader";
 import { DriversPagination } from "./DriversPagination";
 import { DriversTable } from "./DriversTable";
+import { LoanFleetSummaryStrip } from "./LoanFleetSummaryStrip";
 
 type DriversListProps = {
   drivers: DriverListItem[] | undefined;
@@ -28,6 +30,11 @@ type DriversListProps = {
 export function DriversList({ drivers, isLoading, isError, getHeaderProps }: DriversListProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const loansSummaryQuery = useQuery({
+    queryKey: ["drivers", "loans", "summary"],
+    queryFn: () => getLoansSummary().then((r) => r.data),
+  });
 
   const filters = useDriversListFilters(drivers);
   const {
@@ -217,6 +224,12 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
           >
             {importMessage.text}
           </div>
+        </div>
+      )}
+
+      {loansSummaryQuery.data && (
+        <div className="mx-auto max-w-[1600px] px-4 pt-3 sm:px-6 lg:px-8">
+          <LoanFleetSummaryStrip data={loansSummaryQuery.data} />
         </div>
       )}
 
