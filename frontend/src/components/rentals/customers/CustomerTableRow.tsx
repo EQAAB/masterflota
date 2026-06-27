@@ -7,6 +7,7 @@ import {
   customerTypeBadgeClass,
 } from "../rentalStatus";
 import { customerRevenue, formatCustomerSince } from "./customersListUtils";
+import { CustomerVehicleCell } from "./CustomerVehicleCell";
 
 type CustomerTableRowProps = {
   customer: RentalCustomer;
@@ -46,6 +47,9 @@ export function CustomerTableRow({
       <td>
         <p className="text-sm text-ink">{c.email || "—"}</p>
         <p className="text-xs text-slate-500">{c.phone || ""}</p>
+      </td>
+      <td>
+        <CustomerVehicleCell customer={c} />
       </td>
       <td>
         <p className="font-semibold tabular-nums text-ink">{active}</p>
