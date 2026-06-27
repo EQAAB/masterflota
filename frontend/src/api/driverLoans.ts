@@ -49,6 +49,16 @@ export interface WeekLoanRepayment {
   loan_reference: string | null;
 }
 
+export interface LoansSummaryResponse {
+  totalDisbursed: number;
+  totalOutstanding: number;
+  driversWithActiveLoans: number;
+}
+
+export function getLoansSummary() {
+  return api.get<LoansSummaryResponse>("/drivers/loans/summary");
+}
+
 export function getDriverLoans(driverId: string) {
   return api.get<{ items: DriverLoan[] }>(`/drivers/${encodeURIComponent(driverId)}/loans`);
 }

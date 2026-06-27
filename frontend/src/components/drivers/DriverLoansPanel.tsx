@@ -265,6 +265,7 @@ export function DriverLoansPanel({ driverId, canEdit }: DriverLoansPanelProps) {
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["driver-loans", driverId] });
+    void qc.invalidateQueries({ queryKey: ["drivers", "loans", "summary"] });
     void qc.invalidateQueries({ queryKey: ["earnings"] });
   };
 

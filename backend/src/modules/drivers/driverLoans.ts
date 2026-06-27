@@ -580,3 +580,39 @@ export async function listOutstandingLoanBalancesByDriver(
   }
   return map;
 }
+
+export type OrgLoansSummary = {
+  totalDisbursed: number;
+  totalOutstanding: number;
+  driversWithActiveLoans: number;
+};
+
+export async function getOrgLoansSummary(
+  client: PoolClient,
+  orgId: string,
+): Promise<OrgLoansSummary> {
+  const { rows } = await client.query<{
+    total_disbursed: string;
+    total_outstanding: string;
+    drivers_with_active_loans: string;
+  }>(
+    `SELECT
+       COALESCE(SUM(principal), 0)::text AS total_disbursed,
+       COALESCE(SUM(remaining_balance) FILTER (
+         WHERE status = 'active' AND remaining_balance > 0
+       ), 0)::text AS total_outstanding,
+       COUNT(DISTINCT driver_id) FILTER (
+         WHERE status = 'active' AND remaining_balance > 0
+       )::text AS drivers_with_active_loans
+     FROM driver_loans
+     WHERE organization_id = $1::uuid`,
+    [orgId],
+  );
+
+  const row = rows[0];
+  return {
+    totalDisbursed: roundMoney(Number(row?.total_disbursed ?? 0)),
+    totalOutstanding: roundMoney(Number(row?.total_outstanding ?? 0)),
+    driversWithActiveLoans: parseInt(row?.drivers_with_active_loans ?? "0", 10),
+  };
+}

@@ -16,6 +16,7 @@ import {
   LoanError,
   createDriverLoan,
   getActiveDriverLoan,
+  getOrgLoansSummary,
   listDriverLoans,
   recordCashOrForgiveRepayment,
   updateLoanPlan,
@@ -202,6 +203,22 @@ router.get("/search", async (req, res) => {
     // eslint-disable-next-line no-console
     console.error("Search drivers error", err);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/loans/summary", requirePermission("drivers.view"), async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const client = await pool.connect();
+  try {
+    const summary = await getOrgLoansSummary(client, orgId);
+    return res.json(summary);
+  } catch (err) {
+    console.error("Loans summary error", err);
+    return res.status(500).json({ message: "Failed to load loans summary" });
+  } finally {
+    client.release();
   }
 });
 
