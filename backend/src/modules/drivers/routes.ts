@@ -12,6 +12,14 @@ import {
   type RecurringFeeRow,
 } from "../earnings/driverRecurringFees";
 import { recomputeDriverOpenPayoutsAfterRecurringChange } from "../earnings/driverPayoutCustomFees";
+import {
+  LoanError,
+  createDriverLoan,
+  getActiveDriverLoan,
+  listDriverLoans,
+  recordCashOrForgiveRepayment,
+  updateLoanPlan,
+} from "./driverLoans";
 import { logDriverActivity } from "./activity";
 import { driverProfilePhotoUpload } from "../../config/multer";
 import { resolveDriverPhotoAbsolutePath, photoContentType } from "../../lib/driverPhotoFile";
@@ -1069,6 +1077,194 @@ router.delete("/:id/recurring-fees/:feeId", requirePermission("drivers.edit"), a
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
     console.error("Delete recurring fee error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/:id/loans", requirePermission("drivers.view"), async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+  const driverId = String(req.params.id ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+  if (!(await assertDriverInOrg(driverId, orgId))) {
+    return res.status(404).json({ message: "Driver not found" });
+  }
+  const client = await pool.connect();
+  try {
+    const items = await listDriverLoans(client, orgId, driverId);
+    return res.json({ items });
+  } catch (err) {
+    console.error("List driver loans error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/:id/loans/active", requirePermission("drivers.view"), async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+  const driverId = String(req.params.id ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+  if (!(await assertDriverInOrg(driverId, orgId))) {
+    return res.status(404).json({ message: "Driver not found" });
+  }
+  const client = await pool.connect();
+  try {
+    const loan = await getActiveDriverLoan(client, orgId, driverId);
+    return res.json({ loan });
+  } catch (err) {
+    console.error("Get active driver loan error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/:id/loans", requirePermission("drivers.edit"), async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+
+  const body = req.body as Record<string, unknown>;
+  const principalNum = Number(body.principal);
+  if (!Number.isFinite(principalNum) || principalNum <= 0) {
+    return res.status(400).json({ message: "principal must be a positive number" });
+  }
+  const disbursedAt = parseOptionalDate(body.disbursed_at);
+  if (body.disbursed_at != null && body.disbursed_at !== "" && !disbursedAt) {
+    return res.status(400).json({ message: "disbursed_at must be YYYY-MM-DD" });
+  }
+  const plannedWeek = parseOptionalDate(body.planned_repayment_week);
+  if (body.planned_repayment_week != null && body.planned_repayment_week !== "" && !plannedWeek) {
+    return res.status(400).json({ message: "planned_repayment_week must be YYYY-MM-DD" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (!(await assertDriverInOrg(driverId, orgId))) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    const loan = await createDriverLoan(client, orgId, driverId, userId, {
+      principal: roundMoney(principalNum),
+      disbursed_at: disbursedAt ?? undefined,
+      reference: typeof body.reference === "string" ? body.reference.trim() : null,
+      notes: typeof body.notes === "string" ? body.notes.slice(0, 2000) : null,
+      planned_repayment_week: plannedWeek,
+      planned_repayment_note: typeof body.planned_repayment_note === "string" ? body.planned_repayment_note.slice(0, 2000) : null,
+    });
+    await client.query("COMMIT");
+    await logDriverActivity(driverId, "loan_create", {
+      description: `Loan created: ${loan.principal} RON`,
+      performedBy: userId,
+    });
+    return res.status(201).json(loan);
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (err instanceof LoanError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    console.error("Create driver loan error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.patch("/:id/loans/:loanId/plan", requirePermission("drivers.edit"), async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  if (!orgId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  const loanId = String(req.params.loanId ?? "");
+  if (!UUID_RE.test(driverId) || !UUID_RE.test(loanId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const plannedWeek =
+    body.planned_repayment_week !== undefined ? parseOptionalDate(body.planned_repayment_week) : undefined;
+  if (body.planned_repayment_week != null && body.planned_repayment_week !== "" && plannedWeek === null) {
+    return res.status(400).json({ message: "planned_repayment_week must be YYYY-MM-DD" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (!(await assertDriverInOrg(driverId, orgId))) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    const loan = await updateLoanPlan(client, orgId, driverId, loanId, {
+      planned_repayment_week: body.planned_repayment_week !== undefined ? plannedWeek : undefined,
+      planned_repayment_note:
+        body.planned_repayment_note !== undefined
+          ? typeof body.planned_repayment_note === "string"
+            ? body.planned_repayment_note.slice(0, 2000)
+            : null
+          : undefined,
+    });
+    await client.query("COMMIT");
+    return res.json(loan);
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (err instanceof LoanError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    console.error("Update loan plan error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/:id/loans/:loanId/repayments", requirePermission("drivers.edit"), async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const userId = req.user?.sub;
+  if (!orgId || !userId) return res.status(400).json({ message: "User is not associated with an organization" });
+  const driverId = String(req.params.id ?? "");
+  const loanId = String(req.params.loanId ?? "");
+  if (!UUID_RE.test(driverId) || !UUID_RE.test(loanId)) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const body = req.body as Record<string, unknown>;
+  const type = typeof body.type === "string" ? body.type.trim() : "";
+  if (type !== "cash" && type !== "forgive") {
+    return res.status(400).json({ message: "type must be cash or forgive" });
+  }
+  const settleFull = body.settle_full === true;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    if (!(await assertDriverInOrg(driverId, orgId))) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    const result = await recordCashOrForgiveRepayment(client, orgId, driverId, loanId, userId, {
+      type,
+      amount: settleFull ? undefined : Number(body.amount),
+      settle_full: settleFull,
+      notes: typeof body.notes === "string" ? body.notes.slice(0, 2000) : null,
+    });
+    await client.query("COMMIT");
+    await logDriverActivity(driverId, "loan_repayment", {
+      description: `Loan ${type} repayment: ${result.repayment.amount} RON`,
+      performedBy: userId,
+    });
+    return res.status(201).json(result);
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (err instanceof LoanError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    console.error("Loan repayment error", err);
     return res.status(500).json({ message: "Internal server error" });
   } finally {
     client.release();

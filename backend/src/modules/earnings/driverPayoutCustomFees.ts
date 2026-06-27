@@ -50,6 +50,16 @@ export async function sumManualCustomFees(client: PoolClient, payoutId: string):
   };
 }
 
+export async function sumLoanDeductions(client: PoolClient, payoutId: string): Promise<number> {
+  const { rows } = await client.query<{ total: string | null }>(
+    `SELECT COALESCE(SUM(amount), 0)::text AS total
+     FROM driver_payout_adjustments
+     WHERE driver_payout_id = $1::uuid AND source = 'loan' AND fee_type = 'deduction'`,
+    [payoutId],
+  );
+  return roundMoney(Number(rows[0]?.total ?? "0"));
+}
+
 /** @deprecated Use sumManualCustomFees; recurring fees live in driver_weekly_fees. */
 export async function sumCustomFees(client: PoolClient, payoutId: string): Promise<CustomFeeTotals> {
   return sumManualCustomFees(client, payoutId);
@@ -123,8 +133,16 @@ export async function applyPayoutCustomFeesToRawNet(
       ? await sumWeeklyRecurringFees(client, orgId, row.driver_id, periodStart, periodEnd)
       : { deductions: 0, additions: 0 };
 
+  const loanDeductions =
+    anchorId === payoutId ? await sumLoanDeductions(client, payoutId) : 0;
+
   const adjustedRaw = roundMoney(
-    baseRaw - manualFees.deductions - weeklyFees.deductions + manualFees.additions + weeklyFees.additions,
+    baseRaw -
+      manualFees.deductions -
+      weeklyFees.deductions -
+      loanDeductions +
+      manualFees.additions +
+      weeklyFees.additions,
   );
 
   await client.query(
@@ -289,7 +307,7 @@ export async function recomputeDriverPayoutAfterCustomFees(
   await applyWeeklyCustomFees(client, orgId, period.payment_period_start, period.payment_period_end, [driverId]);
 }
 
-export type CustomFeeSource = "manual" | "recurring";
+export type CustomFeeSource = "manual" | "recurring" | "loan";
 
 export type CustomFeeRow = {
   id: string;

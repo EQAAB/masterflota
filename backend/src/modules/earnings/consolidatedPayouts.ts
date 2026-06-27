@@ -32,6 +32,11 @@ export type ConsolidatedDriverPayoutRow = {
   remaining_debt: string;
   /** Sum of manual debt reductions this week (forgive, cash, adjust). */
   week_debt_adjusted_total: string;
+  /** Active loan remaining balance for this driver. */
+  outstanding_loan_balance: string;
+  /** Planned repayment week start on active loan (reminder only). */
+  planned_repayment_week: string | null;
+  planned_repayment_note: string | null;
   /** payable | paid | debt | hold | partial | mixed */
   consolidated_status: string;
   can_pay: boolean;
@@ -102,6 +107,9 @@ function buildConsolidatedRows(
   legs: PayoutLegRow[],
   payments: Map<string, { id: string; paid_at: string }>,
   adjustmentsByDriver: Map<string, number> = new Map(),
+  loanBalancesByDriver: Map<string, number> = new Map(),
+  plannedWeekByDriver: Map<string, string | null> = new Map(),
+  plannedNoteByDriver: Map<string, string | null> = new Map(),
 ): ConsolidatedDriverPayoutRow[] {
   const byDriver = new Map<string, PayoutLegRow[]>();
   for (const leg of legs) {
@@ -147,6 +155,9 @@ function buildConsolidatedRows(
       driverLegs.reduce((m, l) => Math.max(m, Number(l.remaining_debt_amount ?? "0")), 0),
     );
     const weekDebtAdjustedTotal = roundMoney(adjustmentsByDriver.get(driverId) ?? 0);
+    const outstandingLoanBalance = roundMoney(loanBalancesByDriver.get(driverId) ?? 0);
+    const plannedRepaymentWeek = plannedWeekByDriver.get(driverId) ?? null;
+    const plannedRepaymentNote = plannedNoteByDriver.get(driverId) ?? null;
     const statuses = driverLegs.map((l) => l.payment_status);
     const { consolidated_status, can_pay } = deriveConsolidatedStatus(total, statuses, remainingDebt);
 
@@ -172,6 +183,9 @@ function buildConsolidatedRows(
       platform_lines: platformLines,
       remaining_debt: remainingDebt.toFixed(2),
       week_debt_adjusted_total: weekDebtAdjustedTotal.toFixed(2),
+      outstanding_loan_balance: outstandingLoanBalance.toFixed(2),
+      planned_repayment_week: plannedRepaymentWeek,
+      planned_repayment_note: plannedRepaymentNote,
       consolidated_status,
       can_pay,
       driver_payment_id: existingPay?.id ?? null,
@@ -276,6 +290,33 @@ export async function listConsolidatedPayouts(
     adjustmentsByDriver.set(ar.driver_id, roundMoney(Number(ar.week_debt_adjusted_total)));
   }
 
+  const driverIdsInWeek = [...new Set(legs.map((l) => l.driver_id))];
+  const loanBalancesByDriver = new Map<string, number>();
+  const plannedWeekByDriver = new Map<string, string | null>();
+  const plannedNoteByDriver = new Map<string, string | null>();
+
+  if (driverIdsInWeek.length > 0) {
+    const { rows: loanRows } = await client.query<{
+      driver_id: string;
+      remaining_balance: string;
+      planned_repayment_week: string | null;
+      planned_repayment_note: string | null;
+    }>(
+      `SELECT driver_id::text, remaining_balance::text, planned_repayment_week::text,
+              planned_repayment_note
+       FROM driver_loans
+       WHERE organization_id = $1::uuid
+         AND status = 'active'
+         AND driver_id = ANY($2::uuid[])`,
+      [orgId, driverIdsInWeek],
+    );
+    for (const lr of loanRows) {
+      loanBalancesByDriver.set(lr.driver_id, roundMoney(Number(lr.remaining_balance)));
+      plannedWeekByDriver.set(lr.driver_id, lr.planned_repayment_week?.slice(0, 10) ?? null);
+      plannedNoteByDriver.set(lr.driver_id, lr.planned_repayment_note ?? null);
+    }
+  }
+
   const { rows: payRows } = await client.query<{ id: string; driver_id: string; paid_at: string }>(
     `SELECT id::text, driver_id::text, paid_at::text
      FROM driver_payments
@@ -289,7 +330,14 @@ export async function listConsolidatedPayouts(
     payments.set(`${pr.driver_id}|${ps}|${pe}`, { id: pr.id, paid_at: pr.paid_at });
   }
 
-  let consolidated = buildConsolidatedRows(legs, payments, adjustmentsByDriver);
+  let consolidated = buildConsolidatedRows(
+    legs,
+    payments,
+    adjustmentsByDriver,
+    loanBalancesByDriver,
+    plannedWeekByDriver,
+    plannedNoteByDriver,
+  );
 
   if (options?.status?.trim()) {
     const filter = options.status.trim().toLowerCase();

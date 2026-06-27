@@ -44,6 +44,11 @@ import {
 } from "./driverPayoutCustomFees";
 import { syncRecurringFeesToDriverWeek } from "./driverWeeklyFees";
 import {
+  LoanError,
+  listLoanRepaymentsForDriverWeek,
+  recordLoanRepaymentFromPayout,
+} from "../drivers/driverLoans";
+import {
   ConsolidatedPayoutError,
   listConsolidatedPayouts,
   payAllConsolidated,
@@ -1650,6 +1655,84 @@ router.get("/payouts/debt-adjustments", async (req, res) => {
     return res.status(500).json({ message: "Failed to load debt adjustments" });
   }
 });
+
+router.get("/drivers/:driverId/loan-repayments", async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const driverId = String(req.params.driverId ?? "");
+  if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+
+  const from =
+    typeof req.query.from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.from)
+      ? req.query.from
+      : null;
+  const to =
+    typeof req.query.to === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.to)
+      ? req.query.to
+      : null;
+
+  if (!from || !to) return res.status(400).json({ message: "from and to (YYYY-MM-DD) are required" });
+
+  const client = await pool.connect();
+  try {
+    const items = await listLoanRepaymentsForDriverWeek(client, orgId, driverId, from, to);
+    return res.json({ items });
+  } catch (err) {
+    console.error("loan-repayments list error", err);
+    return res.status(500).json({ message: "Failed to load loan repayments" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post(
+  "/drivers/:driverId/loan-repayments/from-payout",
+  requirePermission("payouts.adjust"),
+  async (req, res) => {
+    const orgId = req.effectiveOrgId;
+    const userId = req.user?.sub;
+    if (!orgId || !userId) {
+      return res.status(400).json({ message: "User is not associated with an organization" });
+    }
+
+    const driverId = String(req.params.driverId ?? "");
+    if (!UUID_RE.test(driverId)) return res.status(400).json({ message: "Invalid driver id" });
+
+    const body = req.body as Record<string, unknown>;
+    const periodStart =
+      typeof body.payment_period_start === "string" ? body.payment_period_start.slice(0, 10) : "";
+    const periodEnd =
+      typeof body.payment_period_end === "string" ? body.payment_period_end.slice(0, 10) : "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(periodStart) || !/^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) {
+      return res.status(400).json({ message: "payment_period_start and payment_period_end are required (YYYY-MM-DD)" });
+    }
+
+    const settleFull = body.settle_full === true;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await recordLoanRepaymentFromPayout(client, orgId, driverId, userId, {
+        payment_period_start: periodStart,
+        payment_period_end: periodEnd,
+        amount: settleFull ? undefined : Number(body.amount),
+        settle_full: settleFull,
+        notes: typeof body.notes === "string" ? body.notes.slice(0, 2000) : null,
+      });
+      await client.query("COMMIT");
+      return res.status(201).json(result);
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      if (err instanceof LoanError) {
+        return res.status(err.statusCode).json({ message: err.message });
+      }
+      console.error("loan repayment from payout error", err);
+      return res.status(500).json({ message: "Loan repayment failed" });
+    } finally {
+      client.release();
+    }
+  },
+);
 
 router.get("/payouts/:id/platform-breakdown", async (req, res) => {
   const orgId = requireOrgId(req, res);

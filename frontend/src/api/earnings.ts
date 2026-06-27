@@ -262,6 +262,11 @@ export interface ConsolidatedDriverPayout {
   remaining_debt?: string;
   /** Sum of manual debt reductions this week. */
   week_debt_adjusted_total?: string;
+  /** Active loan remaining balance for this driver. */
+  outstanding_loan_balance?: string;
+  /** Planned repayment week on active loan (reminder only). */
+  planned_repayment_week?: string | null;
+  planned_repayment_note?: string | null;
   consolidated_status: string;
   can_pay: boolean;
   driver_payment_id: string | null;

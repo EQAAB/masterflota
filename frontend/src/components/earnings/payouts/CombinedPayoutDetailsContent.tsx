@@ -19,6 +19,13 @@ import {
   buildDebtAdjustmentCardLines,
   buildDebtAdjustmentLadderSteps,
 } from "./payoutDebtBreakdown";
+import {
+  buildLoanRepaymentCardLines,
+  buildLoanRepaymentLadderSteps,
+  formatPlannedLoanRepaymentHint,
+  shouldShowListLoanContext,
+} from "./payoutLoanBreakdown";
+import type { WeekLoanRepayment } from "../../../api/driverLoans";
 import { LineRow, PlatformLogo } from "./payoutDetailUi";
 import { PlatformEarningsCard } from "./PlatformEarningsCard";
 
@@ -29,9 +36,12 @@ export type CombinedPayoutDetailsContentProps = {
   weekFeeBreakdown?: WeekFeeBreakdown;
   weekDebtAdjustments?: PayoutDebtAdjustment[];
   weekDebtAdjustmentsLoading?: boolean;
+  weekLoanRepayments?: WeekLoanRepayment[];
+  weekLoanRepaymentsLoading?: boolean;
   isPaying?: boolean;
   onPay?: () => void;
   onOpenDebtActions?: (payout: PayoutListItem) => void;
+  onOpenLoanActions?: () => void;
   onOpenCustomFees?: (payout: PayoutListItem) => void;
   onOpenReleaseHold?: (payout: PayoutListItem) => void;
   onDownloadReport?: () => void;
@@ -142,6 +152,7 @@ function ActionsMenu({
   onDownloadReport,
   onPrint,
   onOpenDebtActions,
+  onOpenLoanActions,
   onOpenCustomFees,
   onOpenReleaseHold,
   actionPayout,
@@ -153,6 +164,7 @@ function ActionsMenu({
   onDownloadReport?: () => void;
   onPrint?: () => void;
   onOpenDebtActions?: (p: PayoutListItem) => void;
+  onOpenLoanActions?: () => void;
   onOpenCustomFees?: (p: PayoutListItem) => void;
   onOpenReleaseHold?: (p: PayoutListItem) => void;
   actionPayout?: PayoutListItem;
@@ -218,6 +230,18 @@ function ActionsMenu({
                 Adjust debt
               </button>
             )}
+            {onOpenLoanActions && shouldShowListLoanContext(row) && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenLoanActions();
+                }}
+              >
+                Loan repayment
+              </button>
+            )}
             {actionPayout && onOpenReleaseHold && actionPayout.payment_status === "hold" && (
               <button
                 type="button"
@@ -280,9 +304,12 @@ export function CombinedPayoutDetailsContent({
   weekFeeBreakdown,
   weekDebtAdjustments = [],
   weekDebtAdjustmentsLoading = false,
+  weekLoanRepayments = [],
+  weekLoanRepaymentsLoading = false,
   isPaying,
   onPay,
   onOpenDebtActions,
+  onOpenLoanActions,
   onOpenCustomFees,
   onOpenReleaseHold,
   onDownloadReport,
@@ -337,6 +364,22 @@ export function CombinedPayoutDetailsContent({
     () => buildDebtAdjustmentCardLines(weekDebtAdjustments, platformCountForDebt > 1),
     [weekDebtAdjustments, platformCountForDebt],
   );
+
+  const loanAdjustmentSteps = useMemo(
+    () =>
+      buildLoanRepaymentLadderSteps(weekLoanRepayments, {
+        isLoading: weekLoanRepaymentsLoading,
+      }),
+    [weekLoanRepayments, weekLoanRepaymentsLoading],
+  );
+
+  const loanRepaymentCardLines = useMemo(
+    () => buildLoanRepaymentCardLines(weekLoanRepayments),
+    [weekLoanRepayments],
+  );
+
+  const outstandingLoan = toNum(row.outstanding_loan_balance);
+  const plannedLoanHint = formatPlannedLoanRepaymentHint(row, row.payment_period_start);
 
   /** Short ladder: what the driver actually gets paid. */
   const finalPayoutSteps = useMemo(() => {
@@ -393,6 +436,7 @@ export function CombinedPayoutDetailsContent({
       }
 
       steps.push(...mapLadderSteps(debtAdjustmentSteps));
+      steps.push(...mapLadderSteps(loanAdjustmentSteps));
 
       steps.push({
         kind: isDebtPayout ? "final-debt" : "final",
@@ -454,6 +498,7 @@ export function CombinedPayoutDetailsContent({
     }
 
     steps.push(...mapLadderSteps(debtAdjustmentSteps));
+    steps.push(...mapLadderSteps(loanAdjustmentSteps));
 
     steps.push({
       kind: isDebtPayout ? "final-debt" : "final",
@@ -471,6 +516,7 @@ export function CombinedPayoutDetailsContent({
     recurringAnchorHint,
     vehicleRentSteps,
     debtAdjustmentSteps,
+    loanAdjustmentSteps,
   ]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
@@ -696,6 +742,7 @@ export function CombinedPayoutDetailsContent({
             onDownloadReport={onDownloadReport}
             onPrint={onPrint}
             onOpenDebtActions={onOpenDebtActions}
+            onOpenLoanActions={onOpenLoanActions}
             onOpenCustomFees={onOpenCustomFees}
             onOpenReleaseHold={onOpenReleaseHold}
             actionPayout={actionPayout}
@@ -901,6 +948,7 @@ export function CombinedPayoutDetailsContent({
               onDownloadReport={onDownloadReport}
               onPrint={onPrint}
               onOpenDebtActions={onOpenDebtActions}
+              onOpenLoanActions={onOpenLoanActions}
               onOpenCustomFees={onOpenCustomFees}
               onOpenReleaseHold={onOpenReleaseHold}
               actionPayout={actionPayout}
@@ -962,6 +1010,51 @@ export function CombinedPayoutDetailsContent({
           <LineRow label="Status" value={statusLabel} />
           {row.consolidated_status === "paid" && row.paid_at && (
             <LineRow label="Paid on" value={row.paid_at.slice(0, 10)} />
+          )}
+        </article>
+
+        <article className="fm-payout-detail-mini-card">
+          <MiniCardHeading
+            title="Loan"
+            icon={
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a5 5 0 00-10 0v2M5 9h14v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9z" />
+              </svg>
+            }
+          />
+          <LineRow
+            label="Outstanding"
+            value={outstandingLoan > 0.02 ? formatCurrency(outstandingLoan) : "—"}
+            variant={outstandingLoan > 0.02 ? "deduction" : "neutral"}
+          />
+          {plannedLoanHint && (
+            <p className="mt-1 text-xs text-sky-800">{plannedLoanHint}</p>
+          )}
+          {weekLoanRepaymentsLoading && (
+            <p className="mt-2 text-xs text-slate-500">Loading repayments…</p>
+          )}
+          {!weekLoanRepaymentsLoading && loanRepaymentCardLines.length > 0 && (
+            <div className="mt-3 border-t border-slate-200/80 pt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+                Repayments this week
+              </p>
+              <ul className="space-y-1">
+                {loanRepaymentCardLines.map((line, i) => (
+                  <li key={i} className="text-xs text-ink tabular-nums">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {onOpenLoanActions && outstandingLoan > 0.02 && (
+            <button
+              type="button"
+              className="mt-3 text-xs font-medium text-sky-800 hover:underline"
+              onClick={onOpenLoanActions}
+            >
+              Take repayment from payout
+            </button>
           )}
         </article>
 

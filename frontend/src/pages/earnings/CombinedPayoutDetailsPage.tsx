@@ -22,6 +22,8 @@ import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
+import { LoanRepaymentModal } from "../../components/earnings/LoanRepaymentModal";
+import { getDriverWeekLoanRepayments } from "../../api/driverLoans";
 import { alertError, alertSuccess, btnSecondary } from "../../theme/classNames";
 import { getPreviousWeek } from "../../utils/earningsImportWeek";
 
@@ -53,6 +55,7 @@ export function CombinedPayoutDetailsPage() {
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
   const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
 
   const backUrl = `/earnings/payouts?from=${encodeURIComponent(weekStart)}&to=${encodeURIComponent(weekEnd)}`;
 
@@ -152,6 +155,14 @@ export function CombinedPayoutDetailsPage() {
         from: weekStart,
         to: weekEnd,
       }).then((r) => r.data.items),
+    enabled: !!row && !!driverId && !!weekStart && !!weekEnd,
+    staleTime: 30_000,
+  });
+
+  const loanRepaymentsQuery = useQuery({
+    queryKey: ["earnings", "loan-repayments", driverId, weekStart, weekEnd],
+    queryFn: () =>
+      getDriverWeekLoanRepayments(driverId!, weekStart, weekEnd).then((r) => r.data.items),
     enabled: !!row && !!driverId && !!weekStart && !!weekEnd,
     staleTime: 30_000,
   });
@@ -276,9 +287,12 @@ export function CombinedPayoutDetailsPage() {
           weekFeeBreakdown={weekFeeBreakdown}
           weekDebtAdjustments={debtAdjustmentsQuery.data ?? []}
           weekDebtAdjustmentsLoading={debtAdjustmentsQuery.isLoading}
+          weekLoanRepayments={loanRepaymentsQuery.data ?? []}
+          weekLoanRepaymentsLoading={loanRepaymentsQuery.isLoading}
           isPaying={payMut.isPending}
           onPay={() => setPayConfirmOpen(true)}
           onOpenDebtActions={setDebtModalRow}
+          onOpenLoanActions={() => setLoanModalOpen(true)}
           onOpenCustomFees={setCustomFeesModalRow}
           onOpenReleaseHold={setReleaseHoldRow}
           onDownloadReport={handleDownloadReport}
@@ -320,6 +334,14 @@ export function CombinedPayoutDetailsPage() {
           void queryClient.invalidateQueries({ queryKey: ["earnings"] });
           setSuccessMsg("Hold released successfully.");
         }}
+      />
+      <LoanRepaymentModal
+        row={row ?? null}
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        open={loanModalOpen && row != null}
+        onClose={() => setLoanModalOpen(false)}
+        onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
       />
     </div>
   );
