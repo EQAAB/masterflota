@@ -207,7 +207,13 @@ export async function listConsolidatedPayouts(
   orgId: string,
   weekStart: string,
   weekEnd: string,
-  options?: { q?: string; status?: string; driverId?: string; platform?: string },
+  options?: {
+    q?: string;
+    status?: string;
+    driverId?: string;
+    platform?: string;
+    hasOutstandingLoan?: boolean;
+  },
 ): Promise<ConsolidatedDriverPayoutRow[]> {
   const ps = weekStart.slice(0, 10);
   const pe = weekEnd.slice(0, 10);
@@ -344,7 +350,17 @@ export async function listConsolidatedPayouts(
     consolidated = consolidated.filter((r) => r.consolidated_status === filter);
   }
 
+  if (options?.hasOutstandingLoan) {
+    consolidated = consolidated.filter((r) => hasOutstandingLoanBalance(r));
+  }
+
   return consolidated;
+}
+
+export function hasOutstandingLoanBalance(row: {
+  outstanding_loan_balance: string;
+}): boolean {
+  return Number(row.outstanding_loan_balance) > 0;
 }
 
 /** Builds the driver search WHERE fragment for consolidated payout listing (param index starts at 4). */

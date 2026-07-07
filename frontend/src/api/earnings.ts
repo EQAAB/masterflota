@@ -293,6 +293,7 @@ export function getConsolidatedPayouts(params: {
   status?: string;
   driverId?: string;
   platform?: string;
+  hasOutstandingLoan?: boolean;
 }) {
   return api.get<ConsolidatedPayoutsResponse>("/earnings/payouts/consolidated", { params });
 }
