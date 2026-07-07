@@ -63,6 +63,7 @@ export function EarningsPayoutsPage() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [status, setStatus] = useState("");
   const [platform, setPlatform] = useState("");
+  const [loanOnly, setLoanOnly] = useState(false);
   const [weekStart, setWeekStart] = useState(defaultWeek.start);
   const [weekEnd, setWeekEnd] = useState(defaultWeek.end);
   const [q, setQ] = useState("");
@@ -110,6 +111,7 @@ export function EarningsPayoutsPage() {
       status,
       platform,
       driverIdFromUrl,
+      loanOnly,
     ],
     queryFn: () =>
       getConsolidatedPayouts({
@@ -119,6 +121,7 @@ export function EarningsPayoutsPage() {
         status: status || undefined,
         platform: platform || undefined,
         driverId: driverIdFromUrl,
+        hasOutstandingLoan: loanOnly || undefined,
       }).then((r) => r.data),
     enabled:
       canAccess && !!weekStart && !!weekEnd,
@@ -172,6 +175,13 @@ export function EarningsPayoutsPage() {
       key: "status",
       label: `Status: ${STATUS_LABELS[status] ?? status}`,
       onRemove: () => setStatus(""),
+    });
+  }
+  if (loanOnly) {
+    activeChips.push({
+      key: "loan",
+      label: "Outstanding loans",
+      onRemove: () => setLoanOnly(false),
     });
   }
   if (platform) {
@@ -281,12 +291,15 @@ export function EarningsPayoutsPage() {
           <LoanFleetSummaryStrip
             data={loansSummaryQuery.data}
             action={
-              <Link
-                to="/drivers"
-                className="text-xs font-medium text-sky-800 hover:underline"
-              >
-                View drivers
-              </Link>
+              loansSummaryQuery.data.totalOutstanding > 0 ? (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-sky-800 hover:underline"
+                  onClick={() => setLoanOnly(true)}
+                >
+                  Show loan payouts
+                </button>
+              ) : undefined
             }
           />
         )}

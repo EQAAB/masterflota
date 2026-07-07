@@ -1474,6 +1474,8 @@ router.get("/payouts/consolidated", async (req, res) => {
       ? req.query.driverId
       : undefined;
   const platform = typeof req.query.platform === "string" ? req.query.platform.trim() : undefined;
+  const hasOutstandingLoan =
+    req.query.hasOutstandingLoan === "true" || req.query.hasOutstandingLoan === "1";
 
   const client = await pool.connect();
   try {
@@ -1482,6 +1484,7 @@ router.get("/payouts/consolidated", async (req, res) => {
       status,
       driverId,
       platform: platform || undefined,
+      hasOutstandingLoan: hasOutstandingLoan || undefined,
     });
     const summary = items.reduce(
       (acc, row) => {

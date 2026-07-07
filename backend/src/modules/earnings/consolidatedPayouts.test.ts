@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildConsolidatedPayoutSearchClause, deriveConsolidatedStatus } from "./consolidatedPayouts";
+import {
+  buildConsolidatedPayoutSearchClause,
+  deriveConsolidatedStatus,
+  hasOutstandingLoanBalance,
+} from "./consolidatedPayouts";
 
 describe("deriveConsolidatedStatus", () => {
   it("marks negative total as debt", () => {
@@ -56,6 +60,17 @@ describe("deriveConsolidatedStatus", () => {
       consolidated_status: "hold",
       can_pay: false,
     });
+  });
+});
+
+describe("hasOutstandingLoanBalance", () => {
+  it("returns true when outstanding loan balance is positive", () => {
+    expect(hasOutstandingLoanBalance({ outstanding_loan_balance: "150.00" })).toBe(true);
+  });
+
+  it("returns false when outstanding loan balance is zero", () => {
+    expect(hasOutstandingLoanBalance({ outstanding_loan_balance: "0.00" })).toBe(false);
+    expect(hasOutstandingLoanBalance({ outstanding_loan_balance: "0" })).toBe(false);
   });
 });
 
