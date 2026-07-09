@@ -18,6 +18,7 @@ import {
   getActiveDriverLoan,
   getOrgLoansSummary,
   listDriverLoans,
+  listOrgLoans,
   recordCashOrForgiveRepayment,
   updateLoanPlan,
 } from "./driverLoans";
@@ -217,6 +218,48 @@ router.get("/loans/summary", requirePermission("drivers.view"), async (req, res)
   } catch (err) {
     console.error("Loans summary error", err);
     return res.status(500).json({ message: "Failed to load loans summary" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/loans", requirePermission("drivers.view"), async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const {
+    status,
+    search,
+    has_balance,
+    limit,
+    offset,
+    sort_by,
+    sort_order,
+  } = req.query as {
+    status?: string;
+    search?: string;
+    has_balance?: string;
+    limit?: string;
+    offset?: string;
+    sort_by?: string;
+    sort_order?: string;
+  };
+
+  const client = await pool.connect();
+  try {
+    const result = await listOrgLoans(client, orgId, {
+      status,
+      search,
+      hasBalance: has_balance === "true" || has_balance === "1",
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+      sortBy: sort_by,
+      sortOrder: sort_order === "asc" ? "asc" : "desc",
+    });
+    return res.json(result);
+  } catch (err) {
+    console.error("List org loans error", err);
+    return res.status(500).json({ message: "Failed to load loans" });
   } finally {
     client.release();
   }

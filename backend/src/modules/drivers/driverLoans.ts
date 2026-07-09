@@ -616,3 +616,165 @@ export async function getOrgLoansSummary(
     driversWithActiveLoans: parseInt(row?.drivers_with_active_loans ?? "0", 10),
   };
 }
+
+export type OrgLoanListItem = {
+  id: string;
+  driver_id: string;
+  driver_first_name: string;
+  driver_last_name: string;
+  driver_phone: string | null;
+  principal: string;
+  remaining_balance: string;
+  status: DriverLoanStatus;
+  disbursed_at: string;
+  reference: string | null;
+  notes: string | null;
+  planned_repayment_week: string | null;
+  planned_repayment_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ListOrgLoansOptions = {
+  status?: string;
+  search?: string;
+  hasBalance?: boolean;
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+};
+
+export type ListOrgLoansResult = {
+  summary: OrgLoansSummary;
+  items: OrgLoanListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+const ORG_LOAN_LIST_SORT: Record<string, string> = {
+  disbursed_at: "l.disbursed_at",
+  remaining_balance: "l.remaining_balance",
+  principal: "l.principal",
+  driver_name: "d.last_name, d.first_name",
+  created_at: "l.created_at",
+};
+
+function resolveOrgLoanListOrder(sortBy?: string, sortOrder?: string): string {
+  const col = ORG_LOAN_LIST_SORT[sortBy?.trim() ?? ""] ?? "l.disbursed_at";
+  const dir = sortOrder?.toLowerCase() === "asc" ? "ASC" : "DESC";
+  return `${col} ${dir}, l.id DESC`;
+}
+
+export async function listOrgLoans(
+  client: PoolClient,
+  orgId: string,
+  options: ListOrgLoansOptions = {},
+): Promise<ListOrgLoansResult> {
+  const limit = Math.min(Math.max(options.limit ?? 50, 1), 500);
+  const offset = Math.max(options.offset ?? 0, 0);
+
+  const params: unknown[] = [orgId];
+  const conditions = [
+    "l.organization_id = $1::uuid",
+    "(d.is_deleted = false OR d.is_deleted IS NULL)",
+  ];
+  let p = 2;
+
+  const status = options.status?.trim().toLowerCase();
+  if (status && status !== "all" && ["active", "paid", "written_off"].includes(status)) {
+    conditions.push(`l.status = $${p++}`);
+    params.push(status);
+  }
+
+  if (options.hasBalance) {
+    conditions.push(`l.status = 'active' AND l.remaining_balance > 0`);
+  }
+
+  const search = options.search?.trim();
+  if (search) {
+    conditions.push(`(
+      d.first_name ILIKE $${p}
+      OR d.last_name ILIKE $${p}
+      OR d.phone ILIKE $${p}
+      OR CONCAT(d.first_name, ' ', d.last_name) ILIKE $${p}
+      OR COALESCE(l.reference, '') ILIKE $${p}
+    )`);
+    params.push(`%${search}%`);
+    p++;
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderBy = resolveOrgLoanListOrder(options.sortBy, options.sortOrder);
+
+  const countRes = await client.query<{ c: string }>(
+    `SELECT COUNT(*)::text AS c
+     FROM driver_loans l
+     INNER JOIN drivers d ON d.id = l.driver_id AND d.organization_id = l.organization_id
+     ${where}`,
+    params,
+  );
+
+  const listParams = [...params, limit, offset];
+  const limitIdx = listParams.length - 1;
+  const offsetIdx = listParams.length;
+
+  const { rows } = await client.query<{
+    id: string;
+    driver_id: string;
+    driver_first_name: string;
+    driver_last_name: string;
+    driver_phone: string | null;
+    principal: string;
+    remaining_balance: string;
+    status: DriverLoanStatus;
+    disbursed_at: string;
+    reference: string | null;
+    notes: string | null;
+    planned_repayment_week: string | null;
+    planned_repayment_note: string | null;
+    created_at: string;
+    updated_at: string;
+  }>(
+    `SELECT l.id::text,
+            l.driver_id::text,
+            d.first_name AS driver_first_name,
+            d.last_name AS driver_last_name,
+            d.phone AS driver_phone,
+            l.principal::text,
+            l.remaining_balance::text,
+            l.status,
+            l.disbursed_at::text,
+            l.reference,
+            l.notes,
+            l.planned_repayment_week::text,
+            l.planned_repayment_note,
+            l.created_at::text,
+            l.updated_at::text
+     FROM driver_loans l
+     INNER JOIN drivers d ON d.id = l.driver_id AND d.organization_id = l.organization_id
+     ${where}
+     ORDER BY ${orderBy}
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    listParams,
+  );
+
+  const summary = await getOrgLoansSummary(client, orgId);
+
+  return {
+    summary,
+    items: rows.map((row) => ({
+      ...row,
+      principal: roundMoney(Number(row.principal)).toFixed(2),
+      remaining_balance: roundMoney(Number(row.remaining_balance)).toFixed(2),
+      disbursed_at: row.disbursed_at.slice(0, 10),
+      planned_repayment_week: row.planned_repayment_week?.slice(0, 10) ?? null,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    })),
+    total: parseInt(countRes.rows[0]?.c ?? "0", 10),
+    limit,
+    offset,
+  };
+}

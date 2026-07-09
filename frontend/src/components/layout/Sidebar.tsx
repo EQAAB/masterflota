@@ -13,6 +13,7 @@ const earningsSubItems = [
   { to: "/earnings", label: "Overview" },
   { to: "/earnings/import", label: "Import" },
   { to: "/earnings/payouts", label: "Payouts" },
+  { to: "/earnings/loans", label: "Driver loans" },
   { to: "/earnings/reports", label: "Reports" },
   { to: "/earnings/subcontractors/settlements", label: "Sub settlements" },
 ];
