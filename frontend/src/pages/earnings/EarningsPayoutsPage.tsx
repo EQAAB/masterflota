@@ -291,15 +291,23 @@ export function EarningsPayoutsPage() {
           <LoanFleetSummaryStrip
             data={loansSummaryQuery.data}
             action={
-              loansSummaryQuery.data.totalOutstanding > 0 ? (
-                <button
-                  type="button"
+              <div className="flex flex-wrap items-center gap-3">
+                {loansSummaryQuery.data.totalOutstanding > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-sky-800 hover:underline"
+                    onClick={() => setLoanOnly(true)}
+                  >
+                    Show loan payouts
+                  </button>
+                )}
+                <Link
+                  to="/earnings/loans"
                   className="text-xs font-medium text-sky-800 hover:underline"
-                  onClick={() => setLoanOnly(true)}
                 >
-                  Show loan payouts
-                </button>
-              ) : undefined
+                  View loan report
+                </Link>
+              </div>
             }
           />
         )}
@@ -388,6 +396,7 @@ export function EarningsPayoutsPage() {
           onSuccess={() => {
             void queryClient.invalidateQueries({ queryKey: ["earnings"] });
             void queryClient.invalidateQueries({ queryKey: ["drivers", "loans", "summary"] });
+            void queryClient.invalidateQueries({ queryKey: ["drivers", "loans", "list"] });
           }}
         />
       </div>

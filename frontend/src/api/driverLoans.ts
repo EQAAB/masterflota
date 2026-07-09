@@ -55,8 +55,46 @@ export interface LoansSummaryResponse {
   driversWithActiveLoans: number;
 }
 
+export interface OrgLoanListItem {
+  id: string;
+  driver_id: string;
+  driver_first_name: string;
+  driver_last_name: string;
+  driver_phone: string | null;
+  principal: string;
+  remaining_balance: string;
+  status: DriverLoanStatus;
+  disbursed_at: string;
+  reference: string | null;
+  notes: string | null;
+  planned_repayment_week: string | null;
+  planned_repayment_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrgLoansListResponse {
+  summary: LoansSummaryResponse;
+  items: OrgLoanListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export function getLoansSummary() {
   return api.get<LoansSummaryResponse>("/drivers/loans/summary");
+}
+
+export function getOrgLoansList(params?: {
+  status?: string;
+  search?: string;
+  has_balance?: boolean;
+  limit?: number;
+  offset?: number;
+  sort_by?: string;
+  sort_order?: "asc" | "desc";
+}) {
+  return api.get<OrgLoansListResponse>("/drivers/loans", { params });
 }
 
 export function getDriverLoans(driverId: string) {

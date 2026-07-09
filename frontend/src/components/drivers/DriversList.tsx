@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DriverListItem } from "../../api/drivers";
 import { updateDriver } from "../../api/drivers";
@@ -229,7 +229,17 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
 
       {loansSummaryQuery.data && (
         <div className="mx-auto max-w-[1600px] px-4 pt-3 sm:px-6 lg:px-8">
-          <LoanFleetSummaryStrip data={loansSummaryQuery.data} />
+          <LoanFleetSummaryStrip
+            data={loansSummaryQuery.data}
+            action={
+              <Link
+                to="/earnings/loans"
+                className="text-xs font-medium text-sky-800 hover:underline"
+              >
+                View loan report
+              </Link>
+            }
+          />
         </div>
       )}
 
