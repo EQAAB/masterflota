@@ -9,14 +9,29 @@ import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../them
 import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
 
-const earningsSubItems = [
-  { to: "/earnings", label: "Overview" },
-  { to: "/earnings/import", label: "Import" },
-  { to: "/earnings/payouts", label: "Payouts" },
-  { to: "/earnings/loans", label: "Driver loans" },
-  { to: "/earnings/reports", label: "Reports" },
-  { to: "/earnings/subcontractors/settlements", label: "Sub settlements" },
-];
+function buildEarningsSubItems(opts: {
+  canAccessFinance: boolean;
+  canViewDrivers: boolean;
+  canViewReports: boolean;
+  canSettleSubcontractors: boolean;
+}) {
+  const items: { to: string; label: string; exact?: boolean }[] = [];
+  if (opts.canAccessFinance) {
+    items.push({ to: "/earnings", label: "Overview", exact: true });
+    items.push({ to: "/earnings/import", label: "Import" });
+    items.push({ to: "/earnings/payouts", label: "Payouts" });
+  }
+  if (opts.canViewDrivers) {
+    items.push({ to: "/earnings/loans", label: "Driver loans" });
+  }
+  if (opts.canViewReports) {
+    items.push({ to: "/earnings/reports", label: "Reports" });
+  }
+  if (opts.canSettleSubcontractors) {
+    items.push({ to: "/earnings/subcontractors/settlements", label: "Sub settlements" });
+  }
+  return items;
+}
 
 const rentalSubItems = [
   { to: "/rentals", label: "Dashboard", exact: true },
@@ -44,6 +59,7 @@ function buildSettingsSubItems(opts: {
 }
 
 const ICON = "w-5 h-5 shrink-0 stroke-[1.75]";
+const SIDEBAR_CHEVRON = "h-4 w-4 shrink-0 transition-transform duration-200 ease-out";
 
 function DashboardIcon({ className }: { className?: string }) {
   return (
@@ -162,6 +178,17 @@ function SidebarNavItem({
   );
 }
 
+function SidebarAccordionPanel({ open, children }: { open: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={`sidebar-accordion-panel ${open ? "sidebar-accordion-panel--open" : "sidebar-accordion-panel--closed"}`}
+      aria-hidden={!open}
+    >
+      <div className="sidebar-accordion-panel__inner">{children}</div>
+    </div>
+  );
+}
+
 function NavSubFlyout({
   title,
   items,
@@ -174,11 +201,12 @@ function NavSubFlyout({
   onClose: () => void;
 }) {
   const location = useLocation();
+  const flyoutTop = Math.max(8, Math.min(anchorRect.top, window.innerHeight - 280));
   return createPortal(
-    <div className="fixed inset-0 z-[100]" onClick={onClose} role="presentation">
+    <div className="sidebar-flyout-backdrop fixed inset-0 z-[100]" onClick={onClose} role="presentation">
       <div
-        className="absolute z-[101] min-w-[200px] rounded-xl border border-white/20 bg-brand-deeper/95 p-2 shadow-sidebar-glow backdrop-blur-md"
-        style={{ left: anchorRect.right + 8, top: anchorRect.top }}
+        className="sidebar-flyout absolute z-[101] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto rounded-xl border border-white/20 bg-brand-deeper/95 p-2 shadow-sidebar-glow backdrop-blur-md"
+        style={{ left: anchorRect.right + 8, top: flyoutTop }}
         onClick={(e) => e.stopPropagation()}
         role="menu"
       >
@@ -205,9 +233,54 @@ function NavSubFlyout({
   );
 }
 
+function isEarningsNavActive(pathname: string, to: string, exact?: boolean) {
+  return exact ? pathname === to : pathname.startsWith(to);
+}
+
 function isRentalNavActive(pathname: string, to: string, exact?: boolean) {
   return exact ? pathname === to : pathname.startsWith(to);
 }
+
+function EarningsSubNavLinks({
+  items,
+  pathname,
+  onNavigate,
+}: {
+  items: { to: string; label: string; exact?: boolean }[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+      {items.map(({ to, label, exact }) => {
+        const active = isEarningsNavActive(pathname, to, exact);
+        return (
+          <Link
+            key={to}
+            to={to}
+            onClick={onNavigate}
+            className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+              active
+                ? "bg-brand-mint font-medium text-ink"
+                : "text-white/60 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <span className="truncate">{label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function sectionFromPath(pathname: string): "earnings" | "rentals" | "settings" | null {
+  if (pathname.startsWith("/earnings")) return "earnings";
+  if (pathname.startsWith("/rentals")) return "rentals";
+  if (pathname.startsWith("/settings")) return "settings";
+  return null;
+}
+
+type NavSection = NonNullable<ReturnType<typeof sectionFromPath>>;
 
 export interface SidebarProps {
   collapsed: boolean;
@@ -226,6 +299,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewVehicles = usePermission("vehicles.view");
   const canViewDashboard = usePermission("dashboard.view");
   const canViewRentals = useAnyPermission("rentals.view", "rentals.manage");
+  const canViewReports = usePermission("reports.view");
+  const canSettleSubcontractors = usePermission("subcontractors.settle");
+  const earningsSubItems = buildEarningsSubItems({
+    canAccessFinance: showFinanceNav,
+    canViewDrivers,
+    canViewReports,
+    canSettleSubcontractors,
+  });
+  const showEarningsNav = earningsSubItems.length > 0;
   const canManageOrganizations =
     isPlatformSuperAdmin(user) &&
     isPlatformMode(user, activeOrgId) &&
@@ -253,22 +335,27 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }]
       : []),
   ];
-  const [earningsOpen, setEarningsOpen] = useState(() => location.pathname.startsWith("/earnings"));
-  const [rentalsOpen, setRentalsOpen] = useState(() => location.pathname.startsWith("/rentals"));
-  const [settingsOpen, setSettingsOpen] = useState(() => location.pathname.startsWith("/settings"));
-  const [earningsFlyout, setEarningsFlyout] = useState(false);
-  const [rentalsFlyout, setRentalsFlyout] = useState(false);
-  const [settingsFlyout, setSettingsFlyout] = useState(false);
+  const [openSection, setOpenSection] = useState<NavSection | null>(() => sectionFromPath(location.pathname));
+  const [openFlyout, setOpenFlyout] = useState<NavSection | null>(null);
   const earningsBtnRef = useRef<HTMLButtonElement>(null);
   const rentalsBtnRef = useRef<HTMLButtonElement>(null);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
+  const toggleSection = (section: NavSection) => {
+    setOpenSection((prev) => (prev === section ? null : section));
+  };
+
+  const toggleFlyout = (section: NavSection) => {
+    setOpenFlyout((prev) => (prev === section ? null : section));
+  };
+
   useEffect(() => {
-    if (location.pathname.startsWith("/earnings")) setEarningsOpen(true);
-    if (location.pathname.startsWith("/rentals")) setRentalsOpen(true);
-    if (location.pathname.startsWith("/settings")) setSettingsOpen(true);
-    if (location.pathname.startsWith("/platform")) setSettingsOpen(false);
+    setOpenSection(sectionFromPath(location.pathname));
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!collapsed) setOpenFlyout(null);
+  }, [collapsed]);
 
   const earningsActive = location.pathname.startsWith("/earnings");
   const rentalsActive = location.pathname.startsWith("/rentals");
@@ -321,130 +408,111 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             );
           })}
 
-          {showFleetNav && (showFinanceNav || canViewRentals) &&
+          {showFleetNav && showEarningsNav &&
             (collapsed ? (
               <>
                 <button
                   ref={earningsBtnRef}
                   type="button"
                   title="Earnings"
-                  onClick={() => setEarningsFlyout((o) => !o)}
+                  onClick={() => toggleFlyout("earnings")}
                   className={`${sidebarNavItem} w-full ${earningsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
-                  aria-expanded={earningsFlyout}
+                  aria-expanded={openFlyout === "earnings"}
                   aria-haspopup="menu"
                 >
                   <EarningsIcon className={ICON} />
                 </button>
-                {earningsFlyout && earningsBtnRef.current && (
+                {openFlyout === "earnings" && earningsBtnRef.current && (
                   <NavSubFlyout
                     title="Earnings"
-                    items={earningsSubItems.map(({ to, label }) => ({
-                      to,
-                      label,
-                      exact: to === "/earnings",
-                    }))}
+                    items={earningsSubItems}
                     anchorRect={earningsBtnRef.current.getBoundingClientRect()}
-                    onClose={() => setEarningsFlyout(false)}
-                  />
-                )}
-                <button
-                  ref={rentalsBtnRef}
-                  type="button"
-                  title="Rentals"
-                  onClick={() => setRentalsFlyout((o) => !o)}
-                  className={`${sidebarNavItem} w-full ${rentalsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
-                  aria-expanded={rentalsFlyout}
-                  aria-haspopup="menu"
-                >
-                  <RentalsIcon className={ICON} />
-                </button>
-                {rentalsFlyout && rentalsBtnRef.current && (
-                  <NavSubFlyout
-                    title="Rentals"
-                    items={rentalSubItems}
-                    anchorRect={rentalsBtnRef.current.getBoundingClientRect()}
-                    onClose={() => setRentalsFlyout(false)}
+                    onClose={() => setOpenFlyout(null)}
                   />
                 )}
               </>
             ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => toggleSection("earnings")}
+                  className={`${sidebarNavItem} w-full text-left ${
+                    earningsActive ? sidebarNavActive : sidebarNavInactive
+                  }`}
+                  aria-expanded={openSection === "earnings"}
+                >
+                  <EarningsIcon className={ICON} />
+                  <span className="flex-1 truncate">Earnings</span>
+                  <ChevronDown
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "earnings" ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <SidebarAccordionPanel open={openSection === "earnings"}>
+                  <EarningsSubNavLinks items={earningsSubItems} pathname={location.pathname} />
+                </SidebarAccordionPanel>
+              </div>
+            ))}
+
+          {showFleetNav && canViewRentals &&
+            (collapsed ? (
               <>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setEarningsOpen((o) => !o)}
-                    className={`${sidebarNavItem} w-full text-left ${
-                      earningsActive ? sidebarNavActive : sidebarNavInactive
-                    }`}
-                    aria-expanded={earningsOpen}
-                  >
-                    <EarningsIcon className={ICON} />
-                    <span className="flex-1 truncate">Earnings</span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 transition-transform ${earningsOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {earningsOpen && (
-                    <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
-                      {earningsSubItems.map(({ to, label }) => {
-                        const active =
-                          to === "/earnings"
-                            ? location.pathname === "/earnings"
-                            : location.pathname.startsWith(to);
-                        return (
-                          <Link
-                            key={to}
-                            to={to}
-                            className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
-                              active
-                                ? "bg-brand-mint font-medium text-ink"
-                                : "text-white/60 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span className="truncate">{label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setRentalsOpen((o) => !o)}
-                    className={`${sidebarNavItem} w-full text-left ${
-                      rentalsActive ? sidebarNavActive : sidebarNavInactive
-                    }`}
-                    aria-expanded={rentalsOpen}
-                  >
-                    <RentalsIcon className={ICON} />
-                    <span className="flex-1 truncate">Rentals</span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 transition-transform ${rentalsOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {rentalsOpen && (
-                    <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
-                      {rentalSubItems.map(({ to, label, exact }) => {
-                        const active = isRentalNavActive(location.pathname, to, exact);
-                        return (
-                          <Link
-                            key={to}
-                            to={to}
-                            className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
-                              active
-                                ? "bg-brand-mint font-medium text-ink"
-                                : "text-white/60 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span className="truncate">{label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <button
+                  ref={rentalsBtnRef}
+                  type="button"
+                  title="Rentals"
+                  onClick={() => toggleFlyout("rentals")}
+                  className={`${sidebarNavItem} w-full ${rentalsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
+                  aria-expanded={openFlyout === "rentals"}
+                  aria-haspopup="menu"
+                >
+                  <RentalsIcon className={ICON} />
+                </button>
+                {openFlyout === "rentals" && rentalsBtnRef.current && (
+                  <NavSubFlyout
+                    title="Rentals"
+                    items={rentalSubItems}
+                    anchorRect={rentalsBtnRef.current.getBoundingClientRect()}
+                    onClose={() => setOpenFlyout(null)}
+                  />
+                )}
               </>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => toggleSection("rentals")}
+                  className={`${sidebarNavItem} w-full text-left ${
+                    rentalsActive ? sidebarNavActive : sidebarNavInactive
+                  }`}
+                  aria-expanded={openSection === "rentals"}
+                >
+                  <RentalsIcon className={ICON} />
+                  <span className="flex-1 truncate">Rentals</span>
+                  <ChevronDown
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "rentals" ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <SidebarAccordionPanel open={openSection === "rentals"}>
+                  <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                    {rentalSubItems.map(({ to, label, exact }) => {
+                      const active = isRentalNavActive(location.pathname, to, exact);
+                      return (
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                            active
+                              ? "bg-brand-mint font-medium text-ink"
+                              : "text-white/60 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <span className="truncate">{label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </SidebarAccordionPanel>
+              </div>
             ))}
 
           {showSettingsNav &&
@@ -454,19 +522,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   ref={settingsBtnRef}
                   type="button"
                   title="Settings"
-                  onClick={() => setSettingsFlyout((o) => !o)}
+                  onClick={() => toggleFlyout("settings")}
                   className={`${sidebarNavItem} w-full ${settingsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
-                  aria-expanded={settingsFlyout}
+                  aria-expanded={openFlyout === "settings"}
                   aria-haspopup="menu"
                 >
                   <SettingsIcon className={ICON} />
                 </button>
-                {settingsFlyout && settingsBtnRef.current && (
+                {openFlyout === "settings" && settingsBtnRef.current && (
                   <NavSubFlyout
                     title="Settings"
                     items={settingsSubItems}
                     anchorRect={settingsBtnRef.current.getBoundingClientRect()}
-                    onClose={() => setSettingsFlyout(false)}
+                    onClose={() => setOpenFlyout(null)}
                   />
                 )}
               </>
@@ -474,19 +542,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <div>
                 <button
                   type="button"
-                  onClick={() => setSettingsOpen((o) => !o)}
+                  onClick={() => toggleSection("settings")}
                   className={`${sidebarNavItem} w-full text-left ${
                     settingsActive ? sidebarNavActive : sidebarNavInactive
                   }`}
-                  aria-expanded={settingsOpen}
+                  aria-expanded={openSection === "settings"}
                 >
                   <SettingsIcon className={ICON} />
                   <span className="flex-1 truncate">Settings</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "settings" ? "rotate-180" : ""}`}
                   />
                 </button>
-                {settingsOpen && (
+                <SidebarAccordionPanel open={openSection === "settings"}>
                   <div className="relative z-10 mt-0.5 ml-2 space-y-1.5 border-l border-white/20 pl-3">
                     {settingsSubItems.map(({ to, label, exact }) => {
                       const active = exact ? location.pathname === to : location.pathname.startsWith(to);
@@ -505,7 +573,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       );
                     })}
                   </div>
-                )}
+                </SidebarAccordionPanel>
               </div>
             ))}
         </div>
