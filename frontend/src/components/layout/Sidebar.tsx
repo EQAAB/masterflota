@@ -59,6 +59,7 @@ function buildSettingsSubItems(opts: {
 }
 
 const ICON = "w-5 h-5 shrink-0 stroke-[1.75]";
+const SIDEBAR_CHEVRON = "h-4 w-4 shrink-0 transition-transform duration-200 ease-out";
 
 function DashboardIcon({ className }: { className?: string }) {
   return (
@@ -177,6 +178,17 @@ function SidebarNavItem({
   );
 }
 
+function SidebarAccordionPanel({ open, children }: { open: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={`sidebar-accordion-panel ${open ? "sidebar-accordion-panel--open" : "sidebar-accordion-panel--closed"}`}
+      aria-hidden={!open}
+    >
+      <div className="sidebar-accordion-panel__inner">{children}</div>
+    </div>
+  );
+}
+
 function NavSubFlyout({
   title,
   items,
@@ -191,9 +203,9 @@ function NavSubFlyout({
   const location = useLocation();
   const flyoutTop = Math.max(8, Math.min(anchorRect.top, window.innerHeight - 280));
   return createPortal(
-    <div className="fixed inset-0 z-[100]" onClick={onClose} role="presentation">
+    <div className="sidebar-flyout-backdrop fixed inset-0 z-[100]" onClick={onClose} role="presentation">
       <div
-        className="absolute z-[101] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto rounded-xl border border-white/20 bg-brand-deeper/95 p-2 shadow-sidebar-glow backdrop-blur-md"
+        className="sidebar-flyout absolute z-[101] max-h-[calc(100vh-16px)] min-w-[200px] overflow-y-auto rounded-xl border border-white/20 bg-brand-deeper/95 p-2 shadow-sidebar-glow backdrop-blur-md"
         style={{ left: anchorRect.right + 8, top: flyoutTop }}
         onClick={(e) => e.stopPropagation()}
         role="menu"
@@ -432,12 +444,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <EarningsIcon className={ICON} />
                   <span className="flex-1 truncate">Earnings</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${openSection === "earnings" ? "rotate-180" : ""}`}
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "earnings" ? "rotate-180" : ""}`}
                   />
                 </button>
-                {openSection === "earnings" && (
+                <SidebarAccordionPanel open={openSection === "earnings"}>
                   <EarningsSubNavLinks items={earningsSubItems} pathname={location.pathname} />
-                )}
+                </SidebarAccordionPanel>
               </div>
             ))}
 
@@ -477,10 +489,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <RentalsIcon className={ICON} />
                   <span className="flex-1 truncate">Rentals</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${openSection === "rentals" ? "rotate-180" : ""}`}
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "rentals" ? "rotate-180" : ""}`}
                   />
                 </button>
-                {openSection === "rentals" && (
+                <SidebarAccordionPanel open={openSection === "rentals"}>
                   <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
                     {rentalSubItems.map(({ to, label, exact }) => {
                       const active = isRentalNavActive(location.pathname, to, exact);
@@ -499,7 +511,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       );
                     })}
                   </div>
-                )}
+                </SidebarAccordionPanel>
               </div>
             ))}
 
@@ -539,10 +551,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <SettingsIcon className={ICON} />
                   <span className="flex-1 truncate">Settings</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 transition-transform ${openSection === "settings" ? "rotate-180" : ""}`}
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "settings" ? "rotate-180" : ""}`}
                   />
                 </button>
-                {openSection === "settings" && (
+                <SidebarAccordionPanel open={openSection === "settings"}>
                   <div className="relative z-10 mt-0.5 ml-2 space-y-1.5 border-l border-white/20 pl-3">
                     {settingsSubItems.map(({ to, label, exact }) => {
                       const active = exact ? location.pathname === to : location.pathname.startsWith(to);
@@ -561,7 +573,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       );
                     })}
                   </div>
-                )}
+                </SidebarAccordionPanel>
               </div>
             ))}
         </div>
