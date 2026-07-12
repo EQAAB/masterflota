@@ -2,9 +2,8 @@ import { useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { usePermission } from "../../../lib/permissions";
+import { exportPdfFromElement } from "../../../lib/exportPdfFromElement";
 import {
   getCommissionByBaseTypeReport,
   getDebtsAging,
@@ -158,18 +157,9 @@ export function useReportsPageState() {
         setError("Preview section is not ready yet.");
         return;
       }
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: "#ffffff",
+      await exportPdfFromElement(previewRef.current, {
+        filename: "earnings-reports-preview.pdf",
       });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      const fittedHeight = Math.min(pdfHeight, pdf.internal.pageSize.getHeight() - 10);
-      pdf.addImage(imgData, "PNG", 5, 5, pdfWidth - 10, fittedHeight);
-      pdf.save("earnings-reports-preview.pdf");
     } catch (e) {
       setError(reportsErrMessage(e));
     } finally {
