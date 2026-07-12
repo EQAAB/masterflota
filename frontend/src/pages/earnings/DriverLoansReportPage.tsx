@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrgLoansList } from "../../api/driverLoans";
 import { usePermission } from "../../lib/permissions";
 import { PageHeader } from "../../components/theme/PageHeader";
 import { LoansKpiCards } from "../../components/earnings/loans/LoansKpiCards";
 import { LoansReportTable } from "../../components/earnings/loans/LoansReportTable";
+import { CreateLoanModal } from "../../components/earnings/loans/CreateLoanModal";
+import { invalidateLoanQueries } from "../../components/earnings/loans/invalidateLoanQueries";
 import { DriversPagination } from "../../components/drivers/DriversPagination";
 import { filterInputClass, filterSelectClass } from "../../components/earnings/payouts/PayoutFiltersCard";
 
@@ -18,12 +20,22 @@ const STATUS_OPTIONS = [
 
 export function DriverLoansReportPage() {
   const canAccess = usePermission("drivers.view");
-  const [search, setSearch] = useState("");
+  const canEdit = usePermission("drivers.edit");
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("search")?.trim() ?? "");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
   const [hasBalanceOnly, setHasBalanceOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("search")?.trim();
+    if (fromUrl) setSearch(fromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -70,12 +82,23 @@ export function DriverLoansReportPage() {
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5"
             actions={
-              <Link
-                to="/earnings/payouts"
-                className="inline-flex h-10 items-center rounded-full border border-border/80 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
-              >
-                Go to payouts
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateOpen(true)}
+                    className="inline-flex h-10 items-center rounded-full bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95"
+                  >
+                    Create loan
+                  </button>
+                )}
+                <Link
+                  to="/earnings/payouts"
+                  className="inline-flex h-10 items-center rounded-full border border-border/80 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+                >
+                  Go to payouts
+                </Link>
+              </div>
             }
           />
         </div>
@@ -146,6 +169,15 @@ export function DriverLoansReportPage() {
           />
         )}
       </div>
+
+      <CreateLoanModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSuccess={(loanId) => {
+          invalidateLoanQueries(qc);
+          navigate(`/earnings/loans/${loanId}`);
+        }}
+      />
     </div>
   );
 }

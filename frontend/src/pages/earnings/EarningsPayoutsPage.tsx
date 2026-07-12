@@ -22,6 +22,7 @@ import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 import type { ConsolidatedDriverPayout } from "../../api/earnings";
 import { getLoansSummary } from "../../api/driverLoans";
 import { LoanFleetSummaryStrip } from "../../components/drivers/LoanFleetSummaryStrip";
+import { invalidateLoanQueries } from "../../components/earnings/loans/invalidateLoanQueries";
 import {
   payoutFilterBtnSecondary,
 } from "../../components/earnings/payouts/PayoutFiltersCard";
@@ -394,9 +395,7 @@ export function EarningsPayoutsPage() {
           open={loanModalRow != null}
           onClose={() => setLoanModalRow(null)}
           onSuccess={() => {
-            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-            void queryClient.invalidateQueries({ queryKey: ["drivers", "loans", "summary"] });
-            void queryClient.invalidateQueries({ queryKey: ["drivers", "loans", "list"] });
+            invalidateLoanQueries(queryClient);
           }}
         />
       </div>
