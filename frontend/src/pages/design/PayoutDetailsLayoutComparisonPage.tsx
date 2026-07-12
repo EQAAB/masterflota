@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import html2canvas from "html2canvas";
 import { CombinedPayoutDetailsContent } from "../../components/earnings/payouts/CombinedPayoutDetailsContent";
 import { PayoutDetailsPageHeader } from "../../components/earnings/payouts/PayoutDetailsPageHeader";
 import {
@@ -51,6 +50,7 @@ export function PayoutDetailsLayoutComparisonPage() {
     if (!exportRef.current || exporting) return;
     setExporting(true);
     try {
+      const { default: html2canvas } = await import("html2canvas");
       const canvas = await html2canvas(exportRef.current, {
         backgroundColor: "#eef1f4",
         scale: 2,

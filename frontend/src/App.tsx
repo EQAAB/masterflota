@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -8,45 +8,88 @@ import {
   PlatformRouteGuard,
 } from "./components/layout/PlatformRouteGuard";
 import { RentalsManageRouteGuard } from "./components/layout/RentalsManageRouteGuard";
-import { LoginPage } from "./pages/auth/LoginPage";
-import { DriversListPage } from "./pages/drivers/DriversListPage";
-import { AddDriverPage } from "./pages/drivers/AddDriverPage";
-import { EditDriverPage } from "./pages/drivers/EditDriverPage";
-import { DriverDetailPage } from "./pages/drivers/DriverDetailPage";
-import { DashboardPage } from "./pages/dashboard/DashboardPage";
-import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
-import { OrganizationsPage } from "./pages/settings/OrganizationsPage";
-import { VehiclesListPage } from "./pages/vehicles/VehiclesListPage";
-import { AddVehiclePage } from "./pages/vehicles/AddVehiclePage";
-import { EditVehiclePage } from "./pages/vehicles/EditVehiclePage";
-import { VehicleDetailPage } from "./pages/vehicles/VehicleDetailPage";
-import { VehicleDocumentsPage } from "./pages/vehicles/VehicleDocumentsPage";
-import { EarningsOverviewPage } from "./pages/earnings/EarningsOverviewPage";
-import { EarningsImportPage } from "./pages/earnings/EarningsImportPage";
-import { EarningsPayoutsPage } from "./pages/earnings/EarningsPayoutsPage";
-import { CombinedPayoutDetailsPage } from "./pages/earnings/CombinedPayoutDetailsPage";
-import { PayoutDetailsLayoutComparisonPage } from "./pages/design/PayoutDetailsLayoutComparisonPage";
-import { EarningsReportsPage } from "./pages/earnings/EarningsReportsPage";
-import { SubcontractorSettlementsPage } from "./pages/earnings/SubcontractorSettlementsPage";
-import { SubcontractorSettlementDetailPage } from "./pages/earnings/SubcontractorSettlementDetailPage";
-import { DriverLoansReportPage } from "./pages/earnings/DriverLoansReportPage";
-import { DriverLoanDetailPage } from "./pages/earnings/DriverLoanDetailPage";
-import { SubcontractorsListPage } from "./pages/subcontractors/SubcontractorsListPage";
-import { SubcontractorFormPage } from "./pages/subcontractors/SubcontractorFormPage";
-import { RentalDashboardPage } from "./pages/rentals/RentalDashboardPage";
-import { BookingsListPage } from "./pages/rentals/BookingsListPage";
-import { BookingDetailPage } from "./pages/rentals/BookingDetailPage";
-import { BookingFormPage } from "./pages/rentals/BookingFormPage";
-import { RentalCalendarPage } from "./pages/rentals/RentalCalendarPage";
-import { CustomersListPage } from "./pages/rentals/CustomersListPage";
-import { CustomerFormPage } from "./pages/rentals/CustomerFormPage";
-import { VehicleAvailabilityPage } from "./pages/rentals/VehicleAvailabilityPage";
-import { PricingPage } from "./pages/rentals/PricingPage";
-import { PaymentsPage } from "./pages/rentals/PaymentsPage";
-import { UsersPage } from "./pages/settings/UsersPage";
-import { RolesPage } from "./pages/settings/RolesPage";
-import { AuditLogPage } from "./pages/settings/AuditLogPage";
-import { LoginEventsPage } from "./pages/settings/LoginEventsPage";
+import { RoutePageFallback } from "./components/layout/RoutePageFallback";
+import { lazyPage } from "./lib/lazyPage";
+
+const LoginPage = lazyPage(() => import("./pages/auth/LoginPage"), "LoginPage");
+const DriversListPage = lazyPage(() => import("./pages/drivers/DriversListPage"), "DriversListPage");
+const AddDriverPage = lazyPage(() => import("./pages/drivers/AddDriverPage"), "AddDriverPage");
+const EditDriverPage = lazyPage(() => import("./pages/drivers/EditDriverPage"), "EditDriverPage");
+const DriverDetailPage = lazyPage(() => import("./pages/drivers/DriverDetailPage"), "DriverDetailPage");
+const DashboardPage = lazyPage(() => import("./pages/dashboard/DashboardPage"), "DashboardPage");
+const PlatformDashboardPage = lazyPage(
+  () => import("./pages/platform/PlatformDashboardPage"),
+  "PlatformDashboardPage",
+);
+const OrganizationsPage = lazyPage(() => import("./pages/settings/OrganizationsPage"), "OrganizationsPage");
+const VehiclesListPage = lazyPage(() => import("./pages/vehicles/VehiclesListPage"), "VehiclesListPage");
+const AddVehiclePage = lazyPage(() => import("./pages/vehicles/AddVehiclePage"), "AddVehiclePage");
+const EditVehiclePage = lazyPage(() => import("./pages/vehicles/EditVehiclePage"), "EditVehiclePage");
+const VehicleDetailPage = lazyPage(() => import("./pages/vehicles/VehicleDetailPage"), "VehicleDetailPage");
+const VehicleDocumentsPage = lazyPage(
+  () => import("./pages/vehicles/VehicleDocumentsPage"),
+  "VehicleDocumentsPage",
+);
+const EarningsOverviewPage = lazyPage(
+  () => import("./pages/earnings/EarningsOverviewPage"),
+  "EarningsOverviewPage",
+);
+const EarningsImportPage = lazyPage(() => import("./pages/earnings/EarningsImportPage"), "EarningsImportPage");
+const EarningsPayoutsPage = lazyPage(() => import("./pages/earnings/EarningsPayoutsPage"), "EarningsPayoutsPage");
+const CombinedPayoutDetailsPage = lazyPage(
+  () => import("./pages/earnings/CombinedPayoutDetailsPage"),
+  "CombinedPayoutDetailsPage",
+);
+const PayoutDetailsLayoutComparisonPage = lazyPage(
+  () => import("./pages/design/PayoutDetailsLayoutComparisonPage"),
+  "PayoutDetailsLayoutComparisonPage",
+);
+const EarningsReportsPage = lazyPage(() => import("./pages/earnings/EarningsReportsPage"), "EarningsReportsPage");
+const SubcontractorSettlementsPage = lazyPage(
+  () => import("./pages/earnings/SubcontractorSettlementsPage"),
+  "SubcontractorSettlementsPage",
+);
+const SubcontractorSettlementDetailPage = lazyPage(
+  () => import("./pages/earnings/SubcontractorSettlementDetailPage"),
+  "SubcontractorSettlementDetailPage",
+);
+const DriverLoansReportPage = lazyPage(
+  () => import("./pages/earnings/DriverLoansReportPage"),
+  "DriverLoansReportPage",
+);
+const DriverLoanDetailPage = lazyPage(
+  () => import("./pages/earnings/DriverLoanDetailPage"),
+  "DriverLoanDetailPage",
+);
+const SubcontractorsListPage = lazyPage(
+  () => import("./pages/subcontractors/SubcontractorsListPage"),
+  "SubcontractorsListPage",
+);
+const SubcontractorFormPage = lazyPage(
+  () => import("./pages/subcontractors/SubcontractorFormPage"),
+  "SubcontractorFormPage",
+);
+const RentalDashboardPage = lazyPage(() => import("./pages/rentals/RentalDashboardPage"), "RentalDashboardPage");
+const BookingsListPage = lazyPage(() => import("./pages/rentals/BookingsListPage"), "BookingsListPage");
+const BookingDetailPage = lazyPage(() => import("./pages/rentals/BookingDetailPage"), "BookingDetailPage");
+const BookingFormPage = lazyPage(() => import("./pages/rentals/BookingFormPage"), "BookingFormPage");
+const RentalCalendarPage = lazyPage(() => import("./pages/rentals/RentalCalendarPage"), "RentalCalendarPage");
+const CustomersListPage = lazyPage(() => import("./pages/rentals/CustomersListPage"), "CustomersListPage");
+const CustomerFormPage = lazyPage(() => import("./pages/rentals/CustomerFormPage"), "CustomerFormPage");
+const VehicleAvailabilityPage = lazyPage(
+  () => import("./pages/rentals/VehicleAvailabilityPage"),
+  "VehicleAvailabilityPage",
+);
+const PricingPage = lazyPage(() => import("./pages/rentals/PricingPage"), "PricingPage");
+const PaymentsPage = lazyPage(() => import("./pages/rentals/PaymentsPage"), "PaymentsPage");
+const UsersPage = lazyPage(() => import("./pages/settings/UsersPage"), "UsersPage");
+const RolesPage = lazyPage(() => import("./pages/settings/RolesPage"), "RolesPage");
+const AuditLogPage = lazyPage(() => import("./pages/settings/AuditLogPage"), "AuditLogPage");
+const LoginEventsPage = lazyPage(() => import("./pages/settings/LoginEventsPage"), "LoginEventsPage");
+
+function withSuspense(page: React.ReactNode) {
+  return <Suspense fallback={<RoutePageFallback />}>{page}</Suspense>;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const token = useAuthStore((s) => s.token);
@@ -72,202 +115,128 @@ function ProtectedPlatformRoute({ children }: { children: React.ReactElement }) 
   );
 }
 
+function fleetPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
+  return (
+    <ProtectedFleetRoute>{withSuspense(<Page />)}</ProtectedFleetRoute>
+  );
+}
+
+function platformPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
+  return (
+    <ProtectedPlatformRoute>{withSuspense(<Page />)}</ProtectedPlatformRoute>
+  );
+}
+
+function settingsPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
+  return <ProtectedRoute>{withSuspense(<Page />)}</ProtectedRoute>;
+}
+
 /** Data router (required for `useBlocker`, e.g. unsaved import navigation guard). */
 export const appRouter = createBrowserRouter(
   [
-    { path: "login", element: <LoginPage /> },
+    { path: "login", element: withSuspense(<LoginPage />) },
     { path: "/register", element: <Navigate to="/login" replace /> },
     {
       path: "/platform",
-      element: (
-        <ProtectedPlatformRoute>
-          <PlatformDashboardPage />
-        </ProtectedPlatformRoute>
-      ),
+      element: platformPage(PlatformDashboardPage),
     },
     {
       path: "/dashboard",
-      element: (
-        <ProtectedFleetRoute>
-          <DashboardPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(DashboardPage),
     },
     {
       path: "/drivers",
-      element: (
-        <ProtectedFleetRoute>
-          <DriversListPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(DriversListPage),
     },
     {
       path: "/drivers/new",
-      element: (
-        <ProtectedFleetRoute>
-          <AddDriverPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(AddDriverPage),
     },
     {
       path: "/drivers/:id/edit",
-      element: (
-        <ProtectedFleetRoute>
-          <EditDriverPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EditDriverPage),
     },
     {
       path: "/drivers/:id",
-      element: (
-        <ProtectedFleetRoute>
-          <DriverDetailPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(DriverDetailPage),
     },
     {
       path: "/vehicles",
-      element: (
-        <ProtectedFleetRoute>
-          <VehiclesListPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(VehiclesListPage),
     },
     {
       path: "/vehicles/new",
-      element: (
-        <ProtectedFleetRoute>
-          <AddVehiclePage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(AddVehiclePage),
     },
     {
       path: "/vehicles/:id/edit",
-      element: (
-        <ProtectedFleetRoute>
-          <EditVehiclePage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EditVehiclePage),
     },
     {
       path: "/earnings",
-      element: (
-        <ProtectedFleetRoute>
-          <EarningsOverviewPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EarningsOverviewPage),
     },
     {
       path: "/earnings/import",
-      element: (
-        <ProtectedFleetRoute>
-          <EarningsImportPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EarningsImportPage),
     },
     {
       path: "/design/payout-details-comparison",
-      element: (
-        <ProtectedFleetRoute>
-          <PayoutDetailsLayoutComparisonPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(PayoutDetailsLayoutComparisonPage),
     },
     {
       path: "/earnings/payouts/:driverId",
-      element: (
-        <ProtectedFleetRoute>
-          <CombinedPayoutDetailsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(CombinedPayoutDetailsPage),
     },
     {
       path: "/earnings/payouts",
-      element: (
-        <ProtectedFleetRoute>
-          <EarningsPayoutsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EarningsPayoutsPage),
     },
     {
       path: "/earnings/reports",
-      element: (
-        <ProtectedFleetRoute>
-          <EarningsReportsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(EarningsReportsPage),
     },
     {
       path: "/earnings/loans/:loanId",
-      element: (
-        <ProtectedFleetRoute>
-          <DriverLoanDetailPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(DriverLoanDetailPage),
     },
     {
       path: "/earnings/loans",
-      element: (
-        <ProtectedFleetRoute>
-          <DriverLoansReportPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(DriverLoansReportPage),
     },
     {
       path: "/earnings/subcontractors/settlements",
-      element: (
-        <ProtectedFleetRoute>
-          <SubcontractorSettlementsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(SubcontractorSettlementsPage),
     },
     {
       path: "/earnings/subcontractors/settlements/:id",
-      element: (
-        <ProtectedFleetRoute>
-          <SubcontractorSettlementDetailPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(SubcontractorSettlementDetailPage),
     },
     {
       path: "/subcontractors",
-      element: (
-        <ProtectedFleetRoute>
-          <SubcontractorsListPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(SubcontractorsListPage),
     },
     {
       path: "/subcontractors/new",
-      element: (
-        <ProtectedFleetRoute>
-          <SubcontractorFormPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(SubcontractorFormPage),
     },
     {
       path: "/subcontractors/:id/edit",
-      element: (
-        <ProtectedFleetRoute>
-          <SubcontractorFormPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(SubcontractorFormPage),
     },
     {
       path: "/rentals",
-      element: (
-        <ProtectedFleetRoute>
-          <RentalDashboardPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(RentalDashboardPage),
     },
     {
       path: "/rentals/bookings/new",
       element: (
         <ProtectedFleetRoute>
-          <RentalsManageRouteGuard>
-            <BookingFormPage />
-          </RentalsManageRouteGuard>
+          {withSuspense(
+            <RentalsManageRouteGuard>
+              <BookingFormPage />
+            </RentalsManageRouteGuard>,
+          )}
         </ProtectedFleetRoute>
       ),
     },
@@ -275,43 +244,35 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/bookings/:id/edit",
       element: (
         <ProtectedFleetRoute>
-          <RentalsManageRouteGuard>
-            <BookingFormPage />
-          </RentalsManageRouteGuard>
+          {withSuspense(
+            <RentalsManageRouteGuard>
+              <BookingFormPage />
+            </RentalsManageRouteGuard>,
+          )}
         </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/bookings/:id",
-      element: (
-        <ProtectedFleetRoute>
-          <BookingDetailPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(BookingDetailPage),
     },
     {
       path: "/rentals/bookings",
-      element: (
-        <ProtectedFleetRoute>
-          <BookingsListPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(BookingsListPage),
     },
     {
       path: "/rentals/calendar",
-      element: (
-        <ProtectedFleetRoute>
-          <RentalCalendarPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(RentalCalendarPage),
     },
     {
       path: "/rentals/customers/new",
       element: (
         <ProtectedFleetRoute>
-          <RentalsManageRouteGuard>
-            <CustomerFormPage />
-          </RentalsManageRouteGuard>
+          {withSuspense(
+            <RentalsManageRouteGuard>
+              <CustomerFormPage />
+            </RentalsManageRouteGuard>,
+          )}
         </ProtectedFleetRoute>
       ),
     },
@@ -319,101 +280,61 @@ export const appRouter = createBrowserRouter(
       path: "/rentals/customers/:id/edit",
       element: (
         <ProtectedFleetRoute>
-          <RentalsManageRouteGuard>
-            <CustomerFormPage />
-          </RentalsManageRouteGuard>
+          {withSuspense(
+            <RentalsManageRouteGuard>
+              <CustomerFormPage />
+            </RentalsManageRouteGuard>,
+          )}
         </ProtectedFleetRoute>
       ),
     },
     {
       path: "/rentals/customers",
-      element: (
-        <ProtectedFleetRoute>
-          <CustomersListPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(CustomersListPage),
     },
     {
       path: "/rentals/availability",
-      element: (
-        <ProtectedFleetRoute>
-          <VehicleAvailabilityPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(VehicleAvailabilityPage),
     },
     {
       path: "/rentals/pricing",
-      element: (
-        <ProtectedFleetRoute>
-          <PricingPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(PricingPage),
     },
     {
       path: "/rentals/payments",
-      element: (
-        <ProtectedFleetRoute>
-          <PaymentsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(PaymentsPage),
     },
     {
       path: "/vehicles/:id",
-      element: (
-        <ProtectedFleetRoute>
-          <VehicleDetailPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(VehicleDetailPage),
     },
     {
       path: "/vehicles/:id/documents",
-      element: (
-        <ProtectedFleetRoute>
-          <VehicleDocumentsPage />
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(VehicleDocumentsPage),
     },
     {
       path: "/settings/organizations",
       element: (
         <ProtectedRoute>
-          <PlatformRouteGuard>
-            <OrganizationsPage />
-          </PlatformRouteGuard>
+          <PlatformRouteGuard>{withSuspense(<OrganizationsPage />)}</PlatformRouteGuard>
         </ProtectedRoute>
       ),
     },
     {
       path: "/settings/users",
-      element: (
-        <ProtectedRoute>
-          <UsersPage />
-        </ProtectedRoute>
-      ),
+      element: settingsPage(UsersPage),
     },
     {
       path: "/settings/roles",
-      element: (
-        <ProtectedRoute>
-          <RolesPage />
-        </ProtectedRoute>
-      ),
+      element: settingsPage(RolesPage),
     },
     {
       path: "/settings/audit",
-      element: (
-        <ProtectedRoute>
-          <AuditLogPage />
-        </ProtectedRoute>
-      ),
+      element: settingsPage(AuditLogPage),
     },
     {
       path: "/settings/login-events",
-      element: (
-        <ProtectedRoute>
-          <LoginEventsPage />
-        </ProtectedRoute>
-      ),
+      element: settingsPage(LoginEventsPage),
     },
     { path: "*", element: <DefaultAppRedirect /> },
   ],
