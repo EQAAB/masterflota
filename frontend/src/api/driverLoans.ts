@@ -81,6 +81,13 @@ export interface OrgLoansListResponse {
   offset: number;
 }
 
+export interface OrgLoanDetail extends DriverLoan {
+  driver_first_name: string;
+  driver_last_name: string;
+  driver_phone: string | null;
+  repayments: DriverLoanRepayment[];
+}
+
 export function getLoansSummary() {
   return api.get<LoansSummaryResponse>("/drivers/loans/summary");
 }
@@ -95,6 +102,10 @@ export function getOrgLoansList(params?: {
   sort_order?: "asc" | "desc";
 }) {
   return api.get<OrgLoansListResponse>("/drivers/loans", { params });
+}
+
+export function getOrgLoan(loanId: string) {
+  return api.get<{ loan: OrgLoanDetail }>(`/drivers/loans/${encodeURIComponent(loanId)}`);
 }
 
 export function getDriverLoans(driverId: string) {

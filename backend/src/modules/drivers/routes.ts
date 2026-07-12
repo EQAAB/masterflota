@@ -17,6 +17,7 @@ import {
   createDriverLoan,
   getActiveDriverLoan,
   getOrgLoansSummary,
+  getOrgLoanById,
   listDriverLoans,
   listOrgLoans,
   recordCashOrForgiveRepayment,
@@ -260,6 +261,28 @@ router.get("/loans", requirePermission("drivers.view"), async (req, res) => {
   } catch (err) {
     console.error("List org loans error", err);
     return res.status(500).json({ message: "Failed to load loans" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get("/loans/:loanId", requirePermission("drivers.view"), async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const loanId = String(req.params.loanId ?? "");
+  if (!UUID_RE.test(loanId)) {
+    return res.status(400).json({ message: "Invalid loan id" });
+  }
+
+  const client = await pool.connect();
+  try {
+    const loan = await getOrgLoanById(client, orgId, loanId);
+    if (!loan) return res.status(404).json({ message: "Loan not found" });
+    return res.json({ loan });
+  } catch (err) {
+    console.error("Get org loan error", err);
+    return res.status(500).json({ message: "Failed to load loan" });
   } finally {
     client.release();
   }

@@ -30,6 +30,7 @@ import { EarningsReportsPage } from "./pages/earnings/EarningsReportsPage";
 import { SubcontractorSettlementsPage } from "./pages/earnings/SubcontractorSettlementsPage";
 import { SubcontractorSettlementDetailPage } from "./pages/earnings/SubcontractorSettlementDetailPage";
 import { DriverLoansReportPage } from "./pages/earnings/DriverLoansReportPage";
+import { DriverLoanDetailPage } from "./pages/earnings/DriverLoanDetailPage";
 import { SubcontractorsListPage } from "./pages/subcontractors/SubcontractorsListPage";
 import { SubcontractorFormPage } from "./pages/subcontractors/SubcontractorFormPage";
 import { RentalDashboardPage } from "./pages/rentals/RentalDashboardPage";
@@ -193,6 +194,14 @@ export const appRouter = createBrowserRouter(
       element: (
         <ProtectedFleetRoute>
           <EarningsReportsPage />
+        </ProtectedFleetRoute>
+      ),
+    },
+    {
+      path: "/earnings/loans/:loanId",
+      element: (
+        <ProtectedFleetRoute>
+          <DriverLoanDetailPage />
         </ProtectedFleetRoute>
       ),
     },

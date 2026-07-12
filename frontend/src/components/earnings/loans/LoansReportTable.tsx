@@ -38,7 +38,7 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
     return (
       <EmptyState
         title="No loans found"
-        description="Try changing filters or create a loan from a driver profile."
+        description="Try changing filters or create a loan using the button above."
       />
     );
   }
@@ -93,8 +93,14 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
                   </span>
                 </div>
                 <div className="px-2 py-2 text-sm text-slate-700">{row.disbursed_at}</div>
-                <div className="px-2 py-2 text-sm text-slate-600 truncate" title={row.reference ?? undefined}>
-                  {row.reference?.trim() || "—"}
+                <div className="px-2 py-2 text-sm text-slate-600 truncate">
+                  <Link
+                    to={`/earnings/loans/${row.id}`}
+                    className="font-medium text-brand hover:underline"
+                    title={row.reference ?? undefined}
+                  >
+                    {row.reference?.trim() || "View loan"}
+                  </Link>
                 </div>
               </div>
             );

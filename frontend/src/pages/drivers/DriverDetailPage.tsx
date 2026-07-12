@@ -22,7 +22,7 @@ import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
 import { DriverRecurringFeesPanel } from "../../components/drivers/DriverRecurringFeesPanel";
-import { DriverLoansPanel } from "../../components/drivers/DriverLoansPanel";
+import { DriverLoanSummaryCard } from "../../components/earnings/loans/DriverLoanSummaryCard";
 
 type TabId = "profile" | "documents" | "activity";
 
@@ -516,7 +516,13 @@ export function DriverDetailPage() {
 
             {id && <DriverRecurringFeesPanel driverId={id} canEdit={canEdit} />}
 
-            {id && <DriverLoansPanel driverId={id} canEdit={canEdit} />}
+            {id && (
+              <DriverLoanSummaryCard
+                driverId={id}
+                driverFirstName={d.first_name}
+                driverLastName={d.last_name}
+              />
+            )}
 
             <section className={cardClass}>
               <h2 className={sectionTitleClass}>Payout history</h2>

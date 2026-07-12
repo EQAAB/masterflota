@@ -778,3 +778,58 @@ export async function listOrgLoans(
     offset,
   };
 }
+
+export type OrgLoanDetail = DriverLoanWithRepayments & {
+  driver_first_name: string;
+  driver_last_name: string;
+  driver_phone: string | null;
+};
+
+export async function getOrgLoanById(
+  client: PoolClient,
+  orgId: string,
+  loanId: string,
+): Promise<OrgLoanDetail | null> {
+  const { rows: loans } = await client.query<
+    DriverLoanRow & {
+      driver_first_name: string;
+      driver_last_name: string;
+      driver_phone: string | null;
+    }
+  >(
+    `SELECT l.id::text, l.organization_id::text, l.driver_id::text,
+            l.principal::text, l.remaining_balance::text, l.status,
+            l.disbursed_at::text, l.reference, l.notes,
+            l.planned_repayment_week::text, l.planned_repayment_note,
+            l.created_by::text, l.created_at::text, l.updated_at::text,
+            d.first_name AS driver_first_name,
+            d.last_name AS driver_last_name,
+            d.phone AS driver_phone
+     FROM driver_loans l
+     INNER JOIN drivers d ON d.id = l.driver_id AND d.organization_id = l.organization_id
+     WHERE l.organization_id = $1::uuid
+       AND l.id = $2::uuid
+       AND (d.is_deleted = false OR d.is_deleted IS NULL)`,
+    [orgId, loanId],
+  );
+
+  const loan = loans[0];
+  if (!loan) return null;
+
+  const { rows: repayments } = await client.query<DriverLoanRepaymentRow>(
+    `SELECT ${REPAYMENT_SELECT}
+     FROM driver_loan_repayments
+     WHERE loan_id = $1::uuid AND organization_id = $2::uuid
+     ORDER BY created_at ASC, id ASC`,
+    [loanId, orgId],
+  );
+
+  const mapped = mapLoanRow(loan);
+  return {
+    ...mapped,
+    driver_first_name: loan.driver_first_name,
+    driver_last_name: loan.driver_last_name,
+    driver_phone: loan.driver_phone,
+    repayments: repayments.map(mapRepaymentRow),
+  };
+}
