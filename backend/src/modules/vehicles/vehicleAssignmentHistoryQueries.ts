@@ -138,8 +138,21 @@ export async function listAssignmentHistoryByVehicle(
   return rows;
 }
 
-export async function listRecentAssignments(orgId: string, limit: number) {
+export async function listRecentAssignments(
+  orgId: string,
+  limit: number,
+  period?: { from: string; to: string },
+) {
   const safeLimit = Math.min(Math.max(limit, 1), 50);
+  const params: unknown[] = [orgId];
+  let periodClause = "";
+  if (period) {
+    params.push(period.from, period.to);
+    periodClause = ` AND h.assigned_at::date >= $2::date AND h.assigned_at::date <= $3::date`;
+  }
+  params.push(safeLimit);
+  const limitParam = `$${params.length}`;
+
   const { rows } = await query(
     `SELECT h.id::text,
             h.driver_id::text,
@@ -155,9 +168,10 @@ export async function listRecentAssignments(orgId: string, limit: number) {
      FROM vehicle_assignment_history h
      INNER JOIN drivers d ON d.id = h.driver_id AND d.organization_id = $1::uuid
      INNER JOIN vehicles v ON v.id = h.vehicle_id AND v.organization_id = $1::uuid
+     WHERE 1=1${periodClause}
      ORDER BY sort_at DESC
-     LIMIT $2::int`,
-    [orgId, safeLimit],
+     LIMIT ${limitParam}::int`,
+    params,
   );
   return rows;
 }

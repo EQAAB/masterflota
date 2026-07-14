@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import { roleLabel } from "../../lib/roleLabel";
 import { btnSecondary } from "../../theme/classNames";
+import type { DashboardDatePreset } from "../../utils/dashboardDateRange";
 
-type DatePreset = "today" | "week" | "month" | "custom";
-
-const PRESETS: { id: DatePreset; label: string }[] = [
+const PRESETS: { id: DashboardDatePreset; label: string }[] = [
   { id: "today", label: "Today" },
   { id: "week", label: "This week" },
   { id: "month", label: "This month" },
 ];
-
-import { roleLabel } from "../../lib/roleLabel";
 
 function initials(firstName?: string, lastName?: string): string {
   const a = firstName?.[0] ?? "";
@@ -19,11 +17,23 @@ function initials(firstName?: string, lastName?: string): string {
   return (a + b).toUpperCase() || "?";
 }
 
-export function DashboardTopBar() {
+export type DashboardTopBarProps = {
+  preset: DashboardDatePreset;
+  customDate: string;
+  onPresetChange: (preset: DashboardDatePreset) => void;
+  onCustomDateChange: (date: string) => void;
+  rangeLabel?: string;
+};
+
+export function DashboardTopBar({
+  preset,
+  customDate,
+  onPresetChange,
+  onCustomDateChange,
+  rangeLabel,
+}: DashboardTopBarProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const [preset, setPreset] = useState<DatePreset>("week");
-  const [customDate, setCustomDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +59,12 @@ export function DashboardTopBar() {
             Welcome{user ? `, ${user.firstName}` : ""}
           </h1>
           <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>
+          {rangeLabel && (
+            <p className="mt-1 text-xs text-ink-muted">
+              Period filter: <span className="font-medium text-ink">{rangeLabel}</span>
+              <span className="text-ink-muted"> · applies to money & activity</span>
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -61,7 +77,7 @@ export function DashboardTopBar() {
               <button
                 key={p.id}
                 type="button"
-                onClick={() => setPreset(p.id)}
+                onClick={() => onPresetChange(p.id)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                   preset === p.id
                     ? "bg-brand text-white shadow-soft"
@@ -75,8 +91,8 @@ export function DashboardTopBar() {
               type="date"
               value={customDate}
               onChange={(e) => {
-                setCustomDate(e.target.value);
-                setPreset("custom");
+                onCustomDateChange(e.target.value);
+                onPresetChange("custom");
               }}
               className="rounded-lg border-0 bg-transparent px-2 py-1.5 text-xs text-ink focus:ring-2 focus:ring-brand/20"
               aria-label="Custom date"
