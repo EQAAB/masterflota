@@ -148,7 +148,8 @@ export async function listRecentAssignments(
   let periodClause = "";
   if (period) {
     params.push(period.from, period.to);
-    periodClause = ` AND h.assigned_at::date >= $2::date AND h.assigned_at::date <= $3::date`;
+    periodClause = ` AND GREATEST(h.assigned_at, COALESCE(h.unassigned_at, h.assigned_at))::date >= $2::date
+       AND GREATEST(h.assigned_at, COALESCE(h.unassigned_at, h.assigned_at))::date <= $3::date`;
   }
   params.push(safeLimit);
   const limitParam = `$${params.length}`;

@@ -36,16 +36,24 @@ export interface ActivityTimelineProps {
   title?: string;
   rows: ActivityRow[];
   emptyMessage?: string;
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
 export function ActivityTimeline({
   title = "Activity feed",
   rows,
   emptyMessage = "No recent activity.",
+  isLoading,
+  isError,
 }: ActivityTimelineProps) {
   return (
     <DashboardChartCard title={title} minHeight={320}>
-      {rows.length === 0 ? (
+      {isLoading ? (
+        <p className="text-sm text-ink-muted py-8 text-center">Loading…</p>
+      ) : isError ? (
+        <p className="text-sm text-danger py-8 text-center">Failed to load activity. Try refreshing.</p>
+      ) : rows.length === 0 ? (
         <EmptyState
           title={emptyMessage}
           description="Driver and document updates will appear here."
