@@ -17,6 +17,7 @@ import {
   resolveAccountOpeningFeeForEarningsRow,
   resolvePlatformFeeWithGrossNetInference,
 } from "./accountOpeningFee";
+import { assertNoDuplicatePlatformIdsInWeeklyFile } from "./findDuplicatePlatformIdsInFile";
 
 export type EarningsCommitTotals = {
   gross: number;
@@ -99,6 +100,8 @@ export async function runEarningsCommitFromStaging(
     `SELECT row_index, payload FROM earnings_import_staging WHERE import_id = $1 ORDER BY row_index`,
     [importId],
   );
+
+  assertNoDuplicatePlatformIdsInWeeklyFile(staging.rows.map((r) => r.payload));
 
   const impMetaRes = await client.query<{ detection_meta: unknown }>(
     `SELECT detection_meta FROM earnings_imports WHERE id = $1::uuid AND organization_id = $2::uuid`,
