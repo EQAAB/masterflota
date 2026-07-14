@@ -8,13 +8,17 @@ import { ActivityEmptyIllustration } from "./illustrations/ActivityEmptyIllustra
 export interface AssignmentsFeedProps {
   items: RecentAssignmentItem[];
   isLoading?: boolean;
+  isError?: boolean;
 }
 
-export function AssignmentsFeed({ items, isLoading }: AssignmentsFeedProps) {
+export function AssignmentsFeed({ items, isLoading, isError }: AssignmentsFeedProps) {
   return (
     <DashboardChartCard title="Recent assignments" minHeight={320}>
       {isLoading && <p className="text-sm text-ink-muted py-8 text-center">Loading…</p>}
-      {!isLoading && items.length === 0 && (
+      {!isLoading && isError && (
+        <p className="text-sm text-danger py-8 text-center">Failed to load assignments. Try refreshing.</p>
+      )}
+      {!isLoading && !isError && items.length === 0 && (
         <EmptyState
           title="No assignment history yet"
           description="Vehicle assignments will show up here when drivers are linked to fleet vehicles."
@@ -22,7 +26,7 @@ export function AssignmentsFeed({ items, isLoading }: AssignmentsFeedProps) {
           className="border-0 bg-transparent py-6"
         />
       )}
-      {!isLoading && items.length > 0 && (
+      {!isLoading && !isError && items.length > 0 && (
         <ul className="space-y-3">
           {items.map((a) => (
             <li

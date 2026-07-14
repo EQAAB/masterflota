@@ -353,12 +353,18 @@ export function DashboardPage() {
             >
               {platformQuery.isLoading ? (
                 <p className="py-16 text-center text-sm text-ink-muted">Loading platform chart…</p>
+              ) : platformQuery.isError ? (
+                <p className="py-16 text-center text-sm text-danger">Failed to load platform earnings. Try refreshing.</p>
               ) : (
                 <PlatformEarningsChart data={platformData} />
               )}
             </DashboardChartCard>
             <DashboardChartCard title="Document verification">
-              <DocumentStatsChart data={docsData} />
+              {docsQuery.isError ? (
+                <p className="py-16 text-center text-sm text-danger">Failed to load document stats. Try refreshing.</p>
+              ) : (
+                <DocumentStatsChart data={docsData} />
+              )}
             </DashboardChartCard>
             <DashboardChartCard
               title="Earnings tools"
@@ -395,8 +401,16 @@ export function DashboardPage() {
           <h2 className={dashboardSectionTitle}>Recent activity</h2>
           <p className="mt-1 text-xs text-ink-muted">Showing activity and assignments in {rangeLabel}</p>
           <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <ActivityTimeline rows={activityToRows(activities)} />
-            <AssignmentsFeed items={recentAssignments} isLoading={assignmentsQuery.isLoading} />
+            <ActivityTimeline
+              rows={activityToRows(activities)}
+              isLoading={activityQuery.isLoading}
+              isError={activityQuery.isError}
+            />
+            <AssignmentsFeed
+              items={recentAssignments}
+              isLoading={assignmentsQuery.isLoading}
+              isError={assignmentsQuery.isError}
+            />
           </div>
         </section>
       </div>
