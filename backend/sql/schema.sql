@@ -503,6 +503,9 @@ CREATE INDEX IF NOT EXISTS idx_driver_payments_driver
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_earnings_imports_org ON earnings_imports(organization_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_earnings_imports_org_platform_week_completed
+  ON earnings_imports (organization_id, platform, week_start, week_end)
+  WHERE status = 'completed';
 CREATE INDEX IF NOT EXISTS idx_earnings_staging_import ON earnings_import_staging(import_id);
 CREATE INDEX IF NOT EXISTS idx_earnings_staging_org ON earnings_import_staging(organization_id);
 CREATE INDEX IF NOT EXISTS idx_earnings_records_driver ON earnings_records(driver_id);

@@ -55,6 +55,14 @@ import {
   payDriverConsolidated,
 } from "./consolidatedPayouts";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
+import {
+  DuplicatePlatformWeekImportError,
+  findCompletedPlatformWeekImport,
+} from "./findCompletedPlatformWeekImport";
+import {
+  assertNoDuplicatePlatformIdsInWeeklyFile,
+  DuplicateRowsInFileError,
+} from "./findDuplicatePlatformIdsInFile";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
 import { isUberDebtPreviewRow } from "./mapUberTaxiAmounts";
@@ -153,7 +161,6 @@ function collectWarnings(
   let badMoney = 0;
   let negativeTransfer = 0;
   let noDate = 0;
-  const dupKeys = new Map<string, number>();
   for (const r of normalizedRows) {
     const g = r.amounts.gross;
     const n = r.amounts.net;
@@ -166,8 +173,6 @@ function collectWarnings(
       negativeTransfer += 1;
     }
     if (!r.tripDateIso) noDate += 1;
-    const k = `${r.hints.courierId ?? ""}|${r.hints.phone ?? ""}|${r.hints.plate ?? ""}|${r.tripDateIso ?? ""}|${g ?? ""}|${n ?? ""}|${tt ?? ""}`;
-    dupKeys.set(k, (dupKeys.get(k) ?? 0) + 1);
   }
   if (noMoney > 0) w.push(`${noMoney} row(s) have no gross, net, or TVT amount.`);
   if (badMoney > 0) w.push(`${badMoney} row(s) have negative amounts.`);
@@ -177,8 +182,6 @@ function collectWarnings(
     );
   }
   if (noDate > 0) w.push(`${noDate} row(s) are missing trip dates.`);
-  const dups = [...dupKeys.values()].filter((c) => c > 1).length;
-  if (dups > 0) w.push("Possible duplicate rows detected (same identifiers, date, and amounts).");
   if (platform === "glovo") {
     const hasFeeCol = [...colMap.values()].includes("platform_fee");
     const missingFee = normalizedRows.some(
@@ -255,6 +258,18 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
       dataRowsParsed: normalizedRows.length,
     };
 
+    try {
+      assertNoDuplicatePlatformIdsInWeeklyFile(normalizedRows);
+    } catch (e) {
+      if (e instanceof DuplicateRowsInFileError) {
+        return res.status(409).json({
+          message: e.message,
+          code: e.code,
+        });
+      }
+      throw e;
+    }
+
     const warnings = collectWarnings(colMap, normalizedRows, filenameDate, platform);
     const dates = normalizedRows.map((r) => r.tripDateIso).filter((d): d is string => !!d);
     const { weekStart, weekEnd } = weekBoundsFromDates(dates);
@@ -308,6 +323,23 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
     let importId: string;
     try {
       await client.query("BEGIN");
+
+      const existingCompleted = await findCompletedPlatformWeekImport(
+        client,
+        orgId,
+        platform,
+        weekStart,
+        weekEnd,
+      );
+      if (existingCompleted) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          message: new DuplicatePlatformWeekImportError(existingCompleted).message,
+          code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
+          existingImportId: existingCompleted.id,
+        });
+      }
+
       importId = await insertEarningsPreviewStaging(client, {
         orgId,
         userId,
@@ -514,6 +546,23 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
       return res.status(400).json({ message: "weekStart must be on or before weekEnd" });
     }
 
+    const existingCompleted = await findCompletedPlatformWeekImport(
+      client,
+      orgId,
+      platformEff,
+      weekStartEff,
+      weekEndEff,
+      importId,
+    );
+    if (existingCompleted) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({
+        message: new DuplicatePlatformWeekImportError(existingCompleted).message,
+        code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
+        existingImportId: existingCompleted.id,
+      });
+    }
+
     await client.query(
       `UPDATE earnings_imports
        SET platform = $1, week_start = $2::date, week_end = $3::date
@@ -546,6 +595,21 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
       await client.query("ROLLBACK");
     } catch {
       /* ignore */
+    }
+    if (err instanceof DuplicateRowsInFileError) {
+      return res.status(409).json({
+        message: err.message,
+        code: err.code,
+      });
+    }
+    const pgCode =
+      err && typeof err === "object" && "code" in err ? String((err as { code: unknown }).code) : "";
+    if (pgCode === "23505") {
+      return res.status(409).json({
+        message:
+          "This platform already has a completed import for that pay week. Revert the existing import before uploading again.",
+        code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
+      });
     }
     // eslint-disable-next-line no-console
     console.error("Earnings commit error", err);
