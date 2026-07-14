@@ -5,20 +5,22 @@ import {
   getDashboardStats,
   getDriverStatusDistribution,
   getDocumentStats,
+  getPlatformEarnings,
   getRecentActivity,
   getRecentAssignments,
 } from "../../api/dashboard";
 import type { DashboardActivityItem } from "../../api/dashboard";
 import { KpiStatCard } from "../../components/dashboard/KpiStatCard";
-import { ChartPlaceholder } from "../../components/dashboard/ChartPlaceholder";
 import type { ActivityRow } from "../../components/dashboard/ActivityTable";
 import { ActivityTimeline } from "../../components/dashboard/ActivityTimeline";
 import { AssignmentsFeed } from "../../components/dashboard/AssignmentsFeed";
 import { DriverStatusChart } from "../../components/dashboard/DriverStatusChart";
 import { DocumentStatsChart } from "../../components/dashboard/DocumentStatsChart";
+import { PlatformEarningsChart } from "../../components/dashboard/PlatformEarningsChart";
 import { DashboardChartCard } from "../../components/dashboard/DashboardChartCard";
-import { DashboardTopBar } from "../../components/layout/DashboardTopBar";
+import { buildDashboardAlerts, DashboardTopBar } from "../../components/layout/DashboardTopBar";
 import { EmptyState } from "../../components/theme/EmptyState";
+import { useCanAccessFinance, usePermission } from "../../lib/permissions";
 import { dashboardPage, dashboardSectionTitle, kpiCardHover, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 import { localIsoDate } from "../../utils/earningsImportWeek";
@@ -103,7 +105,22 @@ function VehicleIcon() {
   );
 }
 
+function AlertIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+      />
+    </svg>
+  );
+}
+
 export function DashboardPage() {
+  const canFinance = useCanAccessFinance();
+  const canImport = usePermission("imports.create");
   const [preset, setPreset] = useState<DashboardDatePreset>("week");
   const [customDate, setCustomDate] = useState(() => localIsoDate(new Date()));
   const range = useMemo(() => resolveDashboardDateRange(preset, customDate), [preset, customDate]);
@@ -113,6 +130,10 @@ export function DashboardPage() {
   const statsQuery = useQuery({
     queryKey: ["dashboard", "stats", range.from, range.to],
     queryFn: () => getDashboardStats(periodParams),
+  });
+  const platformQuery = useQuery({
+    queryKey: ["dashboard", "platform-earnings", range.from, range.to],
+    queryFn: () => getPlatformEarnings(periodParams).then((r) => r.data),
   });
   const statusQuery = useQuery({ queryKey: ["dashboard", "status"], queryFn: () => getDriverStatusDistribution() });
   const docsQuery = useQuery({ queryKey: ["dashboard", "documents"], queryFn: () => getDocumentStats() });
@@ -130,10 +151,14 @@ export function DashboardPage() {
   const docsData = docsQuery.data?.data ?? [];
   const activities = activityQuery.data?.data ?? [];
   const recentAssignments = assignmentsQuery.data ?? [];
+  const platformData = platformQuery.data?.platforms ?? [];
+
+  const alerts = useMemo(() => (stats ? buildDashboardAlerts(stats) : []), [stats]);
 
   const isLoading = statsQuery.isLoading || statusQuery.isLoading;
   const isError = statsQuery.isError || statusQuery.isError;
-  const isPeriodLoading = statsQuery.isFetching || activityQuery.isFetching || assignmentsQuery.isFetching;
+  const isPeriodLoading =
+    statsQuery.isFetching || activityQuery.isFetching || assignmentsQuery.isFetching || platformQuery.isFetching;
 
   const topBar = (
     <DashboardTopBar
@@ -142,6 +167,7 @@ export function DashboardPage() {
       onPresetChange={setPreset}
       onCustomDateChange={setCustomDate}
       rangeLabel={rangeLabel}
+      alerts={alerts}
     />
   );
 
@@ -181,55 +207,132 @@ export function DashboardPage() {
       <div className={dashboardPage}>
         <section>
           <div className="flex flex-wrap items-end justify-between gap-2">
-            <h2 className={dashboardSectionTitle}>Overview</h2>
+            <div>
+              <h2 className={dashboardSectionTitle}>Fleet snapshot</h2>
+              <p className="mt-1 text-xs text-ink-muted">Live counts — not limited by the date filter</p>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard title="Total drivers" value={stats.totalDrivers} subtitle="Current roster" icon={<UsersIcon />} />
+            </Link>
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Active drivers"
+                value={stats.activeDrivers}
+                subtitle="Employment status = active"
+                icon={<UsersIcon />}
+              />
+            </Link>
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Pending documents"
+                value={stats.pendingDocuments}
+                subtitle="Needs review"
+                icon={<DocumentIcon />}
+              />
+            </Link>
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Expired documents"
+                value={stats.expiredDocuments}
+                subtitle="Past expiry date"
+                trend={stats.expiredDocuments > 0 ? { value: "needs attention", positive: false } : undefined}
+                icon={<DocumentIcon />}
+              />
+            </Link>
+            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
+              <KpiStatCard title="Total vehicles" value={stats.totalVehicles ?? 0} subtitle="Current fleet" icon={<VehicleIcon />} />
+            </Link>
+            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Assigned vehicles"
+                value={stats.assignedVehicles ?? 0}
+                subtitle="Drivers with a vehicle"
+                icon={<VehicleIcon />}
+              />
+            </Link>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className={dashboardSectionTitle}>Needs attention</h2>
+              <p className="mt-1 text-xs text-ink-muted">Open risks across loans, debt, rentals, and documents</p>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <Link to="/earnings/loans" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Outstanding loans"
+                value={formatCurrency(stats.outstandingLoans ?? 0)}
+                subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
+                trend={(stats.outstandingLoans ?? 0) > 0 ? { value: "open balance", positive: false } : undefined}
+                icon={<AlertIcon />}
+              />
+            </Link>
+            <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Platform debt"
+                value={formatCurrency(stats.outstandingDebt ?? 0)}
+                subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
+                trend={(stats.outstandingDebt ?? 0) > 0 ? { value: "collectible", positive: false } : undefined}
+                icon={<CurrencyIcon />}
+              />
+            </Link>
+            <Link to="/rentals/bookings" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Overdue rentals"
+                value={stats.overdueRentals ?? 0}
+                subtitle="Active bookings past end"
+                trend={(stats.overdueRentals ?? 0) > 0 ? { value: "past due", positive: false } : undefined}
+                icon={<VehicleIcon />}
+              />
+            </Link>
+            <Link to="/drivers" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
+                title="Document risk"
+                value={(stats.expiredDocuments ?? 0) + (stats.pendingDocuments ?? 0)}
+                subtitle={`${stats.expiredDocuments} expired · ${stats.pendingDocuments} pending`}
+                icon={<DocumentIcon />}
+              />
+            </Link>
+          </div>
+        </section>
+
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className={dashboardSectionTitle}>Period money</h2>
+              <p className="mt-1 text-xs text-ink-muted">Filtered by {rangeLabel} (paid/approved commission & pending nets)</p>
+            </div>
             {isPeriodLoading && (
               <p className="text-xs text-ink-muted" aria-live="polite">
                 Updating period metrics…
               </p>
             )}
           </div>
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-            <Link to="/drivers" className={`block ${kpiCardHover}`}>
-              <KpiStatCard title="Total drivers" value={stats.totalDrivers} icon={<UsersIcon />} />
-            </Link>
-            <Link to="/drivers" className={`block ${kpiCardHover}`}>
-              <KpiStatCard
-                title="Active drivers"
-                value={stats.activeDrivers}
-                trend={{ value: "current snapshot", positive: true }}
-                icon={<UsersIcon />}
-              />
-            </Link>
-            <KpiStatCard title="Pending documents" value={stats.pendingDocuments} icon={<DocumentIcon />} />
-            <KpiStatCard
-              title="Expired documents"
-              value={stats.expiredDocuments}
-              trend={{ value: "needs attention", positive: false }}
-              icon={<DocumentIcon />}
-            />
-            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
-              <KpiStatCard title="Total vehicles" value={stats.totalVehicles ?? 0} icon={<VehicleIcon />} />
-            </Link>
-            <Link to="/vehicles" className={`block ${kpiCardHover}`}>
-              <KpiStatCard title="Assigned vehicles" value={stats.assignedVehicles ?? 0} icon={<VehicleIcon />} />
-            </Link>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <KpiStatCard
               title="Commission earned"
               value={formatCurrency(stats.totalCommissionEarned ?? 0)}
-              trend={{ value: rangeLabel, positive: true }}
-              icon={<CurrencyIcon />}
-            />
-            <KpiStatCard
-              title="Pending payments"
-              value={formatCurrency(stats.pendingPayments ?? 0)}
-              trend={{ value: rangeLabel, positive: false }}
+              subtitle="Paid / approved weeks in period"
               icon={<CurrencyIcon />}
             />
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
+                title="Pending payments"
+                value={formatCurrency(stats.pendingPayments ?? 0)}
+                subtitle={`${stats.pendingPayoutRows ?? 0} pending payout row(s)`}
+                icon={<CurrencyIcon />}
+              />
+            </Link>
+            <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
+              <KpiStatCard
                 title="Vehicle rental fees"
                 value={formatCurrency(stats.totalVehicleRentalFees ?? 0)}
-                trend={{ value: rangeLabel, positive: true }}
+                subtitle="Deducted in period payouts"
                 icon={<VehicleIcon />}
               />
             </Link>
@@ -243,24 +346,48 @@ export function DashboardPage() {
               <DriverStatusChart data={statusData} />
             </DashboardChartCard>
             <DashboardChartCard
-              title="Earnings"
-              description="Charts and import live under the Earnings section in the sidebar."
-              action={{ label: "Open earnings overview", to: "/earnings" }}
+              title="Revenue by platform"
+              description={`Gross vs company commission for ${rangeLabel}`}
+              action={canFinance ? { label: "Open earnings overview", to: "/earnings" } : undefined}
               minHeight={320}
             >
-              <div className="flex flex-col items-start justify-center gap-3 py-4">
-                <p className="text-sm text-ink-muted">
-                  Import platform reports, review payouts, and run settlement reports from one place.
-                </p>
-                <Link to="/earnings/import" className={btnSecondary}>
-                  Import earnings
-                </Link>
-              </div>
+              {platformQuery.isLoading ? (
+                <p className="py-16 text-center text-sm text-ink-muted">Loading platform chart…</p>
+              ) : (
+                <PlatformEarningsChart data={platformData} />
+              )}
             </DashboardChartCard>
             <DashboardChartCard title="Document verification">
               <DocumentStatsChart data={docsData} />
             </DashboardChartCard>
-            <ChartPlaceholder />
+            <DashboardChartCard
+              title="Earnings tools"
+              description="Import reports and manage payouts from Earnings."
+              minHeight={320}
+            >
+              <div className="flex flex-col items-start justify-center gap-3 py-4">
+                <p className="text-sm text-ink-muted">
+                  Platform reports, driver payouts, loans, and settlements live under Earnings in the sidebar.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {canFinance && (
+                    <Link to="/earnings" className={btnSecondary}>
+                      Earnings overview
+                    </Link>
+                  )}
+                  {canImport && (
+                    <Link to="/earnings/import" className={btnSecondary}>
+                      Import earnings
+                    </Link>
+                  )}
+                  {canFinance && (
+                    <Link to="/earnings/payouts" className={btnSecondary}>
+                      Payouts
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </DashboardChartCard>
           </div>
         </section>
 

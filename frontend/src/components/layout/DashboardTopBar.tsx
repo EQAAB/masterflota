@@ -4,6 +4,7 @@ import { useAuthStore } from "../../store/authStore";
 import { roleLabel } from "../../lib/roleLabel";
 import { btnSecondary } from "../../theme/classNames";
 import type { DashboardDatePreset } from "../../utils/dashboardDateRange";
+import { formatCurrency } from "../../utils/currency";
 
 const PRESETS: { id: DashboardDatePreset; label: string }[] = [
   { id: "today", label: "Today" },
@@ -17,12 +18,20 @@ function initials(firstName?: string, lastName?: string): string {
   return (a + b).toUpperCase() || "?";
 }
 
+export type DashboardAlertItem = {
+  id: string;
+  label: string;
+  detail: string;
+  to: string;
+};
+
 export type DashboardTopBarProps = {
   preset: DashboardDatePreset;
   customDate: string;
   onPresetChange: (preset: DashboardDatePreset) => void;
   onCustomDateChange: (date: string) => void;
   rangeLabel?: string;
+  alerts?: DashboardAlertItem[];
 };
 
 export function DashboardTopBar({
@@ -31,16 +40,22 @@ export function DashboardTopBar({
   onPresetChange,
   onCustomDateChange,
   rangeLabel,
+  alerts = [],
 }: DashboardTopBarProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const alertsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
+      }
+      if (alertsRef.current && !alertsRef.current.contains(e.target as Node)) {
+        setAlertsOpen(false);
       }
     }
     document.addEventListener("mousedown", onDocClick);
@@ -62,7 +77,7 @@ export function DashboardTopBar({
           {rangeLabel && (
             <p className="mt-1 text-xs text-ink-muted">
               Period filter: <span className="font-medium text-ink">{rangeLabel}</span>
-              <span className="text-ink-muted"> · applies to money & activity</span>
+              <span className="text-ink-muted"> · money, activity & platform chart</span>
             </p>
           )}
         </div>
@@ -99,21 +114,59 @@ export function DashboardTopBar({
             />
           </div>
 
-          <button
-            type="button"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all hover:bg-surface hover:text-ink"
-            aria-label="Notifications"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.75}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger ring-2 ring-white" />
-          </button>
+          <div className="relative" ref={alertsRef}>
+            <button
+              type="button"
+              onClick={() => setAlertsOpen((o) => !o)}
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all hover:bg-surface hover:text-ink"
+              aria-label="Alerts"
+              aria-expanded={alertsOpen}
+              aria-haspopup="menu"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.75}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              {alerts.length > 0 && (
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white ring-2 ring-white">
+                  {alerts.length > 9 ? "9+" : alerts.length}
+                </span>
+              )}
+            </button>
+            {alertsOpen && (
+              <div
+                className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-border bg-white p-2 shadow-card-hover"
+                role="menu"
+              >
+                <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                  Needs attention
+                </p>
+                {alerts.length === 0 ? (
+                  <p className="px-3 py-3 text-sm text-ink-muted">No open alerts right now.</p>
+                ) : (
+                  <ul className="max-h-72 space-y-0.5 overflow-y-auto">
+                    {alerts.map((a) => (
+                      <li key={a.id}>
+                        <Link
+                          to={a.to}
+                          role="menuitem"
+                          onClick={() => setAlertsOpen(false)}
+                          className="block rounded-lg px-3 py-2 hover:bg-surface"
+                        >
+                          <p className="text-sm font-medium text-ink">{a.label}</p>
+                          <p className="text-xs text-ink-muted">{a.detail}</p>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="relative" ref={menuRef}>
             <button
@@ -174,4 +227,68 @@ export function DashboardTopBar({
       </div>
     </header>
   );
+}
+
+/** Build alert list from dashboard stats for the notifications menu. */
+export function buildDashboardAlerts(stats: {
+  outstandingDebt?: number;
+  driversWithDebt?: number;
+  outstandingLoans?: number;
+  driversWithLoans?: number;
+  overdueRentals?: number;
+  expiredDocuments?: number;
+  pendingDocuments?: number;
+  pendingPayoutRows?: number;
+  pendingPayments?: number;
+}): DashboardAlertItem[] {
+  const items: DashboardAlertItem[] = [];
+  if ((stats.overdueRentals ?? 0) > 0) {
+    items.push({
+      id: "overdue-rentals",
+      label: "Overdue rentals",
+      detail: `${stats.overdueRentals} active booking(s) past end date`,
+      to: "/rentals/bookings",
+    });
+  }
+  if ((stats.outstandingLoans ?? 0) > 0) {
+    items.push({
+      id: "loans",
+      label: "Outstanding loans",
+      detail: `${formatCurrency(stats.outstandingLoans ?? 0)} · ${stats.driversWithLoans ?? 0} driver(s)`,
+      to: "/earnings/loans",
+    });
+  }
+  if ((stats.outstandingDebt ?? 0) > 0) {
+    items.push({
+      id: "debt",
+      label: "Platform debt",
+      detail: `${formatCurrency(stats.outstandingDebt ?? 0)} · ${stats.driversWithDebt ?? 0} driver(s)`,
+      to: "/earnings/payouts",
+    });
+  }
+  if ((stats.pendingPayoutRows ?? 0) > 0) {
+    items.push({
+      id: "pending-payouts",
+      label: "Pending payouts in period",
+      detail: `${stats.pendingPayoutRows} row(s) · ${formatCurrency(stats.pendingPayments ?? 0)}`,
+      to: "/earnings/payouts",
+    });
+  }
+  if ((stats.expiredDocuments ?? 0) > 0) {
+    items.push({
+      id: "expired-docs",
+      label: "Expired documents",
+      detail: `${stats.expiredDocuments} document(s) past expiry`,
+      to: "/drivers",
+    });
+  }
+  if ((stats.pendingDocuments ?? 0) > 0) {
+    items.push({
+      id: "pending-docs",
+      label: "Pending documents",
+      detail: `${stats.pendingDocuments} unverified document(s)`,
+      to: "/drivers",
+    });
+  }
+  return items;
 }
