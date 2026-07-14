@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -20,6 +21,12 @@ import { DashboardTopBar } from "../../components/layout/DashboardTopBar";
 import { EmptyState } from "../../components/theme/EmptyState";
 import { dashboardPage, dashboardSectionTitle, kpiCardHover, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
+import { localIsoDate } from "../../utils/earningsImportWeek";
+import {
+  formatDashboardRangeLabel,
+  resolveDashboardDateRange,
+  type DashboardDatePreset,
+} from "../../utils/dashboardDateRange";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   profile_update: "Profile updated",
@@ -97,13 +104,25 @@ function VehicleIcon() {
 }
 
 export function DashboardPage() {
-  const statsQuery = useQuery({ queryKey: ["dashboard", "stats"], queryFn: () => getDashboardStats() });
+  const [preset, setPreset] = useState<DashboardDatePreset>("week");
+  const [customDate, setCustomDate] = useState(() => localIsoDate(new Date()));
+  const range = useMemo(() => resolveDashboardDateRange(preset, customDate), [preset, customDate]);
+  const rangeLabel = formatDashboardRangeLabel(range);
+  const periodParams = range;
+
+  const statsQuery = useQuery({
+    queryKey: ["dashboard", "stats", range.from, range.to],
+    queryFn: () => getDashboardStats(periodParams),
+  });
   const statusQuery = useQuery({ queryKey: ["dashboard", "status"], queryFn: () => getDriverStatusDistribution() });
   const docsQuery = useQuery({ queryKey: ["dashboard", "documents"], queryFn: () => getDocumentStats() });
-  const activityQuery = useQuery({ queryKey: ["dashboard", "activity"], queryFn: () => getRecentActivity() });
+  const activityQuery = useQuery({
+    queryKey: ["dashboard", "activity", range.from, range.to],
+    queryFn: () => getRecentActivity(periodParams),
+  });
   const assignmentsQuery = useQuery({
-    queryKey: ["dashboard", "recent-assignments"],
-    queryFn: () => getRecentAssignments(5).then((r) => r.data.items),
+    queryKey: ["dashboard", "recent-assignments", range.from, range.to],
+    queryFn: () => getRecentAssignments(5, periodParams).then((r) => r.data.items),
   });
 
   const stats = statsQuery.data?.data;
@@ -114,11 +133,22 @@ export function DashboardPage() {
 
   const isLoading = statsQuery.isLoading || statusQuery.isLoading;
   const isError = statsQuery.isError || statusQuery.isError;
+  const isPeriodLoading = statsQuery.isFetching || activityQuery.isFetching || assignmentsQuery.isFetching;
+
+  const topBar = (
+    <DashboardTopBar
+      preset={preset}
+      customDate={customDate}
+      onPresetChange={setPreset}
+      onCustomDateChange={setCustomDate}
+      rangeLabel={rangeLabel}
+    />
+  );
 
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col">
-        <DashboardTopBar />
+        {topBar}
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
@@ -132,7 +162,7 @@ export function DashboardPage() {
   if (isError || !stats) {
     return (
       <div className="flex flex-1 flex-col">
-        <DashboardTopBar />
+        {topBar}
         <div className="flex flex-1 items-center justify-center p-6">
           <EmptyState
             title="Failed to load dashboard"
@@ -146,11 +176,18 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <DashboardTopBar />
+      {topBar}
 
       <div className={dashboardPage}>
         <section>
-          <h2 className={dashboardSectionTitle}>Overview</h2>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className={dashboardSectionTitle}>Overview</h2>
+            {isPeriodLoading && (
+              <p className="text-xs text-ink-muted" aria-live="polite">
+                Updating period metrics…
+              </p>
+            )}
+          </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard title="Total drivers" value={stats.totalDrivers} icon={<UsersIcon />} />
@@ -159,7 +196,7 @@ export function DashboardPage() {
               <KpiStatCard
                 title="Active drivers"
                 value={stats.activeDrivers}
-                trend={{ value: "vs last month", positive: true }}
+                trend={{ value: "current snapshot", positive: true }}
                 icon={<UsersIcon />}
               />
             </Link>
@@ -179,17 +216,20 @@ export function DashboardPage() {
             <KpiStatCard
               title="Commission earned"
               value={formatCurrency(stats.totalCommissionEarned ?? 0)}
+              trend={{ value: rangeLabel, positive: true }}
               icon={<CurrencyIcon />}
             />
             <KpiStatCard
               title="Pending payments"
               value={formatCurrency(stats.pendingPayments ?? 0)}
+              trend={{ value: rangeLabel, positive: false }}
               icon={<CurrencyIcon />}
             />
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Vehicle rental fees"
                 value={formatCurrency(stats.totalVehicleRentalFees ?? 0)}
+                trend={{ value: rangeLabel, positive: true }}
                 icon={<VehicleIcon />}
               />
             </Link>
@@ -226,6 +266,7 @@ export function DashboardPage() {
 
         <section>
           <h2 className={dashboardSectionTitle}>Recent activity</h2>
+          <p className="mt-1 text-xs text-ink-muted">Showing activity and assignments in {rangeLabel}</p>
           <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <ActivityTimeline rows={activityToRows(activities)} />
             <AssignmentsFeed items={recentAssignments} isLoading={assignmentsQuery.isLoading} />

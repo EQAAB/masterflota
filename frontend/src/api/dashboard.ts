@@ -10,6 +10,8 @@ export interface DashboardStats {
   totalVehicleRentalFees?: number;
   totalVehicles?: number;
   assignedVehicles?: number;
+  periodFrom?: string;
+  periodTo?: string;
 }
 
 export interface DriverStatusItem {
@@ -33,8 +35,15 @@ export interface DashboardActivityItem {
   created_at: string;
 }
 
-export function getDashboardStats() {
-  return api.get<DashboardStats>("/dashboard/stats");
+export type DashboardPeriodParams = {
+  from: string;
+  to: string;
+};
+
+export function getDashboardStats(params: DashboardPeriodParams) {
+  return api.get<DashboardStats>("/dashboard/stats", {
+    params: { from: params.from, to: params.to },
+  });
 }
 
 export function getDriverStatusDistribution() {
@@ -45,8 +54,10 @@ export function getDocumentStats() {
   return api.get<DocumentStatsItem[]>("/dashboard/documents");
 }
 
-export function getRecentActivity() {
-  return api.get<DashboardActivityItem[]>("/dashboard/activity");
+export function getRecentActivity(params: DashboardPeriodParams) {
+  return api.get<DashboardActivityItem[]>("/dashboard/activity", {
+    params: { from: params.from, to: params.to },
+  });
 }
 
 export interface RecentAssignmentItem {
@@ -62,9 +73,11 @@ export interface RecentAssignmentItem {
   is_active: boolean;
 }
 
-export function getRecentAssignments(limit = 5) {
+export function getRecentAssignments(limit = 5, params?: DashboardPeriodParams) {
   return api.get<{ items: RecentAssignmentItem[] }>("/dashboard/recent-assignments", {
-    params: { limit: String(limit) },
+    params: {
+      limit: String(limit),
+      ...(params ? { from: params.from, to: params.to } : {}),
+    },
   });
 }
-
