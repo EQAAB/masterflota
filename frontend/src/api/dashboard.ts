@@ -10,6 +10,13 @@ export interface DashboardStats {
   totalVehicleRentalFees?: number;
   totalVehicles?: number;
   assignedVehicles?: number;
+  pendingPayoutRows?: number;
+  outstandingDebt?: number;
+  driversWithDebt?: number;
+  outstandingLoans?: number;
+  driversWithLoans?: number;
+  overdueRentals?: number;
+  alertCount?: number;
   periodFrom?: string;
   periodTo?: string;
 }
@@ -40,8 +47,28 @@ export type DashboardPeriodParams = {
   to: string;
 };
 
+export interface PlatformEarningsItem {
+  platform: string;
+  gross: number;
+  commission: number;
+  netPayout: number;
+  rowCount: number;
+}
+
+export interface PlatformEarningsResponse {
+  periodFrom: string;
+  periodTo: string;
+  platforms: PlatformEarningsItem[];
+}
+
 export function getDashboardStats(params: DashboardPeriodParams) {
   return api.get<DashboardStats>("/dashboard/stats", {
+    params: { from: params.from, to: params.to },
+  });
+}
+
+export function getPlatformEarnings(params: DashboardPeriodParams) {
+  return api.get<PlatformEarningsResponse>("/dashboard/platform-earnings", {
     params: { from: params.from, to: params.to },
   });
 }
