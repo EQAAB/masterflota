@@ -1,9 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  appendToExistingWeekPreviewMessage,
+  appendToExistingWeekRequiredMessage,
   duplicatePlatformWeekImportMessage,
   earningsPlatformLabel,
   findCompletedPlatformWeekImport,
+  toExistingWeekImportDto,
 } from "./findCompletedPlatformWeekImport";
+
+const sample = {
+  id: "a",
+  platform: "glovo",
+  week_start: "2026-05-11",
+  week_end: "2026-05-17",
+  file_name: "glovo.csv",
+  import_date: "2026-05-18",
+} as const;
 
 describe("earningsPlatformLabel", () => {
   it("maps known platforms", () => {
@@ -12,20 +24,26 @@ describe("earningsPlatformLabel", () => {
   });
 });
 
-describe("duplicatePlatformWeekImportMessage", () => {
-  it("includes platform, week, and optional file name", () => {
-    expect(
-      duplicatePlatformWeekImportMessage({
-        id: "a",
-        platform: "glovo",
-        week_start: "2026-05-11",
-        week_end: "2026-05-17",
-        file_name: "glovo.csv",
-        import_date: "2026-05-18",
-      }),
-    ).toBe(
-      "Glovo earnings for 2026-05-11 → 2026-05-17 already imported (glovo.csv). Revert that import before uploading again.",
-    );
+describe("append / duplicate week messages", () => {
+  it("preview message explains append is allowed", () => {
+    expect(appendToExistingWeekPreviewMessage(sample)).toContain("already imported (glovo.csv)");
+    expect(appendToExistingWeekPreviewMessage(sample)).toContain("add this file to the same pay week");
+  });
+
+  it("required message asks for confirm or revert", () => {
+    expect(appendToExistingWeekRequiredMessage(sample)).toContain("Add to this week");
+    expect(duplicatePlatformWeekImportMessage(sample)).toBe(appendToExistingWeekRequiredMessage(sample));
+  });
+
+  it("maps DTO for API responses", () => {
+    expect(toExistingWeekImportDto(sample)).toEqual({
+      id: "a",
+      platform: "glovo",
+      weekStart: "2026-05-11",
+      weekEnd: "2026-05-17",
+      fileName: "glovo.csv",
+      importDate: "2026-05-18",
+    });
   });
 });
 

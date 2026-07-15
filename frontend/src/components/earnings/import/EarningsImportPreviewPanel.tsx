@@ -124,6 +124,26 @@ export function EarningsImportPreviewPanel({
         </div>
       )}
 
+      {preview.existingWeekImport && (
+        <div className="rounded-xl border border-brand/25 bg-brand/5 px-4 py-3 text-sm text-ink">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand">Add to existing week</p>
+          <p className="mt-1">
+            {providerLabel(preview.existingWeekImport.platform)} already has a completed import for{" "}
+            <span className="font-medium">
+              {preview.existingWeekImport.weekStart} → {preview.existingWeekImport.weekEnd}
+            </span>
+            {preview.existingWeekImport.fileName ? (
+              <>
+                {" "}
+                (<span className="font-medium">{preview.existingWeekImport.fileName}</span>)
+              </>
+            ) : null}
+            . Confirming will append this file into that pay week (typical for month-split platform reports). To
+            replace the whole week, revert the existing import first.
+          </p>
+        </div>
+      )}
+
       {preview.aggregates && (
           <div className="rounded-xl border border-border/60 bg-surface-elevated/50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Import summary</p>
@@ -186,7 +206,7 @@ export function EarningsImportPreviewPanel({
           onClick={onConfirm}
           className={`${btnPrimary} text-sm`}
         >
-          Confirm import (valid rows only)
+          {preview.existingWeekImport ? "Add to this week…" : "Confirm import (valid rows only)"}
         </button>
         <button type="button" disabled={busy} onClick={onCancel} className={`${btnSecondary} text-sm`}>
           Cancel preview

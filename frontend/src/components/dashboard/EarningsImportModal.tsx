@@ -7,7 +7,9 @@ import {
   commitEarningsImport,
   cancelEarningsImport,
   fetchOrgImportSettings,
+  shouldAppendToExistingWeek,
   type EarningsPreviewResponse,
+  type ExistingWeekImport,
 } from "../../api/earningsImport";
 import { EarningsImportPreviewVirtualTable } from "../earnings/EarningsImportPreviewVirtualTable";
 import { ConfirmDialog } from "../UI/ConfirmDialog";
@@ -54,6 +56,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   const [selectedPlatform, setSelectedPlatform] = useState<string>("uber");
   const [commitImportOpen, setCommitImportOpen] = useState(false);
   const [commitWarnings, setCommitWarnings] = useState<string[]>([]);
+  const [forceAppendWeek, setForceAppendWeek] = useState<ExistingWeekImport | null>(null);
 
   const { setClientDebtScan, runClientDebtScan, debtSummaryLine } = useCsvValidation(preview);
 
@@ -64,7 +67,10 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   });
 
   useEffect(() => {
-    if (!preview) setCommitImportOpen(false);
+    if (!preview) {
+      setCommitImportOpen(false);
+      setForceAppendWeek(null);
+    }
   }, [preview]);
 
   const importsQuery = useQuery({
@@ -89,6 +95,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
       setClientDebtScan(null);
       setCommitImportOpen(false);
       setCommitWarnings([]);
+      setForceAppendWeek(null);
       return;
     }
     applyPreviousWeek();
@@ -114,7 +121,14 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
       }),
     onSuccess: (res) => {
       setLocalError(null);
+      setForceAppendWeek(null);
       setPreview(res.data);
+      if (res.data.weekStart) setPeriodStart(res.data.weekStart);
+      if (res.data.weekEnd) setPeriodEnd(res.data.weekEnd);
+      if (res.data.existingWeekImport) {
+        setPeriodStart(res.data.existingWeekImport.weekStart);
+        setPeriodEnd(res.data.existingWeekImport.weekEnd);
+      }
     },
     onError: (e) => {
       setPreview(null);
@@ -123,15 +137,23 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   });
 
   const commitMut = useMutation({
-    mutationFn: (args: { importId: string; platform: string; weekStart: string; weekEnd: string }) =>
+    mutationFn: (args: {
+      importId: string;
+      platform: string;
+      weekStart: string;
+      weekEnd: string;
+      appendToExistingWeek?: boolean;
+    }) =>
       commitEarningsImport(args.importId, {
         platform: args.platform,
         weekStart: args.weekStart,
         weekEnd: args.weekEnd,
+        appendToExistingWeek: args.appendToExistingWeek,
       }),
     onSuccess: (resp) => {
       setCommitImportOpen(false);
       setPreview(null);
+      setForceAppendWeek(null);
       setClientDebtScan(null);
       setLocalError(null);
       void queryClient.invalidateQueries({ queryKey: ["earnings"] });
@@ -144,13 +166,31 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
         onClose();
       }
     },
-    onError: (e) => setLocalError(errMessage(e)),
+    onError: (e) => {
+      if (axios.isAxiosError(e)) {
+        const data = e.response?.data as {
+          appendAllowed?: boolean;
+          existingWeekImport?: ExistingWeekImport;
+          message?: string;
+        } | undefined;
+        if (data?.appendAllowed && data.existingWeekImport) {
+          setForceAppendWeek(data.existingWeekImport);
+          setPeriodStart(data.existingWeekImport.weekStart);
+          setPeriodEnd(data.existingWeekImport.weekEnd);
+          setCommitImportOpen(true);
+          setLocalError(null);
+          return;
+        }
+      }
+      setLocalError(errMessage(e));
+    },
   });
 
   const cancelMut = useMutation({
     mutationFn: (importId: string) => cancelEarningsImport(importId),
     onSuccess: () => {
       setPreview(null);
+      setForceAppendWeek(null);
       setClientDebtScan(null);
       setLocalError(null);
       void queryClient.invalidateQueries({ queryKey: ["earnings", "imports"] });
@@ -168,6 +208,12 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
   const periodValidation = validationForPlatform(selectedPlatform);
   const periodValid =
     periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
+  const appendWeek =
+    forceAppendWeek ??
+    (preview &&
+    shouldAppendToExistingWeek(preview.existingWeekImport, selectedPlatform, periodStart, periodEnd)
+      ? preview.existingWeekImport
+      : null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
@@ -321,6 +367,25 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
               </div>
             )}
 
+            {preview.existingWeekImport && (
+              <div className="rounded-lg border border-brand/25 bg-brand/5 px-3 py-2 text-sm text-ink">
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand">Add to existing week</p>
+                <p className="mt-0.5">
+                  {providerLabel(preview.existingWeekImport.platform)} already has a completed import for{" "}
+                  <span className="font-medium">
+                    {preview.existingWeekImport.weekStart} → {preview.existingWeekImport.weekEnd}
+                  </span>
+                  {preview.existingWeekImport.fileName ? (
+                    <>
+                      {" "}
+                      (<span className="font-medium">{preview.existingWeekImport.fileName}</span>)
+                    </>
+                  ) : null}
+                  . Confirming will append this file into that pay week.
+                </p>
+              </div>
+            )}
+
             {preview.warnings.length > 0 && (
               <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
                 <p className="text-xs font-semibold text-amber-900 mb-1">Data quality</p>
@@ -351,7 +416,11 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                 onClick={() => setCommitImportOpen(true)}
                 className="rounded-lg bg-brand-gradient text-white text-sm font-medium px-4 py-2 hover:opacity-95 disabled:opacity-50"
               >
-                {commitMut.isPending ? "Importing…" : "Confirm import (valid rows only)"}
+                {commitMut.isPending
+                  ? "Importing…"
+                  : preview.existingWeekImport
+                    ? "Add to this week…"
+                    : "Confirm import (valid rows only)"}
               </button>
               <button
                 type="button"
@@ -375,7 +444,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
       <ConfirmDialog
         open={commitImportOpen && Boolean(preview)}
         onClose={() => !commitMut.isPending && setCommitImportOpen(false)}
-        title="Commit this import?"
+        title={appendWeek ? "Add this file to the existing week?" : "Commit this import?"}
         description={
           preview ? (
             <div className="space-y-2">
@@ -405,6 +474,13 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
                   </span>
                 </p>
               )}
+              {appendWeek && (
+                <p className="rounded-lg border border-brand/20 bg-brand/5 px-2 py-1.5 text-xs text-ink">
+                  Appends alongside{" "}
+                  <span className="font-medium">{appendWeek.fileName ?? "the existing import"}</span>. Payouts for
+                  this week will be recomputed from both files.
+                </p>
+              )}
               {debtSummaryLine && (
                 <p className="rounded-lg border border-rose-100 bg-rose-50/90 px-2 py-1.5 text-xs text-rose-900">
                   {debtSummaryLine}
@@ -413,7 +489,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
             </div>
           ) : null
         }
-        confirmLabel="Import now"
+        confirmLabel={appendWeek ? "Add to this week" : "Import now"}
         cancelLabel="Go back"
         confirmVariant="primary"
         isLoading={commitMut.isPending}
@@ -424,6 +500,7 @@ export function EarningsImportModal({ open, onClose }: EarningsImportModalProps)
             platform: selectedPlatform,
             weekStart: periodStart,
             weekEnd: periodEnd,
+            appendToExistingWeek: Boolean(appendWeek),
           });
         }}
       />

@@ -9,8 +9,10 @@ import {
   cancelEarningsImport,
   fetchOrgImportSettings,
   patchOrgImportSettings,
+  shouldAppendToExistingWeek,
   type EarningsPreviewResponse,
   type EarningsCommitResponse,
+  type ExistingWeekImport,
 } from "../../api/earningsImport";
 import {
   deleteEarningsImport,
@@ -62,6 +64,7 @@ export function EarningsImportPage() {
   const [clientCsvRowCount, setClientCsvRowCount] = useState<number | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("uber");
   const [commitImportOpen, setCommitImportOpen] = useState(false);
+  const [forceAppendWeek, setForceAppendWeek] = useState<ExistingWeekImport | null>(null);
   const [revertImportId, setRevertImportId] = useState<string | null>(null);
   const [deleteImportId, setDeleteImportId] = useState<string | null>(null);
   const [glovoCommissionBaseType, setGlovoCommissionBaseType] = useState<string>("net_income");
@@ -97,7 +100,10 @@ export function EarningsImportPage() {
   }, [preview?.platform, preview?.importId]);
 
   useEffect(() => {
-    if (!preview) setCommitImportOpen(false);
+    if (!preview) {
+      setCommitImportOpen(false);
+      setForceAppendWeek(null);
+    }
   }, [preview]);
 
   const orgImportSettingsQuery = useQuery({
@@ -128,7 +134,14 @@ export function EarningsImportPage() {
     onSuccess: (res) => {
       setLocalError(null);
       setImportSuccess(null);
+      setForceAppendWeek(null);
       setPreview(res.data);
+      if (res.data.weekStart) setPeriodStart(res.data.weekStart);
+      if (res.data.weekEnd) setPeriodEnd(res.data.weekEnd);
+      if (res.data.existingWeekImport) {
+        setPeriodStart(res.data.existingWeekImport.weekStart);
+        setPeriodEnd(res.data.existingWeekImport.weekEnd);
+      }
       if (res.data.glovoCommissionBaseType) {
         setGlovoCommissionBaseType(res.data.glovoCommissionBaseType);
       }
@@ -144,22 +157,54 @@ export function EarningsImportPage() {
   const uploadError = !preview && localError && previewMut.isError ? localError : null;
 
   const commitMut = useMutation({
-    mutationFn: (args: { importId: string; platform: string; weekStart: string; weekEnd: string }) =>
+    mutationFn: (args: {
+      importId: string;
+      platform: string;
+      weekStart: string;
+      weekEnd: string;
+      appendToExistingWeek?: boolean;
+    }) =>
       commitEarningsImport(args.importId, {
         platform: args.platform,
         weekStart: args.weekStart,
         weekEnd: args.weekEnd,
+        appendToExistingWeek: args.appendToExistingWeek,
       }),
     onSuccess: (res) => {
       setImportSuccess(res.data);
       setPreview(null);
+      setForceAppendWeek(null);
       setClientDebtScan(null);
       setLocalError(null);
       void queryClient.invalidateQueries({ queryKey: ["earnings"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
     },
-    onError: (e) => setLocalError(errMessage(e)),
+    onError: (e) => {
+      if (axios.isAxiosError(e)) {
+        const data = e.response?.data as {
+          appendAllowed?: boolean;
+          existingWeekImport?: ExistingWeekImport;
+          message?: string;
+        } | undefined;
+        if (data?.appendAllowed && data.existingWeekImport) {
+          setForceAppendWeek(data.existingWeekImport);
+          setPeriodStart(data.existingWeekImport.weekStart);
+          setPeriodEnd(data.existingWeekImport.weekEnd);
+          setCommitImportOpen(true);
+          setLocalError(null);
+          return;
+        }
+      }
+      setLocalError(errMessage(e));
+    },
   });
+
+  const appendWeek =
+    forceAppendWeek ??
+    (preview &&
+    shouldAppendToExistingWeek(preview.existingWeekImport, selectedPlatform, periodStart, periodEnd)
+      ? preview.existingWeekImport
+      : null);
 
   const syncMut = useMutation({
     mutationFn: () => syncEarningsVehicleRentals(),
@@ -363,7 +408,7 @@ export function EarningsImportPage() {
       <ConfirmDialog
         open={commitImportOpen && Boolean(preview)}
         onClose={() => !commitMut.isPending && setCommitImportOpen(false)}
-        title="Commit this CSV import?"
+        title={appendWeek ? "Add this file to the existing week?" : "Commit this CSV import?"}
         description={
           preview ? (
             <div className="space-y-2">
@@ -393,6 +438,13 @@ export function EarningsImportPage() {
                   </span>
                 </p>
               )}
+              {appendWeek && (
+                <p className="rounded-lg border border-brand/20 bg-brand/5 px-2 py-1.5 text-xs text-ink">
+                  Appends alongside{" "}
+                  <span className="font-medium">{appendWeek.fileName ?? "the existing import"}</span>.
+                  Payouts for this week will be recomputed from both files.
+                </p>
+              )}
               {debtSummaryLine && (
                 <p className="rounded-lg border border-danger/20 bg-danger/5 px-2 py-1.5 text-xs text-danger">
                   {debtSummaryLine}
@@ -404,7 +456,7 @@ export function EarningsImportPage() {
             </div>
           ) : null
         }
-        confirmLabel="Import now"
+        confirmLabel={appendWeek ? "Add to this week" : "Import now"}
         cancelLabel="Go back"
         confirmVariant="primary"
         isLoading={commitMut.isPending}
@@ -415,6 +467,7 @@ export function EarningsImportPage() {
             platform: selectedPlatform,
             weekStart: periodStart,
             weekEnd: periodEnd,
+            appendToExistingWeek: Boolean(appendWeek),
           });
           setCommitImportOpen(false);
         }}
