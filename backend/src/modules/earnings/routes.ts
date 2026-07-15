@@ -56,8 +56,11 @@ import {
 } from "./consolidatedPayouts";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import {
-  DuplicatePlatformWeekImportError,
+  AppendToExistingWeekRequiredError,
+  appendToExistingWeekPreviewMessage,
+  earningsPlatformLabel,
   findCompletedPlatformWeekImport,
+  toExistingWeekImportDto,
 } from "./findCompletedPlatformWeekImport";
 import {
   assertNoDuplicatePlatformIdsInWeeklyFile,
@@ -321,24 +324,17 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
 
     const client = await pool.connect();
     let importId: string;
+    let existingCompleted = null as Awaited<ReturnType<typeof findCompletedPlatformWeekImport>>;
     try {
       await client.query("BEGIN");
 
-      const existingCompleted = await findCompletedPlatformWeekImport(
+      existingCompleted = await findCompletedPlatformWeekImport(
         client,
         orgId,
         platform,
         weekStart,
         weekEnd,
       );
-      if (existingCompleted) {
-        await client.query("ROLLBACK");
-        return res.status(409).json({
-          message: new DuplicatePlatformWeekImportError(existingCompleted).message,
-          code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
-          existingImportId: existingCompleted.id,
-        });
-      }
 
       importId = await insertEarningsPreviewStaging(client, {
         orgId,
@@ -373,6 +369,11 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
     }
     client.release();
 
+    const previewWarnings = [...warnings];
+    if (existingCompleted) {
+      previewWarnings.unshift(appendToExistingWeekPreviewMessage(existingCompleted));
+    }
+
     return res.json({
       importId,
       platform,
@@ -384,7 +385,8 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
       weekStart,
       weekEnd,
       glovoCommissionBaseType: platform === "glovo" ? effectiveGlovoBase : undefined,
-      warnings,
+      warnings: previewWarnings,
+      existingWeekImport: existingCompleted ? toExistingWeekImportDto(existingCompleted) : null,
       previewRows: [],
       aggregates: {
         valid: validForCommit,
@@ -483,11 +485,14 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
     platform?: string;
     weekStart?: string;
     weekEnd?: string;
+    /** When true, allow a second (or further) completed import for the same platform pay week. */
+    appendToExistingWeek?: boolean;
   };
   const importId = body.importId;
   if (!importId || typeof importId !== "string") {
     return res.status(400).json({ message: "importId is required" });
   }
+  const appendToExistingWeek = body.appendToExistingWeek === true;
 
   const isoDate = /^\d{4}-\d{2}-\d{2}$/;
   if (body.platform !== undefined && body.platform !== null && String(body.platform).trim() !== "") {
@@ -554,12 +559,15 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
       weekEndEff,
       importId,
     );
-    if (existingCompleted) {
+    if (existingCompleted && !appendToExistingWeek) {
       await client.query("ROLLBACK");
+      const err = new AppendToExistingWeekRequiredError(existingCompleted);
       return res.status(409).json({
-        message: new DuplicatePlatformWeekImportError(existingCompleted).message,
-        code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
+        message: err.message,
+        code: err.code,
         existingImportId: existingCompleted.id,
+        existingWeekImport: toExistingWeekImportDto(existingCompleted),
+        appendAllowed: true,
       });
     }
 
@@ -581,6 +589,16 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
 
     await client.query("COMMIT");
 
+    const commitWarnings = [...(commitResult.warnings ?? [])];
+    if (existingCompleted && appendToExistingWeek) {
+      const prior = existingCompleted.file_name?.trim()
+        ? ` (${existingCompleted.file_name})`
+        : "";
+      commitWarnings.unshift(
+        `Added to existing ${earningsPlatformLabel(platformEff)} week ${weekStartEff} → ${weekEndEff}${prior}. Driver payouts were recomputed for the combined week.`,
+      );
+    }
+
     return res.json({
       importId,
       insertedRows: commitResult.insertedRows,
@@ -588,7 +606,8 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
       skippedNoDate: commitResult.skippedNoDate,
       skippedNoMoney: commitResult.skippedNoMoney,
       totals: commitResult.totals,
-      warnings: commitResult.warnings,
+      warnings: commitWarnings,
+      appendedToExistingWeek: Boolean(existingCompleted && appendToExistingWeek),
     });
   } catch (err) {
     try {
@@ -607,8 +626,9 @@ router.post("/import/commit", requirePermission("imports.create"), async (req, r
     if (pgCode === "23505") {
       return res.status(409).json({
         message:
-          "This platform already has a completed import for that pay week. Revert the existing import before uploading again.",
-        code: "DUPLICATE_PLATFORM_WEEK_IMPORT",
+          "This platform already has a completed import for that pay week. Confirm “Add to this week” to append, or revert the existing import first.",
+        code: "APPEND_TO_EXISTING_WEEK_REQUIRED",
+        appendAllowed: true,
       });
     }
     // eslint-disable-next-line no-console

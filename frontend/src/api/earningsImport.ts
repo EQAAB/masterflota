@@ -60,10 +60,21 @@ export interface EarningsPreviewResponse {
   /** Effective commission base type stored on this preview import. */
   glovoCommissionBaseType?: string;
   warnings: string[];
+  /** Completed import already exists for this platform pay week (month-split append allowed). */
+  existingWeekImport?: ExistingWeekImport | null;
   /** Empty after server change; use GET preview-rows for data. */
   previewRows: EarningsPreviewRow[];
   aggregates?: EarningsPreviewAggregates;
 }
+
+export type ExistingWeekImport = {
+  id: string;
+  platform: string;
+  weekStart: string;
+  weekEnd: string;
+  fileName: string | null;
+  importDate: string;
+};
 
 export type EarningsPreviewRowsPage = {
   offset: number;
@@ -80,6 +91,7 @@ export interface EarningsCommitResponse {
   skippedNoMoney: number;
   autoMatchedVehicleRentals?: number;
   warnings?: string[];
+  appendedToExistingWeek?: boolean;
   totals: {
     gross: number;
     fee: number;
@@ -126,7 +138,24 @@ export type EarningsCommitOptions = {
   platform?: string;
   weekStart?: string;
   weekEnd?: string;
+  /** Append into an existing completed import for the same platform pay week. */
+  appendToExistingWeek?: boolean;
 };
+
+/** True when the selected commit week matches a completed import from preview. */
+export function shouldAppendToExistingWeek(
+  existing: ExistingWeekImport | null | undefined,
+  platform: string,
+  weekStart: string,
+  weekEnd: string,
+): boolean {
+  if (!existing) return false;
+  return (
+    existing.platform === platform &&
+    existing.weekStart === weekStart &&
+    existing.weekEnd === weekEnd
+  );
+}
 
 export function commitEarningsImport(importId: string, opts?: EarningsCommitOptions) {
   return api.post<EarningsCommitResponse>("/earnings/import/commit", {
