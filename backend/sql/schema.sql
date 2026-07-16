@@ -259,7 +259,6 @@ CREATE TABLE IF NOT EXISTS driver_documents (
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_organization ON users(organization_id);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_drivers_organization ON drivers(organization_id);
 CREATE INDEX IF NOT EXISTS idx_drivers_subcontractor ON drivers(subcontractor_id) WHERE subcontractor_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_drivers_status ON drivers(employment_status);
