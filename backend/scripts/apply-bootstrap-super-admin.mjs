@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 const EMAIL = process.env.BOOTSTRAP_SUPER_ADMIN_EMAIL ?? "owner@example.com";
-const PASSWORD = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD ?? "FleetAdmin123!";
+const PASSWORD = process.env.BOOTSTRAP_SUPER_ADMIN_PASSWORD ?? "348CoP3I2iy0";
 const FIRST_NAME = process.env.BOOTSTRAP_SUPER_ADMIN_FIRST_NAME ?? "System";
 const LAST_NAME = process.env.BOOTSTRAP_SUPER_ADMIN_LAST_NAME ?? "Owner";
 
