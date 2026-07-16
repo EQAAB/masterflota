@@ -6,7 +6,7 @@
 set -euo pipefail
 
 FLEET_DB_USER="${FLEET_DB_USER:-fleetadmin}"
-FLEET_DB_NAME="${FLEET_DB_NAME:-fleet_manager}"
+FLEET_DB_NAME="${FLEET_DB_NAME:-fleetmanager}"
 FLEET_DB_PASSWORD="${FLEET_DB_PASSWORD:-}"
 
 if [[ "${EUID:-0}" -ne 0 ]]; then
