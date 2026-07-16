@@ -164,7 +164,7 @@ Create `backend/.env` (copy from `backend/.env.example`):
 PORT=4100
 
 # Database (required for production)
-DATABASE_URL=postgresql://user:password@localhost:5432/fleet_manager
+DATABASE_URL=postgresql://user:password@localhost:5432/fleetmanager
 
 # JWT — use a long random string (e.g. openssl rand -base64 48)
 JWT_SECRET=replace_with_long_random_secret_at_least_32_chars
@@ -208,7 +208,7 @@ npm run build
 Alternative without a file:
 
 ```bash
-VITE_API_URL=http://103.131.215.13:4100/api npm run build
+VITE_API_URL=https://169.58.28.189/fleet-api npm run build
 ```
 
 The build fails with a clear error if `VITE_API_URL` is missing.
@@ -304,9 +304,22 @@ A full API reference (endpoints, request/response shapes, errors) can be added h
 
 ## Deployment
 
-- **Backend:** Run `npm run build` then `npm start`; set `NODE_ENV=production`, `PORT`, `DATABASE_URL`, and a strong `JWT_SECRET` (32+ characters) in the production environment. The server exits on startup if `JWT_SECRET` is missing or insecure in production. Ensure PostgreSQL is reachable and migrations are applied.
-- **Frontend:** Run `npm run build` and serve the `frontend/dist` folder with Nginx, a CDN, or a static host. Set `VITE_API_URL` at build time to your production API URL.
-- **Database:** Use a managed PostgreSQL service; run `schema.sql` and migrations on the production DB.
+**Single VM (Ubuntu):** see **[docs/deploy-vm.md](docs/deploy-vm.md)** for Contabo/VPS setup with PostgreSQL, systemd, and Nginx (`/fleet/` + `/fleet-api/`).
+
+Quick path on the server:
+
+```bash
+sudo bash deploy/scripts/setup-server.sh
+sudo FLEET_DB_PASSWORD='...' bash deploy/scripts/setup-database.sh
+# configure backend/.env and frontend/.env.production
+sudo bash deploy/scripts/configure-nginx.sh YOUR_PUBLIC_IP
+bash deploy/scripts/deploy.sh --init
+cd backend && npm run bootstrap:super-admin
+```
+
+- **Backend:** Run `npm run build` then `npm start`; set `NODE_ENV=production`, `PORT`, `DATABASE_URL`, and a strong `JWT_SECRET` (32+ characters) in the production environment. The server exits on startup if `JWT_SECRET` is missing or insecure in production. Ensure PostgreSQL is reachable and migrations are applied (`npm run migrate:all` or `deploy.sh`).
+- **Frontend:** Run `npm run build` and serve the `frontend/dist` folder with Nginx. Set `VITE_API_URL` at build time to your production API URL (e.g. `http://YOUR_IP/fleet-api` when using the included Nginx config).
+- **Database:** PostgreSQL on the VM or managed service; run `sql/schema.sql` and migrations on the production DB (`npm run migrate:init` on first deploy).
   - **Subcontractor module (in order):** `051`–`061`, `062_remove_subcontractor_commission_rate.sql` (run `npm run migrate:060-062` in `backend/`; verify scripts should return empty result sets). Settlements: **Commission** = `SUM(driver_payouts.company_commission)`; `subcontractor_payouts` has no commission columns; `subcontractors` has no `commission_rate` (use each driver’s rate). After deploy, use **Refresh settlements** on active periods. Re-import sub-managed earnings if rows were computed with the old subcontractor-level rate override.
 - **Uploads:** Ensure `backend/uploads` exists and is writable. Uploads are **not** served publicly; driver photos and documents are accessed only through authenticated API routes (`GET /api/drivers/:id/photo`, document download endpoints). Do not expose `/uploads` via Nginx or a static alias. For multi-instance setups, use a shared store (e.g. S3) and adjust the app accordingly.
 
