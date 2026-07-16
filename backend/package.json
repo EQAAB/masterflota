@@ -20,6 +20,9 @@
     "migrate:066": "node scripts/apply-migration-066.mjs",
     "migrate:067": "node scripts/apply-migration-067.mjs",
     "migrate:068": "node scripts/apply-migration-068.mjs",
+    "migrate:all": "node scripts/apply-all-migrations.mjs",
+    "migrate:init": "node scripts/apply-all-migrations.mjs --init",
+    "bootstrap:super-admin": "node scripts/apply-bootstrap-super-admin.mjs",
     "audit:rentals": "node scripts/audit-rental-tables.mjs"
   },
   "keywords": [],

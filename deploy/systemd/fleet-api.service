@@ -1,0 +1,20 @@
+[Unit]
+Description=Fleet Manager API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/Fleet-Manager/backend
+EnvironmentFile=/var/www/Fleet-Manager/backend/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fleet-api
+
+[Install]
+WantedBy=multi-user.target
