@@ -4,8 +4,8 @@ This guide deploys **PostgreSQL**, **Node API**, and **React frontend** on one s
 
 Default paths:
 - App: `/var/www/Fleet-Manager`
-- UI: `https://169.58.28.189/fleet/`
-- API (via Nginx): `https://169.58.28.189/fleet-api/`
+- UI: `http://169.58.28.189/fleet/`
+- API (via Nginx): `http://169.58.28.189/fleet-api/`
 
 ## 1. One-time server setup
 
@@ -56,10 +56,10 @@ nano .env.production
 ```
 
 ```env
-VITE_API_URL=https://169.58.28.189/fleet-api
+VITE_API_URL=http://169.58.28.189/fleet-api
 ```
 
-Use HTTPS at the edge (load balancer or Certbot on Nginx).
+HTTP until TLS is configured (Certbot / load balancer).
 
 ## 6. Nginx
 
@@ -93,16 +93,16 @@ cd /var/www/Fleet-Manager/backend
 npm run bootstrap:super-admin
 ```
 
-Sign in at `https://169.58.28.189/fleet/`, then change the password.
+Sign in at `http://169.58.28.189/fleet/`, then change the password.
 
 ## 9. Smoke tests
 
 ```bash
 curl -s http://127.0.0.1:4100/api/health
-curl -s https://169.58.28.189/fleet-api/health
+curl -s http://169.58.28.189/fleet-api/health
 ```
 
-Open `https://169.58.28.189/fleet/` in a browser.
+Open `http://169.58.28.189/fleet/` in a browser.
 
 ## Updates (after git pull)
 

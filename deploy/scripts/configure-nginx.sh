@@ -23,5 +23,5 @@ nginx -t
 systemctl reload nginx
 
 echo "Nginx configured for server_name=${SERVER_NAME}"
-echo "UI: https://${SERVER_NAME}/fleet/"
-echo "API: https://${SERVER_NAME}/fleet-api/health"
+echo "UI: http://${SERVER_NAME}/fleet/"
+echo "API: http://${SERVER_NAME}/fleet-api/health"

@@ -4,7 +4,7 @@
 #
 # Prerequisites:
 #   - backend/.env configured (see backend/.env.production.example)
-#   - frontend/.env.production configured (VITE_API_URL=https://169.58.28.189/fleet-api)
+#   - frontend/.env.production configured (VITE_API_URL=http://169.58.28.189/fleet-api)
 #   - PostgreSQL running with DATABASE_URL credentials
 set -euo pipefail
 
@@ -85,6 +85,6 @@ fi
 echo ""
 echo "Deploy complete."
 echo "  Health: curl -s http://127.0.0.1:4100/api/health"
-echo "  UI:     https://169.58.28.189/fleet/"
+echo "  UI:     http://169.58.28.189/fleet/"
 echo ""
 echo "First login: cd backend && npm run bootstrap:super-admin"

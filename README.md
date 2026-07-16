@@ -208,7 +208,7 @@ npm run build
 Alternative without a file:
 
 ```bash
-VITE_API_URL=https://169.58.28.189/fleet-api npm run build
+VITE_API_URL=http://169.58.28.189/fleet-api npm run build
 ```
 
 The build fails with a clear error if `VITE_API_URL` is missing.
