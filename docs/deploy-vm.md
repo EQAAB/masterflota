@@ -42,7 +42,7 @@ Set at minimum:
 ```env
 NODE_ENV=production
 PORT=4100
-DATABASE_URL=postgresql://fleetadmin:your-strong-db-password@127.0.0.1:5432/fleet_manager
+DATABASE_URL=postgresql://fleetadmin:your-strong-db-password@127.0.0.1:5432/fleetmanager
 JWT_SECRET=<openssl rand -base64 48>
 APP_VERSION=1.0.0
 ```
