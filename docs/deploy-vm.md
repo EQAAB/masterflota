@@ -75,7 +75,16 @@ cd /var/www/Fleet-Manager
 bash deploy/scripts/deploy.sh --init
 ```
 
-`--init` applies `sql/schema.sql` on an empty database, then all pending migrations.
+`--init` applies `sql/schema.sql` on an empty database, then **baselines** all existing migration files (marks them applied). Do not re-run old ALTERs against a modern schema.
+
+If you already applied `schema.sql` but migrations failed mid-way:
+
+```bash
+cd /var/www/Fleet-Manager/backend
+node scripts/apply-all-migrations.mjs --baseline
+```
+
+Later deploys only run **new** migration files not yet recorded in `schema_migrations`.
 
 ## 8. Bootstrap super admin
 
@@ -125,7 +134,7 @@ Cron (daily 2am):
 | `deploy/scripts/configure-nginx.sh` | Install Nginx site with your IP/domain |
 | `deploy/scripts/deploy.sh` | build, migrate, restart services |
 | `deploy/scripts/backup.sh` | pg_dump + uploads archive |
-| `backend/scripts/apply-all-migrations.mjs` | ordered SQL migrations |
+| `backend/scripts/apply-all-migrations.mjs` | Fresh: schema + baseline; updates: pending only |
 
 ## Security notes
 

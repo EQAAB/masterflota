@@ -22,6 +22,7 @@
     "migrate:068": "node scripts/apply-migration-068.mjs",
     "migrate:all": "node scripts/apply-all-migrations.mjs",
     "migrate:init": "node scripts/apply-all-migrations.mjs --init",
+    "migrate:baseline": "node scripts/apply-all-migrations.mjs --baseline",
     "bootstrap:super-admin": "node scripts/apply-bootstrap-super-admin.mjs",
     "audit:rentals": "node scripts/audit-rental-tables.mjs"
   },
