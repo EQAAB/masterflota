@@ -7,7 +7,7 @@ type PricingPageHeaderProps = {
   onExport: () => void;
 };
 
-export function PricingPageHeader({ canManage = true, onAdd, onExport }: PricingPageHeaderProps) {
+export function PricingPageHeader({ canManage = false, onAdd, onExport }: PricingPageHeaderProps) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>

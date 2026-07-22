@@ -67,6 +67,7 @@ export type VehicleHistoryFiltersProps = {
   onIncidentDescChange: (v: string) => void;
   onSubmitIncident: () => void;
   incidentPending: boolean;
+  canReportIncident?: boolean;
 };
 
 export function VehicleHistoryFilters({
@@ -90,6 +91,7 @@ export function VehicleHistoryFilters({
   onIncidentDescChange,
   onSubmitIncident,
   incidentPending,
+  canReportIncident = false,
 }: VehicleHistoryFiltersProps) {
   return (
     <div className="space-y-4">
@@ -179,6 +181,7 @@ export function VehicleHistoryFilters({
             <span />
           )}
 
+          {canReportIncident ? (
           <button
             type="button"
             onClick={onToggleIncident}
@@ -191,10 +194,13 @@ export function VehicleHistoryFilters({
             <AlertIcon className="h-4 w-4 shrink-0" />
             {incidentOpen ? "Cancel incident" : "Report incident"}
           </button>
+          ) : (
+            <span />
+          )}
         </div>
       </div>
 
-      {incidentOpen && (
+      {canReportIncident && incidentOpen && (
         <div className="rounded-xl border border-red-100 bg-red-50/40 p-4">
           <p className="text-sm font-medium text-red-900">Log a new incident</p>
           <p className="mt-0.5 text-xs text-red-700/80">

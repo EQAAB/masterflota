@@ -508,7 +508,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-const driverVehicleHistory = [requirePermission("drivers.edit"), handleDriverVehicleHistory];
+const driverVehicleHistory = [handleDriverVehicleHistory];
 router.get("/:id/vehicle-assignment-history", ...driverVehicleHistory);
 router.get("/:id/vehicle-history", ...driverVehicleHistory);
 

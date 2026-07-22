@@ -20,7 +20,7 @@ import { PlatformEarningsChart } from "../../components/dashboard/PlatformEarnin
 import { DashboardChartCard } from "../../components/dashboard/DashboardChartCard";
 import { buildDashboardAlerts, DashboardTopBar } from "../../components/layout/DashboardTopBar";
 import { EmptyState } from "../../components/theme/EmptyState";
-import { useCanAccessFinance, usePermission } from "../../lib/permissions";
+import { useCanAccessFinance, useCanViewPayouts, usePermission } from "../../lib/permissions";
 import { dashboardPage, dashboardSectionTitle, kpiCardHover, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 import { localIsoDate } from "../../utils/earningsImportWeek";
@@ -120,6 +120,8 @@ function AlertIcon() {
 
 export function DashboardPage() {
   const canFinance = useCanAccessFinance();
+  const canViewPayouts = useCanViewPayouts();
+  const canViewDrivers = usePermission("drivers.view");
   const canImport = usePermission("imports.create");
   const [preset, setPreset] = useState<DashboardDatePreset>("week");
   const [customDate, setCustomDate] = useState(() => localIsoDate(new Date()));
@@ -263,6 +265,7 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {canViewDrivers ? (
             <Link to="/earnings/loans" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Outstanding loans"
@@ -272,6 +275,16 @@ export function DashboardPage() {
                 icon={<AlertIcon />}
               />
             </Link>
+            ) : (
+              <KpiStatCard
+                title="Outstanding loans"
+                value={formatCurrency(stats.outstandingLoans ?? 0)}
+                subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
+                trend={(stats.outstandingLoans ?? 0) > 0 ? { value: "open balance", positive: false } : undefined}
+                icon={<AlertIcon />}
+              />
+            )}
+            {canViewPayouts ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Platform debt"
@@ -281,6 +294,15 @@ export function DashboardPage() {
                 icon={<CurrencyIcon />}
               />
             </Link>
+            ) : (
+              <KpiStatCard
+                title="Platform debt"
+                value={formatCurrency(stats.outstandingDebt ?? 0)}
+                subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
+                trend={(stats.outstandingDebt ?? 0) > 0 ? { value: "collectible", positive: false } : undefined}
+                icon={<CurrencyIcon />}
+              />
+            )}
             <Link to="/rentals/bookings" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Overdue rentals"
@@ -314,12 +336,22 @@ export function DashboardPage() {
             )}
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {canFinance ? (
             <KpiStatCard
               title="Commission earned"
               value={formatCurrency(stats.totalCommissionEarned ?? 0)}
               subtitle="Paid / approved weeks in period"
               icon={<CurrencyIcon />}
             />
+            ) : (
+              <KpiStatCard
+                title="Commission earned"
+                value="—"
+                subtitle="Requires earnings access"
+                icon={<CurrencyIcon />}
+              />
+            )}
+            {canViewPayouts ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Pending payments"
@@ -328,6 +360,15 @@ export function DashboardPage() {
                 icon={<CurrencyIcon />}
               />
             </Link>
+            ) : (
+              <KpiStatCard
+                title="Pending payments"
+                value="—"
+                subtitle="Requires payout access"
+                icon={<CurrencyIcon />}
+              />
+            )}
+            {canViewPayouts ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Vehicle rental fees"
@@ -336,6 +377,14 @@ export function DashboardPage() {
                 icon={<VehicleIcon />}
               />
             </Link>
+            ) : (
+              <KpiStatCard
+                title="Vehicle rental fees"
+                value="—"
+                subtitle="Requires payout access"
+                icon={<VehicleIcon />}
+              />
+            )}
           </div>
         </section>
 
@@ -386,7 +435,7 @@ export function DashboardPage() {
                       Import earnings
                     </Link>
                   )}
-                  {canFinance && (
+                  {canViewPayouts && (
                     <Link to="/earnings/payouts" className={btnSecondary}>
                       Payouts
                     </Link>

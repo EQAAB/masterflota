@@ -18,7 +18,7 @@ type PaymentsTableProps = {
 
 const MANAGE_PAYMENT_MENU_IDS = new Set(["edit", "paid", "refund"]);
 
-export function PaymentsTable({ rows, loading, canManage = true, onRecord, onEdit }: PaymentsTableProps) {
+export function PaymentsTable({ rows, loading, canManage = false, onRecord, onEdit }: PaymentsTableProps) {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);

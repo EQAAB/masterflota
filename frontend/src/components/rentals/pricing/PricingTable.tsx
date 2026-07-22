@@ -16,7 +16,7 @@ type PricingTableProps = {
   onEdit: (row: RentalPricing) => void;
 };
 
-export function PricingTable({ rows, loading, canManage = true, onAdd, onEdit }: PricingTableProps) {
+export function PricingTable({ rows, loading, canManage = false, onAdd, onEdit }: PricingTableProps) {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);

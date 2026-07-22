@@ -92,6 +92,8 @@ export function VehicleDetailPage() {
   const maintenanceList = maintenanceRes?.data ?? [];
   const driversForAssign = driversRes?.data ?? [];
   const canEdit = usePermission("vehicles.edit");
+  const canAssign = usePermission("vehicles.assign");
+  const canView = usePermission("vehicles.view");
 
   const assignDriverMutation = useMutation({
     mutationFn: (driverId: string) => assignDriverToVehicle(id!, driverId),
@@ -247,7 +249,7 @@ export function VehicleDetailPage() {
               </dl>
             </section>
 
-            {canEdit && (
+            {canAssign && (
               <section className={cardClass}>
                 <h2 className={sectionTitleClass}>Driver assignment</h2>
                 {v.current_driver_id ? (
@@ -297,7 +299,7 @@ export function VehicleDetailPage() {
               </dl>
             </section>
 
-            {canEdit && id && (
+            {canView && id && (
               <VehicleAssignmentHistoryPanel mode="vehicle" entityId={id} title="Driver history" />
             )}
 

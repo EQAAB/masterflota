@@ -697,8 +697,8 @@ async function handleDeleteEarningsImport(req: Request, res: Response) {
   }
 }
 
-router.delete("/import/:id", requirePermission("imports.delete"), handleDeleteEarningsImport);
-router.delete("/imports/:id", requirePermission("imports.delete"), handleDeleteEarningsImport);
+router.delete("/import/:id", requirePermission("imports.delete", "imports.create"), handleDeleteEarningsImport);
+router.delete("/imports/:id", requirePermission("imports.delete", "imports.create"), handleDeleteEarningsImport);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

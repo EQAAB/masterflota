@@ -24,7 +24,7 @@ export function AvailabilityPageHeader({
   onViewChange,
   onBlockDates,
   onQuickWeekly,
-  canManage = true,
+  canManage = false,
 }: AvailabilityPageHeaderProps) {
   return (
     <header className="mb-6 space-y-4">

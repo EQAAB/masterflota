@@ -8,7 +8,7 @@ import {
   type AssignmentHistoryStatus,
   type VehicleAssignmentHistoryRow,
 } from "../../api/vehicleAssignmentHistory";
-import { usePermission } from "../../lib/permissions";
+import { useAnyPermission, useCanViewPayouts } from "../../lib/permissions";
 import { formatCurrency } from "../../utils/currency";
 
 type PanelMode = "driver" | "vehicle";
@@ -47,7 +47,10 @@ export function VehicleAssignmentHistoryPanel({
   entityId: string;
   title: string;
 }) {
-  const canView = usePermission("vehicles.view");
+  const canView = useAnyPermission(
+    mode === "driver" ? "drivers.view" : "vehicles.view",
+  );
+  const canViewPayouts = useCanViewPayouts();
 
   const [status, setStatus] = useState<AssignmentHistoryStatus>("all");
   const [from, setFrom] = useState("");
@@ -216,7 +219,9 @@ export function VehicleAssignmentHistoryPanel({
                   {mode === "driver" ? "Total rent paid" : "Total rent collected"}
                 </th>
                 <th className="px-3 py-2 font-semibold uppercase tracking-wide">Notes</th>
-                {mode === "driver" && <th className="px-3 py-2 font-semibold uppercase tracking-wide">Actions</th>}
+                {mode === "driver" && canViewPayouts && (
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Actions</th>
+                  )}
               </tr>
             </thead>
             <tbody>
@@ -271,7 +276,7 @@ export function VehicleAssignmentHistoryPanel({
                   <td className="max-w-[10rem] truncate px-3 py-2.5 text-ink-muted" title={row.notes ?? undefined}>
                     {row.notes || "—"}
                   </td>
-                  {mode === "driver" && (
+                  {mode === "driver" && canViewPayouts && (
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <Link
                         to={payoutPeriodLink(row)}

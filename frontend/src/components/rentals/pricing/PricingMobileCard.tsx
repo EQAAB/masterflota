@@ -18,7 +18,7 @@ type PricingMobileCardProps = {
 
 export function PricingMobileCard({
   row,
-  canManage = true,
+  canManage = false,
   onExpand,
   onActionMenuToggle,
   isMenuOpen,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useAnyPermission, useCanAccessFinance, useCanViewImports, usePermission } from "../../lib/permissions";
+import { useAnyPermission, useCanViewEarningsOverview, useCanViewImports, useCanViewPayouts, usePermission } from "../../lib/permissions";
 import { isPlatformMode, isPlatformSuperAdmin } from "../../lib/platform";
 import { useAuthStore } from "../../store/authStore";
 import { useOrgStore } from "../../store/orgStore";
@@ -10,15 +10,18 @@ import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
 
 function buildEarningsSubItems(opts: {
-  canAccessFinance: boolean;
+  canViewEarningsOverview: boolean;
+  canViewPayouts: boolean;
   canViewImports: boolean;
   canViewDrivers: boolean;
   canViewReports: boolean;
   canSettleSubcontractors: boolean;
 }) {
   const items: { to: string; label: string; exact?: boolean }[] = [];
-  if (opts.canAccessFinance) {
+  if (opts.canViewEarningsOverview) {
     items.push({ to: "/earnings", label: "Overview", exact: true });
+  }
+  if (opts.canViewPayouts) {
     items.push({ to: "/earnings/payouts", label: "Payouts" });
   }
   if (opts.canViewImports) {
@@ -296,7 +299,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const activeOrgId = useOrgStore((s) => s.activeOrgId);
   const platformMode = isPlatformMode(user, activeOrgId);
   const homePath = platformMode ? "/platform" : "/dashboard";
-  const showFinanceNav = useCanAccessFinance();
+  const canViewEarningsOverview = useCanViewEarningsOverview();
+  const canViewPayouts = useCanViewPayouts();
   const canViewImports = useCanViewImports();
   const canViewSubcontractors = usePermission("subcontractors.view");
   const canViewDrivers = usePermission("drivers.view");
@@ -306,7 +310,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewReports = usePermission("reports.view");
   const canSettleSubcontractors = usePermission("subcontractors.settle");
   const earningsSubItems = buildEarningsSubItems({
-    canAccessFinance: showFinanceNav,
+    canViewEarningsOverview,
+    canViewPayouts,
     canViewImports,
     canViewDrivers,
     canViewReports,

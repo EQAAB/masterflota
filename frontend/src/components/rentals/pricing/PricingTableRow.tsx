@@ -27,7 +27,7 @@ type PricingTableRowProps = {
 export function PricingTableRow({
   row,
   expanded,
-  canManage = true,
+  canManage = false,
   onToggleExpand,
   onActionMenuToggle,
   isMenuOpen,

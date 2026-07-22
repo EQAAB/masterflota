@@ -55,6 +55,7 @@ function EmptyState() {
 }
 
 export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
+  const canView = usePermission("vehicles.view");
   const canEdit = usePermission("vehicles.edit");
   const qc = useQueryClient();
 
@@ -81,13 +82,13 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
   const historyQuery = useQuery({
     queryKey: ["vehicle-history", vehicleId, filters],
     queryFn: () => getVehicleHistory(vehicleId, filters).then((r) => r.data.rows),
-    enabled: !!vehicleId && canEdit,
+    enabled: !!vehicleId && canView,
   });
 
   const driversQuery = useQuery({
     queryKey: ["drivers", "list-short"],
     queryFn: () => getDrivers({ limit: 500 }).then((r) => r.data),
-    enabled: canEdit,
+    enabled: canView,
   });
 
   const incidentMut = useMutation({
@@ -104,7 +105,7 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
     },
   });
 
-  if (!canEdit) {
+  if (!canView) {
     return <p className="text-sm text-ink-muted">You do not have access to vehicle history.</p>;
   }
 
@@ -160,6 +161,7 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
         onIncidentDescChange={setIncidentDesc}
         onSubmitIncident={() => incidentMut.mutate()}
         incidentPending={incidentMut.isPending}
+        canReportIncident={canEdit}
       />
 
       {historyQuery.isLoading && <TimelineSkeleton />}

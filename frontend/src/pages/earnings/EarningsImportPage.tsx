@@ -403,7 +403,8 @@ export function EarningsImportPage() {
           rows={importsQuery.data?.items ?? []}
           isLoading={importsQuery.isLoading}
           busy={busy}
-          isAdmin={canDeleteImport}
+          canDeleteEmptyImport={canDeleteImport || canImport}
+          canRevertImport={canDeleteImport}
           canResync={canAdjustPayouts}
           onResync={() => syncMut.mutate()}
           resyncPending={syncMut.isPending}

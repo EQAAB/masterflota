@@ -15,7 +15,7 @@ import {
   PLATFORM_ID_LABELS,
 } from "../../constants/platformIds";
 import { DriverAvatar } from "../../components/drivers/DriverAvatar";
-import { usePermission } from "../../lib/permissions";
+import { usePermission, useCanViewPayouts } from "../../lib/permissions";
 import { getVehicles, type VehicleListItem } from "../../api/vehicles";
 import { assignVehicleToDriver, unassignDriverVehicle } from "../../api/vehicleAssignments";
 import { DocumentUpload } from "../../components/documents/DocumentUpload";
@@ -199,6 +199,9 @@ export function DriverDetailPage() {
 
   const canEdit = usePermission("drivers.edit");
   const canDelete = usePermission("drivers.delete");
+  const canAssignVehicle = usePermission("drivers.assign_vehicle");
+  const canViewDriver = usePermission("drivers.view");
+  const canViewPayouts = useCanViewPayouts();
 
   if (!id) {
     return (
@@ -436,7 +439,7 @@ export function DriverDetailPage() {
                     {d.current_vehicle_make ?? ""} {d.current_vehicle_model ?? ""}
                     {d.current_vehicle_license_plate ? ` (${d.current_vehicle_license_plate})` : ""}
                   </Link>
-                  {canEdit && (
+                  {canAssignVehicle && (
                     <button
                       type="button"
                       onClick={() => unassignMutation.mutate()}
@@ -450,7 +453,7 @@ export function DriverDetailPage() {
               ) : (
                 <div className="flex flex-wrap items-center gap-2.5">
                   <p className="text-sm text-ink-muted">No vehicle assigned.</p>
-                  {canEdit && (
+                  {canAssignVehicle && (
                     <button
                       type="button"
                       onClick={() => setAssignOpen(true)}
@@ -463,7 +466,7 @@ export function DriverDetailPage() {
               )}
             </section>
 
-            {canEdit && id && (
+            {canViewDriver && id && (
               <VehicleAssignmentHistoryPanel mode="driver" entityId={id} title="Vehicle history" />
             )}
 
@@ -516,7 +519,7 @@ export function DriverDetailPage() {
 
             {id && <DriverRecurringFeesPanel driverId={id} canEdit={canEdit} />}
 
-            {id && (
+            {id && canViewDriver && (
               <DriverLoanSummaryCard
                 driverId={id}
                 driverFirstName={d.first_name}
@@ -524,6 +527,7 @@ export function DriverDetailPage() {
               />
             )}
 
+            {canViewPayouts && (
             <section className={cardClass}>
               <h2 className={sectionTitleClass}>Payout history</h2>
               <p className="mb-2 text-sm text-slate-600">
@@ -536,6 +540,7 @@ export function DriverDetailPage() {
                 Open payouts for this driver
               </Link>
             </section>
+            )}
 
             <section className={cardClass}>
               <h2 className={sectionTitleClass}>Metadata</h2>
