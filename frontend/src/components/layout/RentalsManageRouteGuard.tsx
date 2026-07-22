@@ -1,12 +1,10 @@
-import { Navigate } from "react-router-dom";
-import { useCanManageRentals } from "../../lib/rentalsPermissions";
+import { PermissionRouteGuard } from "./PermissionRouteGuard";
 
+/** @deprecated Use PermissionRouteGuard with permission="rentals.manage" */
 export function RentalsManageRouteGuard({ children }: { children: React.ReactElement }) {
-  const canManage = useCanManageRentals();
-
-  if (!canManage) {
-    return <Navigate to="/rentals" replace />;
-  }
-
-  return children;
+  return (
+    <PermissionRouteGuard permission="rentals.manage" redirectTo="/rentals">
+      {children}
+    </PermissionRouteGuard>
+  );
 }

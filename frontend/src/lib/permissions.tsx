@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useAuthStore } from "../store/authStore";
+import { FINANCE_VIEW_PERMISSIONS } from "./routePermissions";
 
 export function hasPermission(permissions: string[] | undefined, name: string): boolean {
   return !!permissions?.includes(name);
@@ -8,6 +9,12 @@ export function hasPermission(permissions: string[] | undefined, name: string): 
 export function hasAnyPermission(permissions: string[] | undefined, names: string[]): boolean {
   if (!permissions?.length) return false;
   return names.some((n) => permissions.includes(n));
+}
+
+export function hasAllPermissions(permissions: string[] | undefined, names: string[]): boolean {
+  if (!names.length) return true;
+  if (!permissions?.length) return false;
+  return names.every((n) => permissions.includes(n));
 }
 
 export function useUserPermissions(): string[] {
@@ -52,5 +59,5 @@ export function Can({
 
 /** Earnings / finance module (import, payouts, reports, settlements). */
 export function useCanAccessFinance(): boolean {
-  return useAnyPermission("payouts.view", "imports.view", "imports.create", "reports.view");
+  return useAnyPermission(...FINANCE_VIEW_PERMISSIONS);
 }

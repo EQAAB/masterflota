@@ -58,6 +58,10 @@ export function VehiclesList({
 }: VehiclesListProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const canCreate = usePermission("vehicles.create");
+  const canEdit = usePermission("vehicles.edit");
+  const canAssign = usePermission("vehicles.assign");
+  const canImport = usePermission("imports.create");
   const canDelete = usePermission("vehicles.delete");
 
   const rows = vehicles ?? [];
@@ -130,6 +134,8 @@ export function VehiclesList({
   const openMenuItems = useMemo(() => {
     if (!openMenuVehicle) return [];
     return buildVehicleActionMenuItems({
+      canEdit,
+      canAssign,
       canDelete,
       onView: () => {
         closeActionMenu();
@@ -154,7 +160,7 @@ export function VehiclesList({
         onDeleteRequest(openMenuVehicle);
       },
     });
-  }, [openMenuVehicle, closeActionMenu, navigate, canDelete, onDeleteRequest]);
+  }, [openMenuVehicle, closeActionMenu, navigate, canEdit, canAssign, canDelete, onDeleteRequest]);
 
   const toggleRow = (id: string) => {
     setSelectedIds((prev) => {
@@ -259,6 +265,8 @@ export function VehiclesList({
         onImport={() => importInputRef.current?.click()}
         importBusy={importMutation.isPending}
         exportDisabled={rows.length === 0}
+        canCreate={canCreate}
+        canImport={canImport}
       />
 
       {importMessage && (
@@ -313,6 +321,7 @@ export function VehiclesList({
             getHeaderProps={getHeaderProps}
             openMenuRowId={openMenuRowId}
             onActionMenuToggle={handleActionMenuToggle}
+            canCreate={canCreate}
             embedded
           />
           {!isLoading && !isError && filteredCount > 0 && (

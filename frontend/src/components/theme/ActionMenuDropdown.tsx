@@ -15,6 +15,10 @@ export type ActionMenuItemConfig = {
   hidden?: boolean;
 };
 
+export function actionMenuHasVisibleItems(items: ActionMenuItemConfig[]): boolean {
+  return items.some((item) => !item.hidden);
+}
+
 export type ActionMenuDropdownProps = {
   open: boolean;
   anchorEl: HTMLElement | null;

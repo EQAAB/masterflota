@@ -34,6 +34,7 @@ type VehiclesTableProps = {
   getHeaderProps: (field: string) => SortableHeaderProps;
   openMenuRowId: string | null;
   onActionMenuToggle: (vehicleId: string, event: React.MouseEvent<HTMLButtonElement>) => void;
+  canCreate?: boolean;
   embedded?: boolean;
 };
 
@@ -51,6 +52,7 @@ export function VehiclesTable({
   getHeaderProps,
   openMenuRowId,
   onActionMenuToggle,
+  canCreate = false,
   embedded = false,
 }: VehiclesTableProps) {
   const shell = embedded ? "" : driversTableCard;
@@ -86,7 +88,7 @@ export function VehiclesTable({
         <EmptyState
           title="No vehicles yet"
           description="Add your first vehicle to start managing fleet assignments and availability."
-          action={{ label: "Add Vehicle", to: "/vehicles/new" }}
+          action={canCreate ? { label: "Add Vehicle", to: "/vehicles/new" } : undefined}
           className="border-0 py-16"
         />
       </div>

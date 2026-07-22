@@ -17,9 +17,18 @@ type DriversPageHeaderProps = {
   onImport: () => void;
   importBusy?: boolean;
   exportDisabled?: boolean;
+  canCreate?: boolean;
+  canImport?: boolean;
 };
 
-export function DriversPageHeader({ onExport, onImport, importBusy, exportDisabled }: DriversPageHeaderProps) {
+export function DriversPageHeader({
+  onExport,
+  onImport,
+  importBusy,
+  exportDisabled,
+  canCreate = false,
+  canImport = false,
+}: DriversPageHeaderProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,17 +57,19 @@ export function DriversPageHeader({ onExport, onImport, importBusy, exportDisabl
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
           actions={
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={onImport}
-                disabled={importBusy}
-                className={`${btnSecondary} gap-2 text-sm`}
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
-                </svg>
-                Import CSV
-              </button>
+              {canImport && (
+                <button
+                  type="button"
+                  onClick={onImport}
+                  disabled={importBusy}
+                  className={`${btnSecondary} gap-2 text-sm`}
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
+                  </svg>
+                  Import CSV
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onExport}
@@ -68,9 +79,11 @@ export function DriversPageHeader({ onExport, onImport, importBusy, exportDisabl
                 <ExportIcon className="h-4 w-4" />
                 Export
               </button>
-              <Link to="/drivers/new" className={`${btnPrimary} text-sm`}>
-                Add driver
-              </Link>
+              {canCreate && (
+                <Link to="/drivers/new" className={`${btnPrimary} text-sm`}>
+                  Add driver
+                </Link>
+              )}
               <button
                 type="button"
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all duration-200 ease-out hover:bg-surface hover:text-ink"

@@ -11,6 +11,7 @@ import {
 import { useDriversListFilters } from "../../hooks/useDriversListFilters";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import { exportDriversCsv } from "../../utils/exportDriversCsv";
+import { usePermission } from "../../lib/permissions";
 import { btnSecondary, btnDangerOutline, driversPage } from "../../theme/classNames";
 import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
 import { buildDriverActionMenuItems } from "./buildDriverActionMenuItems";
@@ -30,6 +31,9 @@ type DriversListProps = {
 export function DriversList({ drivers, isLoading, isError, getHeaderProps }: DriversListProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const canCreate = usePermission("drivers.create");
+  const canEdit = usePermission("drivers.edit");
+  const canImport = usePermission("imports.create");
 
   const loansSummaryQuery = useQuery({
     queryKey: ["drivers", "loans", "summary"],
@@ -116,6 +120,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
     if (!openMenuDriver) return [];
     const canSuspend = openMenuDriver.employment_status === "active";
     return buildDriverActionMenuItems({
+      canEdit,
       canSuspend,
       onViewProfile: () => {
         closeActionMenu();
@@ -130,7 +135,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
         setSuspendTarget(openMenuDriver);
       },
     });
-  }, [openMenuDriver, closeActionMenu, navigate]);
+  }, [openMenuDriver, closeActionMenu, navigate, canEdit]);
 
   const toggleRow = (id: string) => {
     setSelectedIds((prev) => {
@@ -207,6 +212,8 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
         onImport={() => importInputRef.current?.click()}
         importBusy={importMutation.isPending}
         exportDisabled={filteredDrivers.length === 0}
+        canCreate={canCreate}
+        canImport={canImport}
       />
 
       {importMessage && (
@@ -279,6 +286,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
             getHeaderProps={getHeaderProps}
             openMenuRowId={openMenuRowId}
             onActionMenuToggle={handleActionMenuToggle}
+            canCreate={canCreate}
             embedded
           />
           {!isLoading && !isError && filteredCount > 0 && (

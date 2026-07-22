@@ -7,9 +7,17 @@ import {
   FleetRouteGuard,
   PlatformRouteGuard,
 } from "./components/layout/PlatformRouteGuard";
-import { RentalsManageRouteGuard } from "./components/layout/RentalsManageRouteGuard";
+import {
+  PermissionRouteGuard,
+  type PermissionRouteGuardProps,
+} from "./components/layout/PermissionRouteGuard";
 import { RoutePageFallback } from "./components/layout/RoutePageFallback";
 import { lazyPage } from "./lib/lazyPage";
+import {
+  FINANCE_VIEW_PERMISSIONS,
+  RENTALS_VIEW_PERMISSIONS,
+  ROLES_VIEW_PERMISSIONS,
+} from "./lib/routePermissions";
 
 const LoginPage = lazyPage(() => import("./pages/auth/LoginPage"), "LoginPage");
 const DriversListPage = lazyPage(() => import("./pages/drivers/DriversListPage"), "DriversListPage");
@@ -91,7 +99,7 @@ function withSuspense(page: React.ReactNode) {
   return <Suspense fallback={<RoutePageFallback />}>{page}</Suspense>;
 }
 
-function ProtectedRoute({ children }: { children: React.ReactElement }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -99,7 +107,7 @@ function ProtectedRoute({ children }: { children: React.ReactElement }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
-function ProtectedFleetRoute({ children }: { children: React.ReactElement }) {
+function ProtectedFleetRoute({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <FleetRouteGuard>{children}</FleetRouteGuard>
@@ -107,7 +115,7 @@ function ProtectedFleetRoute({ children }: { children: React.ReactElement }) {
   );
 }
 
-function ProtectedPlatformRoute({ children }: { children: React.ReactElement }) {
+function ProtectedPlatformRoute({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <PlatformRouteGuard>{children}</PlatformRouteGuard>
@@ -115,9 +123,24 @@ function ProtectedPlatformRoute({ children }: { children: React.ReactElement }) 
   );
 }
 
-function fleetPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
+type RouteAccessOptions = Pick<
+  PermissionRouteGuardProps,
+  "permission" | "anyOf" | "allOf" | "redirectTo"
+>;
+
+function guardPage(page: React.ReactNode, access?: RouteAccessOptions) {
+  if (!access || (!access.permission && !access.anyOf?.length && !access.allOf?.length)) {
+    return page;
+  }
+  return <PermissionRouteGuard {...access}>{page}</PermissionRouteGuard>;
+}
+
+function fleetPage(
+  Page: React.LazyExoticComponent<() => React.JSX.Element>,
+  access?: RouteAccessOptions,
+) {
   return (
-    <ProtectedFleetRoute>{withSuspense(<Page />)}</ProtectedFleetRoute>
+    <ProtectedFleetRoute>{guardPage(withSuspense(<Page />), access)}</ProtectedFleetRoute>
   );
 }
 
@@ -127,8 +150,11 @@ function platformPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) 
   );
 }
 
-function settingsPage(Page: React.LazyExoticComponent<() => React.JSX.Element>) {
-  return <ProtectedRoute>{withSuspense(<Page />)}</ProtectedRoute>;
+function settingsPage(
+  Page: React.LazyExoticComponent<() => React.JSX.Element>,
+  access?: RouteAccessOptions,
+) {
+  return <ProtectedRoute>{guardPage(withSuspense(<Page />), access)}</ProtectedRoute>;
 }
 
 /** Data router (required for `useBlocker`, e.g. unsaved import navigation guard). */
@@ -142,175 +168,155 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/dashboard",
-      element: fleetPage(DashboardPage),
+      element: fleetPage(DashboardPage, { permission: "dashboard.view" }),
     },
     {
       path: "/drivers",
-      element: fleetPage(DriversListPage),
+      element: fleetPage(DriversListPage, { permission: "drivers.view" }),
     },
     {
       path: "/drivers/new",
-      element: fleetPage(AddDriverPage),
+      element: fleetPage(AddDriverPage, { permission: "drivers.create", redirectTo: "/drivers" }),
     },
     {
       path: "/drivers/:id/edit",
-      element: fleetPage(EditDriverPage),
+      element: fleetPage(EditDriverPage, { permission: "drivers.edit", redirectTo: "/drivers" }),
     },
     {
       path: "/drivers/:id",
-      element: fleetPage(DriverDetailPage),
+      element: fleetPage(DriverDetailPage, { permission: "drivers.view" }),
     },
     {
       path: "/vehicles",
-      element: fleetPage(VehiclesListPage),
+      element: fleetPage(VehiclesListPage, { permission: "vehicles.view" }),
     },
     {
       path: "/vehicles/new",
-      element: fleetPage(AddVehiclePage),
+      element: fleetPage(AddVehiclePage, { permission: "vehicles.create", redirectTo: "/vehicles" }),
     },
     {
       path: "/vehicles/:id/edit",
-      element: fleetPage(EditVehiclePage),
+      element: fleetPage(EditVehiclePage, { permission: "vehicles.edit", redirectTo: "/vehicles" }),
     },
     {
       path: "/earnings",
-      element: fleetPage(EarningsOverviewPage),
+      element: fleetPage(EarningsOverviewPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/import",
-      element: fleetPage(EarningsImportPage),
+      element: fleetPage(EarningsImportPage, { anyOf: FINANCE_VIEW_PERMISSIONS, redirectTo: "/earnings" }),
     },
     {
       path: "/design/payout-details-comparison",
-      element: fleetPage(PayoutDetailsLayoutComparisonPage),
+      element: fleetPage(PayoutDetailsLayoutComparisonPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/payouts/:driverId",
-      element: fleetPage(CombinedPayoutDetailsPage),
+      element: fleetPage(CombinedPayoutDetailsPage, { anyOf: FINANCE_VIEW_PERMISSIONS, redirectTo: "/earnings/payouts" }),
     },
     {
       path: "/earnings/payouts",
-      element: fleetPage(EarningsPayoutsPage),
+      element: fleetPage(EarningsPayoutsPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/reports",
-      element: fleetPage(EarningsReportsPage),
+      element: fleetPage(EarningsReportsPage, { permission: "reports.view", redirectTo: "/earnings" }),
     },
     {
       path: "/earnings/loans/:loanId",
-      element: fleetPage(DriverLoanDetailPage),
+      element: fleetPage(DriverLoanDetailPage, { permission: "drivers.view", redirectTo: "/earnings/loans" }),
     },
     {
       path: "/earnings/loans",
-      element: fleetPage(DriverLoansReportPage),
+      element: fleetPage(DriverLoansReportPage, { permission: "drivers.view" }),
     },
     {
       path: "/earnings/subcontractors/settlements",
-      element: fleetPage(SubcontractorSettlementsPage),
+      element: fleetPage(SubcontractorSettlementsPage, {
+        permission: "subcontractors.settle",
+        redirectTo: "/earnings",
+      }),
     },
     {
       path: "/earnings/subcontractors/settlements/:id",
-      element: fleetPage(SubcontractorSettlementDetailPage),
+      element: fleetPage(SubcontractorSettlementDetailPage, {
+        permission: "subcontractors.settle",
+        redirectTo: "/earnings/subcontractors/settlements",
+      }),
     },
     {
       path: "/subcontractors",
-      element: fleetPage(SubcontractorsListPage),
+      element: fleetPage(SubcontractorsListPage, { permission: "subcontractors.view" }),
     },
     {
       path: "/subcontractors/new",
-      element: fleetPage(SubcontractorFormPage),
+      element: fleetPage(SubcontractorFormPage, {
+        permission: "subcontractors.create",
+        redirectTo: "/subcontractors",
+      }),
     },
     {
       path: "/subcontractors/:id/edit",
-      element: fleetPage(SubcontractorFormPage),
+      element: fleetPage(SubcontractorFormPage, {
+        permission: "subcontractors.edit",
+        redirectTo: "/subcontractors",
+      }),
     },
     {
       path: "/rentals",
-      element: fleetPage(RentalDashboardPage),
+      element: fleetPage(RentalDashboardPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/bookings/new",
-      element: (
-        <ProtectedFleetRoute>
-          {withSuspense(
-            <RentalsManageRouteGuard>
-              <BookingFormPage />
-            </RentalsManageRouteGuard>,
-          )}
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(BookingFormPage, { permission: "rentals.manage", redirectTo: "/rentals/bookings" }),
     },
     {
       path: "/rentals/bookings/:id/edit",
-      element: (
-        <ProtectedFleetRoute>
-          {withSuspense(
-            <RentalsManageRouteGuard>
-              <BookingFormPage />
-            </RentalsManageRouteGuard>,
-          )}
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(BookingFormPage, { permission: "rentals.manage", redirectTo: "/rentals/bookings" }),
     },
     {
       path: "/rentals/bookings/:id",
-      element: fleetPage(BookingDetailPage),
+      element: fleetPage(BookingDetailPage, { anyOf: RENTALS_VIEW_PERMISSIONS, redirectTo: "/rentals" }),
     },
     {
       path: "/rentals/bookings",
-      element: fleetPage(BookingsListPage),
+      element: fleetPage(BookingsListPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/calendar",
-      element: fleetPage(RentalCalendarPage),
+      element: fleetPage(RentalCalendarPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/customers/new",
-      element: (
-        <ProtectedFleetRoute>
-          {withSuspense(
-            <RentalsManageRouteGuard>
-              <CustomerFormPage />
-            </RentalsManageRouteGuard>,
-          )}
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(CustomerFormPage, { permission: "rentals.manage", redirectTo: "/rentals/customers" }),
     },
     {
       path: "/rentals/customers/:id/edit",
-      element: (
-        <ProtectedFleetRoute>
-          {withSuspense(
-            <RentalsManageRouteGuard>
-              <CustomerFormPage />
-            </RentalsManageRouteGuard>,
-          )}
-        </ProtectedFleetRoute>
-      ),
+      element: fleetPage(CustomerFormPage, { permission: "rentals.manage", redirectTo: "/rentals/customers" }),
     },
     {
       path: "/rentals/customers",
-      element: fleetPage(CustomersListPage),
+      element: fleetPage(CustomersListPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/availability",
-      element: fleetPage(VehicleAvailabilityPage),
+      element: fleetPage(VehicleAvailabilityPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/pricing",
-      element: fleetPage(PricingPage),
+      element: fleetPage(PricingPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/rentals/payments",
-      element: fleetPage(PaymentsPage),
+      element: fleetPage(PaymentsPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
     },
     {
       path: "/vehicles/:id",
-      element: fleetPage(VehicleDetailPage),
+      element: fleetPage(VehicleDetailPage, { permission: "vehicles.view" }),
     },
     {
       path: "/vehicles/:id/documents",
-      element: fleetPage(VehicleDocumentsPage),
+      element: fleetPage(VehicleDocumentsPage, { permission: "vehicles.view", redirectTo: "/vehicles" }),
     },
     {
       path: "/settings/organizations",
@@ -322,19 +328,19 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/settings/users",
-      element: settingsPage(UsersPage),
+      element: settingsPage(UsersPage, { permission: "users.manage", redirectTo: "/dashboard" }),
     },
     {
       path: "/settings/roles",
-      element: settingsPage(RolesPage),
+      element: settingsPage(RolesPage, { anyOf: ROLES_VIEW_PERMISSIONS, redirectTo: "/dashboard" }),
     },
     {
       path: "/settings/audit",
-      element: settingsPage(AuditLogPage),
+      element: settingsPage(AuditLogPage, { permission: "users.manage", redirectTo: "/dashboard" }),
     },
     {
       path: "/settings/login-events",
-      element: settingsPage(LoginEventsPage),
+      element: settingsPage(LoginEventsPage, { permission: "users.manage", redirectTo: "/dashboard" }),
     },
     { path: "*", element: <DefaultAppRedirect /> },
   ],

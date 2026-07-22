@@ -39,6 +39,7 @@ type DriversTableProps = {
   getHeaderProps: (field: string) => SortableHeaderProps;
   openMenuRowId: string | null;
   onActionMenuToggle: (driverId: string, event: React.MouseEvent<HTMLButtonElement>) => void;
+  canCreate?: boolean;
   embedded?: boolean;
 };
 
@@ -56,6 +57,7 @@ export function DriversTable({
   getHeaderProps,
   openMenuRowId,
   onActionMenuToggle,
+  canCreate = false,
   embedded = false,
 }: DriversTableProps) {
   const shell = embedded ? "" : driversTableCard;
@@ -91,7 +93,7 @@ export function DriversTable({
         <EmptyState
           title="No drivers yet"
           description="Add your first driver to start managing fleet assignments and payouts."
-          action={{ label: "Add driver", to: "/drivers/new" }}
+          action={canCreate ? { label: "Add driver", to: "/drivers/new" } : undefined}
           className="border-0 py-16"
         />
       </div>
