@@ -44,8 +44,9 @@ NODE_ENV=production
 PORT=4100
 DATABASE_URL=postgresql://fleetadmin:your-strong-db-password@127.0.0.1:5432/fleetmanager
 JWT_SECRET=<openssl rand -base64 48>
-APP_VERSION=1.0.0
 ```
+
+`APP_VERSION` is optional in `.env` — `deploy/scripts/deploy.sh` sets it automatically from the current git commit on each deploy so browsers show the “Refresh Now” banner after updates.
 
 ## 5. Frontend environment
 
@@ -110,6 +111,8 @@ Open `http://169.58.28.189/fleet/` in a browser.
 cd /var/www/Fleet-Manager
 bash deploy/scripts/deploy.sh
 ```
+
+Each run updates `APP_VERSION` in `backend/.env` to the current git commit hash and restarts the API. Users with an older tab open will see **Fleet Manager has been updated → Refresh Now**.
 
 ## Backups
 
