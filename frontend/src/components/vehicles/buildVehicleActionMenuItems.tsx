@@ -56,6 +56,8 @@ function DeleteIcon() {
 }
 
 type BuildVehicleActionMenuItemsArgs = {
+  canEdit: boolean;
+  canAssign: boolean;
   canDelete: boolean;
   onView: () => void;
   onEdit: () => void;
@@ -65,6 +67,8 @@ type BuildVehicleActionMenuItemsArgs = {
 };
 
 export function buildVehicleActionMenuItems({
+  canEdit,
+  canAssign,
   canDelete,
   onView,
   onEdit,
@@ -92,6 +96,7 @@ export function buildVehicleActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onEdit,
+      hidden: !canEdit,
     },
     {
       id: "assign-driver",
@@ -102,6 +107,7 @@ export function buildVehicleActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onAssignDriver,
+      hidden: !canAssign,
     },
     {
       id: "change-status",
@@ -112,6 +118,7 @@ export function buildVehicleActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onChangeStatus,
+      hidden: !canEdit,
     },
     {
       id: "delete-vehicle",

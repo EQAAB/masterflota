@@ -1,9 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { VehicleDocumentUpload } from "../../components/vehicles/VehicleDocumentUpload";
+import { usePermission } from "../../lib/permissions";
 import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentList";
 
 export function VehicleDocumentsPage() {
   const { id } = useParams<{ id: string }>();
+  const canEdit = usePermission("vehicles.edit");
 
   if (!id) {
     return (
@@ -29,13 +31,15 @@ export function VehicleDocumentsPage() {
         </div>
       </header>
       <main className="p-6 max-w-4xl mx-auto space-y-6">
-        <section className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-sm font-semibold text-ink mb-3">Upload new document</h2>
-          <VehicleDocumentUpload vehicleId={id} />
-        </section>
+        {canEdit && (
+          <section className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-sm font-semibold text-ink mb-3">Upload new document</h2>
+            <VehicleDocumentUpload vehicleId={id} />
+          </section>
+        )}
         <section className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-sm font-semibold text-ink mb-3">Documents</h2>
-          <VehicleDocumentList vehicleId={id} />
+          <VehicleDocumentList vehicleId={id} canEdit={canEdit} />
         </section>
       </main>
     </div>

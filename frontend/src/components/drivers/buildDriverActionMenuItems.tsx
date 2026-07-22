@@ -39,6 +39,7 @@ function SuspendIcon() {
 }
 
 type BuildDriverActionMenuItemsArgs = {
+  canEdit: boolean;
   canSuspend: boolean;
   onViewProfile: () => void;
   onEdit: () => void;
@@ -46,6 +47,7 @@ type BuildDriverActionMenuItemsArgs = {
 };
 
 export function buildDriverActionMenuItems({
+  canEdit,
   canSuspend,
   onViewProfile,
   onEdit,
@@ -71,6 +73,7 @@ export function buildDriverActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onEdit,
+      hidden: !canEdit,
     },
     {
       id: "suspend-driver",
@@ -81,7 +84,7 @@ export function buildDriverActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onSuspend,
-      disabled: !canSuspend,
+      hidden: !canEdit || !canSuspend,
     },
   ];
 }

@@ -8,6 +8,7 @@ import {
   type VehicleDocument,
 } from "../../api/vehicleDocuments";
 import { VEHICLE_DOCUMENT_LABELS, type VehicleDocumentType } from "../../constants/vehicleDocumentTypes";
+import { usePermission } from "../../lib/permissions";
 
 const DOC_TYPE_COLORS: Record<string, string> = {
   insurance: "bg-purple-100 text-purple-800",
@@ -51,9 +52,12 @@ function isExpired(expiryDate: string | null): boolean {
 
 interface VehicleDocumentListProps {
   vehicleId: string;
+  canEdit?: boolean;
 }
 
-export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
+export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: VehicleDocumentListProps) {
+  const canEditFromPermission = usePermission("vehicles.edit");
+  const canEdit = canEditProp ?? canEditFromPermission;
   const queryClient = useQueryClient();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -122,7 +126,11 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
             <FileIcon className="h-5 w-5" />
           </span>
           <p className="text-sm font-medium text-slate-800">No vehicle documents yet</p>
-          <p className="mt-1 text-sm text-slate-500">Upload the first document using the form above.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canEdit
+              ? "Upload the first document using the form above."
+              : "No documents have been uploaded for this vehicle yet."}
+          </p>
         </div>
       )}
       {!isLoading && !isError && docs.length > 0 && (
@@ -223,23 +231,27 @@ export function VehicleDocumentList({ vehicleId }: VehicleDocumentListProps) {
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
-                        <div className="flex flex-wrap items-center gap-3 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => verifyMutation.mutate({ docId: doc.id, verified: !doc.is_verified })}
-                            disabled={verifyMutation.isPending}
-                            className="font-medium text-emerald-700 hover:text-emerald-800 disabled:opacity-60"
-                          >
-                            {doc.is_verified ? "Mark unverified" : "Mark verified"}
+                        {canEdit ? (
+                          <div className="flex flex-wrap items-center gap-3 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => verifyMutation.mutate({ docId: doc.id, verified: !doc.is_verified })}
+                              disabled={verifyMutation.isPending}
+                              className="font-medium text-emerald-700 hover:text-emerald-800 disabled:opacity-60"
+                            >
+                              {doc.is_verified ? "Mark unverified" : "Mark verified"}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirm(doc.id)}
-                            className="font-medium text-red-600 hover:text-red-800"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteConfirm(doc.id)}
+                              className="font-medium text-red-600 hover:text-red-800"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-ink-muted">—</span>
+                        )}
                       </td>
                     </tr>
                   );

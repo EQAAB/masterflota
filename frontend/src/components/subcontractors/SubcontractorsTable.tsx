@@ -23,6 +23,7 @@ type SubcontractorsTableProps = {
   showNoMatchEmpty: boolean;
   openMenuRowId: string | null;
   onActionMenuToggle: (subcontractorId: string, event: React.MouseEvent<HTMLButtonElement>) => void;
+  canCreate?: boolean;
   embedded?: boolean;
 };
 
@@ -35,6 +36,7 @@ export function SubcontractorsTable({
   showNoMatchEmpty,
   openMenuRowId,
   onActionMenuToggle,
+  canCreate = false,
   embedded = false,
 }: SubcontractorsTableProps) {
   const shell = embedded ? "" : "overflow-hidden rounded-2xl border border-border/80 bg-white shadow-sm";
@@ -70,7 +72,7 @@ export function SubcontractorsTable({
         <EmptyState
           title="No subcontractors yet"
           description="Add your first subcontractor to start managing B2B fleet partnerships."
-          action={{ label: "Add subcontractor", to: "/subcontractors/new" }}
+          action={canCreate ? { label: "Add subcontractor", to: "/subcontractors/new" } : undefined}
           className="border-0 py-16"
         />
       </div>

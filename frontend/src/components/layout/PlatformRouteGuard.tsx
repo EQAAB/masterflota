@@ -3,7 +3,7 @@ import { isPlatformMode, isPlatformSuperAdmin } from "../../lib/platform";
 import { useAuthStore } from "../../store/authStore";
 import { useOrgStore } from "../../store/orgStore";
 
-export function FleetRouteGuard({ children }: { children: React.ReactElement }) {
+export function FleetRouteGuard({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const activeOrgId = useOrgStore((s) => s.activeOrgId);
 
@@ -14,7 +14,7 @@ export function FleetRouteGuard({ children }: { children: React.ReactElement }) 
   return children;
 }
 
-export function PlatformRouteGuard({ children }: { children: React.ReactElement }) {
+export function PlatformRouteGuard({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const activeOrgId = useOrgStore((s) => s.activeOrgId);
 

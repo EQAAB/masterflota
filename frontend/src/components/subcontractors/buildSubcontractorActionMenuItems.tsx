@@ -41,6 +41,7 @@ function SuspendIcon() {
 }
 
 type BuildSubcontractorActionMenuItemsArgs = {
+  canEdit: boolean;
   isActive: boolean;
   onViewProfile: () => void;
   onEdit: () => void;
@@ -48,6 +49,7 @@ type BuildSubcontractorActionMenuItemsArgs = {
 };
 
 export function buildSubcontractorActionMenuItems({
+  canEdit,
   isActive,
   onViewProfile,
   onEdit,
@@ -73,6 +75,7 @@ export function buildSubcontractorActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onEdit,
+      hidden: !canEdit,
     },
     {
       id: "suspend-subcontractor",
@@ -83,7 +86,7 @@ export function buildSubcontractorActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onSuspend,
-      hidden: !isActive,
+      hidden: !canEdit || !isActive,
     },
   ];
 }

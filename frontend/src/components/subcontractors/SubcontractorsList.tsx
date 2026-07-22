@@ -5,6 +5,7 @@ import type { Subcontractor } from "../../api/subcontractors";
 import { updateSubcontractor } from "../../api/subcontractors";
 import { useUrlPagination } from "../../hooks/useUrlPagination";
 import { useSubcontractorsListFilters } from "../../hooks/useSubcontractorsListFilters";
+import { usePermission } from "../../lib/permissions";
 import { exportSubcontractorsCsv } from "../../utils/exportSubcontractorsCsv";
 import { btnSecondary, btnDangerOutline, driversPage } from "../../theme/classNames";
 import { ActionMenuDropdown } from "../theme/ActionMenuDropdown";
@@ -24,6 +25,8 @@ type SubcontractorsListProps = {
 export function SubcontractorsList({ subcontractors, isLoading, isError }: SubcontractorsListProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const canCreate = usePermission("subcontractors.create");
+  const canEdit = usePermission("subcontractors.edit");
   const { page, limit, setPage, setLimit } = useUrlPagination();
   const filters = useSubcontractorsListFilters(subcontractors);
 
@@ -101,6 +104,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
     if (!openMenuSubcontractor) return [];
     const isActive = openMenuSubcontractor.status === "active";
     return buildSubcontractorActionMenuItems({
+      canEdit,
       isActive,
       onViewProfile: () => {
         closeActionMenu();
@@ -115,7 +119,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
         setSuspendTarget(openMenuSubcontractor);
       },
     });
-  }, [openMenuSubcontractor, closeActionMenu, navigate]);
+  }, [openMenuSubcontractor, closeActionMenu, navigate, canEdit]);
 
   const suspendMutation = useMutation({
     mutationFn: (sub: Subcontractor) =>
@@ -146,7 +150,11 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
 
   return (
     <>
-      <SubcontractorsPageHeader onExport={handleExport} exportDisabled={filteredSubcontractors.length === 0} />
+      <SubcontractorsPageHeader
+        onExport={handleExport}
+        exportDisabled={filteredSubcontractors.length === 0}
+        canCreate={canCreate}
+      />
 
       <div className={driversPage}>
         <SubcontractorsKpiCards subcontractors={subcontractors} />
@@ -177,6 +185,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
             showNoMatchEmpty={showNoMatchEmpty}
             openMenuRowId={openMenuRowId}
             onActionMenuToggle={handleActionMenuToggle}
+            canCreate={canCreate}
             embedded
           />
           {!isLoading && !isError && filteredCount > 0 && (

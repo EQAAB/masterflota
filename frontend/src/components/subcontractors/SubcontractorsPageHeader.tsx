@@ -15,9 +15,14 @@ function initials(firstName?: string, lastName?: string): string {
 type SubcontractorsPageHeaderProps = {
   onExport: () => void;
   exportDisabled?: boolean;
+  canCreate?: boolean;
 };
 
-export function SubcontractorsPageHeader({ onExport, exportDisabled }: SubcontractorsPageHeaderProps) {
+export function SubcontractorsPageHeader({
+  onExport,
+  exportDisabled,
+  canCreate = false,
+}: SubcontractorsPageHeaderProps) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,9 +60,11 @@ export function SubcontractorsPageHeader({ onExport, exportDisabled }: Subcontra
                 <ExportIcon className="h-4 w-4" />
                 Export
               </button>
-              <Link to="/subcontractors/new" className={`${btnPrimary} text-sm`}>
-                Add subcontractor
-              </Link>
+              {canCreate && (
+                <Link to="/subcontractors/new" className={`${btnPrimary} text-sm`}>
+                  Add subcontractor
+                </Link>
+              )}
               <button
                 type="button"
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all duration-200 ease-out hover:bg-surface hover:text-ink"
