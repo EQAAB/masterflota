@@ -3,7 +3,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Papa from "papaparse";
 import axios from "axios";
-import { useCanAccessFinance } from "../../lib/permissions";
+import { useCanAccessFinance, useCanAdjustPayouts, useCanApprovePayouts } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
   getEarningsPayouts,
@@ -41,6 +41,8 @@ export function CombinedPayoutDetailsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const canAccess = useCanAccessFinance();
+  const canApprove = useCanApprovePayouts();
+  const canAdjust = useCanAdjustPayouts();
   const queryClient = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -290,17 +292,18 @@ export function CombinedPayoutDetailsPage() {
           weekLoanRepayments={loanRepaymentsQuery.data ?? []}
           weekLoanRepaymentsLoading={loanRepaymentsQuery.isLoading}
           isPaying={payMut.isPending}
-          onPay={() => setPayConfirmOpen(true)}
-          onOpenDebtActions={setDebtModalRow}
-          onOpenLoanActions={() => setLoanModalOpen(true)}
-          onOpenCustomFees={setCustomFeesModalRow}
-          onOpenReleaseHold={setReleaseHoldRow}
+          onPay={canApprove ? () => setPayConfirmOpen(true) : undefined}
+          onOpenDebtActions={canAdjust ? setDebtModalRow : undefined}
+          onOpenLoanActions={canAdjust ? () => setLoanModalOpen(true) : undefined}
+          onOpenCustomFees={canAdjust ? setCustomFeesModalRow : undefined}
+          onOpenReleaseHold={canApprove ? setReleaseHoldRow : undefined}
           onDownloadReport={handleDownloadReport}
           onPrint={handlePrint}
           downloadBusy={downloadBusy}
         />
       </div>
 
+      {canApprove && (
       <ConfirmDialog
         open={payConfirmOpen}
         onClose={() => !payMut.isPending && setPayConfirmOpen(false)}
@@ -313,19 +316,25 @@ export function CombinedPayoutDetailsPage() {
           await payMut.mutateAsync();
         }}
       />
+      )}
 
+      {canAdjust && (
       <DebtActionsModal
         row={debtModalRow}
         open={debtModalRow != null}
         onClose={() => setDebtModalRow(null)}
         onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
       />
+      )}
+      {canAdjust && (
       <CustomFeesModal
         row={customFeesModalRow}
         open={customFeesModalRow != null}
         onClose={() => setCustomFeesModalRow(null)}
         onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
       />
+      )}
+      {canApprove && (
       <ReleaseHoldModal
         row={releaseHoldRow}
         open={releaseHoldRow != null}
@@ -335,6 +344,8 @@ export function CombinedPayoutDetailsPage() {
           setSuccessMsg("Hold released successfully.");
         }}
       />
+      )}
+      {canAdjust && (
       <LoanRepaymentModal
         row={row ?? null}
         weekStart={weekStart}
@@ -343,6 +354,7 @@ export function CombinedPayoutDetailsPage() {
         onClose={() => setLoanModalOpen(false)}
         onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
       />
+      )}
     </div>
   );
 }

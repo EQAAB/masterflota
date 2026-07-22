@@ -15,6 +15,7 @@ import { RoutePageFallback } from "./components/layout/RoutePageFallback";
 import { lazyPage } from "./lib/lazyPage";
 import {
   FINANCE_VIEW_PERMISSIONS,
+  IMPORTS_VIEW_PERMISSIONS,
   RENTALS_VIEW_PERMISSIONS,
   ROLES_VIEW_PERMISSIONS,
 } from "./lib/routePermissions";
@@ -76,6 +77,10 @@ const SubcontractorsListPage = lazyPage(
 const SubcontractorFormPage = lazyPage(
   () => import("./pages/subcontractors/SubcontractorFormPage"),
   "SubcontractorFormPage",
+);
+const SubcontractorDetailPage = lazyPage(
+  () => import("./pages/subcontractors/SubcontractorDetailPage"),
+  "SubcontractorDetailPage",
 );
 const RentalDashboardPage = lazyPage(() => import("./pages/rentals/RentalDashboardPage"), "RentalDashboardPage");
 const BookingsListPage = lazyPage(() => import("./pages/rentals/BookingsListPage"), "BookingsListPage");
@@ -204,7 +209,7 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/earnings/import",
-      element: fleetPage(EarningsImportPage, { anyOf: FINANCE_VIEW_PERMISSIONS, redirectTo: "/earnings" }),
+      element: fleetPage(EarningsImportPage, { anyOf: IMPORTS_VIEW_PERMISSIONS, redirectTo: "/earnings" }),
     },
     {
       path: "/design/payout-details-comparison",
@@ -261,6 +266,10 @@ export const appRouter = createBrowserRouter(
         permission: "subcontractors.edit",
         redirectTo: "/subcontractors",
       }),
+    },
+    {
+      path: "/subcontractors/:id",
+      element: fleetPage(SubcontractorDetailPage, { permission: "subcontractors.view" }),
     },
     {
       path: "/rentals",

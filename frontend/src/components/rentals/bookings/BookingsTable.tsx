@@ -9,7 +9,7 @@ import { buildBookingActionMenuItems } from "./buildBookingActionMenuItems";
 import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import type { BookingsDensity } from "./bookingsListUtils";
 
-const MANAGE_BOOKING_MENU_IDS = new Set(["edit", "complete", "cancel"]);
+const MANAGE_BOOKING_MENU_IDS = new Set(["edit", "complete", "cancel", "renew"]);
 
 type BookingsTableProps = {
   bookings: RentalBooking[];

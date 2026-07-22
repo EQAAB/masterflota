@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useAnyPermission, useCanAccessFinance, usePermission } from "../../lib/permissions";
+import { useAnyPermission, useCanAccessFinance, useCanViewImports, usePermission } from "../../lib/permissions";
 import { isPlatformMode, isPlatformSuperAdmin } from "../../lib/platform";
 import { useAuthStore } from "../../store/authStore";
 import { useOrgStore } from "../../store/orgStore";
@@ -11,6 +11,7 @@ import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
 
 function buildEarningsSubItems(opts: {
   canAccessFinance: boolean;
+  canViewImports: boolean;
   canViewDrivers: boolean;
   canViewReports: boolean;
   canSettleSubcontractors: boolean;
@@ -18,8 +19,10 @@ function buildEarningsSubItems(opts: {
   const items: { to: string; label: string; exact?: boolean }[] = [];
   if (opts.canAccessFinance) {
     items.push({ to: "/earnings", label: "Overview", exact: true });
-    items.push({ to: "/earnings/import", label: "Import" });
     items.push({ to: "/earnings/payouts", label: "Payouts" });
+  }
+  if (opts.canViewImports) {
+    items.push({ to: "/earnings/import", label: "Import" });
   }
   if (opts.canViewDrivers) {
     items.push({ to: "/earnings/loans", label: "Driver loans" });
@@ -294,6 +297,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const platformMode = isPlatformMode(user, activeOrgId);
   const homePath = platformMode ? "/platform" : "/dashboard";
   const showFinanceNav = useCanAccessFinance();
+  const canViewImports = useCanViewImports();
   const canViewSubcontractors = usePermission("subcontractors.view");
   const canViewDrivers = usePermission("drivers.view");
   const canViewVehicles = usePermission("vehicles.view");
@@ -303,6 +307,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canSettleSubcontractors = usePermission("subcontractors.settle");
   const earningsSubItems = buildEarningsSubItems({
     canAccessFinance: showFinanceNav,
+    canViewImports,
     canViewDrivers,
     canViewReports,
     canSettleSubcontractors,

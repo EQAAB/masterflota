@@ -43,6 +43,10 @@ type UnifiedPayoutsTableProps = {
 
   payableCount: number;
 
+  canApprove?: boolean;
+
+  canAdjust?: boolean;
+
   onPayDriver: (driverId: string) => void | Promise<void>;
 
   onPayAll: () => void | Promise<void>;
@@ -145,6 +149,10 @@ function RowActionsMenu({
 
   onOpenLoanActions,
 
+  canApprove = false,
+
+  canAdjust = false,
+
   disabled,
 
 }: {
@@ -158,6 +166,10 @@ function RowActionsMenu({
   onPay: () => void;
 
   onOpenLoanActions?: (row: ConsolidatedDriverPayout) => void;
+
+  canApprove?: boolean;
+
+  canAdjust?: boolean;
 
   disabled: boolean;
 
@@ -249,7 +261,7 @@ function RowActionsMenu({
 
             </Link>
 
-            {row.can_pay && (
+            {canApprove && row.can_pay && (
 
               <button
 
@@ -277,7 +289,7 @@ function RowActionsMenu({
 
             )}
 
-            {onOpenLoanActions && shouldShowListLoanContext(row) && (
+            {canAdjust && onOpenLoanActions && shouldShowListLoanContext(row) && (
 
               <button
 
@@ -332,6 +344,10 @@ export function UnifiedPayoutsTable({
   weekEnd,
 
   payableCount,
+
+  canApprove = false,
+
+  canAdjust = false,
 
   onPayDriver,
 
@@ -659,7 +675,7 @@ export function UnifiedPayoutsTable({
 
                       <div className="inline-flex items-center justify-end gap-1">
 
-                        {row.can_pay ? (
+                        {canApprove && row.can_pay ? (
 
                           <button
 
@@ -693,7 +709,11 @@ export function UnifiedPayoutsTable({
 
                           disabled={isPaying}
 
-                          onOpenLoanActions={onOpenLoanActions}
+                          canApprove={canApprove}
+
+                          canAdjust={canAdjust}
+
+                          onOpenLoanActions={canAdjust ? onOpenLoanActions : undefined}
 
                           onPay={() => setPayConfirm({ kind: "one", driverId: row.driver_id })}
 
@@ -741,6 +761,8 @@ export function UnifiedPayoutsTable({
 
 
 
+      {canApprove && (
+
       <footer className="fm-payout-action-bar shrink-0">
 
         <p className="min-w-0 text-sm text-ink-muted">
@@ -770,6 +792,8 @@ export function UnifiedPayoutsTable({
         </button>
 
       </footer>
+
+      )}
 
 
 

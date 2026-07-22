@@ -368,7 +368,7 @@ export function DriverDetailPage() {
                     {d.subcontractor_id && d.subcontractor_legal_name ? (
                       <>
                         <Link
-                          to={`/subcontractors/${d.subcontractor_id}/edit`}
+                          to={`/subcontractors/${d.subcontractor_id}`}
                           className="font-medium text-brand hover:text-brand-dark"
                         >
                           {d.subcontractor_legal_name}
@@ -557,7 +557,7 @@ export function DriverDetailPage() {
             )}
             <div className={cardClass}>
               <h2 className={sectionTitleClass}>Documents</h2>
-              <DocumentList driverId={id} />
+              <DocumentList driverId={id} canEdit={canEdit} />
             </div>
           </div>
         )}

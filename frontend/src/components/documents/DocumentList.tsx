@@ -8,6 +8,7 @@ import {
   type DriverDocument,
   type DocumentType,
 } from "../../api/documents";
+import { usePermission } from "../../lib/permissions";
 
 const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   trc_card: "TRC Card",
@@ -62,9 +63,12 @@ function isExpired(expiryDate: string | null): boolean {
 
 interface DocumentListProps {
   driverId: string;
+  canEdit?: boolean;
 }
 
-export function DocumentList({ driverId }: DocumentListProps) {
+export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListProps) {
+  const canEditFromPermission = usePermission("drivers.edit");
+  const canEdit = canEditProp ?? canEditFromPermission;
   const queryClient = useQueryClient();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -187,45 +191,49 @@ export function DocumentList({ driverId }: DocumentListProps) {
             >
               Download
             </button>
-            <button
-              type="button"
-              onClick={() =>
-                verifyMutation.mutate({
-                  docId: doc.id,
-                  verified: !doc.is_verified,
-                })
-              }
-              disabled={verifyMutation.isPending}
-              className="text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-60"
-            >
-              {doc.is_verified ? "Unverify" : "Verify"}
-            </button>
-            {deleteConfirm === doc.id ? (
+            {canEdit && (
               <>
                 <button
                   type="button"
-                  onClick={() => deleteMutation.mutate(doc.id)}
-                  disabled={deleteMutation.isPending}
-                  className="text-sm font-medium text-red-600 hover:text-red-800"
+                  onClick={() =>
+                    verifyMutation.mutate({
+                      docId: doc.id,
+                      verified: !doc.is_verified,
+                    })
+                  }
+                  disabled={verifyMutation.isPending}
+                  className="text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-60"
                 >
-                  Confirm delete
+                  {doc.is_verified ? "Unverify" : "Verify"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirm(null)}
-                  className="text-sm text-ink-muted hover:text-ink"
-                >
-                  Cancel
-                </button>
+                {deleteConfirm === doc.id ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => deleteMutation.mutate(doc.id)}
+                      disabled={deleteMutation.isPending}
+                      className="text-sm font-medium text-red-600 hover:text-red-800"
+                    >
+                      Confirm delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm(null)}
+                      className="text-sm text-ink-muted hover:text-ink"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteConfirm(doc.id)}
+                    className="text-sm font-medium text-red-600 hover:text-red-800"
+                  >
+                    Delete
+                  </button>
+                )}
               </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setDeleteConfirm(doc.id)}
-                className="text-sm font-medium text-red-600 hover:text-red-800"
-              >
-                Delete
-              </button>
             )}
           </div>
         </div>

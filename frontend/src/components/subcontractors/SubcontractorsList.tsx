@@ -108,7 +108,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
       isActive,
       onViewProfile: () => {
         closeActionMenu();
-        navigate(`/subcontractors/${openMenuSubcontractor.id}/edit`);
+        navigate(`/subcontractors/${openMenuSubcontractor.id}`);
       },
       onEdit: () => {
         closeActionMenu();
