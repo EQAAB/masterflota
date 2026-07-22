@@ -13,9 +13,18 @@ import {
   type RentalPayment,
 } from "../../api/rentals";
 import { addDaysToDate } from "../../components/rentals/booking-form/bookingFormUtils";
+import { WEEKLY_RENTAL_RENEWAL_DAYS } from "../../components/rentals/booking-form/bookingFormConstants";
 import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
-import { bookingStatusClass, formatBookingStatus } from "../../components/rentals/rentalStatus";
+import { formatPaymentDateTime } from "../../components/rentals/payments/paymentsListUtils";
+import {
+  bookingStatusClass,
+  formatBookingStatus,
+  paymentStatusLabel,
+  paymentTypeLabel,
+  rentPaymentStateClass,
+  rentPaymentStateLabel,
+} from "../../components/rentals/rentalStatus";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 
@@ -47,8 +56,33 @@ export function BookingDetailPage() {
 
   const nextEndDate = useMemo(() => {
     if (!b?.end_at) return "";
-    return addDaysToDate(b.end_at.slice(0, 10), 7);
+    return addDaysToDate(b.end_at.slice(0, 10), WEEKLY_RENTAL_RENEWAL_DAYS);
   }, [b?.end_at]);
+
+  const paymentSummary = useMemo(() => {
+    const payments = b?.payments ?? [];
+    const paidRent = payments
+      .filter((p) => p.payment_type === "rent" && p.status === "paid")
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const total = Number(b?.total_amount ?? 0);
+    let rentState: "paid" | "partial" | "unpaid" = "unpaid";
+    if (total > 0 && paidRent >= total) rentState = "paid";
+    else if (paidRent > 0) rentState = "partial";
+
+    const latestPaid = [...payments]
+      .filter((p) => p.status === "paid")
+      .sort(
+        (a, c) =>
+          new Date(c.paid_at ?? c.created_at ?? 0).getTime() -
+          new Date(a.paid_at ?? a.created_at ?? 0).getTime(),
+      )[0];
+
+    const latestPaidAt = latestPaid
+      ? formatPaymentDateTime(latestPaid.paid_at ?? latestPaid.created_at)
+      : null;
+
+    return { rentState, latestPaidAt };
+  }, [b?.payments, b?.total_amount]);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["rentals"] });
@@ -158,6 +192,21 @@ export function BookingDetailPage() {
               <dt className="text-slate-500">Deposit</dt>
               <dd className="tabular-nums">{formatCurrency(Number(b.deposit_amount))}</dd>
             </div>
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Rent payment</dt>
+              <dd className={`font-medium ${rentPaymentStateClass(paymentSummary.rentState)}`}>
+                {rentPaymentStateLabel(paymentSummary.rentState)}
+              </dd>
+            </div>
+            {paymentSummary.latestPaidAt && (
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Last payment</dt>
+                <dd>
+                  {paymentSummary.latestPaidAt.date}
+                  {paymentSummary.latestPaidAt.time ? ` · ${paymentSummary.latestPaidAt.time}` : ""}
+                </dd>
+              </div>
+            )}
           </dl>
           <div className="mt-4 flex flex-wrap gap-2">
             {canManage && b.status === "draft" && (
@@ -250,14 +299,29 @@ export function BookingDetailPage() {
           <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-ink">Payments</h2>
             <ul className="mt-3 space-y-2 text-sm">
-              {(b.payments ?? []).map((p) => (
-                <li key={p.id} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2">
-                  <span className="capitalize">
-                    {p.payment_type} · {p.status}
-                  </span>
-                  <span className="tabular-nums font-medium">{formatCurrency(Number(p.amount))}</span>
-                </li>
-              ))}
+              {(b.payments ?? []).map((p) => {
+                const dt = formatPaymentDateTime(p.paid_at ?? p.created_at);
+                return (
+                  <li
+                    key={p.id}
+                    className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {paymentTypeLabel(p.payment_type)} · {paymentStatusLabel(p.status)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {dt.date}
+                        {dt.time ? ` · ${dt.time}` : ""}
+                      </p>
+                      {p.notes ? <p className="mt-0.5 text-xs text-slate-500">{p.notes}</p> : null}
+                    </div>
+                    <span className="shrink-0 tabular-nums font-medium">
+                      {formatCurrency(Number(p.amount))}
+                    </span>
+                  </li>
+                );
+              })}
               {(b.payments ?? []).length === 0 && <li className="text-slate-500">No payments recorded.</li>}
             </ul>
             {canManage && (

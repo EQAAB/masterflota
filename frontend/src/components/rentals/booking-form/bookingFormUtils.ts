@@ -1,7 +1,7 @@
 import type { RentalQuote } from "../../../api/rentals";
 
 type RentalType = "daily" | "weekly" | "monthly";
-import { EXTRA_SERVICES } from "./bookingFormConstants";
+import { EXTRA_SERVICES, WEEKLY_RENTAL_SPAN_DAYS } from "./bookingFormConstants";
 
 export function combineDateAndTime(date: string, time: string): string | null {
   if (!date || !time) return null;
@@ -39,6 +39,10 @@ export function addDaysToDate(dateStr: string, days: number): string {
   d.setDate(d.getDate() + days);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function weeklyReturnDateFromPickup(pickupDate: string): string {
+  return addDaysToDate(pickupDate, WEEKLY_RENTAL_SPAN_DAYS);
 }
 
 export function parseStartAtParam(param: string): { date: string; time: string } {

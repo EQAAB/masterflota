@@ -39,6 +39,12 @@ export type RenewWeeklyBookingInput = {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/** Mon→Sun pay week: pickup Monday + 6 calendar days = return Sunday. */
+export const WEEKLY_RENTAL_SPAN_DAYS = 6;
+
+/** Extend an active weekly rental by one more Mon→Sun week. */
+export const WEEKLY_RENTAL_RENEWAL_DAYS = 7;
+
 export function defaultWeeklyStartAt(): Date {
   const d = new Date();
   d.setHours(10, 0, 0, 0);
@@ -92,7 +98,7 @@ export async function startWeeklyRentalQuick(
   await assertVehicleInOrg(input.vehicleId, orgId);
 
   const startAt = input.startAt ?? defaultWeeklyStartAt();
-  const endAt = input.endAt ?? addDays(startAt, 7);
+  const endAt = input.endAt ?? addDays(startAt, WEEKLY_RENTAL_SPAN_DAYS);
   if (endAt <= startAt) {
     throw new Error("End date must be after start date");
   }
@@ -145,7 +151,7 @@ export async function renewWeeklyBooking(
   }
 
   const currentEnd = new Date(booking.end_at);
-  const newEndAt = addDays(currentEnd, 7);
+  const newEndAt = addDays(currentEnd, WEEKLY_RENTAL_RENEWAL_DAYS);
   const extensionStart = currentEnd;
 
   const conflict = await checkVehicleAvailableForRental(
