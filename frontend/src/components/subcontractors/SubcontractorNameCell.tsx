@@ -17,7 +17,7 @@ export function SubcontractorNameCell({ subcontractor, displayIndex }: Subcontra
   const displayId = formatSubcontractorDisplayId(subcontractor, displayIndex);
 
   return (
-    <Link to={`/subcontractors/${subcontractor.id}/edit`} className="group flex min-w-0 items-center gap-3">
+    <Link to={`/subcontractors/${subcontractor.id}`} className="group flex min-w-0 items-center gap-3">
       <span
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${subcontractorAvatarClass(tone)}`}
         aria-hidden

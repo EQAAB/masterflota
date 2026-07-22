@@ -6,6 +6,9 @@ export const FINANCE_VIEW_PERMISSIONS = [
   "reports.view",
 ] as const;
 
+/** Earnings import page (history and/or upload). */
+export const IMPORTS_VIEW_PERMISSIONS = ["imports.view", "imports.create"] as const;
+
 /** Rentals list/detail pages (view or manage). */
 export const RENTALS_VIEW_PERMISSIONS = ["rentals.view", "rentals.manage"] as const;
 

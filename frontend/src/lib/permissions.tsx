@@ -61,3 +61,19 @@ export function Can({
 export function useCanAccessFinance(): boolean {
   return useAnyPermission(...FINANCE_VIEW_PERMISSIONS);
 }
+
+export function useCanViewImports(): boolean {
+  return useAnyPermission("imports.view", "imports.create");
+}
+
+export function useCanImportEarnings(): boolean {
+  return usePermission("imports.create");
+}
+
+export function useCanApprovePayouts(): boolean {
+  return usePermission("payouts.approve");
+}
+
+export function useCanAdjustPayouts(): boolean {
+  return usePermission("payouts.adjust");
+}

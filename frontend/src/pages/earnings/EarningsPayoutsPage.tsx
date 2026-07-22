@@ -2,23 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import { useCanAccessFinance } from "../../lib/permissions";
+import { useCanAccessFinance, useCanAdjustPayouts, useCanApprovePayouts } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
   getDebtsSummary,
   postPayAllConsolidated,
   postPayDriverConsolidated,
 } from "../../api/earnings";
-import type { PayoutListItem } from "../../api/earnings";
 import { PayoutPageSummary } from "../../components/earnings/payouts/PayoutPageSummary";
 import { PayoutUnifiedToolbar } from "../../components/earnings/payouts/PayoutUnifiedToolbar";
 import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWeekNavigator";
 import { UnifiedPayoutsTable } from "../../components/earnings/payouts/UnifiedPayoutsTable";
 import { getPreviousWeek } from "../../utils/earningsImportWeek";
-import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
-import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
 import { LoanRepaymentModal } from "../../components/earnings/LoanRepaymentModal";
-import { ReleaseHoldModal } from "../../components/earnings/ReleaseHoldModal";
 import type { ConsolidatedDriverPayout } from "../../api/earnings";
 import { getLoansSummary } from "../../api/driverLoans";
 import { LoanFleetSummaryStrip } from "../../components/drivers/LoanFleetSummaryStrip";
@@ -26,7 +22,7 @@ import { invalidateLoanQueries } from "../../components/earnings/loans/invalidat
 import {
   payoutFilterBtnSecondary,
 } from "../../components/earnings/payouts/PayoutFiltersCard";
-import { alertError, alertSuccess, btnSecondary } from "../../theme/classNames";
+import { alertError, btnSecondary } from "../../theme/classNames";
 
 function errMessage(e: unknown): string {
   if (axios.isAxiosError(e)) {
@@ -55,6 +51,8 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 export function EarningsPayoutsPage() {
   const canAccess = useCanAccessFinance();
+  const canApprove = useCanApprovePayouts();
+  const canAdjust = useCanAdjustPayouts();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const driverIdFromUrl =
@@ -71,11 +69,7 @@ export function EarningsPayoutsPage() {
   const [debouncedQ, setDebouncedQ] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [payingRowId, setPayingRowId] = useState<string | null>(null);
-  const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
-  const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
-  const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
   const [loanModalRow, setLoanModalRow] = useState<ConsolidatedDriverPayout | null>(null);
-  const [releaseHoldMsg, setReleaseHoldMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -263,7 +257,6 @@ export function EarningsPayoutsPage() {
 
       <div className="mx-auto w-full max-w-[1600px] flex-1 space-y-3 p-4 pb-20 sm:p-6 sm:space-y-4">
         {error && <div className={alertError}>{error}</div>}
-        {releaseHoldMsg && <div className={alertSuccess}>{releaseHoldMsg}</div>}
 
         {debtSummaryQuery.data && debtSummaryQuery.data.totalOutstanding > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200/70 bg-rose-50/50 px-3 py-2 text-sm">
@@ -345,6 +338,8 @@ export function EarningsPayoutsPage() {
           weekStart={weekStart}
           weekEnd={weekEnd}
           payableCount={summary?.payable_count ?? 0}
+          canApprove={canApprove}
+          canAdjust={canAdjust}
           onPayDriver={async (driverId) => {
             setPayingRowId(driverId);
             await payDriverMut.mutateAsync(driverId);
@@ -353,41 +348,10 @@ export function EarningsPayoutsPage() {
             setPayingRowId(null);
             await payAllMut.mutateAsync();
           }}
-          onOpenDebtActions={(row) => setDebtModalRow(row)}
-          onOpenLoanActions={(row) => setLoanModalRow(row)}
-          onOpenCustomFees={(row) => setCustomFeesModalRow(row)}
-          onOpenReleaseHold={(row) => setReleaseHoldRow(row)}
+          onOpenLoanActions={canAdjust ? (row) => setLoanModalRow(row) : undefined}
         />
 
-        <DebtActionsModal
-          row={debtModalRow}
-          open={debtModalRow != null}
-          onClose={() => setDebtModalRow(null)}
-          onSuccess={() => {
-            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-            void debtSummaryQuery.refetch();
-          }}
-        />
-
-        <CustomFeesModal
-          row={customFeesModalRow}
-          open={customFeesModalRow != null}
-          onClose={() => setCustomFeesModalRow(null)}
-          onSuccess={() => {
-            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-          }}
-        />
-
-        <ReleaseHoldModal
-          row={releaseHoldRow}
-          open={releaseHoldRow != null}
-          onClose={() => setReleaseHoldRow(null)}
-          onSuccess={() => {
-            void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-            setReleaseHoldMsg("Hold released successfully.");
-          }}
-        />
-
+        {canAdjust && (
         <LoanRepaymentModal
           row={loanModalRow}
           weekStart={weekStart}
@@ -398,6 +362,7 @@ export function EarningsPayoutsPage() {
             invalidateLoanQueries(queryClient);
           }}
         />
+        )}
       </div>
     </div>
   );

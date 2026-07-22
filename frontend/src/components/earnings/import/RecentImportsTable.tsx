@@ -140,6 +140,7 @@ type RecentImportsTableProps = {
   isLoading: boolean;
   busy: boolean;
   isAdmin: boolean;
+  canResync?: boolean;
   onResync: () => void;
   resyncPending: boolean;
   onDelete: (id: string) => void;
@@ -151,6 +152,7 @@ export function RecentImportsTable({
   isLoading,
   busy,
   isAdmin,
+  canResync = false,
   onResync,
   resyncPending,
   onDelete,
@@ -198,6 +200,7 @@ export function RecentImportsTable({
             {rows.length > 0 ? `${rows.length} import${rows.length === 1 ? "" : "s"} · validation & processing status` : "Track validation, processing, and completion"}
           </p>
         </div>
+        {canResync && (
         <button
           type="button"
           disabled={busy || resyncPending}
@@ -207,6 +210,7 @@ export function RecentImportsTable({
           <RefreshIcon className={`h-4 w-4 text-ink-muted ${resyncPending ? "animate-spin" : ""}`} />
           {resyncPending ? "Re-syncing…" : "Re-sync rentals"}
         </button>
+        )}
       </div>
 
       {hasFailedImports && rows.length > 0 && <ImportFailedEmptyHint />}

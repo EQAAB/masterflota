@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Papa from "papaparse";
-import { useCanAccessFinance, usePermission } from "../../lib/permissions";
+import { useCanAdjustPayouts, useCanImportEarnings, useCanViewImports, usePermission } from "../../lib/permissions";
 import {
   previewEarningsImport,
   commitEarningsImport,
@@ -51,7 +51,9 @@ function errMessage(e: unknown): string {
 }
 
 export function EarningsImportPage() {
-  const canAccess = useCanAccessFinance();
+  const canViewImports = useCanViewImports();
+  const canImport = useCanImportEarnings();
+  const canAdjustPayouts = useCanAdjustPayouts();
   const canDeleteImport = usePermission("imports.delete");
   const canManageSettings = usePermission("settings.manage");
   const queryClient = useQueryClient();
@@ -79,7 +81,7 @@ export function EarningsImportPage() {
   const importsQuery = useQuery({
     queryKey: ["earnings", "imports"],
     queryFn: () => getEarningsImports(1, 15).then((r) => r.data),
-    enabled: canAccess,
+    enabled: canViewImports,
   });
 
   const {
@@ -109,7 +111,7 @@ export function EarningsImportPage() {
   const orgImportSettingsQuery = useQuery({
     queryKey: ["earnings", "org-import-settings"],
     queryFn: () => fetchOrgImportSettings().then((r) => r.data),
-    enabled: canAccess,
+    enabled: canViewImports,
   });
 
   useEffect(() => {
@@ -308,7 +310,7 @@ export function EarningsImportPage() {
   const periodValid =
     periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
-  if (!canAccess) {
+  if (!canViewImports) {
     return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
   }
 
@@ -337,7 +339,7 @@ export function EarningsImportPage() {
           </div>
         )}
 
-        {!preview && selectedPlatform === "glovo" && (
+        {!preview && selectedPlatform === "glovo" && canImport && (
           <EarningsImportGlovoSettings
             value={glovoCommissionBaseType}
             onChange={(v) => {
@@ -349,7 +351,7 @@ export function EarningsImportPage() {
           />
         )}
 
-        {!preview ? (
+        {canImport && !preview ? (
           <EarningsImportUploadCard
             dragActive={dragActive}
             isPending={previewMut.isPending}
@@ -370,7 +372,7 @@ export function EarningsImportPage() {
             onBrowseClick={() => fileInputRef.current?.click()}
             onRetry={() => setLocalError(null)}
           />
-        ) : (
+        ) : canImport && preview ? (
           <EarningsImportPreviewPanel
             preview={preview}
             providerLabel={providerLabel}
@@ -389,15 +391,20 @@ export function EarningsImportPage() {
             onConfirm={() => setCommitImportOpen(true)}
             onCancel={() => cancelMut.mutate(preview.importId)}
           />
-        )}
+        ) : !preview ? (
+          <p className="rounded-2xl border border-border/60 bg-white px-4 py-3 text-sm text-ink-muted">
+            You can view recent imports below. Uploading new files requires import permission.
+          </p>
+        ) : null}
 
-        {!preview && <EarningsImportFeatureCards />}
+        {canImport && !preview && <EarningsImportFeatureCards />}
 
         <RecentImportsTable
           rows={importsQuery.data?.items ?? []}
           isLoading={importsQuery.isLoading}
           busy={busy}
           isAdmin={canDeleteImport}
+          canResync={canAdjustPayouts}
           onResync={() => syncMut.mutate()}
           resyncPending={syncMut.isPending}
           onDelete={setDeleteImportId}

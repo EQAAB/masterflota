@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { exitOrganizationWithCache } from "../../lib/orgContextActions";
+import { useRefreshAuthUser } from "../../hooks/useRefreshAuthUser";
 import { useOrgStore } from "../../store/orgStore";
 import { btnSecondary } from "../../theme/classNames";
 import { Sidebar } from "./Sidebar";
@@ -46,6 +47,7 @@ function OrgContextBanner() {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readCollapsed);
+  useRefreshAuthUser();
 
   useEffect(() => {
     try {
