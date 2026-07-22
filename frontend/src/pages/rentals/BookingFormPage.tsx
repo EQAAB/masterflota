@@ -22,13 +22,13 @@ import { ExtraServicesChips } from "../../components/rentals/booking-form/ExtraS
 import { RentalTypeSegment } from "../../components/rentals/booking-form/RentalTypeSegment";
 import { VehicleSelectField } from "../../components/rentals/booking-form/VehicleSelectField";
 import {
-  addDaysToDate,
   buildFormMetaPayload,
   combineDateAndTime,
   computeDisplayTotals,
   hydrateFormMeta,
   parseStartAtParam,
   splitIsoToDateTime,
+  weeklyReturnDateFromPickup,
 } from "../../components/rentals/booking-form/bookingFormUtils";
 
 const RENTAL_TYPE_STORAGE_KEY = "fm.rentalType";
@@ -55,7 +55,7 @@ export function BookingFormPage() {
   const [pickupDate, setPickupDate] = useState(initialPickup.date);
   const [pickupTime, setPickupTime] = useState(initialPickup.time);
   const [returnDate, setReturnDate] = useState(
-    initialPickup.date ? addDaysToDate(initialPickup.date, 7) : "",
+    initialPickup.date ? weeklyReturnDateFromPickup(initialPickup.date) : "",
   );
   const [returnTime, setReturnTime] = useState(initialPickup.time || "10:00");
 
@@ -112,7 +112,7 @@ export function BookingFormPage() {
   useEffect(() => {
     localStorage.setItem(RENTAL_TYPE_STORAGE_KEY, rentalType);
     if (rentalType === "weekly" && pickupDate) {
-      setReturnDate(addDaysToDate(pickupDate, 7));
+      setReturnDate(weeklyReturnDateFromPickup(pickupDate));
     }
   }, [rentalType, pickupDate]);
 

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { quickWeeklyRental, quoteRental, type RentalQuote } from "../../api/rentals";
 import { CustomerSelectField } from "./booking-form/CustomerSelectField";
 import { VehicleSelectField } from "./booking-form/VehicleSelectField";
-import { addDaysToDate, combineDateAndTime } from "./booking-form/bookingFormUtils";
+import { combineDateAndTime, weeklyReturnDateFromPickup } from "./booking-form/bookingFormUtils";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 
@@ -44,7 +44,7 @@ export function QuickWeeklyRentalModal({
   const [quote, setQuote] = useState<RentalQuote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  const returnDate = useMemo(() => addDaysToDate(pickupDate, 7), [pickupDate]);
+  const returnDate = useMemo(() => weeklyReturnDateFromPickup(pickupDate), [pickupDate]);
   const startIso = useMemo(
     () => combineDateAndTime(pickupDate, pickupTime),
     [pickupDate, pickupTime],
