@@ -1,11 +1,25 @@
 # Dependencies
 node_modules/
 
-# Environment — all .env files (never commit)
+# Environment — secrets (never commit)
 .env
-.env.*
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
 **/.env
-**/.env.*
+**/.env.local
+**/.env.*.local
+**/.env.development
+**/.env.production
+**/.env.test
+
+# Env templates (committed)
+!.env.example
+!.env.*.example
+!**/.env.example
+!**/.env.*.example
 
 # Build outputs
 build/
