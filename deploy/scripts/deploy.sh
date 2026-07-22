@@ -36,6 +36,19 @@ if [[ ! -f frontend/.env.production ]]; then
   exit 1
 fi
 
+ENV_FILE="$ROOT/backend/.env"
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  APP_VERSION="$(git -C "$ROOT" rev-parse --short HEAD)"
+else
+  APP_VERSION="$(date -u +%Y%m%d%H%M%S)"
+fi
+if grep -q '^APP_VERSION=' "$ENV_FILE"; then
+  sed -i "s/^APP_VERSION=.*/APP_VERSION=${APP_VERSION}/" "$ENV_FILE"
+else
+  printf '\nAPP_VERSION=%s\n' "$APP_VERSION" >>"$ENV_FILE"
+fi
+echo "==> APP_VERSION=${APP_VERSION} (clients see refresh banner after deploy)"
+
 echo "==> Backend: install & build"
 cd "$ROOT/backend"
 npm ci

@@ -169,7 +169,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/fleetmanager
 # JWT — use a long random string (e.g. openssl rand -base64 48)
 JWT_SECRET=replace_with_long_random_secret_at_least_32_chars
 
-# Optional: set in production for deploy versioning
+# Optional: local dev only; production deploy sets this from git in deploy.sh
 APP_VERSION=dev
 ```
 
@@ -178,7 +178,7 @@ APP_VERSION=dev
 | `PORT`         | API server port                | `4100`                   |
 | `DATABASE_URL` | PostgreSQL connection string   | *(required for DB access)* |
 | `JWT_SECRET`   | Secret for signing JWT tokens  | `dev_jwt_secret_change_me` (development only; logs a warning) |
-| `APP_VERSION`  | API version exposed to clients | `dev`                    |
+| `APP_VERSION`  | API version exposed to clients (refresh banner) | `dev` locally; **auto-set from git commit on VM deploy** |
 | `NODE_ENV`     | Runtime environment            | *(unset = development)*  |
 
 **Production:** Set `NODE_ENV=production` and a strong `JWT_SECRET` (minimum 32 characters, not a default/placeholder). The API **refuses to start** if `JWT_SECRET` is missing or insecure when `NODE_ENV=production`.
