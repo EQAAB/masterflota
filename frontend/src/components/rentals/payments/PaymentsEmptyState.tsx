@@ -5,7 +5,7 @@ type PaymentsEmptyStateProps = {
   onRecord: () => void;
 };
 
-export function PaymentsEmptyState({ canManage = true, onRecord }: PaymentsEmptyStateProps) {
+export function PaymentsEmptyState({ canManage = false, onRecord }: PaymentsEmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">

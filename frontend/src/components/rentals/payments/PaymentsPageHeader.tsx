@@ -7,7 +7,7 @@ type PaymentsPageHeaderProps = {
   onExport: () => void;
 };
 
-export function PaymentsPageHeader({ canManage = true, onRecord, onExport }: PaymentsPageHeaderProps) {
+export function PaymentsPageHeader({ canManage = false, onRecord, onExport }: PaymentsPageHeaderProps) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>

@@ -1,10 +1,15 @@
-/** Matches backend earnings router and useCanAccessFinance. */
-export const FINANCE_VIEW_PERMISSIONS = [
+/** Earnings overview (/earnings) — payouts summary and reports, not import-only access. */
+export const EARNINGS_OVERVIEW_PERMISSIONS = [
   "payouts.view",
-  "imports.view",
-  "imports.create",
+  "payouts.view_all",
   "reports.view",
 ] as const;
+
+/** Payout list and detail pages. */
+export const PAYOUTS_VIEW_PERMISSIONS = ["payouts.view", "payouts.view_all"] as const;
+
+/** Matches backend earnings router and useCanAccessFinance. */
+export const FINANCE_VIEW_PERMISSIONS = EARNINGS_OVERVIEW_PERMISSIONS;
 
 /** Earnings import page (history and/or upload). */
 export const IMPORTS_VIEW_PERMISSIONS = ["imports.view", "imports.create"] as const;

@@ -14,8 +14,9 @@ import {
 import { RoutePageFallback } from "./components/layout/RoutePageFallback";
 import { lazyPage } from "./lib/lazyPage";
 import {
-  FINANCE_VIEW_PERMISSIONS,
+  EARNINGS_OVERVIEW_PERMISSIONS,
   IMPORTS_VIEW_PERMISSIONS,
+  PAYOUTS_VIEW_PERMISSIONS,
   RENTALS_VIEW_PERMISSIONS,
   ROLES_VIEW_PERMISSIONS,
 } from "./lib/routePermissions";
@@ -205,7 +206,7 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/earnings",
-      element: fleetPage(EarningsOverviewPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
+      element: fleetPage(EarningsOverviewPage, { anyOf: EARNINGS_OVERVIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/import",
@@ -213,15 +214,15 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/design/payout-details-comparison",
-      element: fleetPage(PayoutDetailsLayoutComparisonPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
+      element: fleetPage(PayoutDetailsLayoutComparisonPage, { anyOf: PAYOUTS_VIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/payouts/:driverId",
-      element: fleetPage(CombinedPayoutDetailsPage, { anyOf: FINANCE_VIEW_PERMISSIONS, redirectTo: "/earnings/payouts" }),
+      element: fleetPage(CombinedPayoutDetailsPage, { anyOf: PAYOUTS_VIEW_PERMISSIONS, redirectTo: "/earnings/payouts" }),
     },
     {
       path: "/earnings/payouts",
-      element: fleetPage(EarningsPayoutsPage, { anyOf: FINANCE_VIEW_PERMISSIONS }),
+      element: fleetPage(EarningsPayoutsPage, { anyOf: PAYOUTS_VIEW_PERMISSIONS }),
     },
     {
       path: "/earnings/reports",

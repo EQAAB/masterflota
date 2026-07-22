@@ -26,7 +26,7 @@ export function AvailabilityVehicleList({
   from,
   to,
   loading,
-  canManage = true,
+  canManage = false,
   onBlockDates,
   onViewCalendar,
   onQuickWeekly,

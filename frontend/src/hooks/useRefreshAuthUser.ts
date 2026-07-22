@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { fetchMe } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
+import { useOrgStore } from "../store/orgStore";
 
-/** Refreshes permissions and profile from the server once per authenticated session. */
+/** Refreshes permissions and profile from the server when auth or org context changes. */
 export function useRefreshAuthUser() {
   const token = useAuthStore((s) => s.token);
+  const activeOrgId = useOrgStore((s) => s.activeOrgId);
   const updateUser = useAuthStore((s) => s.updateUser);
 
   useEffect(() => {
@@ -20,5 +22,5 @@ export function useRefreshAuthUser() {
     return () => {
       cancelled = true;
     };
-  }, [token, updateUser]);
+  }, [token, activeOrgId, updateUser]);
 }

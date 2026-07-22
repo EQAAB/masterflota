@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { useAuthStore } from "../store/authStore";
-import { FINANCE_VIEW_PERMISSIONS } from "./routePermissions";
+import {
+  EARNINGS_OVERVIEW_PERMISSIONS,
+  FINANCE_VIEW_PERMISSIONS,
+  PAYOUTS_VIEW_PERMISSIONS,
+} from "./routePermissions";
 
 export function hasPermission(permissions: string[] | undefined, name: string): boolean {
   return !!permissions?.includes(name);
@@ -57,9 +61,17 @@ export function Can({
   return allowed ? <>{children}</> : <>{fallback}</>;
 }
 
-/** Earnings / finance module (import, payouts, reports, settlements). */
+/** Earnings overview, payouts, and reports (not import-only). */
 export function useCanAccessFinance(): boolean {
   return useAnyPermission(...FINANCE_VIEW_PERMISSIONS);
+}
+
+export function useCanViewEarningsOverview(): boolean {
+  return useAnyPermission(...EARNINGS_OVERVIEW_PERMISSIONS);
+}
+
+export function useCanViewPayouts(): boolean {
+  return useAnyPermission(...PAYOUTS_VIEW_PERMISSIONS);
 }
 
 export function useCanViewImports(): boolean {

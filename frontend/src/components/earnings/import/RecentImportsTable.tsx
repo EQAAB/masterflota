@@ -139,7 +139,8 @@ type RecentImportsTableProps = {
   rows: EarningsImportListItem[];
   isLoading: boolean;
   busy: boolean;
-  isAdmin: boolean;
+  canDeleteEmptyImport: boolean;
+  canRevertImport: boolean;
   canResync?: boolean;
   onResync: () => void;
   resyncPending: boolean;
@@ -151,7 +152,8 @@ export function RecentImportsTable({
   rows,
   isLoading,
   busy,
-  isAdmin,
+  canDeleteEmptyImport,
+  canRevertImport,
   canResync = false,
   onResync,
   resyncPending,
@@ -166,14 +168,16 @@ export function RecentImportsTable({
     setMenuAnchorEl(null);
   }, []);
 
+  const showImportActions = canDeleteEmptyImport || canRevertImport;
+
   const openRow = openMenuRowId ? rows.find((r) => r.id === openMenuRowId) : undefined;
   const hasFailedImports = rows.some((r) => r.status === "failed");
 
   const menuItems = useMemo(() => {
     if (!openRow) return [];
     const processed = importProcessedRows(openRow);
-    const canDelete = processed === 0;
-    const canRevert = openRow.status === "completed" && processed > 0;
+    const canDelete = processed === 0 && canDeleteEmptyImport;
+    const canRevert = openRow.status === "completed" && processed > 0 && canRevertImport;
     return buildImportActionMenuItems({
       canDelete,
       canRevert,
@@ -186,7 +190,7 @@ export function RecentImportsTable({
         onRevert(openRow.id);
       },
     });
-  }, [openRow, closeMenu, onDelete, onRevert]);
+  }, [openRow, closeMenu, onDelete, onRevert, canDeleteEmptyImport, canRevertImport]);
 
   return (
     <section
@@ -249,7 +253,7 @@ export function RecentImportsTable({
                 <th className={`${tableHeaderCell} w-[116px]`}>
                   <span className={headerLabel}>Created</span>
                 </th>
-                {isAdmin && (
+                {showImportActions && (
                   <th className={`${tableHeaderCell} w-[48px] text-right`}>
                     <span className="sr-only">Actions</span>
                   </th>
@@ -262,9 +266,9 @@ export function RecentImportsTable({
                 const total = importTotalRows(row);
                 const pct = importProgressPct(row);
                 const status = importStatusDisplay(row.status);
-                const canDelete = processed === 0;
-                const canRevert = row.status === "completed" && processed > 0;
-                const hasActions = isAdmin && (canDelete || canRevert);
+                const canDelete = processed === 0 && canDeleteEmptyImport;
+                const canRevert = row.status === "completed" && processed > 0 && canRevertImport;
+                const hasActions = showImportActions && (canDelete || canRevert);
 
                 return (
                   <tr key={row.id} className={`bg-white ${transitionDefault} hover:bg-brand-mint/10`}>
@@ -313,7 +317,7 @@ export function RecentImportsTable({
                         </div>
                       </div>
                     </td>
-                    {isAdmin && (
+                    {showImportActions && (
                       <td className={`${tableCell} text-right !pr-3`}>
                         {hasActions ? (
                           <button

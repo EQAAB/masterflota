@@ -261,7 +261,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-router.get("/:id/history", requirePermission("vehicles.edit"), async (req, res) => {
+router.get("/:id/history", async (req, res) => {
   const orgId = req.effectiveOrgId;
   const { id } = req.params;
   if (!orgId) {
@@ -346,7 +346,7 @@ router.post("/:id/incidents", requirePermission("vehicles.edit"), async (req, re
   }
 });
 
-const vehicleDriverHistory = [requirePermission("vehicles.edit"), handleVehicleDriverHistory];
+const vehicleDriverHistory = [handleVehicleDriverHistory];
 router.get("/:id/vehicle-assignment-history", ...vehicleDriverHistory);
 router.get("/:id/driver-history", ...vehicleDriverHistory);
 

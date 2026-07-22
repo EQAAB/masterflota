@@ -35,7 +35,7 @@ export function AvailabilityVehicleCard({
   blocks,
   from,
   to,
-  canManage = true,
+  canManage = false,
   onBlockDates,
   onViewCalendar,
   onQuickWeekly,
