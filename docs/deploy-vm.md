@@ -44,7 +44,10 @@ NODE_ENV=production
 PORT=4100
 DATABASE_URL=postgresql://fleetadmin:your-strong-db-password@127.0.0.1:5432/fleetmanager
 JWT_SECRET=<openssl rand -base64 48>
+CORS_ORIGINS=http://YOUR_VM_IP_OR_DOMAIN
 ```
+
+`CORS_ORIGINS` must list every browser origin that serves the UI (comma-separated). For this VM layout, use the public URL users open in the browser, e.g. `http://169.58.28.189` (no trailing slash). Without it, the API logs a warning and allows all origins.
 
 `APP_VERSION` is optional in `.env` — `deploy/scripts/deploy.sh` sets it automatically from the current git commit on each deploy so browsers show the “Refresh Now” banner after updates.
 
