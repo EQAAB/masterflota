@@ -210,3 +210,4 @@ Cron (daily 2am):
 | `JWT_SECRET` error on start | Set `NODE_ENV=production` and a 32+ char secret in `.env` |
 | SPA 404 on refresh | Use the Nginx `@fleet_spa` fallback from `deploy/nginx/fleet-manager.conf` |
 | Import upload fails | `client_max_body_size 40m` in Nginx (already in template) |
+| CI: `dubious ownership` | `sudo chown -R deploy:deploy /var/www/Fleet-Manager` or re-run `setup-ci-deploy.sh` |
