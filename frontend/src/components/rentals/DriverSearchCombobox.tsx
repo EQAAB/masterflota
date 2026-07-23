@@ -10,12 +10,19 @@ type DriverSearchComboboxProps = {
   value: DriverListItem | null;
   onChange: (driver: DriverListItem | null) => void;
   disabled?: boolean;
+  /** When set, shows a reassign hint if the driver has a different vehicle assigned. */
+  currentVehicleId?: string;
+  hideLabel?: boolean;
+  inputClassName?: string;
 };
 
 export function DriverSearchCombobox({
   value,
   onChange,
   disabled,
+  currentVehicleId,
+  hideLabel = false,
+  inputClassName,
 }: DriverSearchComboboxProps) {
   const baseId = useId();
   const inputId = `${baseId}-input`;
@@ -93,11 +100,16 @@ export function DriverSearchCombobox({
       ? `${listboxId}-opt-${highlightedIndex}`
       : undefined;
 
+  const defaultInputClass =
+    "w-full rounded-xl border border-white/50 bg-white/70 px-3 py-2.5 text-sm text-ink shadow-inner outline-none ring-brand/30 backdrop-blur-sm placeholder:text-slate-400 focus:border-brand/30/80 focus:ring-2";
+
   return (
     <div ref={rootRef} className="relative">
-      <label htmlFor={inputId} className="block text-sm font-medium text-ink mb-1">
-        Driver *
-      </label>
+      {!hideLabel && (
+        <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink">
+          Driver *
+        </label>
+      )}
       <input
         ref={inputRef}
         id={inputId}
@@ -108,10 +120,10 @@ export function DriverSearchCombobox({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-autocomplete="list"
-        aria-required
+        aria-required={!hideLabel}
         aria-activedescendant={activeDescendantId}
         placeholder="Search by name, phone, or ID…"
-        className="w-full rounded-xl border border-white/50 bg-white/70 px-3 py-2.5 text-sm text-ink shadow-inner outline-none ring-brand/30 backdrop-blur-sm placeholder:text-slate-400 focus:border-brand/30/80 focus:ring-2"
+        className={inputClassName ?? defaultInputClass}
         value={inputValue}
         onChange={(e) => handleInputChange(e.target.value)}
         onFocus={() => setOpen(true)}
@@ -163,6 +175,9 @@ export function DriverSearchCombobox({
               !isError &&
               results.map((d, i) => {
                 const active = i === highlightedIndex;
+                const isReassign =
+                  !!d.current_vehicle_id &&
+                  (!currentVehicleId || d.current_vehicle_id !== currentVehicleId);
                 return (
                   <li
                     key={d.id}
@@ -178,8 +193,15 @@ export function DriverSearchCombobox({
                       selectDriver(d);
                     }}
                   >
-                    <div className="font-medium">
-                      {d.first_name} {d.last_name}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {d.first_name} {d.last_name}
+                      </span>
+                      {isReassign && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                          reassign
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-ink-muted tabular-nums">{d.phone}</div>
                   </li>

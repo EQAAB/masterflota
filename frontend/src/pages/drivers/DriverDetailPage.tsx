@@ -16,8 +16,9 @@ import {
 } from "../../constants/platformIds";
 import { DriverAvatar } from "../../components/drivers/DriverAvatar";
 import { usePermission, useCanViewPayouts } from "../../lib/permissions";
-import { getVehicles, type VehicleListItem } from "../../api/vehicles";
+import type { VehicleListItem } from "../../api/vehicles";
 import { assignVehicleToDriver, unassignDriverVehicle } from "../../api/vehicleAssignments";
+import { VehicleSearchCombobox } from "../../components/vehicles/VehicleSearchCombobox";
 import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
@@ -123,7 +124,7 @@ export function DriverDetailPage() {
   const [notesEdit, setNotesEdit] = useState(false);
   const [notesValue, setNotesValue] = useState("");
   const [assignOpen, setAssignOpen] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState("");
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleListItem | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: driverRes, isLoading: loadingDriver, isError: driverError } = useQuery({
@@ -138,17 +139,8 @@ export function DriverDetailPage() {
     enabled: !!id && tab === "activity",
   });
 
-  const { data: vehiclesRes } = useQuery({
-    queryKey: ["vehicles", "for-assign"],
-    queryFn: () => getVehicles({ limit: 500 }),
-    enabled: assignOpen && !!id,
-  });
-
   const driver = driverRes?.data;
   const activities = activityRes?.data ?? [];
-  const vehiclesForAssign = (vehiclesRes?.data?.data ?? []).filter(
-    (v: VehicleListItem) => v.status !== "sold" && v.status !== "scrapped",
-  );
 
   const notesMutation = useMutation({
     mutationFn: (notes: string | null) => updateDriverNotes(id!, notes),
@@ -175,7 +167,7 @@ export function DriverDetailPage() {
       void queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       void queryClient.invalidateQueries({ queryKey: ["vehicle-assignment-history"] });
       setAssignOpen(false);
-      setSelectedVehicleId("");
+      setSelectedVehicle(null);
     },
   });
 
@@ -653,25 +645,21 @@ export function DriverDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-ink">Assign vehicle</h3>
-            <p className="text-sm text-ink-muted mt-1">Select a vehicle for this driver.</p>
-            <select
-              className="mt-4 w-full rounded-md border border-border px-3 py-2 text-sm"
-              value={selectedVehicleId}
-              onChange={(e) => setSelectedVehicleId(e.target.value)}
-            >
-              <option value="">Choose vehicle…</option>
-              {vehiclesForAssign.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.license_plate} — {v.make} {v.model}
-                  {v.current_driver_id && v.current_driver_id !== id ? " (reassign)" : ""}
-                </option>
-              ))}
-            </select>
+            <p className="text-sm text-ink-muted mt-1">Search and select a vehicle for this driver.</p>
+            <div className="mt-4">
+              <VehicleSearchCombobox
+                value={selectedVehicle}
+                onChange={setSelectedVehicle}
+                currentDriverId={id}
+                hideLabel
+                disabled={assignMutation.isPending}
+              />
+            </div>
             <div className="flex gap-2 mt-4">
               <button
                 type="button"
-                disabled={!selectedVehicleId || assignMutation.isPending}
-                onClick={() => assignMutation.mutate(selectedVehicleId)}
+                disabled={!selectedVehicle || assignMutation.isPending}
+                onClick={() => assignMutation.mutate(selectedVehicle!.id)}
                 className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
                 {assignMutation.isPending ? "Assigning…" : "Assign"}
@@ -680,7 +668,7 @@ export function DriverDetailPage() {
                 type="button"
                 onClick={() => {
                   setAssignOpen(false);
-                  setSelectedVehicleId("");
+                  setSelectedVehicle(null);
                 }}
                 className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
