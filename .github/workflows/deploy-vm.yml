@@ -1,0 +1,66 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vm
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 25m
+          script: |
+            set -euo pipefail
+
+            APP_PATH="${{ secrets.VM_APP_PATH }}"
+            BRANCH="${{ secrets.VM_BRANCH }}"
+
+            if [ -z "$APP_PATH" ]; then APP_PATH="/var/www/Fleet-Manager"; fi
+            if [ -z "$BRANCH" ]; then BRANCH="main"; fi
+
+            echo "==> Deploying branch: $BRANCH"
+            echo "==> App path: $APP_PATH"
+
+            cd "$APP_PATH"
+
+            if [ ! -d .git ]; then
+              echo "ERROR: $APP_PATH is not a git repository"
+              exit 1
+            fi
+
+            if [ ! -f backend/.env ]; then
+              echo "ERROR: missing backend/.env on server"
+              exit 1
+            fi
+
+            if [ ! -f frontend/.env.production ]; then
+              echo "ERROR: missing frontend/.env.production on server"
+              exit 1
+            fi
+
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            bash deploy/scripts/deploy.sh
+
+            echo "==> Health check"
+            curl -fsS http://127.0.0.1:4100/api/health
+            echo ""
+            echo "Deploy OK"

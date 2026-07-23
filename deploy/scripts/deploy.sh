@@ -42,11 +42,27 @@ if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
   APP_VERSION="$(date -u +%Y%m%d%H%M%S)"
 fi
-if grep -q '^APP_VERSION=' "$ENV_FILE"; then
-  sed -i "s/^APP_VERSION=.*/APP_VERSION=${APP_VERSION}/" "$ENV_FILE"
-else
-  printf '\nAPP_VERSION=%s\n' "$APP_VERSION" >>"$ENV_FILE"
-fi
+update_env_file() {
+  if [[ -w "$ENV_FILE" ]]; then
+    if grep -q '^APP_VERSION=' "$ENV_FILE"; then
+      sed -i "s/^APP_VERSION=.*/APP_VERSION=${APP_VERSION}/" "$ENV_FILE"
+    else
+      printf '\nAPP_VERSION=%s\n' "$APP_VERSION" >>"$ENV_FILE"
+    fi
+    return
+  fi
+  if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    if sudo grep -q '^APP_VERSION=' "$ENV_FILE"; then
+      sudo sed -i "s/^APP_VERSION=.*/APP_VERSION=${APP_VERSION}/" "$ENV_FILE"
+    else
+      printf '\nAPP_VERSION=%s\n' "$APP_VERSION" | sudo tee -a "$ENV_FILE" >/dev/null
+    fi
+    return
+  fi
+  echo "Cannot update APP_VERSION in $ENV_FILE (not writable; configure passwordless sudo for CI deploy)."
+  exit 1
+}
+update_env_file
 echo "==> APP_VERSION=${APP_VERSION} (clients see refresh banner after deploy)"
 
 echo "==> Backend: install & build"
