@@ -10,8 +10,8 @@ Permissions are loaded at login and embedded in the JWT (`permissions: string[]`
 |------|---------|
 | `super_admin` | All permissions |
 | `admin` | Full organization access |
-| `accountant` | Earnings, payouts, drivers, vehicles, subcontractors (no import delete, user/settings admin) |
-| `manager` | Day-to-day ops; no delete drivers/vehicles, no import delete, no payout approve |
+| `accountant` | Earnings, payouts (including approve), drivers, vehicles, subcontractors; no import delete, no user/settings admin |
+| `manager` | Day-to-day ops including payout approve; no delete drivers/vehicles, no import delete |
 | `viewer` | Read-only (`*.view`) |
 | `driver` | No fleet permissions (future driver portal) |
 
@@ -66,7 +66,7 @@ Granted only to `super_admin` (migration 093). Org `admin` roles do not receive 
 | `/api/dashboard` | `dashboard.view` |
 | `/api/drivers` | `drivers.view`; mutations use `drivers.create/edit/delete/assign_vehicle` |
 | `/api/vehicles` | `vehicles.view`; mutations use `vehicles.create/edit/delete/assign` |
-| `/api/earnings` | any of `payouts.view`, `imports.view`, `imports.create`, `reports.view` |
+| `/api/earnings` | Per-route: imports (`imports.view`/`imports.create`), payouts (`payouts.view`/`payouts.view_all`), reports (`reports.view`), settlements (`subcontractors.settle`) |
 | `/api/import` | `imports.create` |
 | `/api/subcontractors` | `subcontractors.view` |
 | `/api/subcontractor-payouts` | `subcontractors.settle` |
@@ -77,7 +77,7 @@ Granted only to `super_admin` (migration 093). Org `admin` roles do not receive 
 
 ## Migration
 
-Apply [`backend/sql/migrations/091_rbac_permissions.sql`](../backend/sql/migrations/091_rbac_permissions.sql), then [`backend/sql/migrations/092_user_management_extensions.sql`](../backend/sql/migrations/092_user_management_extensions.sql), then [`backend/sql/migrations/093_organizations_permissions.sql`](../backend/sql/migrations/093_organizations_permissions.sql).
+Apply [`backend/sql/migrations/091_rbac_permissions.sql`](../backend/sql/migrations/091_rbac_permissions.sql), then [`backend/sql/migrations/092_user_management_extensions.sql`](../backend/sql/migrations/092_user_management_extensions.sql), then [`backend/sql/migrations/093_organizations_permissions.sql`](../backend/sql/migrations/093_organizations_permissions.sql), then [`backend/sql/migrations/099_accountant_manager_payout_approve.sql`](../backend/sql/migrations/099_accountant_manager_payout_approve.sql) (grants `payouts.approve` to accountant and manager).
 
 Bootstrap the first platform operator with [`backend/sql/seeds/bootstrap_super_admin.sql`](../backend/sql/seeds/bootstrap_super_admin.sql). Public self-service registration is disabled; only authenticated super admins can create organizations via Settings → Organizations.
 

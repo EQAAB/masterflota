@@ -59,7 +59,29 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret,
   appVersion: process.env.APP_VERSION ?? "dev",
+  nodeEnv: process.env.NODE_ENV ?? "development",
+  corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
+  loginRateLimitMax: parsePositiveInt(process.env.LOGIN_RATE_LIMIT_MAX, 10),
+  loginRateLimitWindowMs: parsePositiveInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
 };
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const n = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function parseCorsOrigins(raw: string | undefined, nodeEnv: string | undefined): string[] | true {
+  const trimmed = raw?.trim();
+  if (trimmed) {
+    return trimmed.split(",").map((o) => o.trim()).filter(Boolean);
+  }
+  if (nodeEnv === "production") {
+    // eslint-disable-next-line no-console
+    console.warn("[env] CORS_ORIGINS is not set. Allowing all origins in production is insecure.");
+    return true;
+  }
+  return ["http://localhost:5173", "http://127.0.0.1:5173"];
+}
 
 if (!env.databaseUrl) {
   // In dev we allow this to be empty, but log loudly to avoid confusion.

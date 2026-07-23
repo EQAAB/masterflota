@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAuditLogs } from "../../api/audit";
-import { createOrgUser, deactivateOrgUser, fetchOrgUsers, updateOrgUser } from "../../api/users";
+import { createOrgUser, deactivateOrgUser, fetchOrgUsers, resetOrgUserPassword, updateOrgUser } from "../../api/users";
 import { fetchRoles } from "../../api/roles";
 import { UsersAddFormCard, type AddUserForm } from "../../components/settings/users/UsersAddFormCard";
 import { UsersEditModal, type EditUserForm } from "../../components/settings/users/UsersEditModal";
@@ -103,6 +103,14 @@ export function UsersPage() {
   const deactivateMut = useMutation({
     mutationFn: (id: string) => deactivateOrgUser(id),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+
+  const resetPasswordMut = useMutation({
+    mutationFn: (id: string) => resetOrgUserPassword(id).then((r) => r.data),
+    onSuccess: (data) => {
+      setTemporaryPassword(data.temporaryPassword ?? null);
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
   });
 
   const allUsers = usersQuery.data ?? [];
@@ -225,6 +233,7 @@ export function UsersPage() {
               onPageChange={setPage}
               onRoleChange={(id, roleId) => updateMut.mutate({ id, body: { roleId } })}
               onEdit={openEdit}
+              onResetPassword={(u) => resetPasswordMut.mutate(u.id)}
               onDeactivate={(id) => deactivateMut.mutate(id)}
               onActivate={(id) => updateMut.mutate({ id, body: { isActive: true } })}
               isUpdating={updateMut.isPending || deactivateMut.isPending}

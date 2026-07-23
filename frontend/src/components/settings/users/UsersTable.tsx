@@ -50,6 +50,7 @@ type UsersTableProps = {
   onPageChange: (page: number) => void;
   onRoleChange: (id: string, roleId: string) => void;
   onEdit: (user: OrgUser) => void;
+  onResetPassword: (user: OrgUser) => void;
   onDeactivate: (id: string) => void;
   onActivate: (id: string) => void;
   isUpdating: boolean;
@@ -99,6 +100,7 @@ export function UsersTable({
   onPageChange,
   onRoleChange,
   onEdit,
+  onResetPassword,
   onDeactivate,
   onActivate,
   isUpdating,
@@ -127,6 +129,21 @@ export function UsersTable({
 
   const openUser = users.find((u) => u.id === openMenuId);
 
+  const confirmResetPassword = useCallback(
+    (user: OrgUser) => {
+      if (
+        !window.confirm(
+          `Reset password for ${user.firstName} ${user.lastName}? They will be signed out and must use the new temporary password.`,
+        )
+      ) {
+        return;
+      }
+      closeMenu();
+      onResetPassword(user);
+    },
+    [closeMenu, onResetPassword],
+  );
+
   const confirmDeactivate = useCallback(
     (user: OrgUser) => {
       if (!window.confirm(`Deactivate ${user.firstName} ${user.lastName}? They will no longer be able to sign in.`)) {
@@ -154,10 +171,11 @@ export function UsersTable({
         closeMenu();
         onEdit(openUser);
       },
+      onResetPassword: () => confirmResetPassword(openUser),
       onDeactivate: () => confirmDeactivate(openUser),
       onActivate: () => confirmActivate(openUser),
     });
-  }, [openUser, closeMenu, onEdit, confirmDeactivate, confirmActivate]);
+  }, [openUser, closeMenu, onEdit, confirmResetPassword, confirmDeactivate, confirmActivate]);
 
   if (loading) {
     return (

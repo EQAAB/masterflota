@@ -265,53 +265,59 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {canViewDrivers ? (
+            {stats.outstandingLoans != null && (
+              canViewDrivers ? (
             <Link to="/earnings/loans" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Outstanding loans"
-                value={formatCurrency(stats.outstandingLoans ?? 0)}
+                value={formatCurrency(stats.outstandingLoans)}
                 subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
-                trend={(stats.outstandingLoans ?? 0) > 0 ? { value: "open balance", positive: false } : undefined}
+                trend={stats.outstandingLoans > 0 ? { value: "open balance", positive: false } : undefined}
                 icon={<AlertIcon />}
               />
             </Link>
-            ) : (
+              ) : (
               <KpiStatCard
                 title="Outstanding loans"
-                value={formatCurrency(stats.outstandingLoans ?? 0)}
+                value={formatCurrency(stats.outstandingLoans)}
                 subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
-                trend={(stats.outstandingLoans ?? 0) > 0 ? { value: "open balance", positive: false } : undefined}
+                trend={stats.outstandingLoans > 0 ? { value: "open balance", positive: false } : undefined}
                 icon={<AlertIcon />}
               />
+              )
             )}
-            {canViewPayouts ? (
+            {stats.outstandingDebt != null && (
+              canViewPayouts ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Platform debt"
-                value={formatCurrency(stats.outstandingDebt ?? 0)}
+                value={formatCurrency(stats.outstandingDebt)}
                 subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
-                trend={(stats.outstandingDebt ?? 0) > 0 ? { value: "collectible", positive: false } : undefined}
+                trend={stats.outstandingDebt > 0 ? { value: "collectible", positive: false } : undefined}
                 icon={<CurrencyIcon />}
               />
             </Link>
-            ) : (
+              ) : (
               <KpiStatCard
                 title="Platform debt"
-                value={formatCurrency(stats.outstandingDebt ?? 0)}
+                value={formatCurrency(stats.outstandingDebt)}
                 subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
-                trend={(stats.outstandingDebt ?? 0) > 0 ? { value: "collectible", positive: false } : undefined}
+                trend={stats.outstandingDebt > 0 ? { value: "collectible", positive: false } : undefined}
                 icon={<CurrencyIcon />}
               />
+              )
             )}
+            {stats.overdueRentals != null && (
             <Link to="/rentals/bookings" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Overdue rentals"
-                value={stats.overdueRentals ?? 0}
+                value={stats.overdueRentals}
                 subtitle="Active bookings past end"
-                trend={(stats.overdueRentals ?? 0) > 0 ? { value: "past due", positive: false } : undefined}
+                trend={stats.overdueRentals > 0 ? { value: "past due", positive: false } : undefined}
                 icon={<VehicleIcon />}
               />
             </Link>
+            )}
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Document risk"
@@ -336,10 +342,10 @@ export function DashboardPage() {
             )}
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {canFinance ? (
+            {stats.totalCommissionEarned != null ? (
             <KpiStatCard
               title="Commission earned"
-              value={formatCurrency(stats.totalCommissionEarned ?? 0)}
+              value={formatCurrency(stats.totalCommissionEarned)}
               subtitle="Paid / approved weeks in period"
               icon={<CurrencyIcon />}
             />
@@ -351,11 +357,11 @@ export function DashboardPage() {
                 icon={<CurrencyIcon />}
               />
             )}
-            {canViewPayouts ? (
+            {stats.pendingPayments != null ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Pending payments"
-                value={formatCurrency(stats.pendingPayments ?? 0)}
+                value={formatCurrency(stats.pendingPayments)}
                 subtitle={`${stats.pendingPayoutRows ?? 0} pending payout row(s)`}
                 icon={<CurrencyIcon />}
               />
@@ -368,11 +374,11 @@ export function DashboardPage() {
                 icon={<CurrencyIcon />}
               />
             )}
-            {canViewPayouts ? (
+            {stats.totalVehicleRentalFees != null ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
                 title="Vehicle rental fees"
-                value={formatCurrency(stats.totalVehicleRentalFees ?? 0)}
+                value={formatCurrency(stats.totalVehicleRentalFees)}
                 subtitle="Deducted in period payouts"
                 icon={<VehicleIcon />}
               />

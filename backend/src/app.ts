@@ -22,7 +22,7 @@ import { organizationRoutes } from "./modules/organizations/routes";
 export const app = express();
 
 app.use(cors({
-  origin: "*",
+  origin: env.corsOrigins,
   allowedHeaders: ["Content-Type", "Authorization", "X-Organization-Id"],
   exposedHeaders: ["Content-Type", "X-App-Version"],
 }));

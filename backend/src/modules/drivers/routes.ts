@@ -926,7 +926,7 @@ async function assertDriverInOrg(driverId: string, orgId: string): Promise<boole
   return !!rows[0];
 }
 
-router.get("/:id/recurring-fees", requirePermission("drivers.edit"), async (req, res) => {
+router.get("/:id/recurring-fees", requirePermission("drivers.view"), async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const driverId = String(req.params.id ?? "");

@@ -324,12 +324,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     usePermission("organizations.create");
   const canManageUsers = usePermission("users.manage");
   const canManageRoles = usePermission("roles.manage");
-  const settingsSubItems = buildSettingsSubItems({
-    canOrganizations: canManageOrganizations,
-    canUsers: canManageUsers,
-    canRoles: canManageRoles,
-    canAudit: canManageUsers,
-  });
+  const settingsSubItems = [
+    { to: "/settings/profile", label: "Profile" },
+    ...buildSettingsSubItems({
+      canOrganizations: canManageOrganizations,
+      canUsers: canManageUsers,
+      canRoles: canManageRoles,
+      canAudit: canManageUsers,
+    }),
+  ];
   const showSettingsNav = settingsSubItems.length > 0;
   const showFleetNav = !platformMode;
 

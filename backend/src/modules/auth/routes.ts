@@ -3,10 +3,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { query } from "../../db/pool";
 import { env } from "../../config/env";
-import { createUserSession, hashSessionToken, newSessionJti, revokeUserSession } from "../../lib/userSession";
+import { createUserSession, hashSessionToken, newSessionJti, revokeAllUserSessions, revokeUserSession } from "../../lib/userSession";
 import { recordLoginEvent } from "../../lib/loginEvent";
 import { authenticateJWT, type AuthPayload } from "../../middleware/auth";
 import { loadUserPermissions } from "./permissions";
+import { loginRateLimiter } from "../../middleware/rateLimit";
 
 const router = Router();
 
@@ -72,7 +73,7 @@ router.post("/register", (_req, res) => {
   });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
@@ -145,6 +146,56 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Login error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/change-password", authenticateJWT, async (req, res) => {
+  const userId = req.user?.sub;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "currentPassword and newPassword are required" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: "New password must be at least 8 characters" });
+  }
+
+  try {
+    const { rows } = await query<UserRow>(
+      `SELECT id, organization_id, email, password_hash, first_name, last_name, phone, role_id::text, is_active
+       FROM users WHERE id = $1::uuid`,
+      [userId],
+    );
+    const user = rows[0];
+    if (!user || !user.is_active) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!passwordOk) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await query(`UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1::uuid`, [
+      userId,
+      passwordHash,
+    ]);
+
+    await revokeAllUserSessions(userId);
+
+    return res.json({ message: "Password updated. Please sign in again." });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Change password error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });

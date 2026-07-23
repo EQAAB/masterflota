@@ -43,3 +43,9 @@ export function updateOrgUser(
 export function deactivateOrgUser(id: string) {
   return api.delete(`/users/${id}`);
 }
+
+export function resetOrgUserPassword(id: string, password?: string) {
+  return api.post<{ ok: boolean; temporaryPassword?: string }>(`/users/${id}/reset-password`, {
+    ...(password ? { password } : {}),
+  });
+}

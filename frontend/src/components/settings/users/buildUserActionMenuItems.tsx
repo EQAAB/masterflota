@@ -18,6 +18,7 @@ function MenuIconWrap({ children, tone }: { children: React.ReactNode; tone: "mu
 type BuildUserActionMenuItemsArgs = {
   user: OrgUser;
   onEdit: () => void;
+  onResetPassword: () => void;
   onDeactivate: () => void;
   onActivate: () => void;
 };
@@ -25,6 +26,7 @@ type BuildUserActionMenuItemsArgs = {
 export function buildUserActionMenuItems({
   user,
   onEdit,
+  onResetPassword,
   onDeactivate,
   onActivate,
 }: BuildUserActionMenuItemsArgs): ActionMenuItemConfig[] {
@@ -45,6 +47,23 @@ export function buildUserActionMenuItems({
         </MenuIconWrap>
       ),
       onSelect: onEdit,
+    },
+    {
+      id: "reset-password",
+      label: "Reset password",
+      icon: (
+        <MenuIconWrap tone="muted">
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 11-12 0 6 6 0 0112 0zm-6 3v2m0 4h.01"
+            />
+          </svg>
+        </MenuIconWrap>
+      ),
+      onSelect: onResetPassword,
     },
   ];
 
