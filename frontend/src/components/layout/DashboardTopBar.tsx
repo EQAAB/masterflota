@@ -242,7 +242,7 @@ export function buildDashboardAlerts(stats: {
   pendingPayments?: number;
 }): DashboardAlertItem[] {
   const items: DashboardAlertItem[] = [];
-  if ((stats.overdueRentals ?? 0) > 0) {
+  if (stats.overdueRentals != null && stats.overdueRentals > 0) {
     items.push({
       id: "overdue-rentals",
       label: "Overdue rentals",
@@ -250,7 +250,7 @@ export function buildDashboardAlerts(stats: {
       to: "/rentals/bookings",
     });
   }
-  if ((stats.outstandingLoans ?? 0) > 0) {
+  if (stats.outstandingLoans != null && stats.outstandingLoans > 0) {
     items.push({
       id: "loans",
       label: "Outstanding loans",
@@ -258,7 +258,7 @@ export function buildDashboardAlerts(stats: {
       to: "/earnings/loans",
     });
   }
-  if ((stats.outstandingDebt ?? 0) > 0) {
+  if (stats.outstandingDebt != null && stats.outstandingDebt > 0) {
     items.push({
       id: "debt",
       label: "Platform debt",
@@ -266,7 +266,7 @@ export function buildDashboardAlerts(stats: {
       to: "/earnings/payouts",
     });
   }
-  if ((stats.pendingPayoutRows ?? 0) > 0) {
+  if (stats.pendingPayoutRows != null && stats.pendingPayoutRows > 0) {
     items.push({
       id: "pending-payouts",
       label: "Pending payouts in period",

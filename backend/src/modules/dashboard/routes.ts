@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import { hasAnyPermission } from "../auth/permissions";
+import { requireEarningsOverview } from "../auth/earningsPermissions";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { handleRecentAssignments } from "../vehicles/vehicleAssignmentHistoryHandlers";
@@ -37,6 +39,22 @@ function parsePeriodQuery(req: { query: Record<string, unknown> }): { from: stri
   return { from, to };
 }
 
+function canViewPayoutFinance(permissions: string[] | undefined): boolean {
+  return hasAnyPermission(permissions, ["payouts.view", "payouts.view_all"]);
+}
+
+function canViewLoanFinance(permissions: string[] | undefined): boolean {
+  return hasAnyPermission(permissions, ["drivers.view"]);
+}
+
+function canViewRentalAlerts(permissions: string[] | undefined): boolean {
+  return hasAnyPermission(permissions, ["rentals.view", "rentals.manage"]);
+}
+
+function canViewCommissionFinance(permissions: string[] | undefined): boolean {
+  return hasAnyPermission(permissions, ["payouts.view", "payouts.view_all", "reports.view"]);
+}
+
 router.use(authenticateJWT);
 router.use(attachOrgContext);
 router.use(requirePermission("dashboard.view"));
@@ -50,6 +68,11 @@ router.get("/stats", async (req, res) => {
     return res.status(400).json({ message: period.error });
   }
   const { from, to } = period;
+  const permissions = req.user?.permissions;
+  const showPayoutFinance = canViewPayoutFinance(permissions);
+  const showLoanFinance = canViewLoanFinance(permissions);
+  const showRentalAlerts = canViewRentalAlerts(permissions);
+  const showCommissionFinance = canViewCommissionFinance(permissions);
 
   try {
     const [
@@ -98,83 +121,109 @@ router.get("/stats", async (req, res) => {
            AND ${NOT_DELETED}`,
         [orgId],
       ),
-      query<{ total: string | null }>(
-        `SELECT COALESCE(SUM(company_commission), 0)::text as total
+      showCommissionFinance
+        ? query<{ total: string | null }>(
+            `SELECT COALESCE(SUM(company_commission), 0)::text as total
          FROM driver_payouts
          WHERE organization_id = $1
            AND payment_status IN ('paid', 'approved')
            AND payment_period_start <= $3::date
            AND payment_period_end >= $2::date`,
-        [orgId, from, to],
-      ),
-      query<{ total: string | null }>(
-        `SELECT COALESCE(SUM(net_driver_payout), 0)::text as total
+            [orgId, from, to],
+          )
+        : Promise.resolve({ rows: [{ total: null }] }),
+      showPayoutFinance
+        ? query<{ total: string | null }>(
+            `SELECT COALESCE(SUM(net_driver_payout), 0)::text as total
          FROM driver_payouts
          WHERE organization_id = $1
            AND payment_status = 'pending'
            AND payment_period_start <= $3::date
            AND payment_period_end >= $2::date`,
-        [orgId, from, to],
-      ),
-      query<{ total: string | null }>(
-        `SELECT COALESCE(SUM(vehicle_rental_fee), 0)::text as total
+            [orgId, from, to],
+          )
+        : Promise.resolve({ rows: [{ total: null }] }),
+      showPayoutFinance
+        ? query<{ total: string | null }>(
+            `SELECT COALESCE(SUM(vehicle_rental_fee), 0)::text as total
          FROM driver_payouts
          WHERE organization_id = $1
            AND payment_period_start <= $3::date
            AND payment_period_end >= $2::date`,
-        [orgId, from, to],
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count
+            [orgId, from, to],
+          )
+        : Promise.resolve({ rows: [{ total: null }] }),
+      showPayoutFinance
+        ? query<{ count: string }>(
+            `SELECT COUNT(*)::text AS count
          FROM driver_payouts
          WHERE organization_id = $1
            AND payment_status = 'pending'
            AND payment_period_start <= $3::date
            AND payment_period_end >= $2::date`,
-        [orgId, from, to],
-      ),
-      query<{ total: string; drivers: string }>(
-        `SELECT COALESCE(SUM(remaining_debt_amount), 0)::text AS total,
+            [orgId, from, to],
+          )
+        : Promise.resolve({ rows: [{ count: null }] }),
+      showPayoutFinance
+        ? query<{ total: string; drivers: string }>(
+            `SELECT COALESCE(SUM(remaining_debt_amount), 0)::text AS total,
                 COUNT(DISTINCT driver_id)::text AS drivers
          FROM driver_payouts
          WHERE organization_id = $1 AND COALESCE(remaining_debt_amount, 0) > 0`,
-        [orgId],
-      ),
-      query<{ total: string; drivers: string }>(
-        `SELECT COALESCE(SUM(remaining_balance), 0)::text AS total,
+            [orgId],
+          )
+        : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
+      showLoanFinance
+        ? query<{ total: string; drivers: string }>(
+            `SELECT COALESCE(SUM(remaining_balance), 0)::text AS total,
                 COUNT(DISTINCT driver_id)::text AS drivers
          FROM driver_loans
          WHERE organization_id = $1
            AND status = 'active'
            AND COALESCE(remaining_balance, 0) > 0`,
-        [orgId],
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count
+            [orgId],
+          )
+        : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
+      showRentalAlerts
+        ? query<{ count: string }>(
+            `SELECT COUNT(*)::text AS count
          FROM rental_bookings
          WHERE organization_id = $1
            AND status = 'active'
            AND end_at < NOW()`,
-        [orgId],
-      ),
+            [orgId],
+          )
+        : Promise.resolve({ rows: [{ count: null }] }),
     ]);
 
-    const outstandingDebt = parseFloat(debtRes.rows[0]?.total ?? "0");
-    const driversWithDebt = parseInt(debtRes.rows[0]?.drivers ?? "0", 10);
-    const outstandingLoans = parseFloat(loansRes.rows[0]?.total ?? "0");
-    const driversWithLoans = parseInt(loansRes.rows[0]?.drivers ?? "0", 10);
-    const overdueRentals = parseInt(overdueRentalsRes.rows[0]?.count ?? "0", 10);
+    const outstandingDebt = showPayoutFinance
+      ? parseFloat(debtRes.rows[0]?.total ?? "0")
+      : null;
+    const driversWithDebt = showPayoutFinance
+      ? parseInt(debtRes.rows[0]?.drivers ?? "0", 10)
+      : null;
+    const outstandingLoans = showLoanFinance
+      ? parseFloat(loansRes.rows[0]?.total ?? "0")
+      : null;
+    const driversWithLoans = showLoanFinance
+      ? parseInt(loansRes.rows[0]?.drivers ?? "0", 10)
+      : null;
+    const overdueRentals = showRentalAlerts
+      ? parseInt(overdueRentalsRes.rows[0]?.count ?? "0", 10)
+      : null;
     const pendingDocuments = parseInt(pendingDocsRes.rows[0]?.count ?? "0", 10);
     const expiredDocuments = parseInt(expiredDocsRes.rows[0]?.count ?? "0", 10);
-    const pendingPayoutRows = parseInt(pendingPayoutsCountRes.rows[0]?.count ?? "0", 10);
+    const pendingPayoutRows = showPayoutFinance
+      ? parseInt(pendingPayoutsCountRes.rows[0]?.count ?? "0", 10)
+      : null;
 
     const alertCount =
-      (outstandingDebt > 0 ? 1 : 0) +
-      (outstandingLoans > 0 ? 1 : 0) +
-      (overdueRentals > 0 ? 1 : 0) +
+      (showPayoutFinance && (outstandingDebt ?? 0) > 0 ? 1 : 0) +
+      (showLoanFinance && (outstandingLoans ?? 0) > 0 ? 1 : 0) +
+      (showRentalAlerts && (overdueRentals ?? 0) > 0 ? 1 : 0) +
       (expiredDocuments > 0 ? 1 : 0) +
       (pendingDocuments > 0 ? 1 : 0) +
-      (pendingPayoutRows > 0 ? 1 : 0);
+      (showPayoutFinance && (pendingPayoutRows ?? 0) > 0 ? 1 : 0);
 
     return res.json({
       totalDrivers: parseInt(driversRes.rows[0]?.count ?? "0", 10),
@@ -183,9 +232,15 @@ router.get("/stats", async (req, res) => {
       expiredDocuments,
       totalVehicles: parseInt(vehiclesRes.rows[0]?.count ?? "0", 10),
       assignedVehicles: parseInt(assignedVehiclesRes.rows[0]?.count ?? "0", 10),
-      totalCommissionEarned: parseFloat(totalCommissionRes.rows[0]?.total ?? "0"),
-      pendingPayments: parseFloat(pendingPaymentsRes.rows[0]?.total ?? "0"),
-      totalVehicleRentalFees: parseFloat(vehicleRentalFeesRes.rows[0]?.total ?? "0"),
+      totalCommissionEarned: showCommissionFinance
+        ? parseFloat(totalCommissionRes.rows[0]?.total ?? "0")
+        : null,
+      pendingPayments: showPayoutFinance
+        ? parseFloat(pendingPaymentsRes.rows[0]?.total ?? "0")
+        : null,
+      totalVehicleRentalFees: showPayoutFinance
+        ? parseFloat(vehicleRentalFeesRes.rows[0]?.total ?? "0")
+        : null,
       pendingPayoutRows,
       outstandingDebt,
       driversWithDebt,
@@ -203,7 +258,7 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-router.get("/platform-earnings", async (req, res) => {
+router.get("/platform-earnings", requireEarningsOverview, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
