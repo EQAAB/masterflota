@@ -210,6 +210,9 @@ router.patch("/:id", async (req, res) => {
     await client.query("COMMIT");
 
     const after = afterRes.rows[0];
+    if (roleId && before.role_id !== after?.role_id) {
+      await revokeAllUserSessions(userId);
+    }
     if (isActive === false) {
       await revokeAllUserSessions(userId);
     }

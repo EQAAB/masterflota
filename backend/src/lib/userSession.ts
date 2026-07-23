@@ -53,6 +53,15 @@ export async function revokeAllUserSessions(userId: string): Promise<void> {
   await query(`DELETE FROM user_sessions WHERE user_id = $1::uuid`, [userId]);
 }
 
+/** Invalidate all sessions for users assigned to a role (after permission/role changes). */
+export async function revokeSessionsForRole(roleId: string): Promise<void> {
+  await query(
+    `DELETE FROM user_sessions
+     WHERE user_id IN (SELECT id FROM users WHERE role_id = $1::uuid)`,
+    [roleId],
+  );
+}
+
 export async function revokeUserSession(userId: string, jti: string): Promise<void> {
   const tokenHash = hashSessionToken(jti);
   await query(

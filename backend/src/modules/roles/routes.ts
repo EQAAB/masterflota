@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool, query } from "../../db/pool";
 import { writeAuditLog } from "../../lib/auditLog";
+import { revokeSessionsForRole } from "../../lib/userSession";
 import { authenticateJWT, requirePermission, isPlatformSuperAdminUser } from "../../middleware/auth";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 
@@ -328,6 +329,9 @@ router.patch("/:id/permissions", requirePermission("roles.manage"), async (req, 
     await client.query("COMMIT");
 
     const newPerms = permRes.rows.map((p) => p.name).sort();
+    if (JSON.stringify(oldPerms) !== JSON.stringify(newPerms)) {
+      await revokeSessionsForRole(String(req.params.id));
+    }
     await writeAuditLog({
       orgId: req.effectiveOrgId ?? null,
       userId: req.user?.sub ?? null,
