@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import type { DashboardStats } from "../../api/dashboard";
 import { useAuthStore } from "../../store/authStore";
 import { roleLabel } from "../../lib/roleLabel";
 import { btnSecondary } from "../../theme/classNames";
@@ -230,17 +231,7 @@ export function DashboardTopBar({
 }
 
 /** Build alert list from dashboard stats for the notifications menu. */
-export function buildDashboardAlerts(stats: {
-  outstandingDebt?: number;
-  driversWithDebt?: number;
-  outstandingLoans?: number;
-  driversWithLoans?: number;
-  overdueRentals?: number;
-  expiredDocuments?: number;
-  pendingDocuments?: number;
-  pendingPayoutRows?: number;
-  pendingPayments?: number;
-}): DashboardAlertItem[] {
+export function buildDashboardAlerts(stats: DashboardStats): DashboardAlertItem[] {
   const items: DashboardAlertItem[] = [];
   if (stats.overdueRentals != null && stats.overdueRentals > 0) {
     items.push({

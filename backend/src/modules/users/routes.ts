@@ -238,6 +238,60 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
+router.post("/:id/reset-password", async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const targetUserId = String(req.params.id ?? "");
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  const { password } = req.body as { password?: string };
+  const passwordGenerated = !password?.trim();
+  const plainPassword = passwordGenerated ? generateStrongPassword() : password!.trim();
+  if (plainPassword.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters" });
+  }
+
+  try {
+    const beforeRes = await query<UserSnapshot>(
+      `SELECT id::text, email, first_name, last_name, phone, role_id::text, is_active
+       FROM users WHERE id = $1::uuid AND organization_id = $2::uuid`,
+      [targetUserId, orgId],
+    );
+    const before = beforeRes.rows[0];
+    if (!before) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+    await query(`UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1::uuid`, [
+      targetUserId,
+      passwordHash,
+    ]);
+    await revokeAllUserSessions(targetUserId);
+
+    await writeAuditLog({
+      orgId,
+      userId: req.user?.sub ?? null,
+      action: "user.password_reset",
+      entityType: "user",
+      entityId: targetUserId,
+      oldValue: { email: before.email },
+      newValue: { passwordReset: true },
+      req,
+    });
+
+    return res.json({
+      ok: true,
+      ...(passwordGenerated ? { temporaryPassword: plainPassword } : {}),
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Reset user password error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   const orgId = req.effectiveOrgId;
   const userId = String(req.params.id ?? "");

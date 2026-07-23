@@ -100,6 +100,7 @@ const UsersPage = lazyPage(() => import("./pages/settings/UsersPage"), "UsersPag
 const RolesPage = lazyPage(() => import("./pages/settings/RolesPage"), "RolesPage");
 const AuditLogPage = lazyPage(() => import("./pages/settings/AuditLogPage"), "AuditLogPage");
 const LoginEventsPage = lazyPage(() => import("./pages/settings/LoginEventsPage"), "LoginEventsPage");
+const ProfilePage = lazyPage(() => import("./pages/settings/ProfilePage"), "ProfilePage");
 
 function withSuspense(page: React.ReactNode) {
   return <Suspense fallback={<RoutePageFallback />}>{page}</Suspense>;
@@ -327,6 +328,10 @@ export const appRouter = createBrowserRouter(
     {
       path: "/vehicles/:id/documents",
       element: fleetPage(VehicleDocumentsPage, { permission: "vehicles.view", redirectTo: "/vehicles" }),
+    },
+    {
+      path: "/settings/profile",
+      element: settingsPage(ProfilePage),
     },
     {
       path: "/settings/organizations",

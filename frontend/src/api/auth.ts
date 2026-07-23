@@ -8,3 +8,10 @@ export interface MeResponse {
 export function fetchMe() {
   return api.get<MeResponse>("/auth/me");
 }
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return api.post<{ message: string }>("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+}
