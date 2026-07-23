@@ -211,3 +211,4 @@ Cron (daily 2am):
 | SPA 404 on refresh | Use the Nginx `@fleet_spa` fallback from `deploy/nginx/fleet-manager.conf` |
 | Import upload fails | `client_max_body_size 40m` in Nginx (already in template) |
 | CI: `dubious ownership` | `sudo chown -R deploy:deploy /var/www/Fleet-Manager` or re-run `setup-ci-deploy.sh` |
+| CI: `FETCH_HEAD` permission denied | Same — deploy user must own the repo; workflow auto-chowns if passwordless `sudo chown` is configured |
