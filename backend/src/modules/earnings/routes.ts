@@ -1,6 +1,13 @@
 import type { PoolClient } from "pg";
 import { Router, type Request, type Response } from "express";
 import { authenticateJWT, requirePermission } from "../../middleware/auth";
+import {
+  requireEarningsOverview,
+  requireImportsView,
+  requirePayoutsView,
+  requireReportsView,
+  requireSubcontractorSettle,
+} from "../auth/earningsPermissions";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { pool, query } from "../../db/pool";
 import { earningsUpload } from "../../config/multer";
@@ -108,11 +115,10 @@ const router = Router();
 
 router.use(authenticateJWT);
 router.use(attachOrgContext);
-router.use(requirePermission("payouts.view", "imports.view", "imports.create", "reports.view"));
 
 export type { EarningsStagingPayload } from "./normalizeRow";
 
-router.get("/import/org-settings", async (req, res) => {
+router.get("/import/org-settings", requireImportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -406,7 +412,7 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
   }
 });
 
-router.get("/import/:id/preview-rows", async (req, res) => {
+router.get("/import/:id/preview-rows", requireImportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const { id: importId } = req.params;
@@ -756,7 +762,7 @@ router.post("/sync-vehicles", requirePermission("payouts.adjust"), async (req, r
   }
 });
 
-router.put("/records/:id/recalculate", async (req, res) => {
+router.put("/records/:id/recalculate", requirePermission("payouts.adjust"), async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const { id } = req.params;
@@ -810,7 +816,7 @@ router.post("/records/recalculate-bulk", requirePermission("payouts.adjust"), as
   }
 });
 
-router.get("/imports", async (req, res) => {
+router.get("/imports", requireImportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
@@ -842,7 +848,7 @@ router.get("/imports", async (req, res) => {
   }
 });
 
-router.get("/overview", async (req, res) => {
+router.get("/overview", requireEarningsOverview, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -905,7 +911,7 @@ router.get("/overview", async (req, res) => {
   }
 });
 
-router.get("/records/payout-integrity", async (req, res) => {
+router.get("/records/payout-integrity", requireReportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   try {
@@ -1238,7 +1244,7 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
   return { items: listRes.rows, page, pageSize, total };
 }
 
-router.get("/payouts", async (req, res) => {
+router.get("/payouts", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1255,7 +1261,7 @@ router.get("/payouts", async (req, res) => {
   }
 });
 
-router.get("/payouts/search", async (req, res) => {
+router.get("/payouts/search", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1272,7 +1278,7 @@ router.get("/payouts/search", async (req, res) => {
   }
 });
 
-router.get("/reports", async (req, res) => {
+router.get("/reports", requireReportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1299,7 +1305,7 @@ router.get("/reports", async (req, res) => {
 });
 
 /** Aggregated fleet commission by stored commission_base_type (filtered like /reports). */
-router.get("/reports/commission-by-base-type", async (req, res) => {
+router.get("/reports/commission-by-base-type", requireReportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const filters = parsePayoutReportFilters(req.query as PayoutFilterQuery);
@@ -1340,7 +1346,7 @@ router.get("/reports/commission-by-base-type", async (req, res) => {
   }
 });
 
-router.get("/payouts/assignment-details", async (req, res) => {
+router.get("/payouts/assignment-details", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1421,7 +1427,7 @@ router.get("/payouts/assignment-details", async (req, res) => {
 });
 
 /** @deprecated Use GET /payouts/assignment-details */
-router.get("/payouts/with-proration-details", (req, res) => {
+router.get("/payouts/with-proration-details", requirePayoutsView, (req, res) => {
   const url = req.originalUrl.replace("/with-proration-details", "/assignment-details");
   res.redirect(307, url);
 });
@@ -1538,7 +1544,7 @@ router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, 
   }
 });
 
-router.get("/payouts/consolidated", async (req, res) => {
+router.get("/payouts/consolidated", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1686,7 +1692,7 @@ router.post("/payouts/pay-all", requirePermission("payouts.approve"), async (req
   }
 });
 
-router.get("/payouts/debt-adjustments", async (req, res) => {
+router.get("/payouts/debt-adjustments", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1743,7 +1749,7 @@ router.get("/payouts/debt-adjustments", async (req, res) => {
   }
 });
 
-router.get("/drivers/:driverId/loan-repayments", async (req, res) => {
+router.get("/drivers/:driverId/loan-repayments", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -1821,7 +1827,7 @@ router.post(
   },
 );
 
-router.get("/payouts/:id/platform-breakdown", async (req, res) => {
+router.get("/payouts/:id/platform-breakdown", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2088,7 +2094,7 @@ router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), asy
 
 const CUSTOM_FEE_TYPES = new Set<CustomFeeType>(["deduction", "addition"]);
 
-router.get("/payouts/:id/custom-fees", async (req, res) => {
+router.get("/payouts/:id/custom-fees", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2486,7 +2492,7 @@ router.post("/payouts/:id/release-hold", requirePermission("payouts.approve"), a
   }
 });
 
-router.get("/debts/summary", async (req, res) => {
+router.get("/debts/summary", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2597,7 +2603,7 @@ router.post("/debts/bulk-carry-forward", requirePermission("payouts.adjust"), as
   }
 });
 
-router.get("/debts/aging", async (req, res) => {
+router.get("/debts/aging", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2634,7 +2640,7 @@ router.get("/debts/aging", async (req, res) => {
   }
 });
 
-router.get("/debts/collection-summary", async (req, res) => {
+router.get("/debts/collection-summary", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2683,7 +2689,7 @@ router.get("/debts/collection-summary", async (req, res) => {
   }
 });
 
-router.get("/debts/history/:driverId", async (req, res) => {
+router.get("/debts/history/:driverId", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2748,7 +2754,7 @@ router.get("/debts/history/:driverId", async (req, res) => {
   }
 });
 
-router.get("/reports/export", async (req, res) => {
+router.get("/reports/export", requireReportsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -2847,7 +2853,7 @@ router.get("/reports/export", async (req, res) => {
   }
 });
 
-router.get("/subcontractors/settlements", async (req, res) => {
+router.get("/subcontractors/settlements", requireSubcontractorSettle, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const q = req.query as { periodStart?: string; periodEnd?: string; subcontractorId?: string };
@@ -2939,7 +2945,7 @@ router.get("/subcontractors/settlements", async (req, res) => {
   }
 });
 
-router.post("/subcontractors/refresh-rent-charges", requirePermission("payouts.adjust"), async (req, res) => {
+router.post("/subcontractors/refresh-rent-charges", requireSubcontractorSettle, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
   const { periodStart, periodEnd } = req.body as { periodStart?: string; periodEnd?: string };
@@ -2967,7 +2973,7 @@ router.post("/subcontractors/refresh-rent-charges", requirePermission("payouts.a
   }
 });
 
-router.get("/vehicle-rent-validation", async (req, res) => {
+router.get("/vehicle-rent-validation", requirePayoutsView, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
