@@ -117,6 +117,55 @@ bash deploy/scripts/deploy.sh
 
 Each run updates `APP_VERSION` in `backend/.env` to the current git commit hash and restarts the API. Users with an older tab open will see **Fleet Manager has been updated → Refresh Now**.
 
+## GitHub Actions (automated deploy)
+
+Workflow file: `.github/workflows/deploy-vm.yml`
+
+Triggers on **push to `main`** or **Run workflow** manually.
+
+### GitHub repository secrets
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `SSH_PRIVATE_KEY` | Yes | Private key for SSH (full PEM, including `BEGIN`/`END` lines) |
+| `VM_HOST` | Yes | VM IP or hostname |
+| `VM_USER` | Yes | SSH user (e.g. `deploy`) |
+| `VM_APP_PATH` | No | Default `/var/www/Fleet-Manager` |
+| `VM_BRANCH` | No | Default `main` |
+
+Do **not** store `backend/.env` or `frontend/.env.production` in GitHub — they stay on the server only.
+
+### One-time CI setup on the VM
+
+1. **Deploy user** (if you do not have one yet):
+
+```bash
+sudo adduser deploy
+sudo chown -R deploy:deploy /var/www/Fleet-Manager
+```
+
+2. **Passwordless sudo** for `deploy.sh`:
+
+```bash
+cd /var/www/Fleet-Manager
+sudo DEPLOY_USER=deploy bash deploy/scripts/setup-ci-deploy.sh
+```
+
+3. **GitHub Actions SSH key** — generate a key pair, put the **private** key in `SSH_PRIVATE_KEY`, add the **public** key to `~deploy/.ssh/authorized_keys`.
+
+4. **Git pull on the server** (deploy key):
+
+```bash
+sudo su - deploy
+cd /var/www/Fleet-Manager
+bash deploy/scripts/setup-git-deploy-key.sh
+# Add printed public key in GitHub → Settings → Deploy keys (read-only)
+git remote set-url origin git@github.com:YOUR_ORG/Fleet-Manager.git
+git fetch origin main
+```
+
+5. Merge your changes to `main` and push, or run **Actions → Deploy to VM → Run workflow**.
+
 ## Backups
 
 ```bash
@@ -140,6 +189,9 @@ Cron (daily 2am):
 | `deploy/scripts/configure-nginx.sh` | Install Nginx site with your IP/domain |
 | `deploy/scripts/deploy.sh` | build, migrate, restart services |
 | `deploy/scripts/backup.sh` | pg_dump + uploads archive |
+| `deploy/scripts/setup-ci-deploy.sh` | Sudoers for GitHub Actions deploy user |
+| `deploy/scripts/setup-git-deploy-key.sh` | VM deploy key for `git fetch` during CI |
+| `.github/workflows/deploy-vm.yml` | GitHub Actions SSH deploy on push to `main` |
 | `backend/scripts/apply-all-migrations.mjs` | Fresh: schema + baseline; updates: pending only |
 
 ## Security notes
