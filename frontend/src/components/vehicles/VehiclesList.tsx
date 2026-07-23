@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { getDrivers } from "../../api/drivers";
+import type { DriverListItem } from "../../api/drivers";
 import type { PaginationMeta, VehicleListItem, VehicleStatus } from "../../api/vehicles";
 import { updateVehicle } from "../../api/vehicles";
 import {
@@ -9,6 +9,7 @@ import {
   importVehiclesCsv,
 } from "../../api/entityCsvImport";
 import { assignDriverToVehicle } from "../../api/vehicleAssignments";
+import { DriverSearchCombobox } from "../rentals/DriverSearchCombobox";
 import { usePermission } from "../../lib/permissions";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import type { useVehiclesListFilters } from "../../hooks/useVehiclesListFilters";
@@ -89,7 +90,7 @@ export function VehiclesList({
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [assignTarget, setAssignTarget] = useState<VehicleListItem | null>(null);
   const [statusTarget, setStatusTarget] = useState<VehicleListItem | null>(null);
-  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState<DriverListItem | null>(null);
   const [newStatus, setNewStatus] = useState<VehicleStatus>("available");
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
@@ -148,7 +149,7 @@ export function VehiclesList({
       onAssignDriver: () => {
         closeActionMenu();
         setAssignTarget(openMenuVehicle);
-        setSelectedDriverId("");
+        setSelectedDriver(null);
       },
       onChangeStatus: () => {
         closeActionMenu();
@@ -183,24 +184,13 @@ export function VehiclesList({
     });
   };
 
-  const { data: driversRes } = useQuery({
-    queryKey: ["drivers", "for-assign"],
-    queryFn: async () => {
-      const { data } = await getDrivers({ limit: 500, status: "active" });
-      return data;
-    },
-    enabled: assignTarget !== null,
-  });
-
-  const driversForAssign = driversRes ?? [];
-
   const assignMutation = useMutation({
     mutationFn: ({ vehicleId, driverId }: { vehicleId: string; driverId: string }) =>
       assignDriverToVehicle(vehicleId, driverId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       setAssignTarget(null);
-      setSelectedDriverId("");
+      setSelectedDriver(null);
     },
   });
 
@@ -353,27 +343,24 @@ export function VehiclesList({
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
             <h3 className="text-lg font-semibold text-ink">Assign driver</h3>
             <p className="mt-1 text-sm text-ink-muted">
-              Select a driver for {assignTarget.make} {assignTarget.model}.
+              Search and select a driver for {assignTarget.make} {assignTarget.model}.
             </p>
-            <select
-              className={`${input} mt-4`}
-              value={selectedDriverId}
-              onChange={(e) => setSelectedDriverId(e.target.value)}
-            >
-              <option value="">Choose driver…</option>
-              {driversForAssign.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.first_name} {d.last_name}
-                  {d.current_vehicle_id && d.current_vehicle_id !== assignTarget.id ? " (reassign)" : ""}
-                </option>
-              ))}
-            </select>
+            <div className="mt-4">
+              <DriverSearchCombobox
+                value={selectedDriver}
+                onChange={setSelectedDriver}
+                currentVehicleId={assignTarget.id}
+                hideLabel
+                disabled={assignMutation.isPending}
+                inputClassName={input}
+              />
+            </div>
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
-                disabled={!selectedDriverId || assignMutation.isPending}
+                disabled={!selectedDriver || assignMutation.isPending}
                 onClick={() =>
-                  assignMutation.mutate({ vehicleId: assignTarget.id, driverId: selectedDriverId })
+                  assignMutation.mutate({ vehicleId: assignTarget.id, driverId: selectedDriver!.id })
                 }
                 className={`${btnPrimary} flex-1 justify-center`}
               >
@@ -383,7 +370,7 @@ export function VehiclesList({
                 type="button"
                 onClick={() => {
                   setAssignTarget(null);
-                  setSelectedDriverId("");
+                  setSelectedDriver(null);
                 }}
                 disabled={assignMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}

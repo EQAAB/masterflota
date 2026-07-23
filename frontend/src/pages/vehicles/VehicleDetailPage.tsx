@@ -12,7 +12,8 @@ import {
   assignDriverToVehicle,
   unassignDriverFromVehicle,
 } from "../../api/vehicleAssignments";
-import { getDrivers, type DriverListItem } from "../../api/drivers";
+import type { DriverListItem } from "../../api/drivers";
+import { DriverSearchCombobox } from "../../components/rentals/DriverSearchCombobox";
 import { VehicleDocumentUpload } from "../../components/vehicles/VehicleDocumentUpload";
 import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentList";
 import { VehicleAssignmentHistoryPanel } from "../../components/vehicles/VehicleAssignmentHistoryPanel";
@@ -68,7 +69,7 @@ export function VehicleDetailPage() {
   const [tab, setTab] = useState<TabId>("profile");
   const [addMaintenanceOpen, setAddMaintenanceOpen] = useState(false);
   const [assignDriverOpen, setAssignDriverOpen] = useState(false);
-  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState<DriverListItem | null>(null);
 
   const { data: vehicleRes, isLoading: loadingVehicle, isError: vehicleError } = useQuery({
     queryKey: ["vehicle", id],
@@ -82,15 +83,8 @@ export function VehicleDetailPage() {
     enabled: !!id && tab === "maintenance",
   });
 
-  const { data: driversRes } = useQuery({
-    queryKey: ["drivers", "for-assign"],
-    queryFn: () => getDrivers({ limit: 500, status: "active" }),
-    enabled: assignDriverOpen && !!id,
-  });
-
   const vehicle = vehicleRes?.data;
   const maintenanceList = maintenanceRes?.data ?? [];
-  const driversForAssign = driversRes?.data ?? [];
   const canEdit = usePermission("vehicles.edit");
   const canAssign = usePermission("vehicles.assign");
   const canView = usePermission("vehicles.view");
@@ -103,7 +97,7 @@ export function VehicleDetailPage() {
       void queryClient.invalidateQueries({ queryKey: ["vehicle-assignment-history"] });
       void queryClient.invalidateQueries({ queryKey: ["drivers"] });
       setAssignDriverOpen(false);
-      setSelectedDriverId("");
+      setSelectedDriver(null);
     },
   });
 
@@ -358,25 +352,22 @@ export function VehicleDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold text-ink">Assign driver</h3>
-            <p className="text-sm text-ink-muted mt-1">Select a driver for this vehicle.</p>
-            <select
-              className="mt-4 w-full rounded-md border border-border px-3 py-2 text-sm"
-              value={selectedDriverId}
-              onChange={(e) => setSelectedDriverId(e.target.value)}
-            >
-              <option value="">Choose driver…</option>
-              {driversForAssign.map((d: DriverListItem) => (
-                <option key={d.id} value={d.id}>
-                  {d.first_name} {d.last_name}
-                  {d.current_vehicle_id && d.current_vehicle_id !== id ? " (reassign)" : ""}
-                </option>
-              ))}
-            </select>
+            <p className="text-sm text-ink-muted mt-1">Search and select a driver for this vehicle.</p>
+            <div className="mt-4">
+              <DriverSearchCombobox
+                value={selectedDriver}
+                onChange={setSelectedDriver}
+                currentVehicleId={id}
+                hideLabel
+                disabled={assignDriverMutation.isPending}
+                inputClassName="w-full rounded-md border border-border px-3 py-2 text-sm"
+              />
+            </div>
             <div className="flex gap-2 mt-4">
               <button
                 type="button"
-                disabled={!selectedDriverId || assignDriverMutation.isPending}
-                onClick={() => assignDriverMutation.mutate(selectedDriverId)}
+                disabled={!selectedDriver || assignDriverMutation.isPending}
+                onClick={() => assignDriverMutation.mutate(selectedDriver!.id)}
                 className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
                 {assignDriverMutation.isPending ? "Assigning…" : "Assign"}
@@ -385,7 +376,7 @@ export function VehicleDetailPage() {
                 type="button"
                 onClick={() => {
                   setAssignDriverOpen(false);
-                  setSelectedDriverId("");
+                  setSelectedDriver(null);
                 }}
                 className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
