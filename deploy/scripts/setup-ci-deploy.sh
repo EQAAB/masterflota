@@ -30,6 +30,14 @@ visudo -cf "$SUDOERS_FILE"
 
 usermod -aG www-data "$DEPLOY_USER" 2>/dev/null || true
 
+APP_PATH="${APP_PATH:-/var/www/Fleet-Manager}"
+if [[ -d "$APP_PATH" ]]; then
+  chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "$APP_PATH"
+  echo "Set ownership: ${DEPLOY_USER}:${DEPLOY_USER} on $APP_PATH"
+fi
+
+sudo -u "$DEPLOY_USER" git config --global --add safe.directory "$APP_PATH" 2>/dev/null || true
+
 echo "Sudoers configured for user: $DEPLOY_USER"
 echo ""
 echo "Next steps:"
