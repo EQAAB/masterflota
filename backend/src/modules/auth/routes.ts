@@ -7,6 +7,7 @@ import { createUserSession, hashSessionToken, newSessionJti, revokeUserSession }
 import { recordLoginEvent } from "../../lib/loginEvent";
 import { authenticateJWT, type AuthPayload } from "../../middleware/auth";
 import { loadUserPermissions } from "./permissions";
+import { loginRateLimiter } from "../../middleware/rateLimit";
 
 const router = Router();
 
@@ -72,7 +73,7 @@ router.post("/register", (_req, res) => {
   });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
