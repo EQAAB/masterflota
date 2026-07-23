@@ -47,6 +47,19 @@ jobs:
             # Git refuses to run when repo dir is owned by another user (e.g. root clone).
             git config --global --add safe.directory "$APP_PATH"
 
+            # git fetch needs write access to .git/ (FETCH_HEAD, etc.)
+            if [[ ! -w .git ]]; then
+              echo "==> Fixing repository ownership for $(whoami)"
+              if command -v sudo >/dev/null 2>&1 && sudo -n chown -R "$(whoami):$(whoami)" "$APP_PATH"; then
+                echo "==> Ownership updated"
+              else
+                echo "ERROR: cannot write to .git — permission denied."
+                echo "On the VM run: sudo chown -R $(whoami):$(whoami) $APP_PATH"
+                echo "Or: sudo DEPLOY_USER=$(whoami) APP_PATH=$APP_PATH bash deploy/scripts/setup-ci-deploy.sh"
+                exit 1
+              fi
+            fi
+
             if [ ! -f backend/.env ]; then
               echo "ERROR: missing backend/.env on server"
               exit 1
