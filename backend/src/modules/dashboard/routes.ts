@@ -40,19 +40,19 @@ function parsePeriodQuery(req: { query: Record<string, unknown> }): { from: stri
 }
 
 function canViewPayoutFinance(permissions: string[] | undefined): boolean {
-  return hasAnyPermission(permissions, ["payouts.view", "payouts.view_all"]);
+  return hasAnyPermission(permissions ?? [], ["payouts.view", "payouts.view_all"]);
 }
 
 function canViewLoanFinance(permissions: string[] | undefined): boolean {
-  return hasAnyPermission(permissions, ["drivers.view"]);
+  return hasAnyPermission(permissions ?? [], ["drivers.view"]);
 }
 
 function canViewRentalAlerts(permissions: string[] | undefined): boolean {
-  return hasAnyPermission(permissions, ["rentals.view", "rentals.manage"]);
+  return hasAnyPermission(permissions ?? [], ["rentals.view", "rentals.manage"]);
 }
 
 function canViewCommissionFinance(permissions: string[] | undefined): boolean {
-  return hasAnyPermission(permissions, ["payouts.view", "payouts.view_all", "reports.view"]);
+  return hasAnyPermission(permissions ?? [], ["payouts.view", "payouts.view_all", "reports.view"]);
 }
 
 router.use(authenticateJWT);
