@@ -215,7 +215,9 @@ export const appRouter = createBrowserRouter(
     },
     {
       path: "/design/payout-details-comparison",
-      element: fleetPage(PayoutDetailsLayoutComparisonPage, { anyOf: PAYOUTS_VIEW_PERMISSIONS }),
+      element: import.meta.env.DEV
+        ? fleetPage(PayoutDetailsLayoutComparisonPage, { anyOf: PAYOUTS_VIEW_PERMISSIONS })
+        : <Navigate to="/dashboard" replace />,
     },
     {
       path: "/earnings/payouts/:driverId",
