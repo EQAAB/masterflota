@@ -161,6 +161,7 @@ bookingsRoutes.post("/quick-weekly", requireRentalsManage, async (req, res) => {
       endAt,
       paymentAmount: paymentAmount != null && Number.isFinite(paymentAmount) ? paymentAmount : undefined,
       recordPayment: b.recordPayment !== false,
+      paymentMethod: typeof b.paymentMethod === "string" ? b.paymentMethod : undefined,
       mileageOut,
       skipPickup: b.skipPickup === true,
     });
@@ -371,6 +372,7 @@ bookingsRoutes.post("/:id/renew-week", requireRentalsManage, async (req, res) =>
     const row = await runRenewWeeklyBooking(orgId, userId, id, {
       paymentAmount: paymentAmount != null && Number.isFinite(paymentAmount) ? paymentAmount : undefined,
       recordPayment: b.recordPayment !== false,
+      paymentMethod: typeof b.paymentMethod === "string" ? b.paymentMethod : undefined,
     });
     return res.json(row);
   } catch (err) {

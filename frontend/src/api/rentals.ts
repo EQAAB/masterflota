@@ -256,6 +256,7 @@ export type QuickWeeklyRentalBody = {
   endAt?: string;
   paymentAmount?: number;
   recordPayment?: boolean;
+  paymentMethod?: string;
   mileageOut?: number;
   skipPickup?: boolean;
 };
@@ -263,6 +264,7 @@ export type QuickWeeklyRentalBody = {
 export type RenewWeeklyBookingBody = {
   paymentAmount?: number;
   recordPayment?: boolean;
+  paymentMethod?: string;
 };
 
 export function getRentalDashboard() {

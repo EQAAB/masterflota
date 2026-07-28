@@ -3,6 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { createRentalPayment, getRentalBookings, updateRentalPayment } from "../../../api/rentals";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
+import {
+  coerceRentalPaymentMethodForSelect,
+  DEFAULT_RENTAL_PAYMENT_METHOD,
+  RENTAL_PAYMENT_METHODS,
+  type RentalPaymentMethod,
+} from "./rentalPaymentMethods";
 
 type RecordPaymentModalProps = {
   open: boolean;
@@ -15,7 +21,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
   const [bookingId, setBookingId] = useState("");
   const [paymentType, setPaymentType] = useState("rent");
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("cash");
+  const [method, setMethod] = useState<RentalPaymentMethod>(DEFAULT_RENTAL_PAYMENT_METHOD);
   const [status, setStatus] = useState("paid");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
@@ -36,7 +42,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
       setBookingId(editing.booking_id);
       setPaymentType(editing.payment_type);
       setAmount(String(editing.amount));
-      setMethod(editing.method ?? "cash");
+      setMethod(coerceRentalPaymentMethodForSelect(editing.method));
       setStatus(editing.status);
       setReference(editing.reference ?? "");
       setNotes(editing.notes ?? "");
@@ -44,7 +50,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
       setBookingId("");
       setPaymentType("rent");
       setAmount("");
-      setMethod("cash");
+      setMethod(DEFAULT_RENTAL_PAYMENT_METHOD);
       setStatus("paid");
       setReference("");
       setNotes("");
@@ -175,13 +181,13 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
             <select
               className="fm-rental-payments__filter-select mt-1 w-full"
               value={method}
-              onChange={(e) => setMethod(e.target.value)}
+              onChange={(e) => setMethod(e.target.value as RentalPaymentMethod)}
             >
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="bank transfer">Bank transfer</option>
-              <option value="stripe">Stripe</option>
-              <option value="paypal">PayPal</option>
+              {RENTAL_PAYMENT_METHODS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </label>
 

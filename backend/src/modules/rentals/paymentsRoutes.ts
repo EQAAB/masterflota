@@ -3,6 +3,7 @@ import { query } from "../../db/pool";
 import { requireOrgId } from "../../middleware/orgContext";
 import {
   createRentalPayment,
+  parseRentalPaymentMethod,
   parseRentalPaymentStatus,
   parseRentalPaymentType,
 } from "./rentalPaymentService";
@@ -181,7 +182,7 @@ paymentsRoutes.post("/booking/:bookingId", requireRentalsManage, async (req, res
       status,
       currency: typeof b.currency === "string" ? b.currency : "RON",
       paidAt: typeof b.paidAt === "string" ? b.paidAt : null,
-      method: typeof b.method === "string" ? b.method : null,
+      method: parseRentalPaymentMethod(b.method ?? b.paymentMethod),
       reference: typeof b.reference === "string" ? b.reference : null,
       notes: typeof b.notes === "string" ? b.notes : null,
     });
@@ -215,6 +216,12 @@ paymentsRoutes.patch("/:id", requireRentalsManage, async (req, res) => {
         ? b.paymentType
         : undefined;
     const amount = b.amount != null ? Number(b.amount) : undefined;
+    const method =
+      typeof b.method === "string" || b.method === null
+        ? b.method === null
+          ? null
+          : parseRentalPaymentMethod(b.method)
+        : undefined;
     const { rows } = await query(
       `UPDATE rental_payments SET
          status = COALESCE($3::varchar, status),
@@ -232,7 +239,7 @@ paymentsRoutes.patch("/:id", requireRentalsManage, async (req, res) => {
         orgId,
         status ?? null,
         b.paidAt ?? null,
-        b.method ?? null,
+        method ?? null,
         b.reference ?? null,
         b.notes ?? null,
         paymentType ?? null,

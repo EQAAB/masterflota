@@ -11,7 +11,7 @@ import {
   type BookingRow,
 } from "./bookingService";
 import { assertRentalCustomerInOrg, assertVehicleInOrg } from "./rentalOrgGuards";
-import { createRentalPayment } from "./rentalPaymentService";
+import { createRentalPayment, parseRentalPaymentMethod } from "./rentalPaymentService";
 import { resolvePricing } from "./pricingService";
 
 type Db = {
@@ -28,6 +28,7 @@ export type StartWeeklyRentalQuickInput = {
   endAt?: Date;
   paymentAmount?: number;
   recordPayment?: boolean;
+  paymentMethod?: string;
   mileageOut?: number;
   skipPickup?: boolean;
 };
@@ -35,6 +36,7 @@ export type StartWeeklyRentalQuickInput = {
 export type RenewWeeklyBookingInput = {
   paymentAmount?: number;
   recordPayment?: boolean;
+  paymentMethod?: string;
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -124,6 +126,7 @@ export async function startWeeklyRentalQuick(
       amount: paymentAmount,
       paymentType: "rent",
       status: "paid",
+      method: parseRentalPaymentMethod(input.paymentMethod),
     });
   }
 
@@ -218,6 +221,7 @@ export async function renewWeeklyBooking(
       amount: paymentAmount,
       paymentType: "rent",
       status: "paid",
+      method: parseRentalPaymentMethod(input.paymentMethod),
       notes: `Weekly renewal ${weeksRenewed}`,
     });
   }

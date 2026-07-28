@@ -1,5 +1,6 @@
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
+import { rentalPaymentMethodLabel } from "./rentalPaymentMethods";
 
 export type PaymentsFilters = {
   q: string;
@@ -38,14 +39,7 @@ export function formatPaymentDateTime(iso: string | null | undefined): { date: s
 }
 
 export function paymentMethodLabel(method: string | null | undefined): string {
-  if (!method?.trim()) return "—";
-  const m = method.toLowerCase();
-  if (m.includes("cash")) return "Cash";
-  if (m.includes("card")) return "Card";
-  if (m.includes("bank") || m.includes("transfer")) return "Bank transfer";
-  if (m.includes("stripe")) return "Stripe";
-  if (m.includes("paypal")) return "PayPal";
-  return method;
+  return rentalPaymentMethodLabel(method);
 }
 
 export function filterAndSortPayments(rows: RentalPaymentListItem[], filters: PaymentsFilters): RentalPaymentListItem[] {
