@@ -224,5 +224,6 @@ Cron (daily 2am):
 | CI: `private key is passphrase protected` | Regenerate with `ssh-keygen ... -N ""` and update `SSH_PRIVATE_KEY`, **or** add optional secret `SSH_PASSPHRASE` |
 | CI: `sudo: a password is required` | Run on VM: `sudo DEPLOY_USER=deploy bash deploy/scripts/setup-ci-deploy.sh` then `sudo -n systemctl status fleet-api` as deploy |
 | CI: `EACCES` on `~/.npm` | `sudo chown -R deploy:deploy /home/deploy /var/www/Fleet-Manager` then remove `backend/node_modules` and `frontend/node_modules` |
+| CI: `EACCES` on `backend/dist` | `sudo chown -R deploy:www-data /var/www/Fleet-Manager/backend /var/www/Fleet-Manager/frontend` |
 | CI: `Cannot update APP_VERSION` in `.env` | `sudo chown deploy:www-data /var/www/Fleet-Manager/backend/.env && sudo chmod 640 /var/www/Fleet-Manager/backend/.env` |
 | CI: health check `Couldn't connect` on :4100 | API still starting — workflow retries now; if it persists run `sudo journalctl -u fleet-api -n 50` on the VM |
