@@ -29,6 +29,13 @@ EOF
   chmod 600 "$SSH_CONFIG"
 fi
 
+KNOWN_HOSTS="${HOME}/.ssh/known_hosts"
+if ! grep -q '^github.com' "$KNOWN_HOSTS" 2>/dev/null; then
+  echo "==> Adding github.com to known_hosts"
+  ssh-keyscan -t rsa,ecdsa,ed25519 github.com >>"$KNOWN_HOSTS" 2>/dev/null
+fi
+chmod 600 "$KNOWN_HOSTS" 2>/dev/null || true
+
 echo "==> Add this deploy key in GitHub (Settings → Deploy keys, read-only):"
 echo ""
 cat "${KEY_PATH}.pub"

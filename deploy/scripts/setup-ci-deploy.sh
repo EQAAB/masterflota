@@ -22,8 +22,8 @@ fi
 
 SUDOERS_FILE="/etc/sudoers.d/fleet-manager-deploy"
 cat >"$SUDOERS_FILE" <<EOF
-# Fleet Manager — allow CI deploy user to run deploy/scripts/deploy.sh without a password
-${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/chown, /usr/bin/chown, /usr/bin/tee, /bin/systemctl, /usr/bin/systemctl, /usr/sbin/nginx
+# Fleet Manager — passwordless sudo for CI deploy (deploy/scripts/deploy.sh)
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/chown, /usr/bin/chown, /bin/chgrp, /usr/bin/chgrp, /usr/bin/tee, /bin/tee, /bin/sed, /usr/bin/sed, /bin/grep, /usr/bin/grep, /bin/systemctl, /usr/bin/systemctl, /usr/sbin/nginx, /usr/bin/nginx
 EOF
 chmod 440 "$SUDOERS_FILE"
 visudo -cf "$SUDOERS_FILE"

@@ -218,7 +218,11 @@ Cron (daily 2am):
 | SPA 404 on refresh | Use the Nginx `@fleet_spa` fallback from `deploy/nginx/fleet-manager.conf` |
 | Import upload fails | `client_max_body_size 40m` in Nginx (already in template) |
 | CI: `dubious ownership` | `sudo chown -R deploy:deploy /var/www/Fleet-Manager` or re-run `setup-ci-deploy.sh` |
+| CI: `Host key verification failed` (git fetch) | As `deploy`: `ssh-keyscan github.com >> ~/.ssh/known_hosts` and ensure deploy key is in GitHub Deploy keys |
 | CI: `could not lock config file` `.gitconfig` | `sudo chown -R deploy:deploy /home/deploy` (home dir owned by root) |
 | CI: `FETCH_HEAD` permission denied | Same — deploy user must own the repo; workflow auto-chowns if passwordless `sudo chown` is configured |
 | CI: `private key is passphrase protected` | Regenerate with `ssh-keygen ... -N ""` and update `SSH_PRIVATE_KEY`, **or** add optional secret `SSH_PASSPHRASE` |
-| CI: `unable to authenticate` | Public key missing from `~deploy/.ssh/authorized_keys`, wrong `VM_USER`, or wrong private key in `SSH_PRIVATE_KEY` |
+| CI: `sudo: a password is required` | Run on VM: `sudo DEPLOY_USER=deploy bash deploy/scripts/setup-ci-deploy.sh` then `sudo -n systemctl status fleet-api` as deploy |
+| CI: `EACCES` on `~/.npm` | `sudo chown -R deploy:deploy /home/deploy /var/www/Fleet-Manager` then remove `backend/node_modules` and `frontend/node_modules` |
+| CI: `Cannot update APP_VERSION` in `.env` | `sudo chown deploy:www-data /var/www/Fleet-Manager/backend/.env && sudo chmod 640 /var/www/Fleet-Manager/backend/.env` |
+| CI: health check `Couldn't connect` on :4100 | API still starting — workflow retries now; if it persists run `sudo journalctl -u fleet-api -n 50` on the VM |
