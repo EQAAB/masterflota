@@ -8,7 +8,7 @@ Production URLs:
 This uses the same VM stack as [deploy-vm.md](./deploy-vm.md) (PostgreSQL, Node on `:4100`, Nginx, `deploy/scripts/deploy.sh`). The difference is **two subdomains** instead of `/fleet` + `/fleet-api` on one host.
 
 ## DNS
-
+ 
 Point both records at your VM (or load balancer):
 
 | Host | Type | Value |
