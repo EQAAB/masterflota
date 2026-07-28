@@ -2,6 +2,8 @@
 
 This guide deploys **PostgreSQL**, **Node API**, and **React frontend** on one server (e.g. Contabo VPS).
 
+For **subdomain** production (`app.masterflota.com` + `api.masterflota.com`), see **[deploy-masterflota.md](./deploy-masterflota.md)**.
+
 Default paths:
 - App: `/var/www/Fleet-Manager`
 - UI: `http://169.58.28.189/fleet/`

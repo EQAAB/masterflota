@@ -1,5 +1,6 @@
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
+import { viteBasePathFrom } from "./src/lib/basePath";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -11,7 +12,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    base: "/fleet",
+    base: viteBasePathFrom(env.VITE_BASE_PATH),
     build: {
       rollupOptions: {
         output: {

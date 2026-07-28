@@ -12,6 +12,7 @@ import {
   type PermissionRouteGuardProps,
 } from "./components/layout/PermissionRouteGuard";
 import { RoutePageFallback } from "./components/layout/RoutePageFallback";
+import { appBasePath } from "./lib/basePath";
 import { lazyPage } from "./lib/lazyPage";
 import {
   EARNINGS_OVERVIEW_PERMISSIONS,
@@ -361,5 +362,5 @@ export const appRouter = createBrowserRouter(
     },
     { path: "*", element: <DefaultAppRedirect /> },
   ],
-  { basename: "/fleet" },
+  { basename: appBasePath() },
 );
