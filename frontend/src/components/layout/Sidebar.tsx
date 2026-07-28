@@ -8,6 +8,7 @@ import { useOrgStore } from "../../store/orgStore";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
 import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
+import { getAppBranding } from "../../lib/appBranding";
 
 function buildEarningsSubItems(opts: {
   canViewEarningsOverview: boolean;
@@ -154,7 +155,14 @@ function ChevronDown({ className }: { className?: string }) {
 }
 
 function LogoMark() {
-  return <FleetManagerLogoMark className="h-9 w-9" />;
+  const branding = getAppBranding();
+  return (
+    <FleetManagerLogoMark
+      className="h-9 w-9"
+      title={branding.appName}
+      monogram={branding.logoMonogram}
+    />
+  );
 }
 
 function SidebarNavItem({
@@ -374,6 +382,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const rentalsActive = location.pathname.startsWith("/rentals");
   const settingsActive = location.pathname.startsWith("/settings");
   const platformActive = location.pathname.startsWith("/platform");
+  const branding = getAppBranding();
 
   return (
     <aside
@@ -383,11 +392,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {!collapsed && (
           <Link to={homePath} className="flex min-w-0 flex-1 items-center gap-2.5">
             <LogoMark />
-            <span className="truncate font-semibold text-white">Fleet Manager</span>
+            <span className="truncate font-semibold text-white">{branding.appName}</span>
           </Link>
         )}
         {collapsed && (
-          <Link to={homePath} className="mx-auto" title="Fleet Manager">
+          <Link to={homePath} className="mx-auto" title={branding.appName}>
             <LogoMark />
           </Link>
         )}
@@ -595,22 +604,41 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="relative z-10 shrink-0 space-y-2 border-t border-white/10 p-2">
         {!collapsed && (
           <>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${sidebarNavItem} ${sidebarNavInactive}`}
-            >
-              <svg className={ICON} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="truncate">Help</span>
-            </a>
+            {branding.marketingUrl ? (
+              <a
+                href={branding.marketingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${sidebarNavItem} ${sidebarNavInactive}`}
+              >
+                <svg className={ICON} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+                <span className="truncate">Product website</span>
+              </a>
+            ) : null}
             <div className="rounded-xl border border-white/15 bg-white/5 p-3 backdrop-blur-sm">
-              <p className="text-xs font-semibold text-white">Fleet Pro</p>
+              <p className="text-xs font-semibold text-white">{branding.appName}</p>
               <p className="mt-0.5 text-[11px] leading-snug text-white/60">
-                Advanced reporting and multi-org support — coming soon.
+                {branding.companyName && branding.companyUrl
+                  ? `Built by ${branding.companyName}`
+                  : "Fleet operations platform"}
               </p>
+              {branding.companyUrl && branding.companyName ? (
+                <a
+                  href={branding.companyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-[11px] font-medium text-brand-mint hover:underline"
+                >
+                  {branding.companyName} →
+                </a>
+              ) : null}
             </div>
           </>
         )}

@@ -54,6 +54,18 @@ VITE_BASE_PATH=/
 
 `VITE_BASE_PATH=/` serves the SPA at the domain root. The default VM layout uses `/fleet` (omit `VITE_BASE_PATH` or set `VITE_BASE_PATH=/fleet`).
 
+The Masterflota example file also sets branding and external site links:
+
+```env
+VITE_APP_NAME=MasterFlota
+VITE_APP_LOGO_MONOGRAM=MF
+VITE_MARKETING_URL=https://masterflota.com
+VITE_COMPANY_NAME=EQAAB
+VITE_COMPANY_URL=https://eqaab.com
+```
+
+These update the login page, sidebar, browser tab title, and links to [masterflota.com](https://masterflota.com) (product) and [eqaab.com](https://eqaab.com) (company).
+
 ## 4. Nginx
 
 ```bash

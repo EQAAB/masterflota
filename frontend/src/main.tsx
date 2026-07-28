@@ -4,8 +4,11 @@ import { RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { QueryDevtools } from "./components/layout/QueryDevtools";
 import { AppUpdatePoller, UpdateAvailableBanner } from "./components/layout/UpdateAvailableBanner";
+import { applyDocumentBranding } from "./lib/appBranding";
 import { appRouter } from "./App";
 import "./index.css";
+
+applyDocumentBranding();
 
 const queryClient = new QueryClient();
 
