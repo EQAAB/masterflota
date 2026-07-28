@@ -103,17 +103,17 @@ if [[ -f "$ROOT/deploy/systemd/fleet-api.service" ]]; then
 fi
 
 echo "==> Nginx"
-if [[ -f "$ROOT/deploy/nginx/fleet-manager.conf" ]]; then
-  if [[ ! -f /etc/nginx/sites-available/fleet-manager ]]; then
-    echo "Run: sudo bash deploy/scripts/configure-nginx.sh 169.58.28.189"
-  elif sudo nginx -t 2>/dev/null; then
+if [[ -f /etc/nginx/sites-available/masterflota ]] || [[ -f /etc/nginx/sites-available/fleet-manager ]]; then
+  if sudo nginx -t 2>/dev/null; then
     sudo systemctl reload nginx
   fi
+elif [[ -f "$ROOT/deploy/nginx/fleet-manager.conf" ]]; then
+  echo "Run: sudo bash deploy/scripts/configure-nginx.sh <host>"
+  echo "  or: sudo bash deploy/scripts/configure-nginx-masterflota.sh"
 fi
 
 echo ""
 echo "Deploy complete."
 echo "  Health: curl -s http://127.0.0.1:4100/api/health"
-echo "  UI:     http://169.58.28.189/fleet/"
 echo ""
 echo "First login: cd backend && npm run bootstrap:super-admin"

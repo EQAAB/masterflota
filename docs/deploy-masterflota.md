@@ -1,0 +1,113 @@
+# Deploy Fleet Manager on Masterflota
+
+Production URLs:
+
+- **Frontend:** https://app.masterflota.com/
+- **Backend:** https://api.masterflota.com/api/
+
+This uses the same VM stack as [deploy-vm.md](./deploy-vm.md) (PostgreSQL, Node on `:4100`, Nginx, `deploy/scripts/deploy.sh`). The difference is **two subdomains** instead of `/fleet` + `/fleet-api` on one host.
+
+## DNS
+
+Point both records at your VM (or load balancer):
+
+| Host | Type | Value |
+|------|------|--------|
+| `app.masterflota.com` | A | your server IP |
+| `api.masterflota.com` | A | your server IP |
+
+## 1. Server setup
+
+Follow [deploy-vm.md](./deploy-vm.md) sections 1–3 (packages, clone repo, PostgreSQL).
+
+## 2. Backend `.env`
+
+```bash
+cd /var/www/Fleet-Manager/backend
+cp .env.production.example .env
+nano .env
+```
+
+Set at minimum:
+
+```env
+NODE_ENV=production
+PORT=4100
+DATABASE_URL=postgresql://fleetadmin:YOUR_PASSWORD@127.0.0.1:5432/fleetmanager
+JWT_SECRET=<openssl rand -base64 48>
+CORS_ORIGINS=https://app.masterflota.com
+```
+
+`CORS_ORIGINS` must be the **browser origin** (scheme + host, no trailing slash).
+
+## 3. Frontend `.env.production`
+
+```bash
+cd /var/www/Fleet-Manager/frontend
+cp .env.production.masterflota.example .env.production
+```
+
+```env
+VITE_API_URL=https://api.masterflota.com/api
+VITE_BASE_PATH=/
+```
+
+`VITE_BASE_PATH=/` serves the SPA at the domain root. The default VM layout uses `/fleet` (omit `VITE_BASE_PATH` or set `VITE_BASE_PATH=/fleet`).
+
+## 4. Nginx
+
+```bash
+cd /var/www/Fleet-Manager
+sudo bash deploy/scripts/configure-nginx-masterflota.sh
+```
+
+Optional custom domains:
+
+```bash
+sudo bash deploy/scripts/configure-nginx-masterflota.sh app.masterflota.com api.masterflota.com
+```
+
+## 5. TLS (HTTPS)
+
+After Nginx works on port 80:
+
+```bash
+sudo certbot --nginx -d app.masterflota.com -d api.masterflota.com
+```
+
+If TLS terminates at a load balancer, keep Nginx on port 80 and ensure `X-Forwarded-Proto` is set.
+
+## 6. Deploy
+
+```bash
+cd /var/www/Fleet-Manager
+bash deploy/scripts/deploy.sh --init   # first time only
+bash deploy/scripts/deploy.sh          # later updates
+```
+
+Verify:
+
+```bash
+curl -fsS http://127.0.0.1:4100/api/health
+curl -fsS https://api.masterflota.com/api/health
+```
+
+Open https://app.masterflota.com/ in a browser.
+
+## 7. GitHub Actions (optional)
+
+Same workflow as the VM guide: [.github/workflows/deploy-vm.yml](../.github/workflows/deploy-vm.yml).
+
+Secrets: `SSH_PRIVATE_KEY`, `VM_HOST`, `VM_USER` (optional: `VM_APP_PATH`, `VM_BRANCH`).
+
+On the server, use the Masterflota env files above — the workflow only runs `git pull` + `deploy.sh`.
+
+## Quick reference
+
+| Item | Masterflota | Default VM (IP) |
+|------|-------------|----------------|
+| UI URL | `https://app.masterflota.com/` | `http://IP/fleet/` |
+| API URL (browser) | `https://api.masterflota.com/api` | `http://IP/fleet-api` |
+| `VITE_BASE_PATH` | `/` | `/fleet` (default) |
+| Nginx config | `deploy/nginx/masterflota.conf` | `deploy/nginx/fleet-manager.conf` |
+| Configure script | `configure-nginx-masterflota.sh` | `configure-nginx.sh` |

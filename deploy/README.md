@@ -1,6 +1,7 @@
 # VM deployment assets
 
-See **[docs/deploy-vm.md](../docs/deploy-vm.md)** for the full guide.
+- **[docs/deploy-vm.md](../docs/deploy-vm.md)** — single host (`/fleet` + `/fleet-api`)
+- **[docs/deploy-masterflota.md](../docs/deploy-masterflota.md)** — `app.masterflota.com` + `api.masterflota.com`
 
 ```bash
 sudo bash deploy/scripts/setup-server.sh
