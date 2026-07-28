@@ -129,9 +129,10 @@ Triggers on **push to `main`** or **Run workflow** manually.
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `SSH_PRIVATE_KEY` | Yes | Private key for SSH (full PEM, including `BEGIN`/`END` lines) |
+| `SSH_PRIVATE_KEY` | Yes | Private key for SSH (full PEM, including `BEGIN`/`END` lines). **No passphrase** (recommended for CI). |
 | `VM_HOST` | Yes | VM IP or hostname |
 | `VM_USER` | Yes | SSH user (e.g. `deploy`) |
+| `SSH_PASSPHRASE` | No | Only if `SSH_PRIVATE_KEY` was created with a passphrase |
 | `VM_APP_PATH` | No | Default `/var/www/Fleet-Manager` |
 | `VM_BRANCH` | No | Default `main` |
 
@@ -153,7 +154,11 @@ cd /var/www/Fleet-Manager
 sudo DEPLOY_USER=deploy bash deploy/scripts/setup-ci-deploy.sh
 ```
 
-3. **GitHub Actions SSH key** — generate a key pair, put the **private** key in `SSH_PRIVATE_KEY`, add the **public** key to `~deploy/.ssh/authorized_keys`.
+3. **GitHub Actions SSH key** — generate a **passphrase-free** key pair for CI, put the **private** key in `SSH_PRIVATE_KEY`, add the **public** key to `~deploy/.ssh/authorized_keys`:
+
+```bash
+ssh-keygen -t ed25519 -f github_actions_deploy -N "" -C "github-actions-fleet-deploy"
+```
 
 4. **Git pull on the server** (deploy key):
 
@@ -213,4 +218,7 @@ Cron (daily 2am):
 | SPA 404 on refresh | Use the Nginx `@fleet_spa` fallback from `deploy/nginx/fleet-manager.conf` |
 | Import upload fails | `client_max_body_size 40m` in Nginx (already in template) |
 | CI: `dubious ownership` | `sudo chown -R deploy:deploy /var/www/Fleet-Manager` or re-run `setup-ci-deploy.sh` |
+| CI: `could not lock config file` `.gitconfig` | `sudo chown -R deploy:deploy /home/deploy` (home dir owned by root) |
 | CI: `FETCH_HEAD` permission denied | Same — deploy user must own the repo; workflow auto-chowns if passwordless `sudo chown` is configured |
+| CI: `private key is passphrase protected` | Regenerate with `ssh-keygen ... -N ""` and update `SSH_PRIVATE_KEY`, **or** add optional secret `SSH_PASSPHRASE` |
+| CI: `unable to authenticate` | Public key missing from `~deploy/.ssh/authorized_keys`, wrong `VM_USER`, or wrong private key in `SSH_PRIVATE_KEY` |

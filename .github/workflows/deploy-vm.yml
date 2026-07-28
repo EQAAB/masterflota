@@ -66,8 +66,10 @@ jobs:
               exit 1
             fi
 
-            # Git refuses to run when repo dir is owned by another user (e.g. root clone).
-            git config --global --add safe.directory "$APP_PATH"
+            # Avoid writing ~/.gitconfig (may be root-owned). Pass safe.directory per command.
+            git_cmd() {
+              git -c safe.directory="$APP_PATH" "$@"
+            }
 
             # git fetch needs write access to .git/ (FETCH_HEAD, etc.)
             if [[ ! -w .git ]]; then
@@ -92,9 +94,9 @@ jobs:
               exit 1
             fi
 
-            git fetch origin "$BRANCH"
-            git checkout "$BRANCH"
-            git reset --hard "origin/$BRANCH"
+            git_cmd fetch origin "$BRANCH"
+            git_cmd checkout "$BRANCH"
+            git_cmd reset --hard "origin/$BRANCH"
 
             bash deploy/scripts/deploy.sh
 
