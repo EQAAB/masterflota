@@ -7,6 +7,11 @@ import { VehicleSelectField } from "./booking-form/VehicleSelectField";
 import { combineDateAndTime, weeklyReturnDateFromPickup } from "./booking-form/bookingFormUtils";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
+import {
+  DEFAULT_RENTAL_PAYMENT_METHOD,
+  RENTAL_PAYMENT_METHODS,
+  type RentalPaymentMethod,
+} from "./payments/rentalPaymentMethods";
 
 type QuickWeeklyRentalModalProps = {
   open: boolean;
@@ -37,6 +42,7 @@ export function QuickWeeklyRentalModal({
   const [pickupDate, setPickupDate] = useState(todayDateStr());
   const [pickupTime, setPickupTime] = useState("10:00");
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<RentalPaymentMethod>(DEFAULT_RENTAL_PAYMENT_METHOD);
   const [recordPayment, setRecordPayment] = useState(true);
   const [skipPickup, setSkipPickup] = useState(false);
   const [mileageOut, setMileageOut] = useState("");
@@ -66,6 +72,7 @@ export function QuickWeeklyRentalModal({
       setPickupTime("10:00");
     }
     setRecordPayment(true);
+    setPaymentMethod(DEFAULT_RENTAL_PAYMENT_METHOD);
     setSkipPickup(false);
     setMileageOut("");
     setError(null);
@@ -99,6 +106,7 @@ export function QuickWeeklyRentalModal({
         endAt: endIso!,
         paymentAmount: recordPayment ? Number(paymentAmount) || undefined : undefined,
         recordPayment,
+        paymentMethod: recordPayment ? paymentMethod : undefined,
         mileageOut: mileageOut ? Number(mileageOut) : undefined,
         skipPickup,
       }),
@@ -206,6 +214,23 @@ export function QuickWeeklyRentalModal({
             />
             Record payment now
           </label>
+
+          {recordPayment && (
+            <label className="block text-sm">
+              <span className="font-medium text-ink">Payment method</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as RentalPaymentMethod)}
+              >
+                {RENTAL_PAYMENT_METHODS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={skipPickup} onChange={(e) => setSkipPickup(e.target.checked)} />

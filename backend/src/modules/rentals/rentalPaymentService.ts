@@ -2,6 +2,7 @@ import type { QueryResultRow } from "pg";
 
 export type RentalPaymentType = "rent" | "deposit" | "deposit_refund" | "extra" | "damage";
 export type RentalPaymentStatus = "paid" | "pending" | "failed" | "refunded";
+export type RentalPaymentMethod = "cash" | "online" | "other";
 
 export type CreateRentalPaymentInput = {
   amount: number;
@@ -40,6 +41,24 @@ export function parseRentalPaymentStatus(value: unknown): RentalPaymentStatus {
   return "pending";
 }
 
+export function parseRentalPaymentMethod(value: unknown): RentalPaymentMethod {
+  if (value == null || value === "") return "cash";
+  const m = String(value).toLowerCase().trim();
+  if (m === "cash") return "cash";
+  if (m === "online") return "online";
+  if (m === "other" || m === "any") return "other";
+  if (
+    m.includes("card") ||
+    m.includes("stripe") ||
+    m.includes("paypal") ||
+    m.includes("bank") ||
+    m.includes("transfer")
+  ) {
+    return "online";
+  }
+  return "other";
+}
+
 export async function createRentalPayment(
   db: Db,
   orgId: string,
@@ -61,6 +80,7 @@ export async function createRentalPayment(
 
   const paymentType = input.paymentType ?? "rent";
   const status = input.status ?? "pending";
+  const method = parseRentalPaymentMethod(input.method);
 
   const { rows } = await db.query<Record<string, unknown>>(
     `INSERT INTO rental_payments (
@@ -77,7 +97,7 @@ export async function createRentalPayment(
       input.currency ?? "RON",
       status,
       input.paidAt ?? null,
-      input.method ?? null,
+      method,
       input.reference ?? null,
       input.notes ?? null,
     ],

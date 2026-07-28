@@ -18,6 +18,12 @@ import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
 import { formatPaymentDateTime } from "../../components/rentals/payments/paymentsListUtils";
 import {
+  DEFAULT_RENTAL_PAYMENT_METHOD,
+  rentalPaymentMethodLabel,
+  RENTAL_PAYMENT_METHODS,
+  type RentalPaymentMethod,
+} from "../../components/rentals/payments/rentalPaymentMethods";
+import {
   bookingStatusClass,
   formatBookingStatus,
   paymentStatusLabel,
@@ -37,7 +43,9 @@ export function BookingDetailPage() {
   const [damageNotes, setDamageNotes] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payType, setPayType] = useState<RentalPayment["payment_type"]>("rent");
+  const [payMethod, setPayMethod] = useState<RentalPaymentMethod>(DEFAULT_RENTAL_PAYMENT_METHOD);
   const [renewAmount, setRenewAmount] = useState("");
+  const [renewMethod, setRenewMethod] = useState<RentalPaymentMethod>(DEFAULT_RENTAL_PAYMENT_METHOD);
   const [contractLoading, setContractLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const canManage = useCanManageRentals();
@@ -124,6 +132,7 @@ export function BookingDetailPage() {
         amount: Number(payAmount),
         paymentType: payType,
         status: "paid",
+        method: payMethod,
       }),
     onSuccess: () => {
       setPayAmount("");
@@ -136,6 +145,7 @@ export function BookingDetailPage() {
       renewWeeklyBooking(id!, {
         paymentAmount: Number(renewAmount) || undefined,
         recordPayment: true,
+        paymentMethod: renewMethod,
       }),
     onSuccess: () => {
       setActionError(null);
@@ -281,6 +291,20 @@ export function BookingDetailPage() {
                   onChange={(e) => setRenewAmount(e.target.value)}
                 />
               </label>
+              <label className="mt-3 block text-sm">
+                <span className="font-medium text-ink">Payment method</span>
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  value={renewMethod}
+                  onChange={(e) => setRenewMethod(e.target.value as RentalPaymentMethod)}
+                >
+                  {RENTAL_PAYMENT_METHODS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 className={`${btnPrimary} mt-4`}
@@ -309,6 +333,7 @@ export function BookingDetailPage() {
                     <div className="min-w-0">
                       <p className="font-medium">
                         {paymentTypeLabel(p.payment_type)} · {paymentStatusLabel(p.status)}
+                        {p.method ? ` · ${rentalPaymentMethodLabel(p.method)}` : ""}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
                         {dt.date}
@@ -344,6 +369,17 @@ export function BookingDetailPage() {
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
                 />
+                <select
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  value={payMethod}
+                  onChange={(e) => setPayMethod(e.target.value as RentalPaymentMethod)}
+                >
+                  {RENTAL_PAYMENT_METHODS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   className={btnPrimary}

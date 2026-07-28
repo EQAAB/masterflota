@@ -336,23 +336,23 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
 
       existingCompleted = await findCompletedPlatformWeekImport(
         client,
-        orgId,
+          orgId,
         platform,
-        weekStart,
-        weekEnd,
+          weekStart,
+          weekEnd,
       );
 
       importId = await insertEarningsPreviewStaging(client, {
         orgId,
-        userId,
+          userId,
         fileName: req.file.originalname,
         weekStart,
         weekEnd,
         platform,
         detectionConfidence,
-        filenameDate,
-        headerCount: table.headers.length,
-        rowCount: table.rows.length,
+            filenameDate,
+            headerCount: table.headers.length,
+            rowCount: table.rows.length,
         normalizedRows,
         glovoCommissionBaseType: platform === "glovo" ? effectiveGlovoBase : undefined,
         defaultAccountOpeningFee:
@@ -1946,7 +1946,7 @@ router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), asy
     const rawNet = roundMoney(Number(row.raw_net_amount ?? "0"));
 
     if (type === "carry_forward") {
-      await client.query(
+    await client.query(
         `INSERT INTO payout_adjustments (organization_id, payout_id, amount, reason, adjustment_type, created_by,
          previous_remaining_debt, new_remaining_debt, applied_amount)
          VALUES ($1::uuid, $2::uuid, 0, $3, 'carry_forward', $4::uuid, NULL, NULL, NULL)`,
@@ -2040,7 +2040,7 @@ router.post("/payouts/:id/adjust-debt", requirePermission("payouts.adjust"), asy
             ? row.payment_status
             : "pending";
 
-    await client.query(
+      await client.query(
       `INSERT INTO payout_adjustments (organization_id, payout_id, amount, reason, adjustment_type, created_by,
        previous_remaining_debt, new_remaining_debt, applied_amount)
        VALUES ($1::uuid, $2::uuid, $3, $4, $5::varchar(32), $6::uuid, $7, $8, $9)`,
@@ -2118,7 +2118,7 @@ router.get("/payouts/:id/custom-fees", requirePayoutsView, async (req, res) => {
 
     await syncRecurringFeesToDriverWeek(
       client,
-      orgId,
+          orgId,
       payout.driver_id,
       payout.payment_period_start,
       payout.payment_period_end,
