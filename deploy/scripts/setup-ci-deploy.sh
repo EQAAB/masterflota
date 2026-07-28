@@ -36,7 +36,13 @@ if [[ -d "$APP_PATH" ]]; then
   echo "Set ownership: ${DEPLOY_USER}:${DEPLOY_USER} on $APP_PATH"
 fi
 
-sudo -u "$DEPLOY_USER" git config --global --add safe.directory "$APP_PATH" 2>/dev/null || true
+DEPLOY_HOME="$(getent passwd "$DEPLOY_USER" | cut -d: -f6)"
+if [[ -n "$DEPLOY_HOME" && -d "$DEPLOY_HOME" ]]; then
+  chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "$DEPLOY_HOME"
+  echo "Set ownership: ${DEPLOY_USER}:${DEPLOY_USER} on $DEPLOY_HOME"
+fi
+
+sudo -u "$DEPLOY_USER" git -c safe.directory="$APP_PATH" status >/dev/null 2>&1 || true
 
 echo "Sudoers configured for user: $DEPLOY_USER"
 echo ""
