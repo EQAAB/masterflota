@@ -9,6 +9,8 @@ import { useAuthStore } from "../../store/authStore";
 import type { AuthUser } from "../../store/authStore";
 import { LoginAuthField } from "../../components/auth/LoginAuthField";
 import { FleetManagerLogoMark } from "../../components/brand/FleetManagerLogoMark";
+import { AppExternalLinks } from "../../components/brand/AppExternalLinks";
+import { getAppBranding } from "../../lib/appBranding";
 import { alertError, btnPrimary } from "../../theme/classNames";
 
 interface LoginResponse {
@@ -19,6 +21,7 @@ interface LoginResponse {
 export function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const branding = getAppBranding();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -47,9 +50,13 @@ export function LoginPage() {
       <div className="fm-login-page__card">
         <header className="text-center">
           <div className="fm-login-page__logo-wrap">
-            <FleetManagerLogoMark className="h-12 w-12" />
+            <FleetManagerLogoMark
+              className="h-12 w-12"
+              title={branding.appName}
+              monogram={branding.logoMonogram}
+            />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Fleet Manager</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{branding.appName}</h1>
           <p className="mt-1 text-sm text-ink-muted">Sign in to your organization dashboard</p>
         </header>
 
@@ -87,6 +94,7 @@ export function LoginPage() {
         </form>
 
         <p className="fm-login-page__footer">Secure access for fleet operations</p>
+        <AppExternalLinks className="mt-3" />
       </div>
     </div>
   );
