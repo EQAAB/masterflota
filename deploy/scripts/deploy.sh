@@ -42,6 +42,20 @@ fi
 
 ENV_FILE="$ROOT/backend/.env"
 
+# deploy builds; www-data runs the API — shared group, deploy owns files
+ensure_deploy_ownership() {
+  local u
+  u="$(whoami)"
+  if ! id www-data >/dev/null 2>&1; then
+    return 0
+  fi
+  if sudo -n chown -R "${u}:www-data" "$ROOT/backend" "$ROOT/frontend" 2>/dev/null; then
+    echo "==> Ownership: ${u}:www-data on backend/ and frontend/"
+    return 0
+  fi
+  echo "WARN: could not chown backend/frontend (EACCES on dist/.env may persist)"
+}
+
 # deploy must write APP_VERSION; www-data (API user) must read .env
 ensure_backend_env_access() {
   if [[ ! -f "$ENV_FILE" ]]; then
@@ -85,13 +99,14 @@ update_env_file() {
   echo "Fix on VM: sudo chown deploy:www-data $ENV_FILE && sudo chmod 640 $ENV_FILE"
   exit 1
 }
+ensure_deploy_ownership
 ensure_backend_env_access
 update_env_file
 echo "==> APP_VERSION=${APP_VERSION} (clients see refresh banner after deploy)"
 
 echo "==> Backend: install & build"
 cd "$ROOT/backend"
-rm -rf node_modules
+rm -rf node_modules dist
 npm ci
 npm run build
 
@@ -107,7 +122,7 @@ mkdir -p uploads/driver-photos uploads/driver-documents uploads/vehicle-document
 
 echo "==> Frontend: install & build"
 cd "$ROOT/frontend"
-rm -rf node_modules
+rm -rf node_modules dist
 npm ci
 npm run build
 
