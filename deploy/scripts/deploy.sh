@@ -73,6 +73,10 @@ ensure_backend_env_access() {
   echo "WARN: cannot fix ownership on $ENV_FILE — run: sudo chown deploy:www-data $ENV_FILE && sudo chmod 640 $ENV_FILE"
 }
 
+has_passwordless_sudo() {
+  sudo -n systemctl --version >/dev/null 2>&1
+}
+
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   APP_VERSION="$(git -C "$ROOT" rev-parse --short HEAD)"
 else
@@ -87,7 +91,7 @@ update_env_file() {
     fi
     return
   fi
-  if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  if command -v sudo >/dev/null 2>&1 && has_passwordless_sudo; then
     if sudo grep -q '^APP_VERSION=' "$ENV_FILE"; then
       sudo sed -i "s/^APP_VERSION=.*/APP_VERSION=${APP_VERSION}/" "$ENV_FILE"
     else
@@ -144,9 +148,10 @@ elif id www-data >/dev/null 2>&1; then
 fi
 
 require_sudo() {
-  if ! sudo -n true 2>/dev/null; then
+  if ! has_passwordless_sudo; then
     echo "ERROR: passwordless sudo is not configured for $(whoami)."
     echo "On the VM run: sudo DEPLOY_USER=$(whoami) bash deploy/scripts/setup-ci-deploy.sh"
+    echo "Then verify: sudo -n systemctl status fleet-api"
     exit 1
   fi
 }

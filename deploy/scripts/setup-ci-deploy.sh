@@ -22,8 +22,8 @@ fi
 
 SUDOERS_FILE="/etc/sudoers.d/fleet-manager-deploy"
 cat >"$SUDOERS_FILE" <<EOF
-# Fleet Manager — passwordless sudo for CI deploy (deploy/scripts/deploy.sh)
-${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/chown, /usr/bin/chown, /bin/chgrp, /usr/bin/chgrp, /usr/bin/tee, /bin/tee, /bin/sed, /usr/bin/sed, /bin/grep, /usr/bin/grep, /bin/systemctl, /usr/bin/systemctl, /usr/sbin/nginx, /usr/bin/nginx
+# Fleet Manager — passwordless sudo for CI deploy (dedicated deploy user only)
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: ALL
 EOF
 chmod 440 "$SUDOERS_FILE"
 visudo -cf "$SUDOERS_FILE"
@@ -51,3 +51,5 @@ echo "  1. Add GitHub Actions SSH *public* key to ~${DEPLOY_USER}/.ssh/authorize
 echo "  2. Run as ${DEPLOY_USER}: bash deploy/scripts/setup-git-deploy-key.sh"
 echo "  3. Add GitHub repo secrets: SSH_PRIVATE_KEY, VM_HOST, VM_USER=${DEPLOY_USER}"
 echo "  4. Push to main (or run workflow manually)"
+echo ""
+echo "Verify as ${DEPLOY_USER}: sudo -n systemctl status fleet-api"
