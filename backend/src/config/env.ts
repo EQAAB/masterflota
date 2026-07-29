@@ -59,6 +59,7 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret,
   appVersion: process.env.APP_VERSION ?? "dev",
+  appName: process.env.APP_NAME?.trim() || "Fleet Manager",
   nodeEnv: process.env.NODE_ENV ?? "development",
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
   loginRateLimitMax: parsePositiveInt(process.env.LOGIN_RATE_LIMIT_MAX, 10),
