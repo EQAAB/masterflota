@@ -40,7 +40,48 @@ export function getAppBranding(): AppBranding {
   return cached;
 }
 
+/** Inline favicon matching FleetManagerLogoMark, so the browser tab icon follows the active brand. */
+function buildFaviconDataUri(monogram: string): string {
+  const letters = monogram.slice(0, 3).toUpperCase();
+  const fontSize = letters.length > 2 ? 9 : 11;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">` +
+    `<rect width="32" height="32" rx="8" fill="#003D38"/>` +
+    `<rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.25" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>` +
+    `<text x="16" y="21" text-anchor="middle" fill="#FFFFFF" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="${fontSize}" font-weight="700">${letters}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function setLinkTag(rel: string, href: string): void {
+  let link = document.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = rel;
+    document.head.appendChild(link);
+  }
+  link.type = "image/svg+xml";
+  link.href = href;
+}
+
+function setMetaTag(attr: "name" | "property", key: string, content: string): void {
+  let meta = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attr, key);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", content);
+}
+
 export function applyDocumentBranding(): void {
   if (typeof document === "undefined") return;
-  document.title = getAppBranding().appName;
+  const branding = getAppBranding();
+  const description = `${branding.appName} — fleet and rental management platform.`;
+
+  document.title = branding.appName;
+  setLinkTag("icon", buildFaviconDataUri(branding.logoMonogram));
+  setMetaTag("name", "description", description);
+  setMetaTag("name", "apple-mobile-web-app-title", branding.appName);
+  setMetaTag("property", "og:title", branding.appName);
+  setMetaTag("property", "og:description", description);
 }
