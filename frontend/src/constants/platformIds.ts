@@ -8,6 +8,7 @@ export const PLATFORM_IDS = {
   WOLT: "wolt",
 } as const;
 
+
 export type PlatformId = (typeof PLATFORM_IDS)[keyof typeof PLATFORM_IDS];
 
 // Platform ID labels for display
