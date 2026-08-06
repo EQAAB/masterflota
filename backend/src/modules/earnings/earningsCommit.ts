@@ -17,7 +17,7 @@ import {
   resolveAccountOpeningFeeForEarningsRow,
   resolvePlatformFeeWithGrossNetInference,
 } from "./accountOpeningFee";
-import { assertNoDuplicatePlatformIdsInWeeklyFile } from "./findDuplicatePlatformIdsInFile";
+import { prepareWeeklyImportRows } from "./findDuplicatePlatformIdsInFile";
 
 export type EarningsCommitTotals = {
   gross: number;
@@ -101,7 +101,7 @@ export async function runEarningsCommitFromStaging(
     [importId],
   );
 
-  assertNoDuplicatePlatformIdsInWeeklyFile(staging.rows.map((r) => r.payload));
+  const { rows: importRows } = prepareWeeklyImportRows(staging.rows.map((r) => r.payload));
 
   const impMetaRes = await client.query<{ detection_meta: unknown }>(
     `SELECT detection_meta FROM earnings_imports WHERE id = $1::uuid AND organization_id = $2::uuid`,
@@ -151,8 +151,7 @@ export async function runEarningsCommitFromStaging(
   let skippedNoDate = 0;
   let skippedNoMoney = 0;
 
-  for (const row of staging.rows) {
-    const p = row.payload;
+  for (const p of importRows) {
     const { driverId } = index.match(platformEff, p.hints);
     if (!driverId) {
       skippedNoDriver += 1;

@@ -70,8 +70,8 @@ import {
   toExistingWeekImportDto,
 } from "./findCompletedPlatformWeekImport";
 import {
-  assertNoDuplicatePlatformIdsInWeeklyFile,
   DuplicateRowsInFileError,
+  prepareWeeklyImportRows,
 } from "./findDuplicatePlatformIdsInFile";
 import { stagingPayloadToPreviewRow } from "./previewRowMapper";
 import { parseCommissionBaseType, type CommissionBaseType } from "./calculatePayout";
@@ -259,16 +259,23 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
         headers: boltTaxi ? table.headers : undefined,
       }),
     );
-    const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
+    const { rows: filteredRows, emptyRowsSkipped: normalizedEmptySkipped } =
       filterEmptyNormalizedEarningsRows(mappedRows);
     const parseStats = {
       ...table.parseStats,
       emptyRowsSkipped: table.parseStats.emptyRowsSkipped + normalizedEmptySkipped,
-      dataRowsParsed: normalizedRows.length,
+      dataRowsParsed: filteredRows.length,
     };
 
+    let normalizedRows: typeof filteredRows;
+    let mergeWarning: string | null = null;
     try {
-      assertNoDuplicatePlatformIdsInWeeklyFile(normalizedRows);
+      const prepared = prepareWeeklyImportRows(filteredRows);
+      normalizedRows = prepared.rows;
+      mergeWarning = prepared.mergeWarning;
+      if (prepared.mergedRowCount > 0) {
+        parseStats.dataRowsParsed = normalizedRows.length;
+      }
     } catch (e) {
       if (e instanceof DuplicateRowsInFileError) {
         return res.status(409).json({
@@ -376,6 +383,9 @@ router.post("/import/preview", requirePermission("imports.create"), earningsUplo
     client.release();
 
     const previewWarnings = [...warnings];
+    if (mergeWarning) {
+      previewWarnings.unshift(mergeWarning);
+    }
     if (existingCompleted) {
       previewWarnings.unshift(appendToExistingWeekPreviewMessage(existingCompleted));
     }

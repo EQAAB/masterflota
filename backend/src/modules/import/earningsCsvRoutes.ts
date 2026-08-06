@@ -13,6 +13,7 @@ import {
 import { rowCellsToNormalized, filterEmptyNormalizedEarningsRows } from "../earnings/normalizeRow";
 import { detectPlatformWithMeta, isEarningsPlatform, type EarningsPlatform } from "../earnings/detectPlatform";
 import { extractDateFromFilename } from "../earnings/filenameDate";
+import { prepareWeeklyImportRows } from "../earnings/findDuplicatePlatformIdsInFile";
 import { insertEarningsPreviewStaging } from "../earnings/earningsPreviewStage";
 import { runEarningsCommitFromStaging } from "../earnings/earningsCommit";
 import { parseAndFilterEntityCsv } from "../../lib/parseEntityCsv";
@@ -69,16 +70,21 @@ router.post("/earnings-csv", earningsUpload.single("file"), async (req, res) => 
         uberTaxiExport: uberTaxi,
       }),
     );
-    const { rows: normalizedRows, emptyRowsSkipped: normalizedEmptySkipped } =
+    const { rows: filteredRows, emptyRowsSkipped: normalizedEmptySkipped } =
       filterEmptyNormalizedEarningsRows(mappedRows);
     const parseStats = {
       ...table.parseStats,
       emptyRowsSkipped: table.parseStats.emptyRowsSkipped + normalizedEmptySkipped,
-      dataRowsParsed: normalizedRows.length,
+      dataRowsParsed: filteredRows.length,
     };
 
-    if (!normalizedRows.length) {
+    if (!filteredRows.length) {
       return res.status(400).json({ message: "No data rows found in file" });
+    }
+
+    const { rows: normalizedRows } = prepareWeeklyImportRows(filteredRows);
+    if (normalizedRows.length !== filteredRows.length) {
+      parseStats.dataRowsParsed = normalizedRows.length;
     }
 
     const glovoCommissionBaseType =
