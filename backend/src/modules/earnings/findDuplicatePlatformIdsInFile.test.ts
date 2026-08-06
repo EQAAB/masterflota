@@ -5,6 +5,8 @@ import {
   DuplicateRowsInFileError,
   findDuplicateCourierIds,
   findExactDuplicateRows,
+  mergeDuplicatePlatformIdsInWeeklyFile,
+  prepareWeeklyImportRows,
 } from "./findDuplicatePlatformIdsInFile";
 
 function row(partial: {
@@ -72,11 +74,66 @@ describe("findExactDuplicateRows", () => {
   });
 });
 
+describe("mergeDuplicatePlatformIdsInWeeklyFile", () => {
+  it("sums earnings for month-split rows with the same platform ID", () => {
+    const { rows, mergedRowCount } = mergeDuplicatePlatformIdsInWeeklyFile([
+      row({ courierId: "2311096", gross: 100, net: 80 }),
+      row({ courierId: "2311096", gross: 50, net: 40 }),
+      row({ courierId: "999", gross: 10, net: 8 }),
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(mergedRowCount).toBe(1);
+    const merged = rows.find((r) => r.hints.courierId === "2311096");
+    expect(merged?.amounts.gross).toBe(150);
+    expect(merged?.amounts.net).toBe(120);
+  });
+
+  it("does not double-count exact clone rows for the same platform ID", () => {
+    const { rows } = mergeDuplicatePlatformIdsInWeeklyFile([
+      row({ courierId: "A", gross: 100, net: 80 }),
+      row({ courierId: "A", gross: 100, net: 80 }),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.amounts.gross).toBe(100);
+    expect(rows[0]!.amounts.net).toBe(80);
+  });
+
+  it("merges case-insensitive platform IDs", () => {
+    const { rows } = mergeDuplicatePlatformIdsInWeeklyFile([
+      row({ courierId: "Abc-1", gross: 10, net: 8 }),
+      row({ courierId: "abc-1", gross: 5, net: 4 }),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.amounts.gross).toBe(15);
+  });
+});
+
+describe("prepareWeeklyImportRows", () => {
+  it("returns merge warning for duplicate platform IDs", () => {
+    const result = prepareWeeklyImportRows([
+      row({ courierId: "DUP", gross: 10, net: 8 }),
+      row({ courierId: "DUP", gross: 5, net: 4 }),
+    ]);
+    expect(result.rows).toHaveLength(1);
+    expect(result.mergeWarning).toMatch(/Merged 1 row/);
+    expect(result.mergedDriverCount).toBe(1);
+  });
+
+  it("throws for exact duplicate rows without a platform ID", () => {
+    expect(() =>
+      prepareWeeklyImportRows([
+        row({ courierId: undefined, gross: 10, net: 5 }),
+        row({ courierId: undefined, gross: 10, net: 5 }),
+      ]),
+    ).toThrow(DuplicateRowsInFileError);
+  });
+});
+
 describe("assertNoDuplicatePlatformIdsInWeeklyFile", () => {
-  it("throws for duplicate platform IDs", () => {
+  it("allows duplicate platform IDs (merged automatically)", () => {
     expect(() =>
       assertNoDuplicatePlatformIdsInWeeklyFile([row({ courierId: "DUP" }), row({ courierId: "DUP" })]),
-    ).toThrow(DuplicateRowsInFileError);
+    ).not.toThrow();
   });
 
   it("allows unique IDs", () => {
