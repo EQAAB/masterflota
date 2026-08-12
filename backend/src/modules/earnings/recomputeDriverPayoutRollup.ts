@@ -6,7 +6,7 @@ import { roundMoney } from "./debtAllocation";
 import type { EarningsPlatform } from "./detectPlatform";
 import { payoutPlatformFromEarnings, type DriverPayoutPlatform } from "./payoutPlatform";
 import { payoutPlatformIdForDriver } from "./payoutPlatformId";
-import { syncPayoutRentEntries } from "./payoutRentEntries";
+import { syncDriverWeekVehicleRent } from "./payoutRentEntries";
 
 export type EarningsPeriodAgg = {
   income: number;
@@ -169,22 +169,10 @@ export async function recomputeDriverPayoutRollup(
   });
   const driverPayout = payoutBeforeRent;
 
-  /** Vehicle rent once per driver/week: on glovo row, or on bolt when no glovo earnings in period. */
-  const glovoInPeriod = await client.query<{ c: string }>(
-    `SELECT COUNT(*)::text AS c
-       FROM earnings_records er
-       INNER JOIN earnings_imports ei ON ei.id = er.import_id AND ei.organization_id = $1::uuid
-      WHERE er.driver_id = $2::uuid
-        AND er.platform = 'glovo'
-        AND (
-          (er.trip_date >= $3::date AND er.trip_date <= $4::date)
-          OR (ei.week_start = $3::date AND ei.week_end = $4::date)
-        )`,
-    [orgId, driver.id, periodStart, periodEnd],
-  );
-  const hasGlovoEarnings = parseInt(glovoInPeriod.rows[0]?.c ?? "0", 10) > 0;
-  const chargeVehicleRent = payoutPlatform === "glovo" || !hasGlovoEarnings;
-
+  /**
+   * Upsert without rent; then assign weekly rent once on the fee-anchor platform
+   * (Glovo → Uber → Bolt Taxi → Bolt) via syncDriverWeekVehicleRent.
+   */
   const upsertRes = await client.query<{ id: string }>(
     `INSERT INTO driver_payouts (
         organization_id, driver_id, platform, platform_id, payment_period_start, payment_period_end,
@@ -198,15 +186,10 @@ export async function recomputeDriverPayoutRollup(
         $7, $8, $9, $10,
         $11, $12,
         $13,
-        ROUND((
-          $10::numeric - $13::numeric - ABS($11::numeric) - ABS($12::numeric)
-          - CASE WHEN $19::boolean THEN calculate_rental_fee($1::uuid, $2::uuid, $5::date, $6::date) ELSE 0 END
-        )::numeric, 2),
-        ROUND((
-          $14::numeric - CASE WHEN $19::boolean THEN calculate_rental_fee($1::uuid, $2::uuid, $5::date, $6::date) ELSE 0 END
-        )::numeric, 2),
+        ROUND(($10::numeric - $13::numeric - ABS($11::numeric) - ABS($12::numeric))::numeric, 2),
+        ROUND($14::numeric, 2),
         0, 0, 0,
-        CASE WHEN $19::boolean THEN calculate_rental_fee($1::uuid, $2::uuid, $5::date, $6::date) ELSE 0 END,
+        0,
         'pending',
         $15, $16, $17, $18, 'net_income'
       )
@@ -225,9 +208,8 @@ export async function recomputeDriverPayoutRollup(
           - EXCLUDED.company_commission::numeric
           - ABS(EXCLUDED.total_daily_cash::numeric)
           - ABS(EXCLUDED.account_opening_fee::numeric)
-          - CASE WHEN $19::boolean THEN calculate_rental_fee($1::uuid, EXCLUDED.driver_id, EXCLUDED.payment_period_start::date, EXCLUDED.payment_period_end::date) ELSE 0 END
         )::numeric, 2),
-        vehicle_rental_fee = CASE WHEN $19::boolean THEN calculate_rental_fee($1::uuid, EXCLUDED.driver_id, EXCLUDED.payment_period_start::date, EXCLUDED.payment_period_end::date) ELSE 0 END,
+        vehicle_rental_fee = 0,
         gross_income = EXCLUDED.gross_income,
         net_income = EXCLUDED.net_income,
         commission_base = EXCLUDED.commission_base,
@@ -254,20 +236,12 @@ export async function recomputeDriverPayoutRollup(
       platformNet,
       platformNet,
       commissionRate,
-      chargeVehicleRent,
     ],
   );
 
   const payoutId = upsertRes.rows[0]?.id;
   if (!payoutId) return null;
-  if (chargeVehicleRent) {
-    await syncPayoutRentEntries(client, orgId, payoutId);
-  } else {
-    await client.query(
-      `UPDATE driver_payouts SET vehicle_rental_fee = 0 WHERE id = $1::uuid AND organization_id = $2::uuid`,
-      [payoutId, orgId],
-    );
-  }
+  await syncDriverWeekVehicleRent(client, orgId, driver.id, periodStart, periodEnd);
   return payoutId;
 }
 

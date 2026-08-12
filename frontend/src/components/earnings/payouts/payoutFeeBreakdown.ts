@@ -247,7 +247,16 @@ function payoutRentAmount(p: PayoutListItem): number {
 
 export function findPayoutWithVehicleRent(payoutItems: PayoutListItem[]): PayoutListItem | undefined {
   if (payoutItems.length === 0) return undefined;
-  return payoutItems.reduce((best, p) =>
+  const withRent = payoutItems.filter((p) => payoutRentAmount(p) > 0.02);
+  if (withRent.length === 0) return undefined;
+  if (withRent.length === 1) return withRent[0];
+
+  /** Prefer fee-anchor platform when multiple legs still carry rent (legacy double-charge). */
+  for (const anchor of WEEKLY_FEE_ANCHOR_PLATFORMS) {
+    const hit = withRent.find((p) => (p.earnings_platform ?? "") === anchor);
+    if (hit) return hit;
+  }
+  return withRent.reduce((best, p) =>
     payoutRentAmount(p) > payoutRentAmount(best) ? p : best,
   );
 }

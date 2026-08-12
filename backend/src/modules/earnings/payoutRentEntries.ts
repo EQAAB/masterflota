@@ -1,19 +1,83 @@
 import type { PoolClient } from "pg";
 import { insertVehicleHistory } from "../vehicles/vehicleHistory";
+import { pickWeeklyFeeAnchorPlatform } from "./driverWeeklyFees";
+import { isFrozenPayoutStatus, OPEN_PAYOUT_STATUS_SQL } from "./payoutFreeze";
+
+/**
+ * Whether this platform should carry vehicle rent for the driver week.
+ * Same priority as weekly recurring fees: Glovo → Uber → Bolt Taxi → Bolt.
+ */
+export function shouldChargeVehicleRentOnPlatform(
+  platform: string,
+  platformsInWeek: string[],
+): boolean {
+  if (!platformsInWeek.length) return false;
+  return pickWeeklyFeeAnchorPlatform(platformsInWeek) === platform;
+}
+
+/**
+ * Clear weekly/overdue rent line items on a non-anchor payout; keep manual adjustments.
+ * Recalculates vehicle_rental_fee and baseline raw_net (before custom/recurring fees).
+ */
+export async function clearPayoutVehicleRent(
+  client: PoolClient,
+  orgId: string,
+  payoutId: string,
+): Promise<void> {
+  const lockRes = await client.query<{ payment_status: string }>(
+    `SELECT payment_status
+     FROM driver_payouts
+     WHERE id = $1::uuid AND organization_id = $2::uuid
+     FOR UPDATE`,
+    [payoutId, orgId],
+  );
+  const row = lockRes.rows[0];
+  if (!row || isFrozenPayoutStatus(row.payment_status)) return;
+
+  await client.query(
+    `DELETE FROM payout_rent_entries
+     WHERE driver_payout_id = $1::uuid
+       AND entry_type IN ('current_week', 'overdue')`,
+    [payoutId],
+  );
+
+  await client.query(
+    `UPDATE driver_payouts dp
+     SET
+       vehicle_rental_fee = COALESCE(agg.sum_amt, 0),
+       raw_net_amount = ROUND((
+         COALESCE(dp.total_net_earnings, 0)::numeric
+         - COALESCE(dp.company_commission, 0)::numeric
+         - ABS(COALESCE(dp.total_daily_cash, 0)::numeric)
+         - ABS(COALESCE(dp.account_opening_fee, 0)::numeric)
+         - COALESCE(agg.sum_amt, 0)::numeric
+       )::numeric, 2),
+       updated_at = NOW()
+     FROM (
+       SELECT ROUND(COALESCE(SUM(amount), 0)::numeric, 2) AS sum_amt
+       FROM payout_rent_entries
+       WHERE driver_payout_id = $1::uuid
+         AND entry_type IN ('current_week', 'overdue', 'adjustment')
+     ) agg
+     WHERE dp.id = $1::uuid AND dp.organization_id = $2::uuid`,
+    [payoutId, orgId],
+  );
+}
 
 /**
  * Rebuilds payroll vehicle rent line item from driver vehicle assignment (weekly_rent),
  * updates vehicle_rental_fee and raw_net_amount from entry totals (includes adjustment rows).
  */
 export async function syncPayoutRentEntries(client: PoolClient, orgId: string, payoutId: string): Promise<void> {
-  const lockRes = await client.query<{ driver_id: string }>(
-    `SELECT driver_id::text
+  const lockRes = await client.query<{ driver_id: string; payment_status: string }>(
+    `SELECT driver_id::text, payment_status
      FROM driver_payouts
      WHERE id = $1::uuid AND organization_id = $2::uuid
      FOR UPDATE`,
     [payoutId, orgId],
   );
-  if (!lockRes.rows[0]) return;
+  const locked = lockRes.rows[0];
+  if (!locked || isFrozenPayoutStatus(locked.payment_status)) return;
 
   await client.query(
     `DELETE FROM payout_rent_entries
@@ -114,4 +178,48 @@ export async function syncPayoutRentEntries(client: PoolClient, orgId: string, p
      WHERE dp.id = $1::uuid`,
     [payoutId],
   );
+}
+
+/**
+ * Charge weekly vehicle rent once per driver/week on the fee-anchor platform only
+ * (Glovo → Uber → Bolt Taxi → Bolt). Clears rent from sibling platform legs.
+ */
+export async function syncDriverWeekVehicleRent(
+  client: PoolClient,
+  orgId: string,
+  driverId: string,
+  periodStart: string,
+  periodEnd: string,
+): Promise<{ anchorPayoutId: string | null; payoutsTouched: number }> {
+  const ps = periodStart.slice(0, 10);
+  const pe = periodEnd.slice(0, 10);
+
+  const { rows } = await client.query<{ id: string; platform: string }>(
+    `SELECT id::text, platform
+     FROM driver_payouts
+     WHERE organization_id = $1::uuid
+       AND driver_id = $2::uuid
+       AND payment_period_start = $3::date
+       AND payment_period_end = $4::date
+       AND ${OPEN_PAYOUT_STATUS_SQL}
+     ORDER BY id`,
+    [orgId, driverId, ps, pe],
+  );
+  if (!rows.length) return { anchorPayoutId: null, payoutsTouched: 0 };
+
+  const anchorPlatform = pickWeeklyFeeAnchorPlatform(rows.map((r) => r.platform));
+  const anchorPayoutId =
+    rows.find((r) => r.platform === anchorPlatform)?.id ?? rows[0]?.id ?? null;
+  let payoutsTouched = 0;
+
+  for (const { id } of rows) {
+    if (anchorPayoutId && id === anchorPayoutId) {
+      await syncPayoutRentEntries(client, orgId, id);
+    } else {
+      await clearPayoutVehicleRent(client, orgId, id);
+    }
+    payoutsTouched += 1;
+  }
+
+  return { anchorPayoutId, payoutsTouched };
 }
