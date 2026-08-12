@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { computeCompanyCommissionFromBase, type DriverCommissionRow } from "./commission";
+import { computeWeekDebtPool } from "./crossPlatformDebt";
 import { roundMoney } from "./debtAllocation";
+import { shouldChargeVehicleRentOnPlatform } from "./payoutRentEntries";
 import {
   aggregateEarningsPeriodTotals,
   computePayoutBeforeRent,
@@ -188,5 +190,43 @@ describe("uber debt payout week", () => {
       -1274.66,
       2,
     );
+  });
+});
+
+describe("multi-platform vehicle rent once (uber + bolt)", () => {
+  it("does not double-count rent when pooling raw nets", () => {
+    const platforms = ["uber", "bolt_taxi"];
+    const rent = 550;
+    const tax = 250;
+
+    const uberOps = 237.94;
+    const boltOps = 1191.61;
+
+    const uberGetsRent = shouldChargeVehicleRentOnPlatform("uber", platforms);
+    const boltGetsRent = shouldChargeVehicleRentOnPlatform("bolt_taxi", platforms);
+    expect(uberGetsRent).toBe(true);
+    expect(boltGetsRent).toBe(false);
+
+    /** Rent + recurring tax both land on Uber (fee anchor). */
+    const uberRaw = roundMoney(uberOps - tax - (uberGetsRent ? rent : 0));
+    const boltRaw = roundMoney(boltOps - (boltGetsRent ? rent : 0));
+    expect(uberRaw).toBeCloseTo(-562.06, 2);
+    expect(boltRaw).toBeCloseTo(1191.61, 2);
+
+    const pool = computeWeekDebtPool([
+      { platform: "uber", rawNet: uberRaw },
+      { platform: "bolt_taxi", rawNet: boltRaw },
+    ]);
+    expect(pool.weekRawNet).toBeCloseTo(629.55, 2);
+
+    /** Bug regression: rent on both legs understates week net by rent amount. */
+    const buggyUberRaw = roundMoney(uberOps - tax - rent);
+    const buggyBoltRaw = roundMoney(boltOps - rent);
+    const buggyPool = computeWeekDebtPool([
+      { platform: "uber", rawNet: buggyUberRaw },
+      { platform: "bolt_taxi", rawNet: buggyBoltRaw },
+    ]);
+    expect(buggyPool.weekRawNet).toBeCloseTo(79.55, 2);
+    expect(buggyPool.weekRawNet).toBeCloseTo(pool.weekRawNet - rent, 2);
   });
 });

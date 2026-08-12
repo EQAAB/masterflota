@@ -166,6 +166,14 @@ describe("findPayoutWithVehicleRent", () => {
     ] as PayoutListItem[];
     expect(findPayoutWithVehicleRent(items)?.id).toBe("b");
   });
+
+  it("prefers uber over bolt when both still carry rent", () => {
+    const items = [
+      { ...payout("b", "bolt"), vehicle_rental_fee: "550" },
+      { ...payout("u", "uber"), vehicle_rental_fee: "550" },
+    ] as PayoutListItem[];
+    expect(findPayoutWithVehicleRent(items)?.id).toBe("u");
+  });
 });
 
 describe("buildVehicleRentLadderSteps", () => {
