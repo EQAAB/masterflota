@@ -14,12 +14,10 @@ export function SubcontractorSettlementsPage() {
     canAccess,
     periodStart,
     periodEnd,
-    setPeriodStart,
-    setPeriodEnd,
     subcontractorId,
     setSubcontractorId,
     periodValidation,
-    applyPreviousWeek,
+    applyWeek,
     subcontractors,
     subcontractorsLoading,
     msg,
@@ -75,9 +73,7 @@ export function SubcontractorSettlementsPage() {
         <SettlementsFiltersCard
           periodStart={periodStart}
           periodEnd={periodEnd}
-          onPeriodStartChange={setPeriodStart}
-          onPeriodEndChange={setPeriodEnd}
-          onResetPreviousWeek={applyPreviousWeek}
+          onWeekChange={applyWeek}
           periodValidation={periodValidation}
           subcontractorId={subcontractorId}
           onSubcontractorIdChange={setSubcontractorId}
