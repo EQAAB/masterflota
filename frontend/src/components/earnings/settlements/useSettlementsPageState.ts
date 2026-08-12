@@ -36,11 +36,15 @@ export function useSettlementsPageState() {
     [periodStart, periodEnd],
   );
 
-  const applyPreviousWeek = useCallback(() => {
-    const { start, end } = getPreviousWeek();
+  const applyWeek = useCallback((start: string, end: string) => {
     setPeriodStart(start);
     setPeriodEnd(end);
   }, []);
+
+  const applyPreviousWeek = useCallback(() => {
+    const { start, end } = getPreviousWeek();
+    applyWeek(start, end);
+  }, [applyWeek]);
 
   const subcontractorsQuery = useQuery({
     queryKey: ["subcontractors"],
@@ -166,6 +170,7 @@ export function useSettlementsPageState() {
     subcontractorId,
     setSubcontractorId,
     periodValidation,
+    applyWeek,
     applyPreviousWeek,
     subcontractors: subcontractorsQuery.data ?? [],
     subcontractorsLoading: subcontractorsQuery.isLoading,
