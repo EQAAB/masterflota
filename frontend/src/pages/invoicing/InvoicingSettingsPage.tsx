@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -319,10 +319,19 @@ export function InvoicingSettingsPage() {
   );
 }
 
+function UploadCloudIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+    </svg>
+  );
+}
+
 function AnafConnectionOptions({ anafData, anafLoading, canAnaf, connectAnafMutation, queryClient }: any) {
   const [activeTab, setActiveTab] = useState<"certificate" | "oauth" | "provider">("certificate");
   const [certFile, setCertFile] = useState<File | null>(null);
   const [certPassword, setCertPassword] = useState("");
+  const certFileInputRef = useRef<HTMLInputElement>(null);
   const [providerType, setProviderType] = useState("smartbill");
   const [providerApiKey, setProviderApiKey] = useState("");
   const [providerApiSecret, setProviderApiSecret] = useState("");
@@ -439,13 +448,47 @@ function AnafConnectionOptions({ anafData, anafLoading, canAnaf, connectAnafMuta
               {canAnaf && (
                 <>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Certificate file (.pfx / .p12)</label>
-                    <input
-                      type="file"
-                      accept=".pfx,.p12"
-                      onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
-                      className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm"
-                    />
+                    <label className="mb-1.5 block text-xs font-medium text-ink-muted">Certificate file (.pfx / .p12)</label>
+                    <div className="rounded-xl border-2 border-dashed border-border/80 bg-brand-mint/10 p-5 text-center transition-all duration-200 hover:border-brand/40 hover:bg-brand-mint/20">
+                      <input
+                        ref={certFileInputRef}
+                        type="file"
+                        accept=".pfx,.p12"
+                        onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
+                        className="hidden"
+                      />
+                      {certFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand/10 text-brand">
+                            <UploadCloudIcon className="h-5 w-5" />
+                          </span>
+                          <p className="max-w-full truncate text-sm font-medium text-ink">{certFile.name}</p>
+                          <p className="text-xs text-ink-muted">{(certFile.size / 1024).toFixed(1)} KB</p>
+                          <button
+                            type="button"
+                            onClick={() => certFileInputRef.current?.click()}
+                            className="text-sm font-medium text-brand hover:underline"
+                          >
+                            Change file
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10 text-brand">
+                            <UploadCloudIcon className="h-5 w-5" />
+                          </span>
+                          <p className="mb-1 text-sm font-medium text-ink">Drag & drop your certificate here, or click to browse</p>
+                          <p className="mb-3 text-xs text-ink-muted">Accepted formats: .pfx, .p12</p>
+                          <button
+                            type="button"
+                            onClick={() => certFileInputRef.current?.click()}
+                            className="inline-flex h-10 items-center rounded-xl border border-brand/60 bg-white px-4 text-sm font-medium text-brand shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-mint/20"
+                          >
+                            Select file
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-ink-muted">Certificate password</label>
