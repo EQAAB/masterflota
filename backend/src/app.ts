@@ -18,6 +18,7 @@ import { settingsRoutes } from "./modules/settings/routes";
 import { auditRoutes } from "./modules/audit/routes";
 import { loginEventRoutes } from "./modules/loginEvents/routes";
 import { organizationRoutes } from "./modules/organizations/routes";
+import { invoicingRoutes } from "./modules/invoicing/routes";
 
 export const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/login-events", loginEventRoutes);
 app.use("/api/organizations", organizationRoutes);
+app.use("/api/invoicing", invoicingRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", version: env.appVersion });

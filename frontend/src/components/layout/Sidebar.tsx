@@ -287,9 +287,23 @@ function EarningsSubNavLinks({
   );
 }
 
-function sectionFromPath(pathname: string): "earnings" | "rentals" | "settings" | null {
+const invoicingSubItems = [
+  { to: "/invoicing", label: "Invoices", exact: true },
+  { to: "/invoicing/settings", label: "Settings" },
+];
+
+function InvoicingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+}
+
+function sectionFromPath(pathname: string): "earnings" | "rentals" | "invoicing" | "settings" | null {
   if (pathname.startsWith("/earnings")) return "earnings";
   if (pathname.startsWith("/rentals")) return "rentals";
+  if (pathname.startsWith("/invoicing")) return "invoicing";
   if (pathname.startsWith("/settings")) return "settings";
   return null;
 }
@@ -315,6 +329,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewVehicles = usePermission("vehicles.view");
   const canViewDashboard = usePermission("dashboard.view");
   const canViewRentals = useAnyPermission("rentals.view", "rentals.manage");
+  const canViewInvoicing = useAnyPermission("invoicing.view", "invoicing.manage");
   const canViewReports = usePermission("reports.view");
   const canSettleSubcontractors = usePermission("subcontractors.settle");
   const earningsSubItems = buildEarningsSubItems({
@@ -360,6 +375,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [openFlyout, setOpenFlyout] = useState<NavSection | null>(null);
   const earningsBtnRef = useRef<HTMLButtonElement>(null);
   const rentalsBtnRef = useRef<HTMLButtonElement>(null);
+  const invoicingBtnRef = useRef<HTMLButtonElement>(null);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   const toggleSection = (section: NavSection) => {
@@ -380,6 +396,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const earningsActive = location.pathname.startsWith("/earnings");
   const rentalsActive = location.pathname.startsWith("/rentals");
+  const invoicingActive = location.pathname.startsWith("/invoicing");
   const settingsActive = location.pathname.startsWith("/settings");
   const platformActive = location.pathname.startsWith("/platform");
   const branding = getAppBranding();
@@ -518,6 +535,68 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
                     {rentalSubItems.map(({ to, label, exact }) => {
                       const active = isRentalNavActive(location.pathname, to, exact);
+                      return (
+                        <Link
+                          key={to}
+                          to={to}
+                          className={`flex min-h-[36px] items-center rounded-lg px-3 py-2 text-sm transition-colors ${
+                            active
+                              ? "bg-brand-mint font-medium text-ink"
+                              : "text-white/60 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <span className="truncate">{label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </SidebarAccordionPanel>
+              </div>
+            ))}
+
+          {showFleetNav && canViewInvoicing &&
+            (collapsed ? (
+              <>
+                <button
+                  ref={invoicingBtnRef}
+                  type="button"
+                  title="Invoicing"
+                  onClick={() => toggleFlyout("invoicing")}
+                  className={`${sidebarNavItem} w-full ${invoicingActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
+                  aria-expanded={openFlyout === "invoicing"}
+                  aria-haspopup="menu"
+                >
+                  <InvoicingIcon className={ICON} />
+                </button>
+                {openFlyout === "invoicing" && invoicingBtnRef.current && (
+                  <NavSubFlyout
+                    title="Invoicing"
+                    items={invoicingSubItems}
+                    anchorRect={invoicingBtnRef.current.getBoundingClientRect()}
+                    onClose={() => setOpenFlyout(null)}
+                  />
+                )}
+              </>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => toggleSection("invoicing")}
+                  className={`${sidebarNavItem} w-full text-left ${
+                    invoicingActive ? sidebarNavActive : sidebarNavInactive
+                  }`}
+                  aria-expanded={openSection === "invoicing"}
+                >
+                  <InvoicingIcon className={ICON} />
+                  <span className="flex-1 truncate">Invoicing</span>
+                  <ChevronDown
+                    className={`${SIDEBAR_CHEVRON} ${openSection === "invoicing" ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <SidebarAccordionPanel open={openSection === "invoicing"}>
+                  <div className="relative z-10 mt-0.5 ml-2 space-y-0.5 border-l border-white/20 pl-3">
+                    {invoicingSubItems.map(({ to, label, exact }) => {
+                      const active = exact ? location.pathname === to : location.pathname.startsWith(to);
                       return (
                         <Link
                           key={to}

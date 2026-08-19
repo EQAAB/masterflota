@@ -64,6 +64,10 @@ export const env = {
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
   loginRateLimitMax: parsePositiveInt(process.env.LOGIN_RATE_LIMIT_MAX, 10),
   loginRateLimitWindowMs: parsePositiveInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+  anafClientId: process.env.ANAF_CLIENT_ID ?? "",
+  anafClientSecret: process.env.ANAF_CLIENT_SECRET ?? "",
+  anafCallbackUrl: process.env.ANAF_CALLBACK_URL ?? "",
+  frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
 };
 
 function parsePositiveInt(raw: string | undefined, fallback: number): number {

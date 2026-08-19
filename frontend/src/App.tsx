@@ -17,6 +17,7 @@ import { lazyPage } from "./lib/lazyPage";
 import {
   EARNINGS_OVERVIEW_PERMISSIONS,
   IMPORTS_VIEW_PERMISSIONS,
+  INVOICING_VIEW_PERMISSIONS,
   PAYOUTS_VIEW_PERMISSIONS,
   RENTALS_VIEW_PERMISSIONS,
   ROLES_VIEW_PERMISSIONS,
@@ -97,6 +98,10 @@ const VehicleAvailabilityPage = lazyPage(
 );
 const PricingPage = lazyPage(() => import("./pages/rentals/PricingPage"), "PricingPage");
 const PaymentsPage = lazyPage(() => import("./pages/rentals/PaymentsPage"), "PaymentsPage");
+const InvoicesListPage = lazyPage(() => import("./pages/invoicing/InvoicesListPage"), "InvoicesListPage");
+const InvoiceDetailPage = lazyPage(() => import("./pages/invoicing/InvoiceDetailPage"), "InvoiceDetailPage");
+const InvoiceFormPage = lazyPage(() => import("./pages/invoicing/InvoiceFormPage"), "InvoiceFormPage");
+const InvoicingSettingsPage = lazyPage(() => import("./pages/invoicing/InvoicingSettingsPage"), "InvoicingSettingsPage");
 const UsersPage = lazyPage(() => import("./pages/settings/UsersPage"), "UsersPage");
 const RolesPage = lazyPage(() => import("./pages/settings/RolesPage"), "RolesPage");
 const AuditLogPage = lazyPage(() => import("./pages/settings/AuditLogPage"), "AuditLogPage");
@@ -323,6 +328,22 @@ export const appRouter = createBrowserRouter(
     {
       path: "/rentals/payments",
       element: fleetPage(PaymentsPage, { anyOf: RENTALS_VIEW_PERMISSIONS }),
+    },
+    {
+      path: "/invoicing",
+      element: fleetPage(InvoicesListPage, { anyOf: INVOICING_VIEW_PERMISSIONS }),
+    },
+    {
+      path: "/invoicing/new",
+      element: fleetPage(InvoiceFormPage, { permission: "invoicing.manage", redirectTo: "/invoicing" }),
+    },
+    {
+      path: "/invoicing/settings",
+      element: fleetPage(InvoicingSettingsPage, { anyOf: INVOICING_VIEW_PERMISSIONS }),
+    },
+    {
+      path: "/invoicing/:id",
+      element: fleetPage(InvoiceDetailPage, { anyOf: INVOICING_VIEW_PERMISSIONS }),
     },
     {
       path: "/vehicles/:id",
