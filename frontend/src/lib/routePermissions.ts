@@ -17,5 +17,8 @@ export const IMPORTS_VIEW_PERMISSIONS = ["imports.view", "imports.create"] as co
 /** Rentals list/detail pages (view or manage). */
 export const RENTALS_VIEW_PERMISSIONS = ["rentals.view", "rentals.manage"] as const;
 
+/** Invoicing pages (view or manage). */
+export const INVOICING_VIEW_PERMISSIONS = ["invoicing.view", "invoicing.manage"] as const;
+
 /** Roles page: view matrix with users.manage, edit with roles.manage. */
 export const ROLES_VIEW_PERMISSIONS = ["roles.manage", "users.manage"] as const;

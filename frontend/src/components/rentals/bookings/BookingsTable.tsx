@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { RentalBooking } from "../../../api/rentals";
-import { downloadRentalContract } from "../../../api/rentals";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { BookingTableRow } from "./BookingTableRow";
 import { BookingsEmptyState } from "./BookingsEmptyState";
@@ -57,7 +56,7 @@ export function BookingsTable({ bookings, loading, density, onRenewNavigate }: B
       },
       onInvoice: () => {
         closeMenu();
-        void downloadRentalContract(openBooking.id);
+        navigate(`/invoicing/new?bookingId=${openBooking.id}&buyerName=${encodeURIComponent(openBooking.customer_name ?? "")}`);
       },
       onComplete: () => {
         closeMenu();
