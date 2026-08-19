@@ -140,9 +140,23 @@ export interface CreateInvoiceInput {
 
 export interface AnafConnectionStatus {
   connected: boolean;
-  cui?: string;
-  expiresAt?: string;
-  connectedAt?: string;
+  connectionMethod: string | null;
+  cui: string | null;
+  expiresAt: string | null;
+  connectedAt: string | null;
+  certificate: {
+    uploaded: boolean;
+    serial?: string;
+    subject?: string;
+    uploadedAt?: string;
+  };
+  provider: {
+    configured: boolean;
+    provider?: string;
+    companyCui?: string;
+    isActive?: boolean;
+    connectedAt?: string;
+  };
 }
 
 // --- API calls ---
@@ -198,3 +212,23 @@ export const initiateAnafConnection = () =>
 
 export const disconnectAnaf = () =>
   api.post("/invoicing/anaf/disconnect");
+
+// Certificate upload
+export const uploadAnafCertificate = (file: File, password: string) => {
+  const formData = new FormData();
+  formData.append("certificate", file);
+  formData.append("password", password);
+  return api.post<{ uploaded: boolean; message: string }>("/invoicing/certificate/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const deleteAnafCertificate = () =>
+  api.delete("/invoicing/certificate");
+
+// Provider API (SmartBill / Oblio)
+export const connectProvider = (data: { provider: string; apiKey: string; apiSecret?: string; companyCui?: string }) =>
+  api.post<{ configured: boolean; provider: string }>("/invoicing/provider/connect", data);
+
+export const disconnectProvider = () =>
+  api.delete("/invoicing/provider");

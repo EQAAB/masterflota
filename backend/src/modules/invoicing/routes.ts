@@ -5,6 +5,8 @@ import { fiscalProfileRoutes } from "./fiscalProfileRoutes";
 import { seriesRoutes } from "./seriesRoutes";
 import { invoiceRoutes } from "./invoiceRoutes";
 import { anafRoutes } from "./anafRoutes";
+import { certificateRoutes } from "./certificateRoutes";
+import { providerRoutes } from "./providerRoutes";
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use("/fiscal-profile", fiscalProfileRoutes);
 router.use("/series", seriesRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/anaf", anafRoutes);
+router.use("/certificate", certificateRoutes);
+router.use("/provider", providerRoutes);
 
 export const invoicingRoutes = router;

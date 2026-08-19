@@ -249,17 +249,36 @@ export async function checkAnafStatus(invoiceId: string, orgId: string) {
 
 export async function getAnafConnectionStatus(orgId: string) {
   const { rows } = await invoicingDb.query(
-    `SELECT cui, expires_at, connected_at, updated_at FROM anaf_tokens WHERE organization_id = $1`,
+    `SELECT cui, expires_at, connected_at, updated_at, connection_method FROM anaf_tokens WHERE organization_id = $1`,
     [orgId],
   );
-  if (!rows.length) return { connected: false };
 
-  const token = rows[0] as { cui: string; expires_at: string; connected_at: string };
+  const { rows: certRows } = await invoicingDb.query(
+    `SELECT cert_serial, cert_subject, uploaded_at FROM anaf_certificates WHERE organization_id = $1`,
+    [orgId],
+  );
+
+  const { rows: providerRows } = await invoicingDb.query(
+    `SELECT provider, company_cui, is_active, connected_at FROM invoicing_providers WHERE organization_id = $1`,
+    [orgId],
+  );
+
+  const token = rows[0] as { cui: string; expires_at: string; connected_at: string; connection_method: string } | undefined;
+  const cert = certRows[0] as { cert_serial: string; cert_subject: string; uploaded_at: string } | undefined;
+  const provider = providerRows[0] as { provider: string; company_cui: string; is_active: boolean; connected_at: string } | undefined;
+
   return {
-    connected: true,
-    cui: token.cui,
-    expiresAt: token.expires_at,
-    connectedAt: token.connected_at,
+    connected: !!token,
+    connectionMethod: token?.connection_method ?? null,
+    cui: token?.cui ?? null,
+    expiresAt: token?.expires_at ?? null,
+    connectedAt: token?.connected_at ?? null,
+    certificate: cert
+      ? { uploaded: true, serial: cert.cert_serial, subject: cert.cert_subject, uploadedAt: cert.uploaded_at }
+      : { uploaded: false },
+    provider: provider
+      ? { configured: true, provider: provider.provider, companyCui: provider.company_cui, isActive: provider.is_active, connectedAt: provider.connected_at }
+      : { configured: false },
   };
 }
 
@@ -268,4 +287,57 @@ export async function disconnectAnaf(orgId: string) {
     `DELETE FROM anaf_tokens WHERE organization_id = $1`,
     [orgId],
   );
+}
+
+export async function authenticateWithCertificate(orgId: string, cui: string) {
+  const { rows: certRows } = await invoicingDb.query(
+    `SELECT cert_data, cert_password_encrypted FROM anaf_certificates WHERE organization_id = $1`,
+    [orgId],
+  );
+  if (!certRows.length) throw new Error("No certificate uploaded");
+
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: ANAF_CLIENT_ID,
+    client_secret: ANAF_CLIENT_SECRET,
+    scope: "e-factura",
+  });
+
+  const resp = await fetch(ANAF_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`ANAF certificate auth failed: ${resp.status} ${text}`);
+  }
+
+  const data = await resp.json() as {
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    expires_in: number;
+    scope?: string;
+  };
+
+  const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+
+  await invoicingDb.query(
+    `INSERT INTO anaf_tokens (organization_id, access_token, refresh_token, token_type, expires_at, scope, cui, connection_method)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'certificate')
+     ON CONFLICT (organization_id) DO UPDATE SET
+       access_token = EXCLUDED.access_token,
+       refresh_token = EXCLUDED.refresh_token,
+       token_type = EXCLUDED.token_type,
+       expires_at = EXCLUDED.expires_at,
+       scope = EXCLUDED.scope,
+       cui = EXCLUDED.cui,
+       connection_method = 'certificate',
+       updated_at = NOW()`,
+    [orgId, data.access_token, data.refresh_token, data.token_type, expiresAt, data.scope ?? null, cui],
+  );
+
+  return { expiresAt };
 }
