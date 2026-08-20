@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useAnyPermission, useCanViewEarningsOverview, useCanViewImports, useCanViewPayouts, usePermission } from "../../lib/permissions";
@@ -377,6 +377,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const rentalsBtnRef = useRef<HTMLButtonElement>(null);
   const invoicingBtnRef = useRef<HTMLButtonElement>(null);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
+  const navScrollRef = useRef<HTMLElement>(null);
+  const [scrollFade, setScrollFade] = useState({ top: false, bottom: false });
+
+  const updateScrollFade = useCallback(() => {
+    const el = navScrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const overflow = scrollHeight > clientHeight + 2;
+    setScrollFade({
+      top: overflow && scrollTop > 4,
+      bottom: overflow && scrollTop + clientHeight < scrollHeight - 4,
+    });
+  }, []);
 
   const toggleSection = (section: NavSection) => {
     setOpenSection((prev) => (prev === section ? null : section));
@@ -393,6 +406,32 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   useEffect(() => {
     if (!collapsed) setOpenFlyout(null);
   }, [collapsed]);
+
+  useEffect(() => {
+    updateScrollFade();
+    const el = navScrollRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(() => updateScrollFade());
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+
+    const t = window.setTimeout(updateScrollFade, 320);
+    return () => {
+      ro.disconnect();
+      window.clearTimeout(t);
+    };
+  }, [
+    updateScrollFade,
+    collapsed,
+    openSection,
+    showEarningsNav,
+    canViewRentals,
+    canViewInvoicing,
+    showSettingsNav,
+    earningsSubItems.length,
+    settingsSubItems.length,
+  ]);
 
   const earningsActive = location.pathname.startsWith("/earnings");
   const rentalsActive = location.pathname.startsWith("/rentals");
@@ -428,8 +467,17 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
 
-      <nav className="sidebar-glass-nav relative z-10">
-        <div className="relative z-10 space-y-0.5 p-1">
+      <div className="sidebar-nav-scroll-wrap">
+        <div
+          className={`sidebar-nav-scroll-fade sidebar-nav-scroll-fade--top ${scrollFade.top ? "is-visible" : ""}`}
+          aria-hidden
+        />
+        <nav
+          ref={navScrollRef}
+          className="sidebar-glass-nav relative z-10"
+          onScroll={updateScrollFade}
+        >
+          <div className="relative z-10 space-y-0.5 p-1">
           {navItems.map(({ to, label, icon }) => {
             const isActive =
               location.pathname === to ||
@@ -677,8 +725,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </SidebarAccordionPanel>
               </div>
             ))}
-        </div>
-      </nav>
+          </div>
+        </nav>
+        <div
+          className={`sidebar-nav-scroll-fade sidebar-nav-scroll-fade--bottom ${scrollFade.bottom ? "is-visible" : ""}`}
+          aria-hidden
+        />
+      </div>
 
       <div className="relative z-10 shrink-0 space-y-2 border-t border-white/10 p-2">
         {!collapsed && (
