@@ -33,6 +33,8 @@ export const SETTLEMENT_TOTALS_SELECT = `
        COALESCE(st.total_daily_cash, 0)::text AS total_daily_cash,
        COALESCE(st.total_custom_deductions, 0)::text AS total_custom_deductions,
        COALESCE(st.total_custom_additions, 0)::text AS total_custom_additions,
+       COALESCE(st.total_raw_net, 0)::text AS total_raw_net,
+       COALESCE(st.total_debt_applied, 0)::text AS total_debt_applied,
        COALESCE(st.total_payable, 0)::text AS total_payable,
        COALESCE(st.total_payable, 0)::text AS amount_payable,
        COALESCE(sp.payment_status, 'pending') AS payment_status,
@@ -66,6 +68,8 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_LATERAL = `
            ROUND(COALESCE(SUM(dp.total_daily_cash), 0)::numeric, 2) AS total_daily_cash,
            ROUND(COALESCE(SUM(${DRIVER_CUSTOM_DEDUCTIONS_EXPR}), 0)::numeric, 2) AS total_custom_deductions,
            ROUND(COALESCE(SUM(${DRIVER_CUSTOM_ADDITIONS_EXPR}), 0)::numeric, 2) AS total_custom_additions,
+           ROUND(COALESCE(SUM(dp.raw_net_amount), 0)::numeric, 2) AS total_raw_net,
+           ROUND(COALESCE(SUM(dp.debt_applied_amount), 0)::numeric, 2) AS total_debt_applied,
            ROUND(COALESCE(SUM(dp.net_driver_payout), 0)::numeric, 2) AS total_payable
     FROM driver_payouts dp
     ${DRIVER_FEE_JOINS}
@@ -83,6 +87,8 @@ export const PAYOUT_TOTALS_BY_PAYOUT_ID_SELECT = `
        COALESCE(pt.total_daily_cash, 0)::text AS total_daily_cash,
        COALESCE(pt.total_custom_deductions, 0)::text AS total_custom_deductions,
        COALESCE(pt.total_custom_additions, 0)::text AS total_custom_additions,
+       COALESCE(pt.total_raw_net, 0)::text AS total_raw_net,
+       COALESCE(pt.total_debt_applied, 0)::text AS total_debt_applied,
        COALESCE(pt.total_payable, 0)::text AS total_payable,
        COALESCE(pt.total_payable, 0)::text AS amount_payable`;
 

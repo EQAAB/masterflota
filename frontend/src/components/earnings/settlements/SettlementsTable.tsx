@@ -128,6 +128,8 @@ function SettlementRowDetailsPanel({ row }: { row: SubcontractorSettlementRow })
         <DetailField label="Daily cash" tint="blue" value={formatCurrency(asSettlementNumber(row.total_daily_cash))} />
         <DetailField label="Custom ded." tint="purple" value={formatCurrency(asSettlementNumber(row.total_custom_deductions))} />
         <DetailField label="Custom add." tint="indigo" value={formatCurrency(asSettlementNumber(row.total_custom_additions))} />
+        <DetailField label="Raw net" tint="slate" value={formatCurrency(asSettlementNumber(row.total_raw_net))} />
+        <DetailField label="Debt applied" tint="orange" value={formatCurrency(asSettlementNumber(row.total_debt_applied))} />
       </div>
     </div>
   );

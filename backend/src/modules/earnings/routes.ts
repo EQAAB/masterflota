@@ -2894,6 +2894,8 @@ router.get("/subcontractors/settlements", requireSubcontractorSettle, async (req
       total_daily_cash: string;
       total_custom_deductions: string;
       total_custom_additions: string;
+      total_raw_net: string | null;
+      total_debt_applied: string | null;
       driver_payout_count: number | null;
       total_payable: string | null;
       amount_payable: string | null;
@@ -2914,6 +2916,8 @@ router.get("/subcontractors/settlements", requireSubcontractorSettle, async (req
               COALESCE(st.total_daily_cash, 0)::text AS total_daily_cash,
               COALESCE(st.total_custom_deductions, 0)::text AS total_custom_deductions,
               COALESCE(st.total_custom_additions, 0)::text AS total_custom_additions,
+              COALESCE(st.total_raw_net, 0)::text AS total_raw_net,
+              COALESCE(st.total_debt_applied, 0)::text AS total_debt_applied,
               st.driver_payout_count,
               COALESCE(st.total_payable, 0)::text AS total_payable,
               COALESCE(st.total_payable, 0)::text AS amount_payable,

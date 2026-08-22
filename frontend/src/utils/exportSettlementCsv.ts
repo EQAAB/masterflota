@@ -30,6 +30,8 @@ function exportDetailCsv(detail: SubcontractorSettlementDetail): void {
       daily_cash: d.daily_cash,
       custom_deductions: d.custom_deductions,
       custom_additions: d.custom_additions,
+      raw_net: d.raw_net,
+      debt_applied: d.debt_applied,
       net: d.net,
     })),
   );
@@ -59,6 +61,8 @@ function exportSummaryCsv(
       daily_cash: asSettlementNumber(row.total_daily_cash),
       custom_deductions: asSettlementNumber(row.total_custom_deductions),
       custom_additions: asSettlementNumber(row.total_custom_additions),
+      raw_net: asSettlementNumber(row.total_raw_net),
+      debt_applied: asSettlementNumber(row.total_debt_applied),
       payable: settlementPayable(row),
       payment_status: row.payment_status ?? "pending",
     },
