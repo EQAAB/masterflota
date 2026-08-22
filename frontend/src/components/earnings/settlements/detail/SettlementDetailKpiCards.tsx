@@ -123,6 +123,19 @@ function MinusCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function ArrowPathIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+      />
+    </svg>
+  );
+}
+
 function PlusCircleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -189,6 +202,7 @@ type SettlementDetailKpiCardsProps = {
 export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsProps) {
   const dailyCash = Number(totals.daily_cash);
   const customDed = Number(totals.custom_deductions);
+  const debtApplied = Number(totals.debt_applied);
 
   const cards = [
     {
@@ -255,6 +269,20 @@ export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsPro
       value: formatCurrency(Number(totals.custom_additions)),
       icon: <PlusCircleIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-teal-50 text-teal-700",
+    },
+    {
+      title: "Raw net",
+      value: formatCurrency(Number(totals.raw_net)),
+      icon: <WalletIcon className="h-[17px] w-[17px]" />,
+      iconClassName: "bg-slate-100 text-slate-700",
+    },
+    {
+      title: "Debt applied",
+      value: formatCurrency(debtApplied),
+      numericAmount: debtApplied,
+      icon: <ArrowPathIcon className="h-[17px] w-[17px]" />,
+      iconClassName: "bg-amber-50 text-amber-700",
+      accentNegative: true,
     },
     {
       title: "Payable",

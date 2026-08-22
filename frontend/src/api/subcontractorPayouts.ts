@@ -18,6 +18,8 @@ export interface SubcontractorPayoutListItem {
   total_daily_cash: string;
   total_custom_deductions: string;
   total_custom_additions: string;
+  total_raw_net: string;
+  total_debt_applied: string;
   total_payable: string;
   amount_payable: string;
   payment_status: string;
@@ -69,6 +71,10 @@ export interface SubcontractorSettlementDetailDriver {
   daily_cash: string;
   custom_deductions: string;
   custom_additions: string;
+  /** Payout after fees/custom deductions, before debt carry-forward. */
+  raw_net: string;
+  /** Amount from this period applied to older debt rows. */
+  debt_applied: string;
   net: string;
 }
 
@@ -94,6 +100,8 @@ export interface SubcontractorSettlementDetail {
     daily_cash: string;
     custom_deductions: string;
     custom_additions: string;
+    raw_net: string;
+    debt_applied: string;
     payable: string;
   };
   drivers: SubcontractorSettlementDetailDriver[];

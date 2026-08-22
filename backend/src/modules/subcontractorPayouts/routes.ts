@@ -248,6 +248,8 @@ router.get("/:id/detail", async (req, res) => {
       total_daily_cash: string;
       total_custom_deductions: string;
       total_custom_additions: string;
+      total_raw_net: string;
+      total_debt_applied: string;
       total_payable: string;
       payment_status: string;
       paid_amount: string | null;
@@ -281,6 +283,8 @@ router.get("/:id/detail", async (req, res) => {
       daily_cash: string;
       custom_deductions: string;
       custom_additions: string;
+      raw_net: string;
+      debt_applied: string;
       net: string;
     }>(
       `SELECT dp.id::text,
@@ -295,6 +299,8 @@ router.get("/:id/detail", async (req, res) => {
               COALESCE(dp.total_daily_cash, 0)::text AS daily_cash,
               COALESCE(${DRIVER_CUSTOM_DEDUCTIONS_EXPR}, 0)::text AS custom_deductions,
               COALESCE(${DRIVER_CUSTOM_ADDITIONS_EXPR}, 0)::text AS custom_additions,
+              COALESCE(dp.raw_net_amount, 0)::text AS raw_net,
+              COALESCE(dp.debt_applied_amount, 0)::text AS debt_applied,
               COALESCE(dp.net_driver_payout, 0)::text AS net
        FROM driver_payouts dp
        INNER JOIN drivers d ON d.id = dp.driver_id
@@ -320,6 +326,8 @@ router.get("/:id/detail", async (req, res) => {
 
     const totalCustomDeductions = num(parent.total_custom_deductions);
     const totalCustomAdditions = num(parent.total_custom_additions);
+    const totalRawNet = num(parent.total_raw_net);
+    const totalDebtApplied = num(parent.total_debt_applied);
 
     const validation = validateSettlementDetail(driversForValidation, {
       gross_incl_tips: num(parent.total_gross_income),
@@ -354,6 +362,8 @@ router.get("/:id/detail", async (req, res) => {
         daily_cash: num(parent.total_daily_cash).toFixed(2),
         custom_deductions: totalCustomDeductions.toFixed(2),
         custom_additions: totalCustomAdditions.toFixed(2),
+        raw_net: totalRawNet.toFixed(2),
+        debt_applied: totalDebtApplied.toFixed(2),
         payable: payable.toFixed(2),
       },
       drivers: driverRows,

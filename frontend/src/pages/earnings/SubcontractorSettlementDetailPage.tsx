@@ -63,6 +63,8 @@ export function SubcontractorSettlementDetailPage() {
           daily_cash: d.daily_cash,
           custom_deductions: d.custom_deductions,
           custom_additions: d.custom_additions,
+          raw_net: d.raw_net,
+          debt_applied: d.debt_applied,
           net: d.net,
         })),
       );
@@ -127,6 +129,8 @@ export function SubcontractorSettlementDetailPage() {
     daily_cash: sumDrivers(drivers, "daily_cash"),
     custom_deductions: sumDrivers(drivers, "custom_deductions"),
     custom_additions: sumDrivers(drivers, "custom_additions"),
+    raw_net: sumDrivers(drivers, "raw_net"),
+    debt_applied: sumDrivers(drivers, "debt_applied"),
     net: sumDrivers(drivers, "net"),
   };
 

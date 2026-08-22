@@ -13,6 +13,8 @@ type FooterTotals = {
   daily_cash: number;
   custom_deductions: number;
   custom_additions: number;
+  raw_net: number;
+  debt_applied: number;
   net: number;
 };
 
@@ -72,6 +74,18 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
               <th className={`${thClass} text-right`}>Daily cash</th>
               <th className={`${thClass} text-right`}>Custom ded.</th>
               <th className={`${thClass} text-right`}>Custom add.</th>
+              <th
+                className={`${thClass} text-right`}
+                title="After commission, cash, rent, and custom fees — before debt carry-forward"
+              >
+                Raw net
+              </th>
+              <th
+                className={`${thClass} text-right`}
+                title="Applied from this period to older driver debt"
+              >
+                Debt applied
+              </th>
               <th className={`${thClass} text-right`}>Net</th>
             </tr>
           </thead>
@@ -109,6 +123,12 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
                 <td className={`${tdClass} text-right`}>
                   <MoneyCell amount={Number(d.custom_additions)} />
                 </td>
+                <td className={`${tdClass} text-right`}>
+                  <MoneyCell amount={Number(d.raw_net)} />
+                </td>
+                <td className={`${tdClass} text-right`}>
+                  <MoneyCell amount={Number(d.debt_applied)} accentNegative />
+                </td>
                 <td className={`${tdClass} text-right font-medium`}>
                   <MoneyCell amount={Number(d.net)} />
                 </td>
@@ -145,6 +165,12 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
                 </td>
                 <td className={`${tdClass} text-right`}>
                   <MoneyCell amount={footer.custom_additions} />
+                </td>
+                <td className={`${tdClass} text-right`}>
+                  <MoneyCell amount={footer.raw_net} />
+                </td>
+                <td className={`${tdClass} text-right`}>
+                  <MoneyCell amount={footer.debt_applied} accentNegative />
                 </td>
                 <td className={`${tdClass} text-right`}>
                   <MoneyCell amount={footer.net} />

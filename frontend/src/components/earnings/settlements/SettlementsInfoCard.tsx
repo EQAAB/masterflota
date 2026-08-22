@@ -71,6 +71,12 @@ export function SettlementsInfoCard() {
                 <span className="font-mono text-xs">company_commission</span> on each linked driver payout.
               </li>
               <li>Fee columns mirror driver payout deductions — expand a row for details.</li>
+              <li>
+                <span className="font-medium text-slate-800">Raw net</span> is after commission, cash, rent, and custom
+                fees. <span className="font-medium text-slate-800">Debt applied</span> is taken from this period to
+                pay older driver debt. <span className="font-medium text-slate-800">Net / Payable</span> = raw net −
+                debt applied.
+              </li>
             </ul>
           </div>
         </div>

@@ -643,6 +643,8 @@ export interface SubcontractorSettlementRow {
   total_daily_cash: string;
   total_custom_deductions: string;
   total_custom_additions: string;
+  total_raw_net: string | null;
+  total_debt_applied: string | null;
   total_payable: string | null;
   amount_payable: string | null;
   payment_status: string | null;
