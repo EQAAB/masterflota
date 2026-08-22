@@ -16,7 +16,9 @@ import { formatConsolidatedPeriod } from "./payoutBreakdownUtils";
 
 import {
   formatListDebtAdjustmentSummary,
+  formatListPreviousDebtDeductionLine,
   formatListRemainingDebtLine,
+  formatNegativeEarningsDebtDetected,
   shouldShowListDebtContext,
 } from "./payoutDebtBreakdown";
 import {
@@ -511,6 +513,15 @@ export function UnifiedPayoutsTable({
 
                 const adjustmentLine = formatListDebtAdjustmentSummary(toNum(row.week_debt_adjusted_total));
 
+                const negativeEarningsLine = formatNegativeEarningsDebtDetected(
+                  toNum(row.negative_earnings_debt),
+                );
+
+                const previousDebtLine = formatListPreviousDebtDeductionLine(
+                  toNum(row.debt_applied_total),
+                  row.prior_debt_origins,
+                );
+
                 const outstandingLoan = toNum(row.outstanding_loan_balance);
 
                 const loanLine = formatListOutstandingLoanLine(outstandingLoan);
@@ -634,6 +645,26 @@ export function UnifiedPayoutsTable({
                         <p className="mt-1 text-[10px] leading-snug text-ink-muted tabular-nums">
 
                           {formatListRemainingDebtLine(remainingDebt)}
+
+                        </p>
+
+                      )}
+
+                      {negativeEarningsLine && (
+
+                        <p className="mt-0.5 text-[10px] leading-snug text-rose-700 tabular-nums">
+
+                          {negativeEarningsLine}
+
+                        </p>
+
+                      )}
+
+                      {previousDebtLine && (
+
+                        <p className="mt-0.5 text-[10px] leading-snug text-amber-800 tabular-nums">
+
+                          {previousDebtLine}
 
                         </p>
 
