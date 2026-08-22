@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { getInvoices } from "../../api/invoicing";
 import { useAnyPermission } from "../../lib/permissions";
@@ -25,6 +26,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function InvoicesListPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const canManage = useAnyPermission("invoicing.manage");
   const [q, setQ] = useState("");
@@ -60,14 +62,14 @@ export function InvoicesListPage() {
       <div className={dashboardPage}>
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Invoices</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">{t("pages.invoices.title")}</h1>
             <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-muted">
-              Create, manage, and submit invoices to ANAF e-Factura.
+              {t("pages.invoices.subtitle")}
             </p>
           </div>
           {canManage && (
             <Link to="/invoicing/new" className={btnPrimary}>
-              + New invoice
+              {t("pages.invoices.add")}
             </Link>
           )}
         </header>

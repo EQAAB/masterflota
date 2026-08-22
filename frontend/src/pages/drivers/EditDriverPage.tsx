@@ -1,6 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getDriverById,
@@ -101,6 +102,7 @@ function driverToForm(
 }
 
 export function EditDriverPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -277,12 +279,12 @@ export function EditDriverPage() {
       <div className="border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <PageHeader
-            title="Edit driver"
-            description="Update personal details, employment settings, commissions, and platform identifiers."
+            title={t("pages.driverEdit.title")}
+            description={t("pages.driverEdit.subtitle")}
             breadcrumbs={[
               { label: "Dashboard", to: "/dashboard" },
               { label: "Drivers", to: "/drivers" },
-              { label: "Edit driver" },
+              { label: t("pages.driverEdit.title") },
             ]}
             actions={
               <div className="flex flex-wrap gap-2">

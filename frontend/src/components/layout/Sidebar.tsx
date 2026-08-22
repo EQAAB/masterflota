@@ -1,68 +1,86 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Link, useLocation } from "react-router-dom";
 import { useAnyPermission, useCanViewEarningsOverview, useCanViewImports, useCanViewPayouts, usePermission } from "../../lib/permissions";
 import { isPlatformMode, isPlatformSuperAdmin } from "../../lib/platform";
 import { useAuthStore } from "../../store/authStore";
 import { useOrgStore } from "../../store/orgStore";
 import { sidebarNavActive, sidebarNavInactive, sidebarNavItem } from "../../theme/classNames";
+import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import { LogoutButton } from "../UI/LogoutButton";
 import { FleetManagerLogoMark } from "../brand/FleetManagerLogoMark";
 import { getAppBranding } from "../../lib/appBranding";
 
-function buildEarningsSubItems(opts: {
-  canViewEarningsOverview: boolean;
-  canViewPayouts: boolean;
-  canViewImports: boolean;
-  canViewDrivers: boolean;
-  canViewReports: boolean;
-  canSettleSubcontractors: boolean;
-}) {
+function buildEarningsSubItems(
+  opts: {
+    canViewEarningsOverview: boolean;
+    canViewPayouts: boolean;
+    canViewImports: boolean;
+    canViewDrivers: boolean;
+    canViewReports: boolean;
+    canSettleSubcontractors: boolean;
+  },
+  t: TFunction,
+) {
   const items: { to: string; label: string; exact?: boolean }[] = [];
   if (opts.canViewEarningsOverview) {
-    items.push({ to: "/earnings", label: "Overview", exact: true });
+    items.push({ to: "/earnings", label: t("nav.earningsOverview"), exact: true });
   }
   if (opts.canViewPayouts) {
-    items.push({ to: "/earnings/payouts", label: "Payouts" });
+    items.push({ to: "/earnings/payouts", label: t("nav.payouts") });
   }
   if (opts.canViewImports) {
-    items.push({ to: "/earnings/import", label: "Import" });
+    items.push({ to: "/earnings/import", label: t("nav.earningsImport") });
   }
   if (opts.canViewDrivers) {
-    items.push({ to: "/earnings/loans", label: "Driver loans" });
+    items.push({ to: "/earnings/loans", label: t("nav.driverLoans") });
   }
   if (opts.canViewReports) {
-    items.push({ to: "/earnings/reports", label: "Reports" });
+    items.push({ to: "/earnings/reports", label: t("nav.reports") });
   }
   if (opts.canSettleSubcontractors) {
-    items.push({ to: "/earnings/subcontractors/settlements", label: "Sub settlements" });
+    items.push({ to: "/earnings/subcontractors/settlements", label: t("nav.subSettlements") });
   }
   return items;
 }
 
-const rentalSubItems = [
-  { to: "/rentals", label: "Dashboard", exact: true },
-  { to: "/rentals/bookings", label: "Bookings" },
-  { to: "/rentals/calendar", label: "Calendar" },
-  { to: "/rentals/customers", label: "Customers" },
-  { to: "/rentals/availability", label: "Availability" },
-  { to: "/rentals/pricing", label: "Pricing" },
-  { to: "/rentals/payments", label: "Payments" },
-];
+function buildRentalSubItems(t: TFunction) {
+  return [
+    { to: "/rentals", label: t("nav.rentalDashboard"), exact: true },
+    { to: "/rentals/bookings", label: t("nav.bookings") },
+    { to: "/rentals/calendar", label: t("nav.calendar") },
+    { to: "/rentals/customers", label: t("nav.customers") },
+    { to: "/rentals/availability", label: t("nav.availability") },
+    { to: "/rentals/pricing", label: t("nav.pricing") },
+    { to: "/rentals/payments", label: t("nav.payments") },
+  ];
+}
 
-function buildSettingsSubItems(opts: {
-  canOrganizations: boolean;
-  canUsers: boolean;
-  canRoles: boolean;
-  canAudit: boolean;
-}) {
+function buildSettingsSubItems(
+  opts: {
+    canOrganizations: boolean;
+    canUsers: boolean;
+    canRoles: boolean;
+    canAudit: boolean;
+  },
+  t: TFunction,
+) {
   const items: { to: string; label: string; exact?: boolean }[] = [];
-  if (opts.canOrganizations) items.push({ to: "/settings/organizations", label: "Organizations" });
-  if (opts.canUsers) items.push({ to: "/settings/users", label: "Users" });
-  if (opts.canRoles) items.push({ to: "/settings/roles", label: "Roles" });
-  if (opts.canAudit) items.push({ to: "/settings/audit", label: "Activity log" });
-  if (opts.canAudit) items.push({ to: "/settings/login-events", label: "Login activity" });
+  if (opts.canOrganizations) items.push({ to: "/settings/organizations", label: t("nav.organizations") });
+  if (opts.canUsers) items.push({ to: "/settings/users", label: t("nav.users") });
+  if (opts.canRoles) items.push({ to: "/settings/roles", label: t("nav.roles") });
+  if (opts.canAudit) items.push({ to: "/settings/audit", label: t("nav.activityLog") });
+  if (opts.canAudit) items.push({ to: "/settings/login-events", label: t("nav.loginActivity") });
   return items;
+}
+
+function buildInvoicingSubItems(t: TFunction) {
+  return [
+    { to: "/invoicing", label: t("nav.invoices"), exact: true },
+    { to: "/invoicing/settings", label: t("nav.invoicingSettings") },
+  ];
 }
 
 const ICON = "w-5 h-5 shrink-0 stroke-[1.75]";
@@ -287,11 +305,6 @@ function EarningsSubNavLinks({
   );
 }
 
-const invoicingSubItems = [
-  { to: "/invoicing", label: "Invoices", exact: true },
-  { to: "/invoicing/settings", label: "Settings" },
-];
-
 function InvoicingIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,6 +329,7 @@ export interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { t } = useTranslation();
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const activeOrgId = useOrgStore((s) => s.activeOrgId);
@@ -332,14 +346,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canViewInvoicing = useAnyPermission("invoicing.view", "invoicing.manage");
   const canViewReports = usePermission("reports.view");
   const canSettleSubcontractors = usePermission("subcontractors.settle");
-  const earningsSubItems = buildEarningsSubItems({
-    canViewEarningsOverview,
-    canViewPayouts,
-    canViewImports,
-    canViewDrivers,
-    canViewReports,
-    canSettleSubcontractors,
-  });
+  const earningsSubItems = buildEarningsSubItems(
+    {
+      canViewEarningsOverview,
+      canViewPayouts,
+      canViewImports,
+      canViewDrivers,
+      canViewReports,
+      canSettleSubcontractors,
+    },
+    t,
+  );
+  const rentalSubItems = buildRentalSubItems(t);
+  const invoicingSubItems = buildInvoicingSubItems(t);
   const showEarningsNav = earningsSubItems.length > 0;
   const canManageOrganizations =
     isPlatformSuperAdmin(user) &&
@@ -348,27 +367,30 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const canManageUsers = usePermission("users.manage");
   const canManageRoles = usePermission("roles.manage");
   const settingsSubItems = [
-    { to: "/settings/profile", label: "Profile" },
-    ...buildSettingsSubItems({
-      canOrganizations: canManageOrganizations,
-      canUsers: canManageUsers,
-      canRoles: canManageRoles,
-      canAudit: canManageUsers,
-    }),
+    { to: "/settings/profile", label: t("nav.profile") },
+    ...buildSettingsSubItems(
+      {
+        canOrganizations: canManageOrganizations,
+        canUsers: canManageUsers,
+        canRoles: canManageRoles,
+        canAudit: canManageUsers,
+      },
+      t,
+    ),
   ];
   const showSettingsNav = settingsSubItems.length > 0;
   const showFleetNav = !platformMode;
 
   const navItems = [
     ...(platformMode
-      ? [{ to: "/platform", label: "Platform", icon: DashboardIcon }]
+      ? [{ to: "/platform", label: t("nav.platform"), icon: DashboardIcon }]
       : canViewDashboard
-        ? [{ to: "/dashboard", label: "Dashboard", icon: DashboardIcon }]
+        ? [{ to: "/dashboard", label: t("nav.dashboard"), icon: DashboardIcon }]
         : []),
-    ...(showFleetNav && canViewDrivers ? [{ to: "/drivers", label: "Drivers", icon: DriversIcon }] : []),
-    ...(showFleetNav && canViewVehicles ? [{ to: "/vehicles", label: "Vehicles", icon: VehiclesIcon }] : []),
+    ...(showFleetNav && canViewDrivers ? [{ to: "/drivers", label: t("nav.drivers"), icon: DriversIcon }] : []),
+    ...(showFleetNav && canViewVehicles ? [{ to: "/vehicles", label: t("nav.vehicles"), icon: VehiclesIcon }] : []),
     ...(showFleetNav && canViewSubcontractors
-      ? [{ to: "/subcontractors", label: "Subcontractors", icon: SubcontractorsIcon }]
+      ? [{ to: "/subcontractors", label: t("nav.subcontractors"), icon: SubcontractorsIcon }]
       : []),
   ];
   const [openSection, setOpenSection] = useState<NavSection | null>(() => sectionFromPath(location.pathname));
@@ -462,7 +484,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         type="button"
         onClick={onToggle}
         className="absolute -right-3 top-[52px] z-20 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white text-ink-muted shadow-card transition-all hover:text-ink hover:shadow-card-hover"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
@@ -501,7 +523,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <button
                   ref={earningsBtnRef}
                   type="button"
-                  title="Earnings"
+                  title={t("nav.earnings")}
                   onClick={() => toggleFlyout("earnings")}
                   className={`${sidebarNavItem} w-full ${earningsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
                   aria-expanded={openFlyout === "earnings"}
@@ -511,7 +533,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </button>
                 {openFlyout === "earnings" && earningsBtnRef.current && (
                   <NavSubFlyout
-                    title="Earnings"
+                    title={t("nav.earnings")}
                     items={earningsSubItems}
                     anchorRect={earningsBtnRef.current.getBoundingClientRect()}
                     onClose={() => setOpenFlyout(null)}
@@ -529,7 +551,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   aria-expanded={openSection === "earnings"}
                 >
                   <EarningsIcon className={ICON} />
-                  <span className="flex-1 truncate">Earnings</span>
+                  <span className="flex-1 truncate">{t("nav.earnings")}</span>
                   <ChevronDown
                     className={`${SIDEBAR_CHEVRON} ${openSection === "earnings" ? "rotate-180" : ""}`}
                   />
@@ -546,7 +568,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <button
                   ref={rentalsBtnRef}
                   type="button"
-                  title="Rentals"
+                  title={t("nav.rentals")}
                   onClick={() => toggleFlyout("rentals")}
                   className={`${sidebarNavItem} w-full ${rentalsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
                   aria-expanded={openFlyout === "rentals"}
@@ -556,7 +578,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </button>
                 {openFlyout === "rentals" && rentalsBtnRef.current && (
                   <NavSubFlyout
-                    title="Rentals"
+                    title={t("nav.rentals")}
                     items={rentalSubItems}
                     anchorRect={rentalsBtnRef.current.getBoundingClientRect()}
                     onClose={() => setOpenFlyout(null)}
@@ -574,7 +596,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   aria-expanded={openSection === "rentals"}
                 >
                   <RentalsIcon className={ICON} />
-                  <span className="flex-1 truncate">Rentals</span>
+                  <span className="flex-1 truncate">{t("nav.rentals")}</span>
                   <ChevronDown
                     className={`${SIDEBAR_CHEVRON} ${openSection === "rentals" ? "rotate-180" : ""}`}
                   />
@@ -608,7 +630,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <button
                   ref={invoicingBtnRef}
                   type="button"
-                  title="Invoicing"
+                  title={t("nav.invoicing")}
                   onClick={() => toggleFlyout("invoicing")}
                   className={`${sidebarNavItem} w-full ${invoicingActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
                   aria-expanded={openFlyout === "invoicing"}
@@ -618,7 +640,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </button>
                 {openFlyout === "invoicing" && invoicingBtnRef.current && (
                   <NavSubFlyout
-                    title="Invoicing"
+                    title={t("nav.invoicing")}
                     items={invoicingSubItems}
                     anchorRect={invoicingBtnRef.current.getBoundingClientRect()}
                     onClose={() => setOpenFlyout(null)}
@@ -636,7 +658,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   aria-expanded={openSection === "invoicing"}
                 >
                   <InvoicingIcon className={ICON} />
-                  <span className="flex-1 truncate">Invoicing</span>
+                  <span className="flex-1 truncate">{t("nav.invoicing")}</span>
                   <ChevronDown
                     className={`${SIDEBAR_CHEVRON} ${openSection === "invoicing" ? "rotate-180" : ""}`}
                   />
@@ -670,7 +692,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <button
                   ref={settingsBtnRef}
                   type="button"
-                  title="Settings"
+                  title={t("nav.settings")}
                   onClick={() => toggleFlyout("settings")}
                   className={`${sidebarNavItem} w-full ${settingsActive ? sidebarNavActive : sidebarNavInactive} justify-center px-2`}
                   aria-expanded={openFlyout === "settings"}
@@ -680,7 +702,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </button>
                 {openFlyout === "settings" && settingsBtnRef.current && (
                   <NavSubFlyout
-                    title="Settings"
+                    title={t("nav.settings")}
                     items={settingsSubItems}
                     anchorRect={settingsBtnRef.current.getBoundingClientRect()}
                     onClose={() => setOpenFlyout(null)}
@@ -698,7 +720,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   aria-expanded={openSection === "settings"}
                 >
                   <SettingsIcon className={ICON} />
-                  <span className="flex-1 truncate">Settings</span>
+                  <span className="flex-1 truncate">{t("nav.settings")}</span>
                   <ChevronDown
                     className={`${SIDEBAR_CHEVRON} ${openSection === "settings" ? "rotate-180" : ""}`}
                   />
@@ -751,15 +773,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                   />
                 </svg>
-                <span className="truncate">Product website</span>
+                <span className="truncate">{t("nav.productWebsite")}</span>
               </a>
             ) : null}
             <div className="rounded-xl border border-white/15 bg-white/5 p-3 backdrop-blur-sm">
               <p className="text-xs font-semibold text-white">{branding.appName}</p>
               <p className="mt-0.5 text-[11px] leading-snug text-white/60">
                 {branding.companyName && branding.companyUrl
-                  ? `Built by ${branding.companyName}`
-                  : "Fleet operations platform"}
+                  ? t("nav.builtBy", { name: branding.companyName })
+                  : t("nav.fleetOpsPlatform")}
               </p>
               {branding.companyUrl && branding.companyName ? (
                 <a
@@ -771,6 +793,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   {branding.companyName} →
                 </a>
               ) : null}
+            </div>
+            <div className="px-1">
+              <LanguageSwitcher variant="compact" className="w-full [&_select]:w-full [&_select]:bg-white/10 [&_select]:text-white [&_select]:border-white/20" />
             </div>
           </>
         )}

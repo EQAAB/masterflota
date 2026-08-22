@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   getFiscalProfile,
@@ -22,6 +23,7 @@ import { dashboardPage, btnPrimary, btnSecondary } from "../../theme/classNames"
 const INPUT_CLS = "w-full rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand";
 
 export function InvoicingSettingsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const canManage = useAnyPermission("invoicing.manage");
@@ -116,7 +118,7 @@ export function InvoicingSettingsPage() {
           >
             ← Invoices
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Invoicing settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.invoicingSettings.title")}</h1>
           <p className="mt-1.5 text-sm text-ink-muted">
             Configure your fiscal profile, invoice series, and ANAF connection.
           </p>
@@ -267,7 +269,7 @@ export function InvoicingSettingsPage() {
                   onClick={() => createSeriesMutation.mutate()}
                   disabled={createSeriesMutation.isPending || !newPrefix.trim()}
                 >
-                  Add series
+                  {t("pages.invoicingSettings.addSeries")}
                 </button>
               </div>
             )}

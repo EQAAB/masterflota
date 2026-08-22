@@ -1,0 +1,361 @@
+{
+  "common": {
+    "save": "Salvează",
+    "cancel": "Anulează",
+    "delete": "Șterge",
+    "edit": "Editează",
+    "add": "Adaugă",
+    "create": "Creează",
+    "update": "Actualizează",
+    "search": "Caută",
+    "filter": "Filtrează",
+    "loading": "Se încarcă…",
+    "retry": "Reîncearcă",
+    "back": "Înapoi",
+    "next": "Următorul",
+    "previous": "Anteriorul",
+    "close": "Închide",
+    "confirm": "Confirmă",
+    "actions": "Acțiuni",
+    "status": "Status",
+    "details": "Detalii",
+    "view": "Vezi",
+    "download": "Descarcă",
+    "upload": "Încarcă",
+    "export": "Exportă",
+    "import": "Importă",
+    "refresh": "Reîmprospătează",
+    "yes": "Da",
+    "no": "Nu",
+    "none": "Niciunul",
+    "all": "Toate",
+    "optional": "Opțional",
+    "required": "Obligatoriu",
+    "noResults": "Nu s-au găsit rezultate",
+    "errorGeneric": "A apărut o eroare. Încercați din nou.",
+    "saved": "Salvat cu succes.",
+    "deleted": "Șters cu succes.",
+    "emDash": "—",
+    "language": "Limbă",
+    "english": "Engleză",
+    "romanian": "Română",
+    "payNow": "Plătește acum",
+    "paying": "Se plătește…",
+    "saving": "Se salvează…",
+    "notPayable": "Neplătibil",
+    "print": "Tipărește",
+    "more": "Mai mult"
+  },
+  "nav": {
+    "platform": "Platformă",
+    "dashboard": "Panou",
+    "drivers": "Șoferi",
+    "vehicles": "Vehicule",
+    "subcontractors": "Subcontractori",
+    "earnings": "Câștiguri",
+    "earningsOverview": "Prezentare",
+    "payouts": "Plăți",
+    "earningsImport": "Import",
+    "driverLoans": "Împrumuturi șoferi",
+    "reports": "Rapoarte",
+    "subSettlements": "Decontări sub",
+    "rentals": "Închirieri",
+    "rentalDashboard": "Panou",
+    "bookings": "Rezervări",
+    "calendar": "Calendar",
+    "customers": "Clienți",
+    "availability": "Disponibilitate",
+    "pricing": "Tarife",
+    "payments": "Plăți",
+    "invoicing": "Facturare",
+    "invoices": "Facturi",
+    "invoicingSettings": "Setări",
+    "settings": "Setări",
+    "profile": "Profil",
+    "organizations": "Organizații",
+    "users": "Utilizatori",
+    "roles": "Roluri",
+    "activityLog": "Jurnal activitate",
+    "loginActivity": "Activitate autentificare",
+    "expandSidebar": "Extinde meniul",
+    "collapseSidebar": "Restrânge meniul",
+    "productWebsite": "Site produs",
+    "fleetOpsPlatform": "Platformă operațiuni flotă",
+    "builtBy": "Dezvoltat de {{name}}"
+  },
+  "layout": {
+    "viewingOrganization": "Organizație vizualizată:",
+    "exitOrganization": "Ieși din organizație",
+    "updateAvailable": "{{appName}} a fost actualizat.",
+    "refreshNow": "Reîncarcă acum"
+  },
+  "auth": {
+    "signInSubtitle": "Autentificați-vă în panoul organizației",
+    "email": "Email",
+    "password": "Parolă",
+    "signIn": "Autentificare",
+    "signingIn": "Se autentifică...",
+    "loginFailed": "Autentificare eșuată. Verificați datele.",
+    "secureAccess": "Acces securizat pentru operațiuni flotă",
+    "logOut": "Deconectare",
+    "loggingOut": "Se deconectează...",
+    "logOutConfirmTitle": "Deconectare",
+    "logOutConfirmBody": "Sigur doriți să vă deconectați? Va trebui să vă autentificați din nou pentru a accesa aplicația.",
+    "loggedOutSuccess": "Deconectare reușită."
+  },
+  "roles": {
+    "user": "Utilizator",
+    "super_admin": "Super Admin",
+    "admin": "Administrator",
+    "accountant": "Contabil",
+    "manager": "Manager",
+    "viewer": "Vizualizator",
+    "driver": "Șofer"
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Detalii cont, limbă și securitatea parolei.",
+    "account": "Cont",
+    "name": "Nume",
+    "email": "Email",
+    "role": "Rol",
+    "languageSection": "Limbă",
+    "languageHint": "Alegeți limba folosită în aplicație. Preferința se salvează pe acest dispozitiv.",
+    "changePassword": "Schimbă parola",
+    "changePasswordHint": "Veți fi deconectat de pe toate dispozitivele după salvarea unei parole noi.",
+    "currentPassword": "Parola actuală",
+    "newPassword": "Parola nouă",
+    "confirmPassword": "Confirmă parola nouă",
+    "passwordMismatch": "Parolele noi nu coincid.",
+    "passwordTooShort": "Parola nouă trebuie să aibă cel puțin 8 caractere.",
+    "passwordUpdated": "Parola a fost actualizată.",
+    "passwordChangeFailed": "Schimbarea parolei a eșuat.",
+    "updatePassword": "Actualizează parola"
+  },
+  "pages": {
+    "platformDashboard": {
+      "title": "Panou platformă",
+      "subtitle": "Gestionați organizațiile și setările la nivel de platformă.",
+      "manageOrganizations": "Gestionează organizațiile"
+    },
+    "dashboard": {
+      "title": "Panou",
+      "subtitle": "Prezentare flotă și acțiuni rapide.",
+      "welcome": "Bine ai venit, {{name}}",
+      "welcomeGuest": "Bine ai venit",
+      "roleOverview": "{{role}} · Prezentare flotă",
+      "fleetOverview": "Prezentare flotă"
+    },
+    "driversList": {
+      "title": "Șoferi",
+      "subtitle": "Gestionați profilurile și alocările șoferilor.",
+      "add": "Adaugă șofer"
+    },
+    "driverAdd": {
+      "title": "Adaugă șofer",
+      "subtitle": "Creați un profil nou de șofer."
+    },
+    "driverEdit": {
+      "title": "Editează șofer",
+      "subtitle": "Actualizați detaliile șoferului."
+    },
+    "driverDetail": {
+      "title": "Șofer",
+      "profile": "Profil",
+      "documents": "Documente",
+      "activity": "Activitate",
+      "edit": "Editează șoferul"
+    },
+    "vehiclesList": {
+      "title": "Vehicule",
+      "subtitle": "Vehiculele flotei și statusul acestora.",
+      "add": "Adaugă vehicul"
+    },
+    "vehicleAdd": {
+      "title": "Adaugă vehicul",
+      "subtitle": "Înregistrați un vehicul nou."
+    },
+    "vehicleEdit": {
+      "title": "Editează vehicul",
+      "subtitle": "Actualizați detaliile vehiculului."
+    },
+    "vehicleDetail": {
+      "title": "Vehicul",
+      "profile": "Profil",
+      "maintenance": "Mentenanță",
+      "documents": "Documente",
+      "history": "Istoric",
+      "rentals": "Închirieri",
+      "edit": "Editează vehiculul"
+    },
+    "vehicleDocuments": {
+      "title": "Documente vehicul",
+      "subtitle": "Documentele acestui vehicul."
+    },
+    "subcontractorsList": {
+      "title": "Subcontractori",
+      "subtitle": "Flote partenere și decontări.",
+      "add": "Adaugă subcontractor"
+    },
+    "subcontractorForm": {
+      "createTitle": "Adaugă subcontractor",
+      "editTitle": "Editează subcontractor",
+      "createSubtitle": "Creează un profil de subcontractor cu detalii de business, contact și contract.",
+      "editSubtitle": "Actualizează informațiile, datele bancare și perioada contractului."
+    },
+    "subcontractorDetail": {
+      "title": "Subcontractor",
+      "subtitle": "Profil subcontractor și șoferi asociați.",
+      "edit": "Editează subcontractantul"
+    },
+    "earningsOverview": {
+      "title": "Câștiguri",
+      "subtitle": "Prezentare săptămânală a câștigurilor pe platforme."
+    },
+    "earningsImport": {
+      "title": "Import câștiguri",
+      "subtitle": "Încărcați și previzualizați fișierele de câștiguri."
+    },
+    "earningsPayouts": {
+      "title": "Plăți",
+      "subtitle": "Plățile șoferilor pentru săptămâna selectată."
+    },
+    "earningsReports": {
+      "title": "Rapoarte câștiguri",
+      "subtitle": "Exportați și analizați rapoartele de câștiguri."
+    },
+    "driverLoans": {
+      "title": "Împrumuturi șoferi",
+      "subtitle": "Solduri și rambursări.",
+      "add": "Creează împrumut"
+    },
+    "driverLoanDetail": {
+      "title": "Detalii împrumut",
+      "forDriver": "Împrumut pentru {{name}}"
+    },
+    "subSettlements": {
+      "title": "Decontări subcontractori",
+      "subtitle": "Decontați plățile partenerilor."
+    },
+    "subSettlementDetail": {
+      "title": "Detalii decontare"
+    },
+    "rentalDashboard": {
+      "title": "Închirieri",
+      "subtitle": "Rezervări, utilizare și indicatori.",
+      "quickWeekly": "Închiriere săptămânală rapidă"
+    },
+    "bookings": {
+      "title": "Rezervări",
+      "subtitle": "Rezervări de închiriere și status.",
+      "add": "Rezervare nouă",
+      "quickWeekly": "Închiriere săptămânală rapidă"
+    },
+    "bookingForm": {
+      "createTitle": "Rezervare nouă",
+      "editTitle": "Editează rezervarea",
+      "subtitle": "Creează o rezervare și programează ridicarea vehiculului."
+    },
+    "bookingDetail": {
+      "title": "Rezervare"
+    },
+    "rentalCalendar": {
+      "title": "Calendar închirieri",
+      "subtitle": "Rezervări pe zile."
+    },
+    "customers": {
+      "title": "Clienți",
+      "subtitle": "Profiluri clienți închiriere.",
+      "add": "Adaugă client"
+    },
+    "customerForm": {
+      "createTitle": "Adaugă client",
+      "editTitle": "Editează client",
+      "createSubtitle": "Adăugați un profil de client pentru rezervări, facturi și istoric contact.",
+      "editSubtitle": "Actualizați profilul clientului pentru rezervări, facturi și istoric contact."
+    },
+    "availability": {
+      "title": "Disponibilitate",
+      "subtitle": "Care vehicule sunt libere pentru rezervare.",
+      "quickWeekly": "Închiriere săptămânală rapidă"
+    },
+    "pricing": {
+      "title": "Tarife",
+      "subtitle": "Tarife de închiriere pe vehicul.",
+      "add": "Adaugă regulă de preț"
+    },
+    "payments": {
+      "title": "Plăți",
+      "subtitle": "Plăți și depozite pentru închirieri.",
+      "add": "Înregistrează plată"
+    },
+    "invoices": {
+      "title": "Facturi",
+      "subtitle": "Facturi emise și status ANAF.",
+      "add": "Factură nouă"
+    },
+    "invoiceForm": {
+      "title": "Factură nouă",
+      "subtitle": "Creați o factură pentru un client.",
+      "create": "Creează factură"
+    },
+    "invoiceDetail": {
+      "title": "Factură"
+    },
+    "invoicingSettings": {
+      "title": "Setări facturare",
+      "subtitle": "Serii, certificate și e-Factura.",
+      "addSeries": "Adaugă serie"
+    },
+    "organizations": {
+      "title": "Organizații",
+      "subtitle": "Organizații pe platformă.",
+      "add": "Creează organizație"
+    },
+    "users": {
+      "title": "Utilizatori",
+      "subtitle": "Utilizatori și acces în organizație.",
+      "add": "Adaugă utilizator"
+    },
+    "roles": {
+      "title": "Roluri",
+      "subtitle": "Permisiuni și șabloane de rol.",
+      "add": "Creează rol"
+    },
+    "auditLog": {
+      "title": "Jurnal activitate",
+      "subtitle": "Modificări de securitate și configurație."
+    },
+    "loginActivity": {
+      "title": "Activitate autentificare",
+      "subtitle": "Evenimente recente de autentificare."
+    }
+  },
+  "status": {
+    "paid": "Plătit",
+    "payable": "De plată",
+    "debt": "Datorie",
+    "hold": "În așteptare",
+    "partial": "Parțial",
+    "mixed": "Mixt",
+    "active": "Activ",
+    "inactive": "Inactiv",
+    "pending": "În așteptare",
+    "completed": "Finalizat",
+    "cancelled": "Anulat",
+    "draft": "Ciornă",
+    "overdue": "Restant"
+  },
+  "payout": {
+    "finalPayoutCalculation": "Calcul plată finală",
+    "finalPayout": "Plată finală",
+    "finalNetPayout": "Plată netă finală",
+    "noPayoutDebtCarried": "Fără plată — datoria trece în săptămâna următoare",
+    "noPayoutDebtOutstanding": "Fără plată — datorie restantă",
+    "finalNetPayable": "Plată netă finală (de plătit)",
+    "debtCarriedSubtext": "Datoria trece în săptămâna următoare — fără plată cash",
+    "balanceOwedSubtext": "Sold datorat de șofer",
+    "payableAfterDebtSubtext": "De plătit după deducerea datoriei din săptămâna anterioară",
+    "amountToPaySubtext": "Sumă de plătit șoferului"
+  }
+}

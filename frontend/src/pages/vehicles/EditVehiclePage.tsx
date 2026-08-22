@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -52,6 +53,7 @@ function vehicleToForm(v: Vehicle): VehicleFormState {
 }
 
 export function EditVehiclePage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -198,7 +200,7 @@ export function EditVehiclePage() {
   return (
     <div className="min-h-full bg-slate-100">
       <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Edit Vehicle</h1>
+        <h1 className="text-xl font-semibold text-ink">{t("pages.vehicleEdit.title")}</h1>
         <Link to={`/vehicles/${id}`} className="text-sm text-ink-muted hover:text-ink">
           ← Back to vehicle
         </Link>

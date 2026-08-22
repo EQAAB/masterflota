@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getDriverDetail,
@@ -116,6 +117,7 @@ function ActivityIcon({ type }: { type: string }) {
 }
 
 export function DriverDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -287,7 +289,7 @@ export function DriverDetailPage() {
                 to={`/drivers/${id}/edit`}
                 className="inline-flex h-10 items-center rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md"
               >
-                Edit driver
+                {t("pages.driverDetail.edit")}
               </Link>
             )}
             {canDelete && (

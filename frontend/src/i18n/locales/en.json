@@ -1,0 +1,361 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "confirm": "Confirm",
+    "actions": "Actions",
+    "status": "Status",
+    "details": "Details",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "yes": "Yes",
+    "no": "No",
+    "none": "None",
+    "all": "All",
+    "optional": "Optional",
+    "required": "Required",
+    "noResults": "No results found",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "saved": "Saved successfully.",
+    "deleted": "Deleted successfully.",
+    "emDash": "—",
+    "language": "Language",
+    "english": "English",
+    "romanian": "Romanian",
+    "payNow": "Pay now",
+    "paying": "Paying…",
+    "saving": "Saving…",
+    "notPayable": "Not payable",
+    "print": "Print",
+    "more": "More"
+  },
+  "nav": {
+    "platform": "Platform",
+    "dashboard": "Dashboard",
+    "drivers": "Drivers",
+    "vehicles": "Vehicles",
+    "subcontractors": "Subcontractors",
+    "earnings": "Earnings",
+    "earningsOverview": "Overview",
+    "payouts": "Payouts",
+    "earningsImport": "Import",
+    "driverLoans": "Driver loans",
+    "reports": "Reports",
+    "subSettlements": "Sub settlements",
+    "rentals": "Rentals",
+    "rentalDashboard": "Dashboard",
+    "bookings": "Bookings",
+    "calendar": "Calendar",
+    "customers": "Customers",
+    "availability": "Availability",
+    "pricing": "Pricing",
+    "payments": "Payments",
+    "invoicing": "Invoicing",
+    "invoices": "Invoices",
+    "invoicingSettings": "Settings",
+    "settings": "Settings",
+    "profile": "Profile",
+    "organizations": "Organizations",
+    "users": "Users",
+    "roles": "Roles",
+    "activityLog": "Activity log",
+    "loginActivity": "Login activity",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "productWebsite": "Product website",
+    "fleetOpsPlatform": "Fleet operations platform",
+    "builtBy": "Built by {{name}}"
+  },
+  "layout": {
+    "viewingOrganization": "Viewing organization:",
+    "exitOrganization": "Exit organization",
+    "updateAvailable": "{{appName}} has been updated.",
+    "refreshNow": "Refresh Now"
+  },
+  "auth": {
+    "signInSubtitle": "Sign in to your organization dashboard",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "loginFailed": "Login failed. Check your credentials.",
+    "secureAccess": "Secure access for fleet operations",
+    "logOut": "Log out",
+    "loggingOut": "Logging out...",
+    "logOutConfirmTitle": "Log out",
+    "logOutConfirmBody": "Are you sure you want to log out? You will need to sign in again to access the app.",
+    "loggedOutSuccess": "Logged out successfully."
+  },
+  "roles": {
+    "user": "User",
+    "super_admin": "Super Admin",
+    "admin": "Administrator",
+    "accountant": "Accountant",
+    "manager": "Manager",
+    "viewer": "Viewer",
+    "driver": "Driver"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Account details, language, and password security.",
+    "account": "Account",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "languageSection": "Language",
+    "languageHint": "Choose the language used across the app. This is saved on this device.",
+    "changePassword": "Change password",
+    "changePasswordHint": "You will be signed out on all devices after saving a new password.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordMismatch": "New passwords do not match.",
+    "passwordTooShort": "New password must be at least 8 characters.",
+    "passwordUpdated": "Password updated.",
+    "passwordChangeFailed": "Failed to change password.",
+    "updatePassword": "Update password"
+  },
+  "pages": {
+    "platformDashboard": {
+      "title": "Platform Dashboard",
+      "subtitle": "Manage organizations and platform-wide settings.",
+      "manageOrganizations": "Manage organizations"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Fleet overview and quick actions.",
+      "welcome": "Welcome, {{name}}",
+      "welcomeGuest": "Welcome",
+      "roleOverview": "{{role}} · Fleet overview",
+      "fleetOverview": "Fleet overview"
+    },
+    "driversList": {
+      "title": "Drivers",
+      "subtitle": "Manage driver profiles and assignments.",
+      "add": "Add driver"
+    },
+    "driverAdd": {
+      "title": "Add Driver",
+      "subtitle": "Create a new driver profile."
+    },
+    "driverEdit": {
+      "title": "Edit Driver",
+      "subtitle": "Update driver details."
+    },
+    "driverDetail": {
+      "title": "Driver",
+      "profile": "Profile",
+      "documents": "Documents",
+      "activity": "Activity",
+      "edit": "Edit driver"
+    },
+    "vehiclesList": {
+      "title": "Vehicles",
+      "subtitle": "Fleet vehicles and status.",
+      "add": "Add vehicle"
+    },
+    "vehicleAdd": {
+      "title": "Add Vehicle",
+      "subtitle": "Register a new vehicle."
+    },
+    "vehicleEdit": {
+      "title": "Edit Vehicle",
+      "subtitle": "Update vehicle details."
+    },
+    "vehicleDetail": {
+      "title": "Vehicle",
+      "profile": "Profile",
+      "maintenance": "Maintenance",
+      "documents": "Documents",
+      "history": "History",
+      "rentals": "Rentals",
+      "edit": "Edit vehicle"
+    },
+    "vehicleDocuments": {
+      "title": "Vehicle documents",
+      "subtitle": "Documents for this vehicle."
+    },
+    "subcontractorsList": {
+      "title": "Subcontractors",
+      "subtitle": "Partner fleets and settlements.",
+      "add": "Add subcontractor"
+    },
+    "subcontractorForm": {
+      "createTitle": "Add subcontractor",
+      "editTitle": "Edit subcontractor",
+      "createSubtitle": "Create a subcontractor profile with business, contact, and contract details.",
+      "editSubtitle": "Update subcontractor information, banking details, and contract dates."
+    },
+    "subcontractorDetail": {
+      "title": "Subcontractor",
+      "subtitle": "Subcontractor profile and linked drivers.",
+      "edit": "Edit subcontractor"
+    },
+    "earningsOverview": {
+      "title": "Earnings",
+      "subtitle": "Weekly earnings overview across platforms."
+    },
+    "earningsImport": {
+      "title": "Import earnings",
+      "subtitle": "Upload and preview platform earnings files."
+    },
+    "earningsPayouts": {
+      "title": "Payouts",
+      "subtitle": "Driver payouts for the selected week."
+    },
+    "earningsReports": {
+      "title": "Earnings reports",
+      "subtitle": "Export and review earnings reports."
+    },
+    "driverLoans": {
+      "title": "Driver loans",
+      "subtitle": "Loan balances and repayments.",
+      "add": "Create loan"
+    },
+    "driverLoanDetail": {
+      "title": "Loan details",
+      "forDriver": "Loan for {{name}}"
+    },
+    "subSettlements": {
+      "title": "Subcontractor settlements",
+      "subtitle": "Settle partner payouts."
+    },
+    "subSettlementDetail": {
+      "title": "Settlement details"
+    },
+    "rentalDashboard": {
+      "title": "Rentals",
+      "subtitle": "Bookings, utilization, and rental KPIs.",
+      "quickWeekly": "Quick weekly rental"
+    },
+    "bookings": {
+      "title": "Bookings",
+      "subtitle": "Rental bookings and status.",
+      "add": "New booking",
+      "quickWeekly": "Quick weekly rental"
+    },
+    "bookingForm": {
+      "createTitle": "New booking",
+      "editTitle": "Edit booking",
+      "subtitle": "Create a rental reservation and schedule vehicle pickup."
+    },
+    "bookingDetail": {
+      "title": "Booking"
+    },
+    "rentalCalendar": {
+      "title": "Rental calendar",
+      "subtitle": "Vehicle bookings by day."
+    },
+    "customers": {
+      "title": "Customers",
+      "subtitle": "Rental customer profiles.",
+      "add": "Add customer"
+    },
+    "customerForm": {
+      "createTitle": "Add customer",
+      "editTitle": "Edit customer",
+      "createSubtitle": "Add a rental customer profile for bookings, invoices, and contact history.",
+      "editSubtitle": "Update this rental customer profile for bookings, invoices, and contact history."
+    },
+    "availability": {
+      "title": "Availability",
+      "subtitle": "Which vehicles are free to book.",
+      "quickWeekly": "Quick weekly rental"
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "Rental rates by vehicle.",
+      "add": "Add pricing rule"
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "Rental payments and deposits.",
+      "add": "Record payment"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "subtitle": "Issued invoices and ANAF status.",
+      "add": "New invoice"
+    },
+    "invoiceForm": {
+      "title": "New invoice",
+      "subtitle": "Create an invoice for a customer.",
+      "create": "Create invoice"
+    },
+    "invoiceDetail": {
+      "title": "Invoice"
+    },
+    "invoicingSettings": {
+      "title": "Invoicing settings",
+      "subtitle": "Series, certificates, and e-Factura.",
+      "addSeries": "Add series"
+    },
+    "organizations": {
+      "title": "Organizations",
+      "subtitle": "Platform organizations.",
+      "add": "Create organization"
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Organization users and access.",
+      "add": "Add user"
+    },
+    "roles": {
+      "title": "Roles",
+      "subtitle": "Permissions and role templates.",
+      "add": "Create role"
+    },
+    "auditLog": {
+      "title": "Activity log",
+      "subtitle": "Security and configuration changes."
+    },
+    "loginActivity": {
+      "title": "Login activity",
+      "subtitle": "Recent sign-in events."
+    }
+  },
+  "status": {
+    "paid": "Paid",
+    "payable": "Payable",
+    "debt": "Debt",
+    "hold": "On hold",
+    "partial": "Partial",
+    "mixed": "Mixed",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "draft": "Draft",
+    "overdue": "Overdue"
+  },
+  "payout": {
+    "finalPayoutCalculation": "Final payout calculation",
+    "finalPayout": "Final Payout",
+    "finalNetPayout": "Final net payout",
+    "noPayoutDebtCarried": "No payout — debt carried to next week",
+    "noPayoutDebtOutstanding": "No payout — debt outstanding",
+    "finalNetPayable": "Final net payout (payable)",
+    "debtCarriedSubtext": "Debt carried to next week — no cash payout",
+    "balanceOwedSubtext": "Net balance owed by driver",
+    "payableAfterDebtSubtext": "Payable after previous-week debt deduction",
+    "amountToPaySubtext": "Amount to be paid to driver"
+  }
+}

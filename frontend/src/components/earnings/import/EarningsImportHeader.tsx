@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { pageSubtitle, pageTitle, transitionDefault } from "../../../theme/classNames";
 import { scrollToRecentImports } from "./importDisplayUtils";
 
@@ -28,6 +29,7 @@ function UploadIcon({ className }: { className?: string }) {
 }
 
 export function EarningsImportHeader() {
+  const { t } = useTranslation();
   return (
     <div className="shrink-0 border-b border-border/50 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
@@ -36,10 +38,8 @@ export function EarningsImportHeader() {
             <UploadIcon className="h-5 w-5 text-brand-dark" />
           </div>
           <div className="min-w-0">
-            <h1 className={`${pageTitle} leading-tight`}>Import earnings</h1>
-            <p className={`${pageSubtitle} mt-1 max-w-2xl`}>
-              Upload platform exports to keep driver payouts accurate and up to date.
-            </p>
+            <h1 className={`${pageTitle} leading-tight`}>{t("pages.earningsImport.title")}</h1>
+            <p className={`${pageSubtitle} mt-1 max-w-2xl`}>{t("pages.earningsImport.subtitle")}</p>
           </div>
         </div>
 
@@ -49,7 +49,7 @@ export function EarningsImportHeader() {
             onClick={scrollToRecentImports}
             className={`inline-flex h-10 items-center gap-2 rounded-xl border border-border/80 bg-white px-4 text-sm font-medium text-ink shadow-sm ${transitionDefault} hover:border-brand/25 hover:bg-brand-mint/20 hover:shadow-md`}
           >
-            <HistoryIcon className="h-4 w-4 text-ink-muted" />
+            <HistoryIcon className="h-4 w-4" />
             Import history
           </button>
         </div>

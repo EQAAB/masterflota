@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 import type { CalendarViewMode } from "./calendarUtils";
@@ -9,6 +10,7 @@ type CalendarPageHeaderProps = {
 };
 
 export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderProps) {
+  const { t } = useTranslation();
   const canManage = useCanManageRentals();
   return (
     <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -19,8 +21,10 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
         >
           ← Back
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Booking calendar</h1>
-        <p className="mt-1.5 text-sm text-ink-muted">Upcoming and active rentals.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
+          {t("pages.rentalCalendar.title")}
+        </h1>
+        <p className="mt-1.5 text-sm text-ink-muted">{t("pages.rentalCalendar.subtitle")}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <div className="fm-rental-calendar__view-toggle" role="group" aria-label="Calendar view">
@@ -37,7 +41,7 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
         </div>
         {canManage && (
           <Link to="/rentals/bookings/new" className={`${btnPrimary} fm-rental-bookings__header-cta shrink-0`}>
-            New booking
+            {t("pages.bookings.add")}
           </Link>
         )}
       </div>

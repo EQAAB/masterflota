@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { getSubcontractor } from "../../api/subcontractors";
 import { usePermission } from "../../lib/permissions";
@@ -25,6 +26,7 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 }
 
 export function SubcontractorDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const canEdit = usePermission("subcontractors.edit");
 
@@ -41,8 +43,8 @@ export function SubcontractorDetailPage() {
       <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
           <PageHeader
-            title={d?.legal_name ?? "Subcontractor"}
-            description="Subcontractor profile and linked drivers."
+            title={d?.legal_name ?? t("pages.subcontractorDetail.title")}
+            description={t("pages.subcontractorDetail.subtitle")}
             breadcrumbs={[
               { label: "Dashboard", to: "/dashboard" },
               { label: "Subcontractors", to: "/subcontractors" },
@@ -55,7 +57,7 @@ export function SubcontractorDetailPage() {
                   to={`/subcontractors/${id}/edit`}
                   className={`${btnPrimary} text-sm`}
                 >
-                  Edit subcontractor
+                  {t("pages.subcontractorDetail.edit")}
                 </Link>
               ) : undefined
             }

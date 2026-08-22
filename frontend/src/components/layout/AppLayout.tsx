@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { exitOrganizationWithCache } from "../../lib/orgContextActions";
@@ -19,6 +20,7 @@ function readCollapsed(): boolean {
 }
 
 function OrgContextBanner() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const activeOrgId = useOrgStore((s) => s.activeOrgId);
@@ -29,7 +31,8 @@ function OrgContextBanner() {
   return (
     <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-brand-mint/40 px-4 py-2.5">
       <p className="text-sm text-ink">
-        Viewing organization: <span className="font-semibold">{activeOrgName ?? activeOrgId}</span>
+        {t("layout.viewingOrganization")}{" "}
+        <span className="font-semibold">{activeOrgName ?? activeOrgId}</span>
       </p>
       <button
         type="button"
@@ -39,7 +42,7 @@ function OrgContextBanner() {
           navigate("/platform");
         }}
       >
-        Exit organization
+        {t("layout.exitOrganization")}
       </button>
     </div>
   );

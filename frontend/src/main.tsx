@@ -6,6 +6,7 @@ import { QueryDevtools } from "./components/layout/QueryDevtools";
 import { AppUpdatePoller, UpdateAvailableBanner } from "./components/layout/UpdateAvailableBanner";
 import { applyDocumentBranding } from "./lib/appBranding";
 import { appRouter } from "./App";
+import "./i18n";
 import "./index.css";
 
 applyDocumentBranding();

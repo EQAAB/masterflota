@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useNavigate, Navigate } from "react-router-dom";
 import { createOrganization, fetchOrganizations } from "../../api/organizations";
 import { enterOrganizationWithCache } from "../../lib/orgContextActions";
@@ -39,6 +40,7 @@ const emptyForm: CreateOrgForm = {
 };
 
 export function OrganizationsPage() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const canCreate = usePermission("organizations.create");
   const queryClient = useQueryClient();
@@ -112,9 +114,9 @@ export function OrganizationsPage() {
       <div className={`${dashboardPage} fm-settings-users__page`}>
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink">Organizations</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.organizations.title")}</h1>
             <p className="mt-1 text-sm text-ink-muted">
-              Create and manage fleet organizations. Only super admins can access this page.
+              {t("pages.organizations.subtitle")}
             </p>
           </div>
           <button
@@ -122,7 +124,7 @@ export function OrganizationsPage() {
             className={showForm ? btnSecondary : btnPrimary}
             onClick={() => setShowForm((v) => !v)}
           >
-            {showForm ? "Cancel" : "Create organization"}
+            {showForm ? t("common.cancel") : t("pages.organizations.add")}
           </button>
         </header>
 

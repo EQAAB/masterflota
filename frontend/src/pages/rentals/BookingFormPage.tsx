@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../api/vehicles";
 import {
@@ -40,6 +41,7 @@ function readDefaultRentalType(): "daily" | "weekly" | "monthly" {
 }
 
 export function BookingFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const [searchParams] = useSearchParams();
@@ -254,8 +256,8 @@ export function BookingFormPage() {
   return (
     <div className="fm-rental-booking-form flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
       <BookingFormHeader
-        title={isEdit ? "Edit booking" : "New booking"}
-        subtitle="Create a rental reservation and schedule vehicle pickup."
+        title={isEdit ? t("pages.bookingForm.editTitle") : t("pages.bookingForm.createTitle")}
+        subtitle={t("pages.bookingForm.subtitle")}
         backTo={isEdit ? `/rentals/bookings/${id}` : "/rentals/bookings"}
         backLabel={isEdit ? "Booking" : "Bookings"}
         statusBadge={isEdit ? existing?.status ?? "draft" : "Draft"}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getOrgLoansList } from "../../api/driverLoans";
 import { usePermission } from "../../lib/permissions";
 import { PageHeader } from "../../components/theme/PageHeader";
@@ -19,6 +20,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function DriverLoansReportPage() {
+  const { t } = useTranslation();
   const canAccess = usePermission("drivers.view");
   const canEdit = usePermission("drivers.edit");
   const navigate = useNavigate();
@@ -73,12 +75,12 @@ export function DriverLoansReportPage() {
       <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <PageHeader
-            title="Driver loans"
-            description="Fleet-wide view of cash loans given to drivers — principal, remaining balance, and status."
+            title={t("pages.driverLoans.title")}
+            description={t("pages.driverLoans.subtitle")}
             breadcrumbs={[
               { label: "Dashboard", to: "/dashboard" },
               { label: "Earnings", to: "/earnings" },
-              { label: "Driver loans" },
+              { label: t("pages.driverLoans.title") },
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5"
             actions={
@@ -89,7 +91,7 @@ export function DriverLoansReportPage() {
                     onClick={() => setCreateOpen(true)}
                     className="inline-flex h-10 items-center rounded-full bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95"
                   >
-                    Create loan
+                    {t("pages.driverLoans.add")}
                   </button>
                 )}
                 <Link

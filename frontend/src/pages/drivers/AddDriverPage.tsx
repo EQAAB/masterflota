@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import {
   createDriver,
@@ -29,6 +30,7 @@ function validatePhone(phone: string): boolean {
 }
 
 export function AddDriverPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
@@ -168,7 +170,7 @@ export function AddDriverPage() {
   return (
     <div className="min-h-full bg-slate-100">
       <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Add Driver</h1>
+        <h1 className="text-xl font-semibold text-ink">{t("pages.driverAdd.title")}</h1>
         <Link
           to="/drivers"
           className="text-sm text-ink-muted hover:text-ink"

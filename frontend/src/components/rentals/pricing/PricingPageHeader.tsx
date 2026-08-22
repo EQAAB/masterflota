@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type PricingPageHeaderProps = {
@@ -8,6 +9,7 @@ type PricingPageHeaderProps = {
 };
 
 export function PricingPageHeader({ canManage = false, onAdd, onExport }: PricingPageHeaderProps) {
+  const { t } = useTranslation();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -17,9 +19,11 @@ export function PricingPageHeader({ canManage = false, onAdd, onExport }: Pricin
         >
           ← Back
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Pricing</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
+          {t("pages.pricing.title")}
+        </h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-muted">
-          Manage rental pricing, deposits, and rate plans for all vehicles.
+          {t("pages.pricing.subtitle")}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -28,7 +32,7 @@ export function PricingPageHeader({ canManage = false, onAdd, onExport }: Pricin
         </button>
         {canManage && (
           <button type="button" className={`${btnPrimary} fm-rental-pricing__header-cta`} onClick={onAdd}>
-            Add pricing rule
+            {t("pages.pricing.add")}
           </button>
         )}
       </div>

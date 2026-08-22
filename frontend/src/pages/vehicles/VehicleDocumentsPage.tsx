@@ -1,9 +1,11 @@
 import { useParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { VehicleDocumentUpload } from "../../components/vehicles/VehicleDocumentUpload";
 import { usePermission } from "../../lib/permissions";
 import { VehicleDocumentList } from "../../components/vehicles/VehicleDocumentList";
 
 export function VehicleDocumentsPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const canEdit = usePermission("vehicles.edit");
 
@@ -27,7 +29,7 @@ export function VehicleDocumentsPage() {
           <Link to="/vehicles" className="text-sm text-ink-muted hover:text-ink">
             Vehicles
           </Link>
-          <h1 className="text-xl font-semibold text-ink">Vehicle documents</h1>
+          <h1 className="text-xl font-semibold text-ink">{t("pages.vehicleDocuments.title")}</h1>
         </div>
       </header>
       <main className="p-6 max-w-4xl mx-auto space-y-6">

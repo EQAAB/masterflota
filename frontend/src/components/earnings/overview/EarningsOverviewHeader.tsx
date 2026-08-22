@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 import { PageHeader } from "../../theme/PageHeader";
 import { ExportIcon } from "../../theme/actionMenuIcons";
@@ -35,15 +36,16 @@ export function EarningsOverviewHeader({
   filtersOpen,
   onToggleFilters,
 }: EarningsOverviewHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <PageHeader
-          title="Earnings overview"
-          description="KPIs and payout analytics for fleet operations."
+          title={t("pages.earningsOverview.title")}
+          description={t("pages.earningsOverview.subtitle")}
           breadcrumbs={[
             { label: "Dashboard", to: "/dashboard" },
-            { label: "Earnings overview" },
+            { label: t("pages.earningsOverview.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
           actions={

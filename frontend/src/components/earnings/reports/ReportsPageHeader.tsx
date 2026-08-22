@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnNavy, btnPrimary } from "../../../theme/classNames";
 import { PageHeader } from "../../theme/PageHeader";
 
@@ -29,16 +30,17 @@ export function ReportsPageHeader({
   onExportCsv,
   onExportPdf,
 }: ReportsPageHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <PageHeader
-          title="Reports"
-          description="Filter first, preview live, then download confidently."
+          title={t("pages.earningsReports.title")}
+          description={t("pages.earningsReports.subtitle")}
           breadcrumbs={[
             { label: "Dashboard", to: "/dashboard" },
             { label: "Earnings", to: "/earnings" },
-            { label: "Reports" },
+            { label: t("pages.earningsReports.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
           actions={
