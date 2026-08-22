@@ -237,6 +237,14 @@ export interface ConsolidatedPlatformLine {
   payment_status: string;
 }
 
+/** Older week that originated driver debt (negative earnings). */
+export interface PriorDebtOrigin {
+  period_start: string;
+  period_end: string;
+  original_debt: string;
+  remaining_debt: string;
+}
+
 export interface ConsolidatedDriverPayout {
   driver_id: string;
   first_name: string;
@@ -260,6 +268,12 @@ export interface ConsolidatedDriverPayout {
   platform_lines: ConsolidatedPlatformLine[];
   /** Max remaining collectible debt across platform legs. */
   remaining_debt?: string;
+  /** Amount from this week's earnings applied to older debt weeks. */
+  debt_applied_total?: string;
+  /** When this week's pooled raw net is negative — debt created from negative earnings. */
+  negative_earnings_debt?: string;
+  /** Older weeks that originated debt (for “previous week debt deducted” labels). */
+  prior_debt_origins?: PriorDebtOrigin[];
   /** Sum of manual debt reductions this week. */
   week_debt_adjusted_total?: string;
   /** Active loan remaining balance for this driver. */

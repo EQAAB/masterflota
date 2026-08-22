@@ -1,5 +1,11 @@
 import type { PoolClient } from "pg";
 import { roundMoney } from "./debtAllocation";
+import {
+  loadPriorDebtOriginsByDriver,
+  type PriorDebtOrigin,
+} from "./priorDebtOrigins";
+
+export type { PriorDebtOrigin };
 
 export type ConsolidatedPlatformLine = {
   payout_id: string;
@@ -30,6 +36,15 @@ export type ConsolidatedDriverPayoutRow = {
   platform_lines: ConsolidatedPlatformLine[];
   /** Max remaining collectible debt across platform legs. */
   remaining_debt: string;
+  /** Amount from this week's earnings applied to older debt weeks. */
+  debt_applied_total: string;
+  /**
+   * When this week's pooled raw net is negative: debt created from negative earnings.
+   * Shown as “Negative earnings detected” on the debt week itself.
+   */
+  negative_earnings_debt: string;
+  /** Older weeks that originated debt (for “previous week debt deducted” labels). */
+  prior_debt_origins: PriorDebtOrigin[];
   /** Sum of manual debt reductions this week (forgive, cash, adjust). */
   week_debt_adjusted_total: string;
   /** Active loan remaining balance for this driver. */
@@ -62,6 +77,7 @@ type PayoutLegRow = {
   cross_platform_debt_offset: string | null;
   week_debt_platforms: string[] | null;
   remaining_debt_amount: string | null;
+  debt_applied_amount: string | null;
   payment_status: string;
 };
 
@@ -110,6 +126,7 @@ function buildConsolidatedRows(
   loanBalancesByDriver: Map<string, number> = new Map(),
   plannedWeekByDriver: Map<string, string | null> = new Map(),
   plannedNoteByDriver: Map<string, string | null> = new Map(),
+  priorOriginsByDriver: Map<string, PriorDebtOrigin[]> = new Map(),
 ): ConsolidatedDriverPayoutRow[] {
   const byDriver = new Map<string, PayoutLegRow[]>();
   for (const leg of legs) {
@@ -154,6 +171,14 @@ function buildConsolidatedRows(
     const remainingDebt = roundMoney(
       driverLegs.reduce((m, l) => Math.max(m, Number(l.remaining_debt_amount ?? "0")), 0),
     );
+    const debtAppliedTotal = roundMoney(
+      driverLegs.reduce((s, l) => s + Number(l.debt_applied_amount ?? "0"), 0),
+    );
+    const weekRawNet = roundMoney(
+      driverLegs.reduce((s, l) => s + Number(l.raw_net_amount ?? "0"), 0),
+    );
+    const negativeEarningsDebt =
+      weekRawNet < -0.02 ? roundMoney(Math.abs(weekRawNet)) : 0;
     const weekDebtAdjustedTotal = roundMoney(adjustmentsByDriver.get(driverId) ?? 0);
     const outstandingLoanBalance = roundMoney(loanBalancesByDriver.get(driverId) ?? 0);
     const plannedRepaymentWeek = plannedWeekByDriver.get(driverId) ?? null;
@@ -182,6 +207,9 @@ function buildConsolidatedRows(
       platform_payout_ids: driverLegs.map((l) => l.id),
       platform_lines: platformLines,
       remaining_debt: remainingDebt.toFixed(2),
+      debt_applied_total: debtAppliedTotal.toFixed(2),
+      negative_earnings_debt: negativeEarningsDebt.toFixed(2),
+      prior_debt_origins: priorOriginsByDriver.get(driverId) ?? [],
       week_debt_adjusted_total: weekDebtAdjustedTotal.toFixed(2),
       outstanding_loan_balance: outstandingLoanBalance.toFixed(2),
       planned_repayment_week: plannedRepaymentWeek,
@@ -245,7 +273,7 @@ export async function listConsolidatedPayouts(
             dp.total_gross_earnings::text, dp.company_commission::text,
             dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
             dp.cross_platform_debt_offset::text, dp.week_debt_platforms,
-            dp.remaining_debt_amount::text
+            dp.remaining_debt_amount::text, dp.debt_applied_amount::text
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid
@@ -336,6 +364,9 @@ export async function listConsolidatedPayouts(
     payments.set(`${pr.driver_id}|${ps}|${pe}`, { id: pr.id, paid_at: pr.paid_at });
   }
 
+  const driverIds = [...new Set(legs.map((l) => l.driver_id))];
+  const priorOriginsByDriver = await loadPriorDebtOriginsByDriver(client, orgId, driverIds, ps);
+
   let consolidated = buildConsolidatedRows(
     legs,
     payments,
@@ -343,6 +374,7 @@ export async function listConsolidatedPayouts(
     loanBalancesByDriver,
     plannedWeekByDriver,
     plannedNoteByDriver,
+    priorOriginsByDriver,
   );
 
   if (options?.status?.trim()) {
@@ -419,7 +451,7 @@ export async function payDriverConsolidated(
             dp.total_gross_earnings::text, dp.company_commission::text,
             dp.total_platform_fees::text, dp.vehicle_rental_fee::text, dp.payment_status,
             dp.cross_platform_debt_offset::text, dp.week_debt_platforms,
-            dp.remaining_debt_amount::text
+            dp.remaining_debt_amount::text, dp.debt_applied_amount::text
      FROM driver_payouts dp
      INNER JOIN drivers d ON d.id = dp.driver_id AND d.organization_id = dp.organization_id
      WHERE dp.organization_id = $1::uuid

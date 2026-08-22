@@ -18,6 +18,9 @@ import {
 import {
   buildDebtAdjustmentCardLines,
   buildDebtAdjustmentLadderSteps,
+  formatNegativeEarningsDebtDetected,
+  formatPreviousWeekDebtDeductionHint,
+  formatPreviousWeekDebtDeductionLabel,
 } from "./payoutDebtBreakdown";
 import {
   buildLoanRepaymentCardLines,
@@ -425,13 +428,31 @@ export function CombinedPayoutDetailsContent({
         ...mapLadderSteps(vehicleRentSteps),
       );
 
+      if (breakdown.newPeriodDebt > 0.02) {
+        steps.push({
+          kind: "deduction",
+          prefix: "-",
+          label: "Negative earnings detected — debt created",
+          amount: -breakdown.newPeriodDebt,
+          hint:
+            formatNegativeEarningsDebtDetected(breakdown.newPeriodDebt) ??
+            "This week's net is negative and becomes driver debt for the next week",
+        });
+      }
+
       if (breakdown.totalDebtApplied > 0.02) {
         steps.push({
           kind: "deduction",
           prefix: "-",
-          label: "Debt applied to older periods",
+          label: formatPreviousWeekDebtDeductionLabel(
+            breakdown.totalDebtApplied,
+            row.prior_debt_origins,
+          ),
           amount: -breakdown.totalDebtApplied,
-          hint: "Paid from this week's earnings toward prior debt",
+          hint: formatPreviousWeekDebtDeductionHint(
+            breakdown.totalDebtApplied,
+            row.prior_debt_origins,
+          ),
         });
       }
 
@@ -487,13 +508,31 @@ export function CombinedPayoutDetailsContent({
       hint: combinedHint,
     });
 
+    if (breakdown.newPeriodDebt > 0.02) {
+      steps.push({
+        kind: "deduction",
+        prefix: "-",
+        label: "Negative earnings detected — debt created",
+        amount: -breakdown.newPeriodDebt,
+        hint:
+          formatNegativeEarningsDebtDetected(breakdown.newPeriodDebt) ??
+          "This week's combined net is negative and becomes driver debt for the next week",
+      });
+    }
+
     if (breakdown.totalDebtApplied > 0.02) {
       steps.push({
         kind: "deduction",
         prefix: "-",
-        label: "Debt applied to older periods",
+        label: formatPreviousWeekDebtDeductionLabel(
+          breakdown.totalDebtApplied,
+          row.prior_debt_origins,
+        ),
         amount: -breakdown.totalDebtApplied,
-        hint: "Paid from this week's combined earnings toward prior debt",
+        hint: formatPreviousWeekDebtDeductionHint(
+          breakdown.totalDebtApplied,
+          row.prior_debt_origins,
+        ),
       });
     }
 
@@ -517,6 +556,7 @@ export function CombinedPayoutDetailsContent({
     vehicleRentSteps,
     debtAdjustmentSteps,
     loanAdjustmentSteps,
+    row.prior_debt_origins,
   ]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
@@ -750,6 +790,37 @@ export function CombinedPayoutDetailsContent({
         </div>
       </section>
 
+      {(toNum(row.negative_earnings_debt) > 0.02 || debtApplied > 0.02) && (
+        <div
+          className={`mx-0 mb-3 rounded-xl border px-4 py-3 text-sm ${
+            toNum(row.negative_earnings_debt) > 0.02
+              ? "border-rose-200 bg-rose-50 text-rose-950"
+              : "border-amber-200 bg-amber-50 text-amber-950"
+          }`}
+          role="status"
+        >
+          {toNum(row.negative_earnings_debt) > 0.02 ? (
+            <>
+              <p className="font-semibold">Negative earnings detected</p>
+              <p className="mt-0.5 text-[13px] leading-snug opacity-90">
+                This week’s net is negative (
+                {formatCurrency(-toNum(row.negative_earnings_debt))}). That amount is recorded as driver
+                debt and will be deducted from a future positive week.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold">
+                {formatPreviousWeekDebtDeductionLabel(debtApplied, row.prior_debt_origins)}
+              </p>
+              <p className="mt-0.5 text-[13px] leading-snug opacity-90">
+                {formatPreviousWeekDebtDeductionHint(debtApplied, row.prior_debt_origins)}
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Platform cards */}
       <div className={platformsGridClass}>
         {sortedPlatforms.map((line) => {
@@ -977,7 +1048,26 @@ export function CombinedPayoutDetailsContent({
               </svg>
             }
           />
-          <LineRow label="Debt applied" value={formatCurrency(debtApplied)} />
+          <LineRow
+            label={
+              debtApplied > 0.02
+                ? formatPreviousWeekDebtDeductionLabel(debtApplied, row.prior_debt_origins)
+                : "Previous week debt deducted"
+            }
+            value={formatCurrency(debtApplied)}
+          />
+          {debtApplied > 0.02 && (
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              {formatPreviousWeekDebtDeductionHint(debtApplied, row.prior_debt_origins)}
+            </p>
+          )}
+          {toNum(row.negative_earnings_debt) > 0.02 && (
+            <LineRow
+              label="Negative earnings (debt created)"
+              value={formatCurrency(toNum(row.negative_earnings_debt))}
+              variant="deduction"
+            />
+          )}
           <LineRow label="Remaining debt" value={formatCurrency(remainingDebt)} variant={remainingDebt > 0 ? "deduction" : "neutral"} />
           {weekDebtAdjustmentsLoading && (
             <p className="mt-2 text-xs text-slate-500">Loading adjustments…</p>

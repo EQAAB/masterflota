@@ -1,4 +1,9 @@
-import type { ConsolidatedDriverPayout, DebtAdjustType, PayoutDebtAdjustment } from "../../../api/earnings";
+import type {
+  ConsolidatedDriverPayout,
+  DebtAdjustType,
+  PayoutDebtAdjustment,
+  PriorDebtOrigin,
+} from "../../../api/earnings";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import type { FeeLadderStepDef } from "./payoutFeeBreakdown";
 
@@ -152,20 +157,31 @@ export function buildDebtAdjustmentCardLines(
   });
 }
 
-export function shouldShowListDebtContext(row: Pick<
-  ConsolidatedDriverPayout,
-  "consolidated_status" | "total_amount" | "remaining_debt" | "week_debt_adjusted_total"
->): boolean {
+export function shouldShowListDebtContext(
+  row: Pick<
+    ConsolidatedDriverPayout,
+    | "consolidated_status"
+    | "total_amount"
+    | "remaining_debt"
+    | "week_debt_adjusted_total"
+    | "debt_applied_total"
+    | "negative_earnings_debt"
+  >,
+): boolean {
   const total = toNum(row.total_amount);
   const remaining = toNum(row.remaining_debt);
   const adjusted = toNum(row.week_debt_adjusted_total);
+  const debtApplied = toNum(row.debt_applied_total);
+  const negativeDebt = toNum(row.negative_earnings_debt);
   const status = row.consolidated_status;
   return (
     status === "debt" ||
     status === "hold" ||
     total < -0.02 ||
     remaining > 0.02 ||
-    adjusted > 0.02
+    adjusted > 0.02 ||
+    debtApplied > 0.02 ||
+    negativeDebt > 0.02
   );
 }
 
@@ -176,4 +192,60 @@ export function formatListRemainingDebtLine(remaining: number): string {
 export function formatListDebtAdjustmentSummary(adjustedTotal: number): string | null {
   if (adjustedTotal <= 0.02) return null;
   return `Adjusted −${round2(adjustedTotal).toFixed(2)} RON this week`;
+}
+
+function formatShortPeriod(startIso: string, endIso: string): string {
+  const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+  const start = new Date(`${startIso.slice(0, 10)}T12:00:00`);
+  const end = new Date(`${endIso.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return `${startIso.slice(0, 10)} – ${endIso.slice(0, 10)}`;
+  }
+  return `${fmt.format(start)} – ${fmt.format(end)}`;
+}
+
+/** Week 1: negative earnings became debt. */
+export function formatNegativeEarningsDebtDetected(amount: number): string | null {
+  if (amount <= 0.02) return null;
+  return `Negative earnings detected — debt ${round2(amount).toFixed(2)} RON`;
+}
+
+/**
+ * Week 2+: this week's earnings paid prior debt.
+ * Prefer naming the most recent origin period when known.
+ */
+export function formatPreviousWeekDebtDeductionLabel(
+  amount: number,
+  origins: PriorDebtOrigin[] | null | undefined,
+): string {
+  if (amount <= 0.02) return "Previous week debt deducted";
+  const primary = origins?.[0];
+  if (primary) {
+    const period = formatShortPeriod(primary.period_start, primary.period_end);
+    const extra = (origins?.length ?? 0) > 1 ? ` (+${(origins!.length - 1)} more)` : "";
+    return `Previous week debt deducted (${period}${extra})`;
+  }
+  return "Previous week debt deducted";
+}
+
+export function formatPreviousWeekDebtDeductionHint(
+  amount: number,
+  origins: PriorDebtOrigin[] | null | undefined,
+): string {
+  const amt = round2(amount).toFixed(2);
+  const primary = origins?.[0];
+  if (primary) {
+    const period = formatShortPeriod(primary.period_start, primary.period_end);
+    const originAmt = round2(toNum(primary.original_debt)).toFixed(2);
+    return `−${amt} RON from this week's earnings paid debt from ${period} (origin ${originAmt} RON negative earnings)`;
+  }
+  return `−${amt} RON from this week's earnings paid toward older negative-earnings debt`;
+}
+
+export function formatListPreviousDebtDeductionLine(
+  debtApplied: number,
+  origins: PriorDebtOrigin[] | null | undefined,
+): string | null {
+  if (debtApplied <= 0.02) return null;
+  return `${formatPreviousWeekDebtDeductionLabel(debtApplied, origins)} −${round2(debtApplied).toFixed(2)} RON`;
 }

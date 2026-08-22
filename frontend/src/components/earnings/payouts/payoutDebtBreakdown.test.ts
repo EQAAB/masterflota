@@ -5,7 +5,10 @@ import {
   debtAdjustmentReductionAmount,
   formatDebtAdjustmentLabel,
   formatListDebtAdjustmentSummary,
+  formatListPreviousDebtDeductionLine,
   formatListRemainingDebtLine,
+  formatNegativeEarningsDebtDetected,
+  formatPreviousWeekDebtDeductionLabel,
   shouldShowListDebtContext,
 } from "./payoutDebtBreakdown";
 
@@ -104,11 +107,68 @@ describe("list debt summary helpers", () => {
         week_debt_adjusted_total: "0",
       }),
     ).toBe(false);
+    expect(
+      shouldShowListDebtContext({
+        consolidated_status: "payable",
+        total_amount: "100",
+        remaining_debt: "0",
+        week_debt_adjusted_total: "0",
+        debt_applied_total: "40",
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowListDebtContext({
+        consolidated_status: "payable",
+        total_amount: "100",
+        remaining_debt: "0",
+        week_debt_adjusted_total: "0",
+        negative_earnings_debt: "80",
+      }),
+    ).toBe(true);
   });
 
   it("formats remaining and adjustment lines", () => {
     expect(formatListRemainingDebtLine(150)).toBe("Remaining: 150.00 RON");
     expect(formatListDebtAdjustmentSummary(200)).toBe("Adjusted −200.00 RON this week");
     expect(formatListDebtAdjustmentSummary(0)).toBeNull();
+  });
+
+  it("formats negative earnings and previous-week debt deduction", () => {
+    expect(formatNegativeEarningsDebtDetected(443.91)).toBe(
+      "Negative earnings detected — debt 443.91 RON",
+    );
+    expect(formatNegativeEarningsDebtDetected(0)).toBeNull();
+
+    expect(
+      formatPreviousWeekDebtDeductionLabel(100, [
+        {
+          period_start: "2026-07-27",
+          period_end: "2026-08-02",
+          original_debt: "443.91",
+          remaining_debt: "0",
+        },
+      ]),
+    ).toContain("Previous week debt deducted");
+    expect(
+      formatPreviousWeekDebtDeductionLabel(100, [
+        {
+          period_start: "2026-07-27",
+          period_end: "2026-08-02",
+          original_debt: "443.91",
+          remaining_debt: "0",
+        },
+      ]),
+    ).toMatch(/27 Jul|Jul 27/);
+
+    expect(
+      formatListPreviousDebtDeductionLine(100, [
+        {
+          period_start: "2026-07-27",
+          period_end: "2026-08-02",
+          original_debt: "443.91",
+          remaining_debt: "0",
+        },
+      ]),
+    ).toContain("−100.00 RON");
   });
 });
