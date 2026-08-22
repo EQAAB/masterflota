@@ -249,3 +249,139 @@ export function formatListPreviousDebtDeductionLine(
   if (debtApplied <= 0.02) return null;
   return `${formatPreviousWeekDebtDeductionLabel(debtApplied, origins)} −${round2(debtApplied).toFixed(2)} RON`;
 }
+
+/** Clearer Week-1 wording for the ladder. */
+export function formatNegativeEarningsBecameDebtLabel(amount: number): string {
+  return `This week's negative earnings became debt (−${round2(amount).toFixed(2)} RON)`;
+}
+
+export function formatNegativeEarningsBecameDebtHint(amount: number): string {
+  return `Week result ${round2(-amount).toFixed(2)} RON is recorded as driver debt and will be deducted from a future positive week.`;
+}
+
+export function formatRemainingDebtAfterDeductionLabel(remaining: number): string {
+  if (remaining <= 0.02) return "Previous debt fully cleared this week";
+  return `Remaining previous debt after this week`;
+}
+
+export function formatRemainingDebtAfterDeductionHint(
+  remaining: number,
+  origins: PriorDebtOrigin[] | null | undefined,
+): string {
+  if (remaining <= 0.02) {
+    return "No older negative-earnings debt left to collect.";
+  }
+  const primary = origins?.[0];
+  if (primary) {
+    const period = formatShortPeriod(primary.period_start, primary.period_end);
+    return `${round2(remaining).toFixed(2)} RON still owed from prior weeks (e.g. ${period}).`;
+  }
+  return `${round2(remaining).toFixed(2)} RON still owed from prior weeks.`;
+}
+
+export function formatFinalPayoutDebtLabel(params: {
+  isDebtPayout: boolean;
+  newPeriodDebt: number;
+  finalNet: number;
+}): string {
+  if (params.newPeriodDebt > 0.02 || (params.isDebtPayout && params.finalNet < -0.02)) {
+    return "No payout — debt carried to next week";
+  }
+  if (params.isDebtPayout && params.finalNet <= 0.02) {
+    return "No payout — debt outstanding";
+  }
+  return "Final net payout (payable)";
+}
+
+/** Short formula under the final line so the math is obvious. */
+export function formatPayoutDebtFormulaHint(params: {
+  earningsBeforeDebt: number;
+  totalDebtApplied: number;
+  newPeriodDebt: number;
+  remainingDebt: number;
+  finalNet: number;
+  origins?: PriorDebtOrigin[] | null;
+}): string | undefined {
+  const earnings = round2(params.earningsBeforeDebt);
+  const applied = round2(params.totalDebtApplied);
+  const created = round2(params.newPeriodDebt);
+  const finalNet = round2(params.finalNet);
+
+  if (created > 0.02) {
+    return `${(-created).toFixed(2)} RON negative earnings → debt created · payable this week 0.00 RON`;
+  }
+  if (applied > 0.02) {
+    const before = round2(finalNet + applied);
+    const primary = params.origins?.[0];
+    const period = primary
+      ? ` from ${formatShortPeriod(primary.period_start, primary.period_end)}`
+      : "";
+    const rem =
+      params.remainingDebt > 0.02
+        ? ` · remaining debt ${round2(params.remainingDebt).toFixed(2)} RON`
+        : " · previous debt cleared";
+    return `${before.toFixed(2)} − ${applied.toFixed(2)} previous debt${period} = ${finalNet.toFixed(2)} RON${rem}`;
+  }
+  if (Math.abs(earnings) > 0.02 && Math.abs(earnings - finalNet) <= 0.05) {
+    return undefined;
+  }
+  return undefined;
+}
+
+export type DebtStoryLadderStep = {
+  kind: "neutral" | "deduction" | "positive" | "total" | "final" | "final-debt";
+  prefix?: "-" | "=" | "";
+  label: string;
+  amount: number;
+  hint?: string;
+};
+
+/**
+ * Debt story rows for the final-payout ladder (after fees/rent).
+ * Week 1: negative earnings → debt created.
+ * Week 2+: previous week debt deducted + remaining.
+ */
+export function buildDebtStoryLadderSteps(params: {
+  newPeriodDebt: number;
+  totalDebtApplied: number;
+  remainingDebt: number;
+  priorOrigins?: PriorDebtOrigin[] | null;
+}): DebtStoryLadderStep[] {
+  const steps: DebtStoryLadderStep[] = [];
+  const { newPeriodDebt, totalDebtApplied, remainingDebt, priorOrigins } = params;
+
+  if (newPeriodDebt > 0.02) {
+    steps.push({
+      kind: "deduction",
+      prefix: "-",
+      label: formatNegativeEarningsBecameDebtLabel(newPeriodDebt),
+      amount: -newPeriodDebt,
+      hint: formatNegativeEarningsBecameDebtHint(newPeriodDebt),
+    });
+    steps.push({
+      kind: "neutral",
+      label: "Payable this week (before next-week carry)",
+      amount: 0,
+      hint: "No cash payout while this week's result is negative debt.",
+    });
+    return steps;
+  }
+
+  if (totalDebtApplied > 0.02) {
+    steps.push({
+      kind: "deduction",
+      prefix: "-",
+      label: formatPreviousWeekDebtDeductionLabel(totalDebtApplied, priorOrigins),
+      amount: -totalDebtApplied,
+      hint: formatPreviousWeekDebtDeductionHint(totalDebtApplied, priorOrigins),
+    });
+    steps.push({
+      kind: "neutral",
+      label: formatRemainingDebtAfterDeductionLabel(remainingDebt),
+      amount: remainingDebt > 0.02 ? remainingDebt : 0,
+      hint: formatRemainingDebtAfterDeductionHint(remainingDebt, priorOrigins),
+    });
+  }
+
+  return steps;
+}

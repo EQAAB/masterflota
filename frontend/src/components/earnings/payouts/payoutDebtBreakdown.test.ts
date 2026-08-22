@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import type { PayoutDebtAdjustment } from "../../../api/earnings";
 import {
   buildDebtAdjustmentLadderSteps,
+  buildDebtStoryLadderSteps,
   debtAdjustmentReductionAmount,
   formatDebtAdjustmentLabel,
+  formatFinalPayoutDebtLabel,
   formatListDebtAdjustmentSummary,
   formatListPreviousDebtDeductionLine,
   formatListRemainingDebtLine,
   formatNegativeEarningsDebtDetected,
+  formatPayoutDebtFormulaHint,
   formatPreviousWeekDebtDeductionLabel,
   shouldShowListDebtContext,
 } from "./payoutDebtBreakdown";
@@ -170,5 +173,89 @@ describe("list debt summary helpers", () => {
         },
       ]),
     ).toContain("−100.00 RON");
+  });
+});
+
+describe("debt story ladder helpers", () => {
+  const week1Origin = {
+    period_start: "2026-07-27",
+    period_end: "2026-08-02",
+    original_debt: "400",
+    remaining_debt: "0",
+  };
+
+  it("labels negative week as no payout with debt carry", () => {
+    expect(
+      formatFinalPayoutDebtLabel({
+        isDebtPayout: true,
+        newPeriodDebt: 400,
+        finalNet: -400,
+      }),
+    ).toBe("No payout — debt carried to next week");
+  });
+
+  it("labels positive week after debt as payable", () => {
+    expect(
+      formatFinalPayoutDebtLabel({
+        isDebtPayout: false,
+        newPeriodDebt: 0,
+        finalNet: 800,
+      }),
+    ).toBe("Final net payout (payable)");
+  });
+
+  it("builds Week-1 story: negative earnings became debt", () => {
+    const steps = buildDebtStoryLadderSteps({
+      newPeriodDebt: 400,
+      totalDebtApplied: 0,
+      remainingDebt: 400,
+    });
+    expect(steps).toHaveLength(2);
+    expect(steps[0]?.label).toContain("negative earnings became debt");
+    expect(steps[0]?.amount).toBe(-400);
+    expect(steps[1]?.label).toContain("Payable this week");
+    expect(steps[1]?.amount).toBe(0);
+  });
+
+  it("builds Week-2 story: previous debt deducted + remaining info", () => {
+    const steps = buildDebtStoryLadderSteps({
+      newPeriodDebt: 0,
+      totalDebtApplied: 400,
+      remainingDebt: 0,
+      priorOrigins: [week1Origin],
+    });
+    expect(steps).toHaveLength(2);
+    expect(steps[0]?.kind).toBe("deduction");
+    expect(steps[0]?.label).toContain("Previous week debt deducted");
+    expect(steps[0]?.amount).toBe(-400);
+    expect(steps[1]?.kind).toBe("neutral");
+    expect(steps[1]?.label).toMatch(/fully cleared|Remaining previous debt/i);
+  });
+
+  it("formats formula hint for previous-debt deduction", () => {
+    const hint = formatPayoutDebtFormulaHint({
+      earningsBeforeDebt: 1200,
+      totalDebtApplied: 400,
+      newPeriodDebt: 0,
+      remainingDebt: 0,
+      finalNet: 800,
+      origins: [week1Origin],
+    });
+    expect(hint).toContain("1200.00");
+    expect(hint).toContain("400.00");
+    expect(hint).toContain("800.00");
+    expect(hint).toMatch(/previous debt/i);
+  });
+
+  it("formats formula hint for newly created debt", () => {
+    const hint = formatPayoutDebtFormulaHint({
+      earningsBeforeDebt: -400,
+      totalDebtApplied: 0,
+      newPeriodDebt: 400,
+      remainingDebt: 400,
+      finalNet: -400,
+    });
+    expect(hint).toMatch(/debt created/i);
+    expect(hint).toContain("0.00");
   });
 });

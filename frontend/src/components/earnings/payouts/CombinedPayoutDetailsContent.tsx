@@ -18,7 +18,9 @@ import {
 import {
   buildDebtAdjustmentCardLines,
   buildDebtAdjustmentLadderSteps,
-  formatNegativeEarningsDebtDetected,
+  buildDebtStoryLadderSteps,
+  formatFinalPayoutDebtLabel,
+  formatPayoutDebtFormulaHint,
   formatPreviousWeekDebtDeductionHint,
   formatPreviousWeekDebtDeductionLabel,
 } from "./payoutDebtBreakdown";
@@ -72,6 +74,10 @@ function statusBadgeClass(status: string): string {
     default:
       return "bg-slate-100 text-slate-700 ring-slate-200/60";
   }
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 function SummaryStep({
@@ -330,6 +336,30 @@ export function CombinedPayoutDetailsContent({
   const remainingDebt = payoutItems.reduce((m, p) => Math.max(m, toNum(p.remaining_debt_amount)), 0);
   const weeklyRent = vehicleDetail?.weekly_rent ? toNum(vehicleDetail.weekly_rent) : breakdown.customFeeVehicleRent;
   const isDebtPayout = breakdown.finalNet < -0.02 || row.consolidated_status === "debt";
+  const finalPayoutHeading = formatFinalPayoutDebtLabel({
+    isDebtPayout,
+    newPeriodDebt: breakdown.newPeriodDebt,
+    finalNet: breakdown.finalNet,
+  });
+  const finalPayoutFormulaHint = formatPayoutDebtFormulaHint({
+    earningsBeforeDebt:
+      breakdown.totalDebtApplied > 0.02
+        ? round2(breakdown.finalNet + breakdown.totalDebtApplied)
+        : breakdown.weekRawNet,
+    totalDebtApplied: breakdown.totalDebtApplied,
+    newPeriodDebt: breakdown.newPeriodDebt,
+    remainingDebt,
+    finalNet: breakdown.finalNet,
+    origins: row.prior_debt_origins,
+  });
+  const finalPayoutSubtext =
+    breakdown.newPeriodDebt > 0.02
+      ? "Debt carried to next week — no cash payout"
+      : isDebtPayout
+        ? "Net balance owed by driver"
+        : breakdown.totalDebtApplied > 0.02
+          ? "Payable after previous-week debt deduction"
+          : "Amount to be paid to driver";
 
   const cashBreakdownHint = breakdown.platforms
     .map((p) => `${earningsPlatformLabel(p.platform)}: ${formatCurrency(-p.cashBalance)}`)
@@ -428,43 +458,74 @@ export function CombinedPayoutDetailsContent({
         ...mapLadderSteps(vehicleRentSteps),
       );
 
-      if (breakdown.newPeriodDebt > 0.02) {
+      if (breakdown.totalDebtApplied > 0.02 || breakdown.newPeriodDebt > 0.02) {
         steps.push({
-          kind: "deduction",
-          prefix: "-",
-          label: "Negative earnings detected — debt created",
-          amount: -breakdown.newPeriodDebt,
+          kind: "total",
+          prefix: "=",
+          label: "This week earnings (before previous debt)",
+          amount: round2(
+            breakdown.finalNet + breakdown.totalDebtApplied + (breakdown.newPeriodDebt > 0.02 ? 0 : 0),
+          ),
           hint:
-            formatNegativeEarningsDebtDetected(breakdown.newPeriodDebt) ??
-            "This week's net is negative and becomes driver debt for the next week",
+            breakdown.newPeriodDebt > 0.02
+              ? "Net after fees/rent before debt status is applied"
+              : "Net after fees/rent before deducting older debt",
         });
       }
 
-      if (breakdown.totalDebtApplied > 0.02) {
-        steps.push({
-          kind: "deduction",
-          prefix: "-",
-          label: formatPreviousWeekDebtDeductionLabel(
-            breakdown.totalDebtApplied,
-            row.prior_debt_origins,
-          ),
-          amount: -breakdown.totalDebtApplied,
-          hint: formatPreviousWeekDebtDeductionHint(
-            breakdown.totalDebtApplied,
-            row.prior_debt_origins,
-          ),
-        });
+      // For negative weeks, show earnings-before as week raw / amount after rent when final is 0 or negative
+      if (breakdown.newPeriodDebt > 0.02) {
+        // Replace misleading "before debt" amount with week result
+        const last = steps[steps.length - 1];
+        if (last?.label === "This week earnings (before previous debt)") {
+          last.amount = breakdown.weekRawNet;
+          last.label = "This week result (before debt status)";
+          last.hint = "Combined platform result after fees — this week is negative";
+        }
+      } else if (breakdown.totalDebtApplied > 0.02) {
+        const last = steps[steps.length - 1];
+        if (last?.label === "This week earnings (before previous debt)") {
+          last.amount = round2(breakdown.finalNet + breakdown.totalDebtApplied);
+        }
       }
+
+      steps.push(
+        ...buildDebtStoryLadderSteps({
+          newPeriodDebt: breakdown.newPeriodDebt,
+          totalDebtApplied: breakdown.totalDebtApplied,
+          remainingDebt: remainingDebt,
+          priorOrigins: row.prior_debt_origins,
+        }),
+      );
 
       steps.push(...mapLadderSteps(debtAdjustmentSteps));
       steps.push(...mapLadderSteps(loanAdjustmentSteps));
 
+      const finalLabel = formatFinalPayoutDebtLabel({
+        isDebtPayout,
+        newPeriodDebt: breakdown.newPeriodDebt,
+        finalNet: breakdown.finalNet,
+      });
+      const formulaHint = formatPayoutDebtFormulaHint({
+        earningsBeforeDebt:
+          breakdown.totalDebtApplied > 0.02
+            ? round2(breakdown.finalNet + breakdown.totalDebtApplied)
+            : breakdown.weekRawNet,
+        totalDebtApplied: breakdown.totalDebtApplied,
+        newPeriodDebt: breakdown.newPeriodDebt,
+        remainingDebt,
+        finalNet: breakdown.finalNet,
+        origins: row.prior_debt_origins,
+      });
+
       steps.push({
         kind: isDebtPayout ? "final-debt" : "final",
         prefix: "=",
-        label: "Final net payout",
-        amount: breakdown.finalNet,
-        hint: breakdown.isReconciled ? "Matches stored driver payout total" : undefined,
+        label: finalLabel,
+        amount: breakdown.newPeriodDebt > 0.02 ? Math.min(0, breakdown.finalNet) : breakdown.finalNet,
+        hint:
+          formulaHint ??
+          (breakdown.isReconciled ? "Matches stored driver payout total" : undefined),
       });
 
       return steps;
@@ -503,48 +564,54 @@ export function CombinedPayoutDetailsContent({
     steps.push({
       kind: "total",
       prefix: "=",
-      label: "Combined net this week",
-      amount: breakdown.weekRawNet,
+      label:
+        breakdown.newPeriodDebt > 0.02
+          ? "This week result (before debt status)"
+          : "Combined net this week (before previous debt)",
+      amount:
+        breakdown.totalDebtApplied > 0.02
+          ? round2(breakdown.finalNet + breakdown.totalDebtApplied)
+          : breakdown.weekRawNet,
       hint: combinedHint,
     });
 
-    if (breakdown.newPeriodDebt > 0.02) {
-      steps.push({
-        kind: "deduction",
-        prefix: "-",
-        label: "Negative earnings detected — debt created",
-        amount: -breakdown.newPeriodDebt,
-        hint:
-          formatNegativeEarningsDebtDetected(breakdown.newPeriodDebt) ??
-          "This week's combined net is negative and becomes driver debt for the next week",
-      });
-    }
-
-    if (breakdown.totalDebtApplied > 0.02) {
-      steps.push({
-        kind: "deduction",
-        prefix: "-",
-        label: formatPreviousWeekDebtDeductionLabel(
-          breakdown.totalDebtApplied,
-          row.prior_debt_origins,
-        ),
-        amount: -breakdown.totalDebtApplied,
-        hint: formatPreviousWeekDebtDeductionHint(
-          breakdown.totalDebtApplied,
-          row.prior_debt_origins,
-        ),
-      });
-    }
+    steps.push(
+      ...buildDebtStoryLadderSteps({
+        newPeriodDebt: breakdown.newPeriodDebt,
+        totalDebtApplied: breakdown.totalDebtApplied,
+        remainingDebt,
+        priorOrigins: row.prior_debt_origins,
+      }),
+    );
 
     steps.push(...mapLadderSteps(debtAdjustmentSteps));
     steps.push(...mapLadderSteps(loanAdjustmentSteps));
 
+    const finalLabel = formatFinalPayoutDebtLabel({
+      isDebtPayout,
+      newPeriodDebt: breakdown.newPeriodDebt,
+      finalNet: breakdown.finalNet,
+    });
+    const formulaHint = formatPayoutDebtFormulaHint({
+      earningsBeforeDebt:
+        breakdown.totalDebtApplied > 0.02
+          ? round2(breakdown.finalNet + breakdown.totalDebtApplied)
+          : breakdown.weekRawNet,
+      totalDebtApplied: breakdown.totalDebtApplied,
+      newPeriodDebt: breakdown.newPeriodDebt,
+      remainingDebt,
+      finalNet: breakdown.finalNet,
+      origins: row.prior_debt_origins,
+    });
+
     steps.push({
       kind: isDebtPayout ? "final-debt" : "final",
       prefix: "=",
-      label: "Final net payout",
-      amount: breakdown.finalNet,
-      hint: breakdown.isReconciled ? "Matches stored driver payout total" : undefined,
+      label: finalLabel,
+      amount: breakdown.newPeriodDebt > 0.02 ? Math.min(0, breakdown.finalNet) : breakdown.finalNet,
+      hint:
+        formulaHint ??
+        (breakdown.isReconciled ? "Matches stored driver payout total" : undefined),
     });
 
     return steps;
@@ -557,6 +624,7 @@ export function CombinedPayoutDetailsContent({
     debtAdjustmentSteps,
     loanAdjustmentSteps,
     row.prior_debt_origins,
+    remainingDebt,
   ]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
@@ -762,7 +830,7 @@ export function CombinedPayoutDetailsContent({
         <div
           className={`fm-payout-detail-summary__block fm-payout-detail-summary__amount${isDebtPayout ? " fm-payout-detail-summary__amount--debt" : ""}`}
         >
-          <p className="fm-payout-detail-summary__label">Final net payout</p>
+          <p className="fm-payout-detail-summary__label">{finalPayoutHeading}</p>
           <p className="fm-payout-detail-summary__value tabular-nums">{formatCurrency(breakdown.finalNet)}</p>
         </div>
 
@@ -923,8 +991,17 @@ export function CombinedPayoutDetailsContent({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               </svg>
               <p>
-                <strong>No payment will be made.</strong> Driver still owes{" "}
-                {formatCurrency(Math.abs(breakdown.finalNet))}.
+                {breakdown.newPeriodDebt > 0.02 ? (
+                  <>
+                    <strong>No payout — debt carried to next week.</strong> This week’s negative result
+                    becomes driver debt and will be deducted from a future positive week.
+                  </>
+                ) : (
+                  <>
+                    <strong>No payment will be made.</strong> Driver still owes{" "}
+                    {formatCurrency(Math.abs(breakdown.finalNet))}.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -976,11 +1053,12 @@ export function CombinedPayoutDetailsContent({
           <div className="fm-payout-detail-final-panel__hero">
             <div>
               <p className={`text-sm font-semibold ${isDebtPayout ? "text-rose-900" : "text-emerald-900"}`}>
-                Final net payout
+                {finalPayoutHeading}
               </p>
-              <p className="text-xs text-slate-600">
-                {isDebtPayout ? "Net balance owed by driver" : "Amount to be paid to driver"}
-              </p>
+              <p className="text-xs text-slate-600">{finalPayoutSubtext}</p>
+              {finalPayoutFormulaHint && (
+                <p className="mt-1 text-[11px] leading-snug text-slate-500">{finalPayoutFormulaHint}</p>
+              )}
             </div>
             <p className="fm-payout-detail-final-panel__amount tabular-nums">{formatCurrency(breakdown.finalNet)}</p>
           </div>
