@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnSecondary } from "../../../theme/classNames";
 
 type UsersPageHeaderProps = {
@@ -19,6 +20,7 @@ export function UsersPageHeader({
   showForm,
   onToggleForm,
 }: UsersPageHeaderProps) {
+  const { t } = useTranslation();
   return (
     <header>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
@@ -34,8 +36,8 @@ export function UsersPageHeader({
             </svg>
           </span>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Users</h1>
-            <p className="mt-1 text-sm text-ink-muted">Manage organization users and roles.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">{t("pages.users.title")}</h1>
+            <p className="mt-1 text-sm text-ink-muted">{t("pages.users.subtitle")}</p>
           </div>
         </div>
 
@@ -85,7 +87,7 @@ export function UsersPageHeader({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               )}
-              {showForm ? "Cancel" : "Add user"}
+              {showForm ? t("common.cancel") : t("pages.users.add")}
             </button>
           </div>
         </div>

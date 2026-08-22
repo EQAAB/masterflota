@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { fetchAuditLogs } from "../../api/audit";
 import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { usePermission } from "../../lib/permissions";
@@ -18,6 +19,7 @@ function formatDate(iso: string): string {
 }
 
 export function AuditLogPage() {
+  const { t } = useTranslation();
   const canView = usePermission("users.manage");
   const [page, setPage] = useState(1);
   const [entityType, setEntityType] = useState("");
@@ -53,8 +55,8 @@ export function AuditLogPage() {
     <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
       <div className={dashboardPage}>
         <header className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Activity log</h1>
-          <p className="mt-1 text-sm text-ink-muted">Audit trail for user and role changes.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.auditLog.title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("pages.auditLog.subtitle")}</p>
         </header>
 
         <div className="fm-settings-roles__toolbar mb-5 flex flex-wrap gap-2">

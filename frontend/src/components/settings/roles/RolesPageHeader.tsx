@@ -1,9 +1,12 @@
+import { useTranslation } from "react-i18next";
+
 type RolesPageHeaderProps = {
   onCreate: () => void;
   canManage: boolean;
 };
 
 export function RolesPageHeader({ onCreate, canManage }: RolesPageHeaderProps) {
+  const { t } = useTranslation();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
@@ -18,8 +21,8 @@ export function RolesPageHeader({ onCreate, canManage }: RolesPageHeaderProps) {
           </svg>
         </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Roles & permissions</h1>
-          <p className="mt-1 text-sm text-ink-muted">Manage role access across your organization.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">{t("pages.roles.title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("pages.roles.subtitle")}</p>
         </div>
       </div>
       {canManage && (
@@ -27,7 +30,7 @@ export function RolesPageHeader({ onCreate, canManage }: RolesPageHeaderProps) {
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Create role
+          {t("pages.roles.add")}
         </button>
       )}
     </header>

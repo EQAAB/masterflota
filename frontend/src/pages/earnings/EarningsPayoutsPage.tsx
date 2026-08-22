@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useCanAccessFinance, useCanAdjustPayouts, useCanApprovePayouts } from "../../lib/permissions";
@@ -50,6 +51,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export function EarningsPayoutsPage() {
+  const { t } = useTranslation();
   const canAccess = useCanAccessFinance();
   const canApprove = useCanApprovePayouts();
   const canAdjust = useCanAdjustPayouts();
@@ -223,7 +225,7 @@ export function EarningsPayoutsPage() {
         </nav>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">Payouts</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">{t("pages.earningsPayouts.title")}</h1>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-ink-muted">
               Unified driver payouts across all connected platforms.
             </p>

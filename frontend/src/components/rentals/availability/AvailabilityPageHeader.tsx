@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 export type AvailabilityViewMode = "list" | "calendar";
@@ -26,6 +27,7 @@ export function AvailabilityPageHeader({
   onQuickWeekly,
   canManage = false,
 }: AvailabilityPageHeaderProps) {
+  const { t } = useTranslation();
   return (
     <header className="mb-6 space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -36,9 +38,11 @@ export function AvailabilityPageHeader({
           >
             ← Back
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">Vehicle availability</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
+            {t("pages.availability.title")}
+          </h1>
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-muted">
-            Track rental availability, blocked dates, and booking conflicts.
+            {t("pages.availability.subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -80,7 +84,7 @@ export function AvailabilityPageHeader({
               </button>
               {onQuickWeekly ? (
                 <button type="button" className={btnPrimary} onClick={onQuickWeekly}>
-                  Quick weekly rental
+                  {t("pages.availability.quickWeekly")}
                 </button>
               ) : null}
               <Link to="/rentals/bookings/new" className={`${btnSecondary} fm-rental-availability__header-cta`}>

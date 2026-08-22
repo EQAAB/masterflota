@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { createVehicle, type CreateVehiclePayload } from "../../api/vehicles";
 
@@ -12,6 +13,7 @@ const VEHICLE_STATUSES = [
 ] as const;
 
 export function AddVehiclePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
@@ -108,7 +110,7 @@ export function AddVehiclePage() {
   return (
     <div className="min-h-full bg-slate-100">
       <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Add Vehicle</h1>
+        <h1 className="text-xl font-semibold text-ink">{t("pages.vehicleAdd.title")}</h1>
         <Link to="/vehicles" className="text-sm text-ink-muted hover:text-ink">
           ← Back to vehicles
         </Link>

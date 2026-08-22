@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export interface LogoutConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,6 +10,7 @@ export interface LogoutConfirmationModalProps {
 
 export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
   const { isOpen, onClose, onConfirm, isLoading = false, successMessage = null } = props;
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
@@ -17,10 +20,8 @@ export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
-        <h3 className="text-lg font-semibold text-ink">Log out</h3>
-        <p className="text-sm text-ink-muted mt-2">
-          Are you sure you want to log out? You will need to sign in again to access the app.
-        </p>
+        <h3 className="text-lg font-semibold text-ink">{t("auth.logOutConfirmTitle")}</h3>
+        <p className="text-sm text-ink-muted mt-2">{t("auth.logOutConfirmBody")}</p>
         {successMessage && (
           <p className="text-sm text-green-600 mt-2">{successMessage}</p>
         )}
@@ -34,10 +35,10 @@ export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
             {isLoading ? (
               <>
                 <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Logging out...
+                {t("auth.loggingOut")}
               </>
             ) : (
-              "Log out"
+              t("auth.logOut")
             )}
           </button>
           <button
@@ -46,7 +47,7 @@ export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
             disabled={isLoading}
             className="inline-flex items-center justify-center rounded-md border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-60"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </div>

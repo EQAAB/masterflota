@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { PageHeader } from "../theme/PageHeader";
@@ -29,6 +30,7 @@ export function DriversPageHeader({
   canCreate = false,
   canImport = false,
 }: DriversPageHeaderProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,11 +50,11 @@ export function DriversPageHeader({
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <PageHeader
-          title="Drivers"
-          description="Manage fleet drivers, assignments, and platform IDs."
+          title={t("pages.driversList.title")}
+          description={t("pages.driversList.subtitle")}
           breadcrumbs={[
             { label: "Dashboard", to: "/dashboard" },
-            { label: "Drivers" },
+            { label: t("pages.driversList.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
           actions={
@@ -81,7 +83,7 @@ export function DriversPageHeader({
               </button>
               {canCreate && (
                 <Link to="/drivers/new" className={`${btnPrimary} text-sm`}>
-                  Add driver
+                  {t("pages.driversList.add")}
                 </Link>
               )}
               <button

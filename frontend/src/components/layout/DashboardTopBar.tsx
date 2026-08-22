@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { DashboardStats } from "../../api/dashboard";
 import { useAuthStore } from "../../store/authStore";
 import { roleLabel } from "../../lib/roleLabel";
@@ -43,6 +44,7 @@ export function DashboardTopBar({
   rangeLabel,
   alerts = [],
 }: DashboardTopBarProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,15 +66,15 @@ export function DashboardTopBar({
   }, []);
 
   const subtitle = user
-    ? `${roleLabel(user.role)} · Fleet overview`
-    : "Fleet overview";
+    ? t("pages.dashboard.roleOverview", { role: roleLabel(user.role) })
+    : t("pages.dashboard.fleetOverview");
 
   return (
     <header className="shrink-0 border-b border-border/60 bg-surface-card/90 px-4 py-5 backdrop-blur-md sm:px-6">
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight text-ink">
-            Welcome{user ? `, ${user.firstName}` : ""}
+            {user ? t("pages.dashboard.welcome", { name: user.firstName }) : t("pages.dashboard.welcomeGuest")}
           </h1>
           <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>
           {rangeLabel && (

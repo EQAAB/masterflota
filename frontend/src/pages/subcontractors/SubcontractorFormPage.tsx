@@ -1,6 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   createSubcontractor,
@@ -111,6 +112,7 @@ function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
 }
 
 export function SubcontractorFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const isNew = !id || id === "new";
   const navigate = useNavigate();
@@ -204,11 +206,11 @@ export function SubcontractorFormPage() {
       <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
           <PageHeader
-            title={isNew ? "New subcontractor" : "Edit subcontractor"}
+            title={isNew ? t("pages.subcontractorForm.createTitle") : t("pages.subcontractorForm.editTitle")}
             description={
               isNew
-                ? "Create a subcontractor profile with business, contact, and contract details."
-                : "Update subcontractor information, banking details, and contract dates."
+                ? t("pages.subcontractorForm.createSubtitle")
+                : t("pages.subcontractorForm.editSubtitle")
             }
             breadcrumbs={[
               { label: "Dashboard", to: "/dashboard" },

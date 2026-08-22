@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { fetchLoginEvents, fetchLoginEventsSummary } from "../../api/loginEvents";
 import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { usePermission } from "../../lib/permissions";
@@ -63,6 +64,7 @@ function KpiCard({ label, value, warn, loading }: KpiCardProps) {
 }
 
 export function LoginEventsPage() {
+  const { t } = useTranslation();
   const canView = usePermission("users.manage");
   const [page, setPage] = useState(1);
   const [eventType, setEventType] = useState("");
@@ -135,9 +137,9 @@ export function LoginEventsPage() {
       <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
         <div className={dashboardPage}>
           <header className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-ink">Login activity</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.loginActivity.title")}</h1>
             <p className="mt-1 text-sm text-ink-muted">
-              Sign-in audit trail with failed-attempt monitoring (last 24 hours).
+              {t("pages.loginActivity.subtitle")}
             </p>
           </header>
 

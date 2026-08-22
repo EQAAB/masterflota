@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { PageHeader } from "../theme/PageHeader";
@@ -23,6 +24,7 @@ export function SubcontractorsPageHeader({
   exportDisabled,
   canCreate = false,
 }: SubcontractorsPageHeaderProps) {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,11 +44,11 @@ export function SubcontractorsPageHeader({
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <PageHeader
-          title="Subcontractors"
-          description="Manage your fleet subcontractors and their driver assignments."
+          title={t("pages.subcontractorsList.title")}
+          description={t("pages.subcontractorsList.subtitle")}
           breadcrumbs={[
             { label: "Dashboard", to: "/dashboard" },
-            { label: "Subcontractors" },
+            { label: t("pages.subcontractorsList.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
           actions={
@@ -62,7 +64,7 @@ export function SubcontractorsPageHeader({
               </button>
               {canCreate && (
                 <Link to="/subcontractors/new" className={`${btnPrimary} text-sm`}>
-                  Add subcontractor
+                  {t("pages.subcontractorsList.add")}
                 </Link>
               )}
               <button

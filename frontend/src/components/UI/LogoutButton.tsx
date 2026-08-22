@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { LogoutConfirmationModal } from "./LogoutConfirmationModal";
 
@@ -26,6 +27,7 @@ export interface LogoutButtonProps {
 }
 
 export function LogoutButton({ collapsed = false }: LogoutButtonProps) {
+  const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
   const [modalOpen, setModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,7 @@ export function LogoutButton({ collapsed = false }: LogoutButtonProps) {
     setSuccessMessage(null);
     try {
       logout();
-      setSuccessMessage("Logged out successfully.");
+      setSuccessMessage(t("auth.loggedOutSuccess"));
     } catch {
       setIsLoading(false);
     }
@@ -57,11 +59,11 @@ export function LogoutButton({ collapsed = false }: LogoutButtonProps) {
         className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-mint/50 transition-colors w-full ${
           collapsed ? "justify-center" : "justify-start"
         }`}
-        aria-label="Log out"
-        title={collapsed ? "Log out" : undefined}
+        aria-label={t("auth.logOut")}
+        title={collapsed ? t("auth.logOut") : undefined}
       >
         <LogoutIcon />
-        {!collapsed && <span>Log out</span>}
+        {!collapsed && <span>{t("auth.logOut")}</span>}
       </button>
       <LogoutConfirmationModal
         isOpen={modalOpen}

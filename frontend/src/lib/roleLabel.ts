@@ -1,10 +1,18 @@
+import i18n from "../i18n";
+
+const ROLE_KEYS = [
+  "super_admin",
+  "admin",
+  "accountant",
+  "manager",
+  "viewer",
+  "driver",
+] as const;
+
 export function roleLabel(role: string | undefined): string {
-  if (!role) return "User";
-  if (role === "super_admin") return "Super Admin";
-  if (role === "admin") return "Administrator";
-  if (role === "accountant") return "Accountant";
-  if (role === "manager") return "Manager";
-  if (role === "viewer") return "Viewer";
-  if (role === "driver") return "Driver";
+  if (!role) return i18n.t("roles.user");
+  if ((ROLE_KEYS as readonly string[]).includes(role)) {
+    return i18n.t(`roles.${role}`);
+  }
   return role.replace(/_/g, " ");
 }

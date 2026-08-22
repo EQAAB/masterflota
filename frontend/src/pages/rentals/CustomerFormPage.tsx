@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { createRentalCustomer, getRentalCustomer, updateRentalCustomer } from "../../api/rentals";
 import { CustomerFormCard } from "../../components/rentals/customer-form/CustomerFormCard";
@@ -27,6 +28,7 @@ const EMPTY_VALUES: CustomerFormValues = {
 };
 
 export function CustomerFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
@@ -109,12 +111,15 @@ export function CustomerFormPage() {
     : touched;
 
   const subtitle = isEdit
-    ? "Update this rental customer profile for bookings, invoices, and contact history."
-    : "Add a rental customer profile for bookings, invoices, and contact history.";
+    ? t("pages.customerForm.editSubtitle")
+    : t("pages.customerForm.createSubtitle");
 
   return (
     <div className="fm-rental-customer-form flex min-h-full flex-1 flex-col bg-surface-elevated p-6 sm:p-8">
-      <CustomerFormHeader title={isEdit ? "Edit customer" : "New customer"} subtitle={subtitle} />
+      <CustomerFormHeader
+        title={isEdit ? t("pages.customerForm.editTitle") : t("pages.customerForm.createTitle")}
+        subtitle={subtitle}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-8">

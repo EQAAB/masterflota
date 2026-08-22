@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { extractVersionFromResponse } from "../../lib/appVersion";
 import { acknowledgeServerVersion } from "../../store/appUpdateStore";
@@ -10,6 +11,7 @@ import type { AuthUser } from "../../store/authStore";
 import { LoginAuthField } from "../../components/auth/LoginAuthField";
 import { FleetManagerLogoMark } from "../../components/brand/FleetManagerLogoMark";
 import { AppExternalLinks } from "../../components/brand/AppExternalLinks";
+import { LanguageSwitcher } from "../../components/i18n/LanguageSwitcher";
 import { getAppBranding } from "../../lib/appBranding";
 import { alertError, btnPrimary } from "../../theme/classNames";
 
@@ -19,6 +21,7 @@ interface LoginResponse {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const branding = getAppBranding();
@@ -47,7 +50,10 @@ export function LoginPage() {
 
   return (
     <div className="fm-login-page flex min-h-screen items-center justify-center p-4">
-      <div className="fm-login-page__card">
+      <div className="fm-login-page__card relative">
+        <div className="absolute right-4 top-4">
+          <LanguageSwitcher variant="compact" />
+        </div>
         <header className="text-center">
           <div className="fm-login-page__logo-wrap">
             <FleetManagerLogoMark
@@ -57,13 +63,13 @@ export function LoginPage() {
             />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-ink">{branding.appName}</h1>
-          <p className="mt-1 text-sm text-ink-muted">Sign in to your organization dashboard</p>
+          <p className="mt-1 text-sm text-ink-muted">{t("auth.signInSubtitle")}</p>
         </header>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5">
           <LoginAuthField
             id="login-email"
-            label="Email"
+            label={t("auth.email")}
             type="email"
             value={email}
             onChange={setEmail}
@@ -72,7 +78,7 @@ export function LoginPage() {
           />
           <LoginAuthField
             id="login-password"
-            label="Password"
+            label={t("auth.password")}
             type="password"
             value={password}
             onChange={setPassword}
@@ -81,7 +87,7 @@ export function LoginPage() {
           />
           {mutation.isError && (
             <p className={alertError}>
-              {(mutation.error as Error).message || "Login failed. Check your credentials."}
+              {(mutation.error as Error).message || t("auth.loginFailed")}
             </p>
           )}
           <button
@@ -89,11 +95,11 @@ export function LoginPage() {
             disabled={mutation.isPending}
             className={`fm-login-page__submit ${btnPrimary}`}
           >
-            {mutation.isPending ? "Signing in..." : "Sign in"}
+            {mutation.isPending ? t("auth.signingIn") : t("auth.signIn")}
           </button>
         </form>
 
-        <p className="fm-login-page__footer">Secure access for fleet operations</p>
+        <p className="fm-login-page__footer">{t("auth.secureAccess")}</p>
         <AppExternalLinks className="mt-3" />
       </div>
     </div>

@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { fetchOrganizations } from "../../api/organizations";
 import { usePermission } from "../../lib/permissions";
 import { btnPrimary, btnSecondary, card, dashboardPage } from "../../theme/classNames";
 
 export function PlatformDashboardPage() {
+  const { t } = useTranslation();
   const canManageOrgs = usePermission("organizations.create");
 
   const orgsQuery = useQuery({
@@ -20,11 +22,8 @@ export function PlatformDashboardPage() {
     <div className="flex min-h-full flex-1 flex-col bg-surface-elevated">
       <div className={`${dashboardPage} space-y-6`}>
         <header>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Platform Dashboard</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Manage fleet organizations and platform settings. Enter an organization to access fleet
-            operations.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.platformDashboard.title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("pages.platformDashboard.subtitle")}</p>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -48,7 +47,7 @@ export function PlatformDashboardPage() {
             </div>
             {canManageOrgs && (
               <Link to="/settings/organizations" className={btnPrimary}>
-                Manage organizations
+                {t("pages.platformDashboard.manageOrganizations")}
               </Link>
             )}
           </div>

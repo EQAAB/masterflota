@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createInvoice, getInvoiceSeries, type InvoiceLineInput } from "../../api/invoicing";
 import { dashboardPage, btnPrimary, btnSecondary } from "../../theme/classNames";
@@ -9,6 +10,7 @@ const EMPTY_LINE: InvoiceLineInput = { description: "", quantity: 1, unit: "buc"
 const INPUT_CLS = "w-full rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand";
 
 export function InvoiceFormPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -121,7 +123,7 @@ export function InvoiceFormPage() {
           >
             ← Invoices
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">New invoice</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.invoiceForm.title")}</h1>
         </header>
 
         {createMutation.error && (
@@ -295,7 +297,7 @@ export function InvoiceFormPage() {
           <div className="flex justify-end gap-3">
             <Link to="/invoicing" className={btnSecondary}>Cancel</Link>
             <button type="submit" className={btnPrimary} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Creating..." : "Create invoice"}
+              {createMutation.isPending ? t("common.saving") : t("pages.invoiceForm.create")}
             </button>
           </div>
         </form>

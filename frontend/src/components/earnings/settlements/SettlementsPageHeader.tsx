@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 import { PageHeader } from "../../theme/PageHeader";
 
@@ -16,16 +17,17 @@ const payoutsLinkClass =
   `hover:border-slate-300 hover:bg-slate-50 hover:shadow-md`;
 
 export function SettlementsPageHeader() {
+  const { t } = useTranslation();
   return (
     <div className="shrink-0 border-b border-border/60 bg-surface-card/90 backdrop-blur-md">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <PageHeader
-          title="Subcontractor settlements"
-          description="Review subcontractor totals for the selected period and mark settlements as paid."
+          title={t("pages.subSettlements.title")}
+          description={t("pages.subSettlements.subtitle")}
           breadcrumbs={[
             { label: "Dashboard", to: "/dashboard" },
             { label: "Earnings", to: "/earnings" },
-            { label: "Subcontractor settlements" },
+            { label: t("pages.subSettlements.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-5 [&_nav]:mb-1.5 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:leading-tight [&_h1]:tracking-tight [&_h1]:text-slate-900 [&_.text-sm.text-ink-muted]:mt-1.5 [&_.text-sm.text-ink-muted]:max-w-2xl [&_.text-sm.text-ink-muted]:text-sm [&_.text-sm.text-ink-muted]:font-normal [&_.text-sm.text-ink-muted]:leading-relaxed [&_.text-sm.text-ink-muted]:text-slate-500"
           actions={
