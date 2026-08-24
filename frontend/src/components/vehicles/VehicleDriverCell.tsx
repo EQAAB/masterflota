@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { VehicleListItem } from "../../api/vehicles";
 import { getDriverDisplayId } from "../../utils/vehicleTypeDisplay";
 import { DriverAvatar } from "../drivers/DriverAvatar";
@@ -17,6 +18,7 @@ function UnassignedIcon() {
 }
 
 export function VehicleDriverCell({ vehicle }: { vehicle: VehicleListItem }) {
+  const { t } = useTranslation();
   const hasDriver =
     vehicle.current_driver_id && (vehicle.driver_first_name || vehicle.driver_last_name);
 
@@ -36,7 +38,7 @@ export function VehicleDriverCell({ vehicle }: { vehicle: VehicleListItem }) {
             {`${vehicle.driver_first_name ?? ""} ${vehicle.driver_last_name ?? ""}`.trim()}
           </p>
           {displayId && (
-            <p className="truncate text-xs text-ink-muted tabular-nums">ID: {displayId}</p>
+            <p className="truncate text-xs text-ink-muted tabular-nums">{t("common.id")}: {displayId}</p>
           )}
         </div>
       </Link>
@@ -49,8 +51,8 @@ export function VehicleDriverCell({ vehicle }: { vehicle: VehicleListItem }) {
         <UnassignedIcon />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-ink-muted">Unassigned</p>
-        <p className="truncate text-xs text-ink-muted/80">No driver assigned</p>
+        <p className="truncate text-sm font-medium text-ink-muted">{t("common.unassigned")}</p>
+        <p className="truncate text-xs text-ink-muted/80">{t("pages.vehiclesList.noDriverAssigned")}</p>
       </div>
     </div>
   );

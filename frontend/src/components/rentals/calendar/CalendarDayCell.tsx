@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { bookingsForDay, toDateKey } from "./calendarUtils";
 import { CalendarEventCard } from "./CalendarEventCard";
@@ -21,6 +22,7 @@ export function CalendarDayCell({
   onSelectBooking,
   onQuickBook,
 }: CalendarDayCellProps) {
+  const { t } = useTranslation();
   const todayKey = toDateKey(new Date());
   const isToday = dateKey === todayKey;
   const dayBookings = bookingsForDay(bookings, dateKey);
@@ -39,7 +41,7 @@ export function CalendarDayCell({
           <button
             type="button"
             className="fm-rental-calendar__cell-add"
-            title="Quick weekly rental"
+            title={t("pages.rentalCalendar.quickWeeklyRentalTitle")}
             onClick={(e) => {
               e.stopPropagation();
               onQuickBook?.(`${dateKey}T09:00`);
@@ -54,7 +56,9 @@ export function CalendarDayCell({
           <CalendarEventCard key={b.id} booking={b} compact onClick={() => onSelectBooking(b)} />
         ))}
         {more > 0 && (
-          <p className="px-1 text-[10px] font-medium text-slate-500">+{more} more</p>
+          <p className="px-1 text-[10px] font-medium text-slate-500">
+            <Trans i18nKey="pages.rentalCalendar.more" count={more} />
+          </p>
         )}
       </div>
     </div>

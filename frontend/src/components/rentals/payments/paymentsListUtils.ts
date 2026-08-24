@@ -1,6 +1,7 @@
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { rentalPaymentMethodLabel } from "./rentalPaymentMethods";
+import i18n from "../../../i18n";
 
 export type PaymentsFilters = {
   q: string;
@@ -29,9 +30,9 @@ export function todayRentCollectedFilters(): Partial<PaymentsFilters> {
 }
 
 export function formatPaymentDateTime(iso: string | null | undefined): { date: string; time: string } {
-  if (!iso) return { date: "—", time: "" };
+  if (!iso) return { date: i18n.t("common.emDash"), time: "" };
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { date: "—", time: "" };
+  if (Number.isNaN(d.getTime())) return { date: i18n.t("common.emDash"), time: "" };
   return {
     date: d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }),
     time: d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalDueThisWeekRow } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { btnSecondary } from "../../../theme/classNames";
@@ -18,6 +19,7 @@ export function RentalsDueThisWeekList({
   className = "",
   onRenew,
 }: RentalsDueThisWeekListProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <section className={`fm-rental-dashboard__card rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}>
@@ -32,11 +34,11 @@ export function RentalsDueThisWeekList({
     <section
       className={`fm-rental-dashboard__card rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}
     >
-      <h2 className="text-base font-semibold text-ink">Due this week</h2>
-      <p className="mt-1 text-sm text-slate-500">Weekly rentals ending soon — renew or return.</p>
+      <h2 className="text-base font-semibold text-ink">{t("pages.rentalDashboard.dueThisWeekTitle")}</h2>
+      <p className="mt-1 text-sm text-slate-500">{t("pages.rentalDashboard.dueThisWeekHint")}</p>
 
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">No weekly rentals due in the next 7 days.</p>
+        <p className="mt-4 text-sm text-slate-500">{t("pages.rentalDashboard.noWeeklyDue")}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {rows.map((b) => {
@@ -52,7 +54,7 @@ export function RentalsDueThisWeekList({
                   </p>
                   <p className="text-xs text-slate-600">
                     {formatShortDateRange(b.start_at, b.end_at)}
-                    {overdue ? " · Overdue" : ""}
+                    {overdue ? ` ${t("pages.rentalDashboard.overdueSuffix")}` : ""}
                   </p>
                   <p className={`text-xs font-medium ${rentPaymentStateClass(b.rent_payment_state)}`}>
                     {rentPaymentStateLabel(b.rent_payment_state)} · {formatCurrency(Number(b.total_amount))}
@@ -61,11 +63,11 @@ export function RentalsDueThisWeekList({
                 <div className="flex shrink-0 gap-2">
                   {onRenew && b.status === "active" && b.rental_type === "weekly" && (
                     <button type="button" className={`${btnSecondary} !text-xs`} onClick={() => onRenew(b.id)}>
-                      Renew
+                      {t("pages.rentalDashboard.renew")}
                     </button>
                   )}
                   <Link to={`/rentals/bookings/${b.id}`} className={`${btnSecondary} !text-xs`}>
-                    View
+                    {t("common.view")}
                   </Link>
                 </div>
               </li>

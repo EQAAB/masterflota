@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import {
   getDashboardStats,
   getDriverStatusDistribution,
@@ -30,28 +32,18 @@ import {
   type DashboardDatePreset,
 } from "../../utils/dashboardDateRange";
 
-const ACTIVITY_LABELS: Record<string, string> = {
-  profile_update: "Profile updated",
-  status_change: "Status changed",
-  document_upload: "Document uploaded",
-  document_verify: "Document verified",
-  document_delete: "Document deleted",
-  driver_delete: "Driver deleted",
-  notes_update: "Notes updated",
-};
-
 function formatTime(createdAt: string): string {
   try {
     const d = new Date(createdAt);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return i18n.t("timeAgo.justNow");
+    if (diffMins < 60) return i18n.t("timeAgo.minutesAgo", { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return i18n.t("timeAgo.hoursAgo", { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 7) return i18n.t("timeAgo.daysAgo", { count: diffDays });
     return d.toLocaleDateString();
   } catch {
     return createdAt;
@@ -61,7 +53,9 @@ function formatTime(createdAt: string): string {
 function activityToRows(activities: DashboardActivityItem[]): ActivityRow[] {
   return activities.map((a) => ({
     id: a.id,
-    description: ACTIVITY_LABELS[a.activity_type] ?? a.activity_type,
+    description: i18n.exists(`activityLabel.${a.activity_type}`)
+      ? i18n.t(`activityLabel.${a.activity_type}`)
+      : a.activity_type,
     meta: a.activity_description ?? undefined,
     time: formatTime(a.created_at),
     type: a.activity_type === "document_verify" ? "success" : "default",
@@ -119,6 +113,7 @@ function AlertIcon() {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const canFinance = useCanAccessFinance();
   const canViewPayouts = useCanViewPayouts();
   const canViewDrivers = usePermission("drivers.view");
@@ -180,7 +175,7 @@ export function DashboardPage() {
         <div className="flex flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-            <p className="text-sm text-ink-muted">Loading dashboard…</p>
+            <p className="text-sm text-ink-muted">{t("pages.dashboard.loading")}</p>
           </div>
         </div>
       </div>
@@ -193,9 +188,9 @@ export function DashboardPage() {
         {topBar}
         <div className="flex flex-1 items-center justify-center p-6">
           <EmptyState
-            title="Failed to load dashboard"
-            description="We couldn't fetch your fleet metrics. Check your connection and try again."
-            action={{ label: "Go to drivers", to: "/drivers" }}
+            title={t("pages.dashboard.failedTitle")}
+            description={t("pages.dashboard.failedDescription")}
+            action={{ label: t("pages.dashboard.goToDrivers"), to: "/drivers" }}
           />
         </div>
       </div>
@@ -210,47 +205,47 @@ export function DashboardPage() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className={dashboardSectionTitle}>Fleet snapshot</h2>
-              <p className="mt-1 text-xs text-ink-muted">Live counts — not limited by the date filter</p>
+              <h2 className={dashboardSectionTitle}>{t("pages.dashboard.fleetSnapshotTitle")}</h2>
+              <p className="mt-1 text-xs text-ink-muted">{t("pages.dashboard.fleetSnapshotHint")}</p>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
-              <KpiStatCard title="Total drivers" value={stats.totalDrivers} subtitle="Current roster" icon={<UsersIcon />} />
+              <KpiStatCard title={t("pages.dashboard.kpiTotalDrivers")} value={stats.totalDrivers} subtitle={t("pages.dashboard.kpiTotalDriversSub")} icon={<UsersIcon />} />
             </Link>
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Active drivers"
+                title={t("pages.dashboard.kpiActiveDrivers")}
                 value={stats.activeDrivers}
-                subtitle="Employment status = active"
+                subtitle={t("pages.dashboard.kpiActiveDriversSub")}
                 icon={<UsersIcon />}
               />
             </Link>
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Pending documents"
+                title={t("pages.dashboard.kpiPendingDocuments")}
                 value={stats.pendingDocuments}
-                subtitle="Needs review"
+                subtitle={t("pages.dashboard.kpiPendingDocumentsSub")}
                 icon={<DocumentIcon />}
               />
             </Link>
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Expired documents"
+                title={t("pages.dashboard.kpiExpiredDocuments")}
                 value={stats.expiredDocuments}
-                subtitle="Past expiry date"
-                trend={stats.expiredDocuments > 0 ? { value: "needs attention", positive: false } : undefined}
+                subtitle={t("pages.dashboard.kpiExpiredDocumentsSub")}
+                trend={stats.expiredDocuments > 0 ? { value: t("pages.dashboard.trendNeedsAttention"), positive: false } : undefined}
                 icon={<DocumentIcon />}
               />
             </Link>
             <Link to="/vehicles" className={`block ${kpiCardHover}`}>
-              <KpiStatCard title="Total vehicles" value={stats.totalVehicles ?? 0} subtitle="Current fleet" icon={<VehicleIcon />} />
+              <KpiStatCard title={t("pages.dashboard.kpiTotalVehicles")} value={stats.totalVehicles ?? 0} subtitle={t("pages.dashboard.kpiTotalVehiclesSub")} icon={<VehicleIcon />} />
             </Link>
             <Link to="/vehicles" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Assigned vehicles"
+                title={t("pages.dashboard.kpiAssignedVehicles")}
                 value={stats.assignedVehicles ?? 0}
-                subtitle="Drivers with a vehicle"
+                subtitle={t("pages.dashboard.kpiAssignedVehiclesSub")}
                 icon={<VehicleIcon />}
               />
             </Link>
@@ -260,8 +255,8 @@ export function DashboardPage() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className={dashboardSectionTitle}>Needs attention</h2>
-              <p className="mt-1 text-xs text-ink-muted">Open risks across loans, debt, rentals, and documents</p>
+              <h2 className={dashboardSectionTitle}>{t("pages.dashboard.needsAttentionTitle")}</h2>
+              <p className="mt-1 text-xs text-ink-muted">{t("pages.dashboard.needsAttentionHint")}</p>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -269,19 +264,19 @@ export function DashboardPage() {
               canViewDrivers ? (
             <Link to="/earnings/loans" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Outstanding loans"
+                title={t("pages.dashboard.kpiOutstandingLoans")}
                 value={formatCurrency(stats.outstandingLoans)}
-                subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
-                trend={stats.outstandingLoans > 0 ? { value: "open balance", positive: false } : undefined}
+                subtitle={t("common.driversCount", { count: stats.driversWithLoans ?? 0 })}
+                trend={stats.outstandingLoans > 0 ? { value: t("pages.dashboard.trendOpenBalance"), positive: false } : undefined}
                 icon={<AlertIcon />}
               />
             </Link>
               ) : (
               <KpiStatCard
-                title="Outstanding loans"
+                title={t("pages.dashboard.kpiOutstandingLoans")}
                 value={formatCurrency(stats.outstandingLoans)}
-                subtitle={`${stats.driversWithLoans ?? 0} driver(s)`}
-                trend={stats.outstandingLoans > 0 ? { value: "open balance", positive: false } : undefined}
+                subtitle={t("common.driversCount", { count: stats.driversWithLoans ?? 0 })}
+                trend={stats.outstandingLoans > 0 ? { value: t("pages.dashboard.trendOpenBalance"), positive: false } : undefined}
                 icon={<AlertIcon />}
               />
               )
@@ -290,19 +285,19 @@ export function DashboardPage() {
               canViewPayouts ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Platform debt"
+                title={t("pages.dashboard.kpiPlatformDebt")}
                 value={formatCurrency(stats.outstandingDebt)}
-                subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
-                trend={stats.outstandingDebt > 0 ? { value: "collectible", positive: false } : undefined}
+                subtitle={t("common.driversCount", { count: stats.driversWithDebt ?? 0 })}
+                trend={stats.outstandingDebt > 0 ? { value: t("pages.dashboard.trendCollectible"), positive: false } : undefined}
                 icon={<CurrencyIcon />}
               />
             </Link>
               ) : (
               <KpiStatCard
-                title="Platform debt"
+                title={t("pages.dashboard.kpiPlatformDebt")}
                 value={formatCurrency(stats.outstandingDebt)}
-                subtitle={`${stats.driversWithDebt ?? 0} driver(s)`}
-                trend={stats.outstandingDebt > 0 ? { value: "collectible", positive: false } : undefined}
+                subtitle={t("common.driversCount", { count: stats.driversWithDebt ?? 0 })}
+                trend={stats.outstandingDebt > 0 ? { value: t("pages.dashboard.trendCollectible"), positive: false } : undefined}
                 icon={<CurrencyIcon />}
               />
               )
@@ -310,19 +305,19 @@ export function DashboardPage() {
             {stats.overdueRentals != null && (
             <Link to="/rentals/bookings" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Overdue rentals"
+                title={t("pages.dashboard.kpiOverdueRentals")}
                 value={stats.overdueRentals}
-                subtitle="Active bookings past end"
-                trend={stats.overdueRentals > 0 ? { value: "past due", positive: false } : undefined}
+                subtitle={t("pages.dashboard.kpiOverdueRentalsSub")}
+                trend={stats.overdueRentals > 0 ? { value: t("pages.dashboard.trendPastDue"), positive: false } : undefined}
                 icon={<VehicleIcon />}
               />
             </Link>
             )}
             <Link to="/drivers" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Document risk"
+                title={t("pages.dashboard.kpiDocumentRisk")}
                 value={(stats.expiredDocuments ?? 0) + (stats.pendingDocuments ?? 0)}
-                subtitle={`${stats.expiredDocuments} expired · ${stats.pendingDocuments} pending`}
+                subtitle={t("pages.dashboard.documentRiskSub", { expired: stats.expiredDocuments, pending: stats.pendingDocuments })}
                 icon={<DocumentIcon />}
               />
             </Link>
@@ -332,62 +327,62 @@ export function DashboardPage() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className={dashboardSectionTitle}>Period money</h2>
-              <p className="mt-1 text-xs text-ink-muted">Filtered by {rangeLabel} (paid/approved commission & pending nets)</p>
+              <h2 className={dashboardSectionTitle}>{t("pages.dashboard.periodMoneyTitle")}</h2>
+              <p className="mt-1 text-xs text-ink-muted">{t("pages.dashboard.periodMoneyHint", { range: rangeLabel })}</p>
             </div>
             {isPeriodLoading && (
               <p className="text-xs text-ink-muted" aria-live="polite">
-                Updating period metrics…
+                {t("pages.dashboard.updatingPeriodMetrics")}
               </p>
             )}
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {stats.totalCommissionEarned != null ? (
             <KpiStatCard
-              title="Commission earned"
+              title={t("pages.dashboard.kpiCommissionEarned")}
               value={formatCurrency(stats.totalCommissionEarned)}
-              subtitle="Paid / approved weeks in period"
+              subtitle={t("pages.dashboard.kpiCommissionEarnedSub")}
               icon={<CurrencyIcon />}
             />
             ) : (
               <KpiStatCard
-                title="Commission earned"
-                value="—"
-                subtitle="Requires earnings access"
+                title={t("pages.dashboard.kpiCommissionEarned")}
+                value={t("common.emDash")}
+                subtitle={t("pages.dashboard.requiresEarningsAccess")}
                 icon={<CurrencyIcon />}
               />
             )}
             {stats.pendingPayments != null ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Pending payments"
+                title={t("pages.dashboard.kpiPendingPayments")}
                 value={formatCurrency(stats.pendingPayments)}
-                subtitle={`${stats.pendingPayoutRows ?? 0} pending payout row(s)`}
+                subtitle={t("pages.dashboard.pendingPayoutRows", { count: stats.pendingPayoutRows ?? 0 })}
                 icon={<CurrencyIcon />}
               />
             </Link>
             ) : (
               <KpiStatCard
-                title="Pending payments"
-                value="—"
-                subtitle="Requires payout access"
+                title={t("pages.dashboard.kpiPendingPayments")}
+                value={t("common.emDash")}
+                subtitle={t("pages.dashboard.requiresPayoutAccess")}
                 icon={<CurrencyIcon />}
               />
             )}
             {stats.totalVehicleRentalFees != null ? (
             <Link to="/earnings/payouts" className={`block ${kpiCardHover}`}>
               <KpiStatCard
-                title="Vehicle rental fees"
+                title={t("pages.dashboard.kpiVehicleRentalFees")}
                 value={formatCurrency(stats.totalVehicleRentalFees)}
-                subtitle="Deducted in period payouts"
+                subtitle={t("pages.dashboard.kpiVehicleRentalFeesSub")}
                 icon={<VehicleIcon />}
               />
             </Link>
             ) : (
               <KpiStatCard
-                title="Vehicle rental fees"
-                value="—"
-                subtitle="Requires payout access"
+                title={t("pages.dashboard.kpiVehicleRentalFees")}
+                value={t("common.emDash")}
+                subtitle={t("pages.dashboard.requiresPayoutAccess")}
                 icon={<VehicleIcon />}
               />
             )}
@@ -395,55 +390,55 @@ export function DashboardPage() {
         </section>
 
         <section>
-          <h2 className={dashboardSectionTitle}>Analytics</h2>
+          <h2 className={dashboardSectionTitle}>{t("pages.dashboard.analyticsTitle")}</h2>
           <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <DashboardChartCard title="Driver status">
+            <DashboardChartCard title={t("pages.dashboard.chartDriverStatus")}>
               <DriverStatusChart data={statusData} />
             </DashboardChartCard>
             <DashboardChartCard
-              title="Revenue by platform"
-              description={`Gross vs company commission for ${rangeLabel}`}
-              action={canFinance ? { label: "Open earnings overview", to: "/earnings" } : undefined}
+              title={t("pages.dashboard.chartRevenueByPlatform")}
+              description={t("pages.dashboard.chartRevenueByPlatformDesc", { range: rangeLabel })}
+              action={canFinance ? { label: t("pages.dashboard.openEarningsOverview"), to: "/earnings" } : undefined}
               minHeight={320}
             >
               {platformQuery.isLoading ? (
-                <p className="py-16 text-center text-sm text-ink-muted">Loading platform chart…</p>
+                <p className="py-16 text-center text-sm text-ink-muted">{t("pages.dashboard.loadingPlatformChart")}</p>
               ) : platformQuery.isError ? (
-                <p className="py-16 text-center text-sm text-danger">Failed to load platform earnings. Try refreshing.</p>
+                <p className="py-16 text-center text-sm text-danger">{t("pages.dashboard.failedPlatformChart")}</p>
               ) : (
                 <PlatformEarningsChart data={platformData} />
               )}
             </DashboardChartCard>
-            <DashboardChartCard title="Document verification">
+            <DashboardChartCard title={t("pages.dashboard.chartDocumentVerification")}>
               {docsQuery.isError ? (
-                <p className="py-16 text-center text-sm text-danger">Failed to load document stats. Try refreshing.</p>
+                <p className="py-16 text-center text-sm text-danger">{t("pages.dashboard.failedDocumentStats")}</p>
               ) : (
                 <DocumentStatsChart data={docsData} />
               )}
             </DashboardChartCard>
             <DashboardChartCard
-              title="Earnings tools"
-              description="Import reports and manage payouts from Earnings."
+              title={t("pages.dashboard.earningsToolsTitle")}
+              description={t("pages.dashboard.earningsToolsDesc")}
               minHeight={320}
             >
               <div className="flex flex-col items-start justify-center gap-3 py-4">
                 <p className="text-sm text-ink-muted">
-                  Platform reports, driver payouts, loans, and settlements live under Earnings in the sidebar.
+                  {t("pages.dashboard.earningsToolsBody")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {canFinance && (
                     <Link to="/earnings" className={btnSecondary}>
-                      Earnings overview
+                      {t("pages.dashboard.earningsOverviewLink")}
                     </Link>
                   )}
                   {canImport && (
                     <Link to="/earnings/import" className={btnSecondary}>
-                      Import earnings
+                      {t("pages.dashboard.importEarningsLink")}
                     </Link>
                   )}
                   {canViewPayouts && (
                     <Link to="/earnings/payouts" className={btnSecondary}>
-                      Payouts
+                      {t("pages.dashboard.payoutsLink")}
                     </Link>
                   )}
                 </div>
@@ -453,8 +448,8 @@ export function DashboardPage() {
         </section>
 
         <section>
-          <h2 className={dashboardSectionTitle}>Recent activity</h2>
-          <p className="mt-1 text-xs text-ink-muted">Showing activity and assignments in {rangeLabel}</p>
+          <h2 className={dashboardSectionTitle}>{t("pages.dashboard.recentActivityTitle")}</h2>
+          <p className="mt-1 text-xs text-ink-muted">{t("pages.dashboard.recentActivityHint", { range: rangeLabel })}</p>
           <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <ActivityTimeline
               rows={activityToRows(activities)}

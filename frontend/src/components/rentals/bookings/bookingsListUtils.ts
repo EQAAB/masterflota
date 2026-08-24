@@ -1,6 +1,7 @@
 import type { RentalBooking } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { bookingStatusDisplayLabel, rentPaymentStateLabel } from "../rentalStatus";
+import i18n from "../../../i18n";
 
 export function formatRelativeCreated(createdAt?: string): string {
   if (!createdAt) return "";
@@ -9,13 +10,16 @@ export function formatRelativeCreated(createdAt?: string): string {
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Created just now";
-    if (diffMins < 60) return `Created ${diffMins}m ago`;
+    if (diffMins < 1) return i18n.t("pages.bookings.createdJustNow");
+    if (diffMins < 60) return i18n.t("pages.bookings.createdMinutesAgo", { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `Created ${diffHours}h ago`;
+    if (diffHours < 24) return i18n.t("pages.bookings.createdHoursAgo", { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 14) return `Created ${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-    return `Created ${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+    if (diffDays < 14) return i18n.t("pages.bookings.createdDaysAgo", { count: diffDays });
+    const locale = i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB";
+    return i18n.t("pages.bookings.createdOn", {
+      date: d.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }),
+    });
   } catch {
     return "";
   }

@@ -1,22 +1,17 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { PlatformEarningsItem } from "../../api/dashboard";
 import { CHART_BRAND, CHART_COLORS } from "./chartPalette";
 import { EmptyState } from "../theme/EmptyState";
 import { ChartEmptyIllustration } from "./illustrations/ChartEmptyIllustration";
 import { formatCurrency } from "../../utils/currency";
+import i18n from "../../i18n";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  uber: "Uber",
-  bolt: "Bolt",
-  glovo: "Glovo",
-  bolt_courier: "Bolt Courier",
-  wolt_courier: "Wolt Courier",
-  bolt_taxi: "Bolt Taxi",
-  unknown: "Unknown",
-};
+const PROPER_NOUN_PLATFORMS = new Set(["uber", "bolt", "glovo"]);
 
 function platformLabel(platform: string): string {
-  return PLATFORM_LABELS[platform] ?? platform;
+  if (PROPER_NOUN_PLATFORMS.has(platform)) return platform.charAt(0).toUpperCase() + platform.slice(1);
+  return i18n.t(`dashboardCharts.platform.${platform}`, { defaultValue: platform });
 }
 
 function ChartTooltip({
@@ -42,6 +37,7 @@ function ChartTooltip({
 }
 
 export function PlatformEarningsChart({ data }: { data: PlatformEarningsItem[] }) {
+  const { t } = useTranslation();
   const chartData = data.map((d) => ({
     name: platformLabel(d.platform),
     Gross: d.gross,
@@ -51,8 +47,8 @@ export function PlatformEarningsChart({ data }: { data: PlatformEarningsItem[] }
   if (!chartData.length || chartData.every((d) => d.Gross === 0 && d.Commission === 0)) {
     return (
       <EmptyState
-        title="No earnings in this period"
-        description="Import platform reports for this date range to see revenue by platform."
+        title={t("dashboardCharts.noEarningsTitle")}
+        description={t("dashboardCharts.noEarningsDesc")}
         illustration={<ChartEmptyIllustration className="w-20 h-20" />}
         className="border-0 bg-transparent py-6"
       />
@@ -67,8 +63,8 @@ export function PlatformEarningsChart({ data }: { data: PlatformEarningsItem[] }
         <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} width={56} />
         <Tooltip content={<ChartTooltip />} />
         <Legend wrapperStyle={{ fontSize: 12, color: "#6B7280" }} />
-        <Bar dataKey="Gross" fill={CHART_COLORS[0]} radius={[6, 6, 0, 0]} maxBarSize={36} />
-        <Bar dataKey="Commission" fill={CHART_BRAND} radius={[6, 6, 0, 0]} maxBarSize={36} />
+        <Bar dataKey="Gross" name={t("dashboardCharts.gross")} fill={CHART_COLORS[0]} radius={[6, 6, 0, 0]} maxBarSize={36} />
+        <Bar dataKey="Commission" name={t("dashboardCharts.commission")} fill={CHART_BRAND} radius={[6, 6, 0, 0]} maxBarSize={36} />
       </BarChart>
     </ResponsiveContainer>
   );

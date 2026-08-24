@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { EarningsOverviewResponse } from "../../../api/earnings";
 import { KpiStatCard } from "../../dashboard/KpiStatCard";
 import { CHART_BRAND, CHART_WARNING } from "../../dashboard/chartPalette";
@@ -52,15 +53,16 @@ type EarningsKpiCardsProps = {
 };
 
 export function EarningsKpiCards({ kpis, monthly }: EarningsKpiCardsProps) {
+  const { t } = useTranslation();
   const pendingPct = pendingOfGrossPct(kpis);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <KpiStatCard
-        title="Pending payouts"
+        title={t("pages.earningsOverview.kpiPendingPayouts")}
         value={formatCurrency(kpis.pendingPaymentsTotal)}
         subtitle={
-          pendingPct != null ? `${pendingPct.toFixed(0)}% of gross (30 days)` : undefined
+          pendingPct != null ? t("pages.earningsOverview.kpiPendingPayoutsSub", { pct: pendingPct.toFixed(0) }) : undefined
         }
         icon={<WalletIcon className="h-5 w-5" />}
         iconClassName="bg-success/10 text-success"
@@ -72,9 +74,9 @@ export function EarningsKpiCards({ kpis, monthly }: EarningsKpiCardsProps) {
         }
       />
       <KpiStatCard
-        title="Gross (30 days)"
+        title={t("pages.earningsOverview.kpiGross30d")}
         value={formatCurrency(kpis.totalEarningsLast30Days)}
-        subtitle="100% total earnings"
+        subtitle={t("pages.earningsOverview.kpiGross30dSub")}
         icon={<CurrencyIcon className="h-5 w-5" />}
         iconClassName="bg-purple-100 text-purple-700"
         sparkline={
@@ -86,9 +88,9 @@ export function EarningsKpiCards({ kpis, monthly }: EarningsKpiCardsProps) {
         }
       />
       <KpiStatCard
-        title="Avg paid payout (90d)"
+        title={t("pages.earningsOverview.kpiAvgPaidPayout")}
         value={formatCurrency(kpis.avgPayoutPaidLast90Days)}
-        subtitle="Average paid payout, last 90 days"
+        subtitle={t("pages.earningsOverview.kpiAvgPaidPayoutSub")}
         icon={<AnalyticsIcon className="h-5 w-5" />}
         iconClassName="bg-warning/10 text-warning"
         sparkline={

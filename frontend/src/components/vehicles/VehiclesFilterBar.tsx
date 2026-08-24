@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import type { VehiclePlatformFilter } from "../../api/vehicles";
 import type { VehicleStatusFilter } from "../../hooks/useVehiclesListFilters";
 import { driversFilterCard, input, btnGhost } from "../../theme/classNames";
@@ -61,6 +62,7 @@ export function VehiclesFilterBar({
   hasActiveFilters,
   onClearAllFilters,
 }: VehiclesFilterBarProps) {
+  const { t } = useTranslation();
   const hasQuery = searchQuery.trim().length > 0;
 
   return (
@@ -68,14 +70,14 @@ export function VehiclesFilterBar({
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(0,1fr))_auto] lg:items-center lg:gap-2">
         <div className="relative min-w-0 lg:col-span-1">
           <label htmlFor="vehicle-search" className="sr-only">
-            Search vehicles
+            {t("pages.vehiclesList.searchAriaLabel")}
           </label>
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-muted" />
           <input
             id="vehicle-search"
             type="search"
             autoComplete="off"
-            placeholder="Search plate, VIN, driver, make/model, status..."
+            placeholder={t("pages.vehiclesList.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className={`${input} pl-10 ${hasQuery ? "pr-20" : ""}`}
@@ -86,32 +88,32 @@ export function VehiclesFilterBar({
               onClick={onClearSearch}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1 text-xs font-medium text-ink-muted transition-colors hover:bg-surface hover:text-ink"
             >
-              Clear
+              {t("common.clear")}
             </button>
           )}
         </div>
 
         <select
-          aria-label="Filter by status"
+          aria-label={t("pages.vehiclesList.filterStatusAriaLabel")}
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value as VehicleStatusFilter)}
           className={selectClass}
         >
-          <option value="all">All statuses</option>
-          <option value="available">Available</option>
-          <option value="rented">Rented</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="sold">Sold</option>
-          <option value="scrapped">Scrapped</option>
+          <option value="all">{t("pages.vehiclesList.allStatuses")}</option>
+          <option value="available">{t("vehicleStatus.available")}</option>
+          <option value="rented">{t("vehicleStatus.rented")}</option>
+          <option value="maintenance">{t("vehicleStatus.maintenance")}</option>
+          <option value="sold">{t("vehicleStatus.sold")}</option>
+          <option value="scrapped">{t("vehicleStatus.scrapped")}</option>
         </select>
 
         <select
-          aria-label="Filter by platform"
+          aria-label={t("pages.vehiclesList.filterPlatformAriaLabel")}
           value={platformFilter}
           onChange={(e) => onPlatformChange(e.target.value as VehiclePlatformFilter)}
           className={selectClass}
         >
-          <option value="all">All platforms</option>
+          <option value="all">{t("pages.vehiclesList.allPlatforms")}</option>
           <option value="bolt">Bolt</option>
           <option value="glovo">Glovo</option>
           <option value="bolt_glovo">Bolt + Glovo</option>
@@ -125,13 +127,13 @@ export function VehiclesFilterBar({
           className={`${btnGhost} inline-flex shrink-0 items-center gap-2 text-sm`}
         >
           <FiltersIcon className="h-4 w-4" />
-          Filters
+          {t("pages.vehiclesList.filtersButton")}
         </button>
       </div>
 
       {filtersExpanded && (
         <p className="mt-3 text-xs text-ink-muted">
-          More filters (rent range, insurance expiry) coming soon.
+          {t("pages.vehiclesList.moreFiltersComingSoon")}
         </p>
       )}
 
@@ -139,24 +141,25 @@ export function VehiclesFilterBar({
         {totalCount > 0 && (
           <p className="text-xs text-ink-muted sm:text-sm">
             {hasQuery && isFilterPending ? (
-              <span>Matching vehicles…</span>
+              <span>{t("pages.vehiclesList.matching")}</span>
             ) : debouncedQuery.trim() || hasActiveFilters ? (
-              <>
-                Showing{" "}
-                <span className="font-semibold tabular-nums text-ink">{filteredCount.toLocaleString()}</span> of{" "}
-                <span className="tabular-nums">{totalCount.toLocaleString()}</span>
-              </>
+              <Trans
+                i18nKey="pages.vehiclesList.showing"
+                values={{ filtered: filteredCount.toLocaleString(), total: totalCount.toLocaleString() }}
+                components={{ b: <span className="font-semibold tabular-nums text-ink" /> }}
+              />
             ) : (
-              <>
-                <span className="font-semibold tabular-nums text-ink">{totalCount.toLocaleString()}</span> vehicle
-                {totalCount === 1 ? "" : "s"}
-              </>
+              <Trans
+                i18nKey="pages.vehiclesList.vehicleCount"
+                count={totalCount}
+                components={{ b: <span className="font-semibold tabular-nums text-ink" /> }}
+              />
             )}
           </p>
         )}
         {hasActiveFilters && (
           <button type="button" onClick={onClearAllFilters} className="text-xs font-medium text-brand hover:underline">
-            Clear all filters
+            {t("pages.vehiclesList.clearAllFilters")}
           </button>
         )}
       </div>

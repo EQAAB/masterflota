@@ -1,8 +1,9 @@
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { buildMonthCells } from "./calendarUtils";
 import { CalendarDayCell } from "./CalendarDayCell";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_KEYS = ["weekdayMon", "weekdayTue", "weekdayWed", "weekdayThu", "weekdayFri", "weekdaySat", "weekdaySun"] as const;
 
 type CalendarMonthGridProps = {
   cursorDate: Date;
@@ -19,6 +20,7 @@ export function CalendarMonthGrid({
   onSelectBooking,
   onQuickBook,
 }: CalendarMonthGridProps) {
+  const { t } = useTranslation();
   const cells = buildMonthCells(cursorDate);
 
   if (loading) {
@@ -32,9 +34,9 @@ export function CalendarMonthGrid({
   return (
     <div className="fm-rental-calendar__grid-card">
       <div className="fm-rental-calendar__grid">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="fm-rental-calendar__weekday">
-            {d}
+        {WEEKDAY_KEYS.map((key) => (
+          <div key={key} className="fm-rental-calendar__weekday">
+            {t(`pages.rentalDashboard.${key}`)}
           </div>
         ))}
         {cells.map((cell) => (

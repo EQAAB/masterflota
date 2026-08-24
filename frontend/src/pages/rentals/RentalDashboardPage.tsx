@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getOverdueRentals, getRentalDashboard } from "../../api/rentals";
 import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
 import { CalendarPreview } from "../../components/rentals/dashboard/CalendarPreview";
@@ -17,6 +18,7 @@ import { useQuickWeeklyRentalModal } from "../../hooks/useQuickWeeklyRentalModal
 import { dashboardPage } from "../../theme/classNames";
 
 export function RentalDashboardPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const dashQuery = useQuery({
@@ -52,7 +54,7 @@ export function RentalDashboardPage() {
 
         {dashQuery.isError && (
           <p className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Could not load dashboard data. Refresh the page or try again later.
+            {t("pages.rentalDashboard.loadError")}
           </p>
         )}
 

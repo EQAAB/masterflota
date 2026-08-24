@@ -5,13 +5,14 @@ import type { DashboardStats } from "../../api/dashboard";
 import { useAuthStore } from "../../store/authStore";
 import { roleLabel } from "../../lib/roleLabel";
 import { btnSecondary } from "../../theme/classNames";
+import i18n from "../../i18n";
 import type { DashboardDatePreset } from "../../utils/dashboardDateRange";
 import { formatCurrency } from "../../utils/currency";
 
-const PRESETS: { id: DashboardDatePreset; label: string }[] = [
-  { id: "today", label: "Today" },
-  { id: "week", label: "This week" },
-  { id: "month", label: "This month" },
+const PRESETS: { id: DashboardDatePreset; key: "presetToday" | "presetWeek" | "presetMonth" }[] = [
+  { id: "today", key: "presetToday" },
+  { id: "week", key: "presetWeek" },
+  { id: "month", key: "presetMonth" },
 ];
 
 function initials(firstName?: string, lastName?: string): string {
@@ -79,8 +80,8 @@ export function DashboardTopBar({
           <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>
           {rangeLabel && (
             <p className="mt-1 text-xs text-ink-muted">
-              Period filter: <span className="font-medium text-ink">{rangeLabel}</span>
-              <span className="text-ink-muted"> · money, activity & platform chart</span>
+              {t("pages.dashboard.topBar.periodFilterLabel")} <span className="font-medium text-ink">{rangeLabel}</span>
+              <span className="text-ink-muted">{t("pages.dashboard.topBar.periodFilterSuffix")}</span>
             </p>
           )}
         </div>
@@ -89,7 +90,7 @@ export function DashboardTopBar({
           <div
             className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/80 bg-surface-elevated p-1"
             role="group"
-            aria-label="Date range"
+            aria-label={t("pages.dashboard.topBar.dateRangeAriaLabel")}
           >
             {PRESETS.map((p) => (
               <button
@@ -102,7 +103,7 @@ export function DashboardTopBar({
                     : "text-ink-muted hover:bg-white hover:text-ink"
                 }`}
               >
-                {p.label}
+                {t(`pages.dashboard.topBar.${p.key}`)}
               </button>
             ))}
             <input
@@ -113,7 +114,7 @@ export function DashboardTopBar({
                 onPresetChange("custom");
               }}
               className="rounded-lg border-0 bg-transparent px-2 py-1.5 text-xs text-ink focus:ring-2 focus:ring-brand/20"
-              aria-label="Custom date"
+              aria-label={t("pages.dashboard.topBar.customDateAriaLabel")}
             />
           </div>
 
@@ -122,7 +123,7 @@ export function DashboardTopBar({
               type="button"
               onClick={() => setAlertsOpen((o) => !o)}
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all hover:bg-surface hover:text-ink"
-              aria-label="Alerts"
+              aria-label={t("pages.dashboard.topBar.alertsAriaLabel")}
               aria-expanded={alertsOpen}
               aria-haspopup="menu"
             >
@@ -146,10 +147,10 @@ export function DashboardTopBar({
                 role="menu"
               >
                 <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                  Needs attention
+                  {t("pages.dashboard.needsAttentionTitle")}
                 </p>
                 {alerts.length === 0 ? (
-                  <p className="px-3 py-3 text-sm text-ink-muted">No open alerts right now.</p>
+                  <p className="px-3 py-3 text-sm text-ink-muted">{t("pages.dashboard.topBar.noOpenAlerts")}</p>
                 ) : (
                   <ul className="max-h-72 space-y-0.5 overflow-y-auto">
                     {alerts.map((a) => (
@@ -184,7 +185,7 @@ export function DashboardTopBar({
               </span>
               {!menuOpen && (
                 <span className="hidden text-sm font-medium text-ink sm:inline max-w-[120px] truncate">
-                  {user?.firstName ?? "Account"}
+                  {user?.firstName ?? t("profile.account")}
                 </span>
               )}
             </button>
@@ -195,7 +196,7 @@ export function DashboardTopBar({
               >
                 <div className="border-b border-border px-3 pb-2 mb-2">
                   <p className="text-sm font-semibold text-ink truncate">
-                    {user ? `${user.firstName} ${user.lastName}` : "User"}
+                    {user ? `${user.firstName} ${user.lastName}` : t("roles.user")}
                   </p>
                   <p className="text-xs text-ink-muted truncate">{user?.email}</p>
                   <p className="text-xs text-brand mt-0.5">{roleLabel(user?.role)}</p>
@@ -206,7 +207,7 @@ export function DashboardTopBar({
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
                 >
-                  View drivers
+                  {t("pages.dashboard.topBar.viewDrivers")}
                 </Link>
                 <button
                   type="button"
@@ -217,14 +218,14 @@ export function DashboardTopBar({
                     logout();
                   }}
                 >
-                  Log out
+                  {t("auth.logOut")}
                 </button>
               </div>
             )}
           </div>
 
           <Link to="/drivers" className={`${btnSecondary} hidden lg:inline-flex text-sm`}>
-            All drivers
+            {t("pages.dashboard.topBar.allDrivers")}
           </Link>
         </div>
       </div>
@@ -238,48 +239,57 @@ export function buildDashboardAlerts(stats: DashboardStats): DashboardAlertItem[
   if (stats.overdueRentals != null && stats.overdueRentals > 0) {
     items.push({
       id: "overdue-rentals",
-      label: "Overdue rentals",
-      detail: `${stats.overdueRentals} active booking(s) past end date`,
+      label: i18n.t("pages.dashboard.kpiOverdueRentals"),
+      detail: i18n.t("pages.dashboard.topBar.alertOverdueRentalsDetail", { count: stats.overdueRentals }),
       to: "/rentals/bookings",
     });
   }
   if (stats.outstandingLoans != null && stats.outstandingLoans > 0) {
     items.push({
       id: "loans",
-      label: "Outstanding loans",
-      detail: `${formatCurrency(stats.outstandingLoans ?? 0)} · ${stats.driversWithLoans ?? 0} driver(s)`,
+      label: i18n.t("pages.dashboard.kpiOutstandingLoans"),
+      detail: i18n.t("pages.dashboard.topBar.alertAmountDrivers", {
+        amount: formatCurrency(stats.outstandingLoans ?? 0),
+        count: stats.driversWithLoans ?? 0,
+      }),
       to: "/earnings/loans",
     });
   }
   if (stats.outstandingDebt != null && stats.outstandingDebt > 0) {
     items.push({
       id: "debt",
-      label: "Platform debt",
-      detail: `${formatCurrency(stats.outstandingDebt ?? 0)} · ${stats.driversWithDebt ?? 0} driver(s)`,
+      label: i18n.t("pages.dashboard.kpiPlatformDebt"),
+      detail: i18n.t("pages.dashboard.topBar.alertAmountDrivers", {
+        amount: formatCurrency(stats.outstandingDebt ?? 0),
+        count: stats.driversWithDebt ?? 0,
+      }),
       to: "/earnings/payouts",
     });
   }
   if (stats.pendingPayoutRows != null && stats.pendingPayoutRows > 0) {
     items.push({
       id: "pending-payouts",
-      label: "Pending payouts in period",
-      detail: `${stats.pendingPayoutRows} row(s) · ${formatCurrency(stats.pendingPayments ?? 0)}`,
+      label: i18n.t("pages.dashboard.topBar.alertPendingPayoutsLabel"),
+      detail: i18n.t("pages.dashboard.topBar.alertPendingPayoutsDetail", {
+        count: stats.pendingPayoutRows,
+        amount: formatCurrency(stats.pendingPayments ?? 0),
+      }),
       to: "/earnings/payouts",
     });
   }
   if ((stats.expiredDocuments ?? 0) > 0) {
     items.push({
       id: "expired-docs",
-      label: "Expired documents",
-      detail: `${stats.expiredDocuments} document(s) past expiry`,
+      label: i18n.t("pages.dashboard.kpiExpiredDocuments"),
+      detail: i18n.t("pages.dashboard.topBar.alertExpiredDocsDetail", { count: stats.expiredDocuments }),
       to: "/drivers",
     });
   }
   if ((stats.pendingDocuments ?? 0) > 0) {
     items.push({
       id: "pending-docs",
-      label: "Pending documents",
-      detail: `${stats.pendingDocuments} unverified document(s)`,
+      label: i18n.t("pages.dashboard.kpiPendingDocuments"),
+      detail: i18n.t("pages.dashboard.topBar.alertPendingDocsDetail", { count: stats.pendingDocuments }),
       to: "/drivers",
     });
   }

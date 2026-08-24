@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { RentalDashboardCard } from "./RentalDashboardCard";
 
 type CalendarPreviewProps = {
@@ -12,6 +13,7 @@ function toDateKey(d: Date): string {
 }
 
 export function CalendarPreview({ bookingDates = [], loading, className }: CalendarPreviewProps) {
+  const { t, i18n } = useTranslation();
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -20,23 +22,32 @@ export function CalendarPreview({ bookingDates = [], loading, className }: Calen
   const startPad = (firstDay.getDay() + 6) % 7;
   const dateSet = new Set(bookingDates.map((d) => (typeof d === "string" ? d.slice(0, 10) : String(d))));
 
-  const monthLabel = today.toLocaleString("en-GB", { month: "long", year: "numeric" });
+  const monthLabel = today.toLocaleString(i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB", { month: "long", year: "numeric" });
   const todayKey = toDateKey(today);
+  const weekdayLabels = [
+    t("pages.rentalDashboard.weekdayMon"),
+    t("pages.rentalDashboard.weekdayTue"),
+    t("pages.rentalDashboard.weekdayWed"),
+    t("pages.rentalDashboard.weekdayThu"),
+    t("pages.rentalDashboard.weekdayFri"),
+    t("pages.rentalDashboard.weekdaySat"),
+    t("pages.rentalDashboard.weekdaySun"),
+  ];
 
   const cells: (number | null)[] = [];
   for (let i = 0; i < startPad; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <RentalDashboardCard title="Calendar preview" viewAllTo="/rentals/calendar" className={className}>
+    <RentalDashboardCard title={t("pages.rentalDashboard.calendarPreviewTitle")} viewAllTo="/rentals/calendar" className={className}>
       {loading ? (
         <div className="fm-rental-dashboard__skeleton h-48" />
       ) : (
         <>
           <p className="mb-3 text-xs font-semibold text-ink-muted">{monthLabel}</p>
           <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-slate-400">
-            {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
-              <span key={d}>{d}</span>
+            {weekdayLabels.map((d, i) => (
+              <span key={i}>{d}</span>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -61,7 +72,7 @@ export function CalendarPreview({ bookingDates = [], loading, className }: Calen
             to="/rentals/calendar"
             className="mt-4 block text-center text-xs font-medium text-brand hover:underline"
           >
-            Open full calendar
+            {t("pages.rentalDashboard.openFullCalendar")}
           </Link>
         </>
       )}

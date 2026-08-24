@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 import { updateSubcontractor } from "../../api/subcontractors";
 import { useUrlPagination } from "../../hooks/useUrlPagination";
@@ -23,6 +24,7 @@ type SubcontractorsListProps = {
 };
 
 export function SubcontractorsList({ subcontractors, isLoading, isError }: SubcontractorsListProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canCreate = usePermission("subcontractors.create");
@@ -215,9 +217,9 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
       {suspendTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Suspend subcontractor?</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.subcontractorsList.suspendModalTitle")}</h3>
             <p className="mt-2 text-sm text-ink-muted">
-              {suspendTarget.legal_name} will be marked as inactive and hidden from active fleet operations.
+              {t("pages.subcontractorsList.suspendModalBody", { name: suspendTarget.legal_name })}
             </p>
             <div className="mt-5 flex gap-2">
               <button
@@ -226,7 +228,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
                 disabled={suspendMutation.isPending}
                 className={`${btnDangerOutline} flex-1 justify-center`}
               >
-                {suspendMutation.isPending ? "Suspending…" : "Suspend"}
+                {suspendMutation.isPending ? t("pages.subcontractorsList.suspending") : t("pages.subcontractorsList.suspend")}
               </button>
               <button
                 type="button"
@@ -234,7 +236,7 @@ export function SubcontractorsList({ subcontractors, isLoading, isError }: Subco
                 disabled={suspendMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 import { getSubcontractors } from "../../api/subcontractors";
 import { driversFilterCard, input, btnGhost } from "../../theme/classNames";
 import type { DriverPlatformFilter, DriverStatusFilter } from "../../hooks/useDriversListFilters";
@@ -66,6 +67,7 @@ export function DriversFilterBar({
   hasActiveFilters,
   onClearAllFilters,
 }: DriversFilterBarProps) {
+  const { t } = useTranslation();
   const subcontractorsQuery = useQuery({
     queryKey: ["subcontractors", "list"],
     queryFn: async () => {
@@ -81,14 +83,14 @@ export function DriversFilterBar({
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))_auto] lg:items-center lg:gap-2">
         <div className="relative min-w-0 lg:col-span-1">
           <label htmlFor="driver-search" className="sr-only">
-            Search drivers
+            {t("pages.driversList.searchAriaLabel")}
           </label>
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-muted" />
           <input
             id="driver-search"
             type="search"
             autoComplete="off"
-            placeholder="Search name, phone, ID, city…"
+            placeholder={t("pages.driversList.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className={`${input} pl-10 ${hasQuery ? "pr-20" : ""}`}
@@ -99,30 +101,30 @@ export function DriversFilterBar({
               onClick={onClearSearch}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1 text-xs font-medium text-ink-muted transition-colors hover:bg-surface hover:text-ink"
             >
-              Clear
+              {t("common.clear")}
             </button>
           )}
         </div>
 
         <select
-          aria-label="Filter by status"
+          aria-label={t("pages.driversList.filterStatusAriaLabel")}
           value={statusFilter}
           onChange={(e) => onStatusChange(e.target.value as DriverStatusFilter)}
           className={selectClass}
         >
-          <option value="all">All statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-          <option value="terminated">Terminated</option>
+          <option value="all">{t("pages.driversList.allStatuses")}</option>
+          <option value="active">{t("driverStatus.active")}</option>
+          <option value="suspended">{t("driverStatus.suspended")}</option>
+          <option value="terminated">{t("driverStatus.terminated")}</option>
         </select>
 
         <select
-          aria-label="Filter by subcontractor"
+          aria-label={t("pages.driversList.filterSubcontractorAriaLabel")}
           value={subcontractorFilter}
           onChange={(e) => onSubcontractorChange(e.target.value)}
           className={selectClass}
         >
-          <option value="all">All subcontractors</option>
+          <option value="all">{t("pages.driversList.allSubcontractors")}</option>
           {(subcontractorsQuery.data ?? []).map((s) => (
             <option key={s.id} value={s.id}>
               {s.legal_name}
@@ -131,12 +133,12 @@ export function DriversFilterBar({
         </select>
 
         <select
-          aria-label="Filter by platform"
+          aria-label={t("pages.driversList.filterPlatformAriaLabel")}
           value={platformFilter}
           onChange={(e) => onPlatformChange(e.target.value as DriverPlatformFilter)}
           className={selectClass}
         >
-          <option value="all">All platforms</option>
+          <option value="all">{t("pages.driversList.allPlatforms")}</option>
           <option value="bolt">Bolt</option>
           <option value="glovo">Glovo</option>
           <option value="bolt_glovo">Bolt + Glovo</option>
@@ -150,13 +152,13 @@ export function DriversFilterBar({
           className={`${btnGhost} inline-flex shrink-0 items-center gap-2 text-sm`}
         >
           <FiltersIcon className="h-4 w-4" />
-          Filters
+          {t("pages.driversList.filtersButton")}
         </button>
       </div>
 
       {filtersExpanded && (
         <p className="mt-3 text-xs text-ink-muted">
-          More filters (commission range, vehicle assignment) coming soon.
+          {t("pages.driversList.moreFiltersComingSoon")}
         </p>
       )}
 
@@ -164,24 +166,25 @@ export function DriversFilterBar({
         {totalCount > 0 && (
           <p className="text-xs text-ink-muted sm:text-sm">
             {hasQuery && isFilterPending ? (
-              <span>Matching drivers…</span>
+              <span>{t("pages.driversList.matching")}</span>
             ) : debouncedQuery.trim() || hasActiveFilters ? (
-              <>
-                Showing{" "}
-                <span className="font-semibold tabular-nums text-ink">{filteredCount.toLocaleString()}</span> of{" "}
-                <span className="tabular-nums">{totalCount.toLocaleString()}</span>
-              </>
+              <Trans
+                i18nKey="pages.driversList.showing"
+                values={{ filtered: filteredCount.toLocaleString(), total: totalCount.toLocaleString() }}
+                components={{ b: <span className="font-semibold tabular-nums text-ink" /> }}
+              />
             ) : (
-              <>
-                <span className="font-semibold tabular-nums text-ink">{totalCount.toLocaleString()}</span> driver
-                {totalCount === 1 ? "" : "s"}
-              </>
+              <Trans
+                i18nKey="pages.driversList.driverCount"
+                count={totalCount}
+                components={{ b: <span className="font-semibold tabular-nums text-ink" /> }}
+              />
             )}
           </p>
         )}
         {hasActiveFilters && (
           <button type="button" onClick={onClearAllFilters} className="text-xs font-medium text-brand hover:underline">
-            Clear all filters
+            {t("pages.driversList.clearAllFilters")}
           </button>
         )}
       </div>

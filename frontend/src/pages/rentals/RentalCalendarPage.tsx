@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getRentalAvailability, getRentalDashboard } from "../../api/rentals";
 import type { RentalAvailabilityBooking, RentalBooking } from "../../api/rentals";
 import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
@@ -42,6 +43,7 @@ function useMediaListDefault(): boolean {
 }
 
 export function RentalCalendarPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const isNarrow = useMediaListDefault();
@@ -128,7 +130,7 @@ export function RentalCalendarPage() {
 
         {calendarQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load calendar data.
+            {t("pages.rentalCalendar.failedToLoad")}
           </p>
         )}
 

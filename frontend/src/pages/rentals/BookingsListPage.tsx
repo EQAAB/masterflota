@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getRentalBookings, getRentalDashboard } from "../../api/rentals";
 import { QuickWeeklyRentalModal } from "../../components/rentals/QuickWeeklyRentalModal";
 import { BookingsKpiRow } from "../../components/rentals/bookings/BookingsKpiRow";
@@ -26,6 +27,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function BookingsListPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const [searchParams] = useSearchParams();
@@ -96,7 +98,7 @@ export function BookingsListPage() {
 
         {bookingsQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load bookings. Check your connection and try again.
+            {t("pages.bookings.failedToLoad")}
           </p>
         )}
 

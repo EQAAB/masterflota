@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import {
@@ -60,6 +61,7 @@ export function DriversTable({
   canCreate = false,
   embedded = false,
 }: DriversTableProps) {
+  const { t } = useTranslation();
   const shell = embedded ? "" : driversTableCard;
 
   if (isLoading) {
@@ -68,9 +70,9 @@ export function DriversTable({
         <span
           className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
           role="status"
-          aria-label="Loading drivers"
+          aria-label={t("pages.driversList.loadingAriaLabel")}
         />
-        <p className="text-sm text-ink-muted">Loading drivers…</p>
+        <p className="text-sm text-ink-muted">{t("pages.driversList.loading")}</p>
       </div>
     );
   }
@@ -79,8 +81,8 @@ export function DriversTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="Failed to load drivers"
-          description="Check your connection and refresh the page."
+          title={t("pages.driversList.failedTitle")}
+          description={t("pages.driversList.failedDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -91,9 +93,9 @@ export function DriversTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No drivers yet"
-          description="Add your first driver to start managing fleet assignments and payouts."
-          action={canCreate ? { label: "Add driver", to: "/drivers/new" } : undefined}
+          title={t("pages.driversList.emptyTitle")}
+          description={t("pages.driversList.emptyDescription")}
+          action={canCreate ? { label: t("pages.driversList.add"), to: "/drivers/new" } : undefined}
           className="border-0 py-16"
         />
       </div>
@@ -104,8 +106,8 @@ export function DriversTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No drivers match your filters"
-          description="Try adjusting search or filter criteria."
+          title={t("pages.driversList.noMatchTitle")}
+          description={t("pages.driversList.noMatchDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -137,35 +139,35 @@ export function DriversTable({
                     if (el) el.indeterminate = pageSomeSelected && !pageAllSelected;
                   }}
                   onChange={onTogglePageSelection}
-                  aria-label="Select all on page"
+                  aria-label={t("pages.driversList.selectAllAriaLabel")}
                   className={checkboxClass}
                 />
               </th>
-              <SortableTableHeader label="Driver" {...getHeaderProps("last_name")} className={tableCell} />
+              <SortableTableHeader label={t("pages.driversList.colDriver")} {...getHeaderProps("last_name")} className={tableCell} />
               <SortableTableHeader
-                label="Phone"
+                label={t("pages.driversList.colPhone")}
                 {...getHeaderProps("phone")}
                 className={`${tableCell} hidden lg:table-cell`}
               />
-              <SortableTableHeader label="Status" {...getHeaderProps("employment_status")} className={tableCell} />
+              <SortableTableHeader label={t("pages.driversList.colStatus")} {...getHeaderProps("employment_status")} className={tableCell} />
               <SortableTableHeader
-                label="Subcontractor"
+                label={t("pages.driversList.colSubcontractor")}
                 {...getHeaderProps("subcontractor_id")}
                 className={`${tableCell} hidden md:table-cell`}
               />
               <th className={`${tableCell} text-right`}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Commission</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">{t("pages.driversList.colCommission")}</span>
               </th>
               <SortableTableHeader
-                label="Vehicle"
+                label={t("pages.driversList.colVehicle")}
                 {...getHeaderProps("current_vehicle_id")}
                 className={`${tableCell} hidden md:table-cell`}
               />
               <th className={tableCell}>
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">Platform</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-ink-muted">{t("pages.driversList.colPlatform")}</span>
               </th>
               <th className={`${tableCell} w-[56px] text-right`}>
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t("pages.driversList.colActionsAriaLabel")}</span>
               </th>
             </tr>
           </thead>
@@ -185,7 +187,9 @@ export function DriversTable({
                       type="checkbox"
                       checked={selected}
                       onChange={() => onToggleRow(driver.id)}
-                      aria-label={`Select ${driver.first_name} ${driver.last_name}`}
+                      aria-label={t("pages.driversList.selectRowAriaLabel", {
+                        name: `${driver.first_name} ${driver.last_name}`,
+                      })}
                       className={checkboxClass}
                     />
                   </td>
@@ -203,7 +207,7 @@ export function DriversTable({
                           {driver.first_name} {driver.last_name}
                         </p>
                         <p className="truncate text-xs text-ink-muted tabular-nums">
-                          ID {shortDriverId(driver.id)}
+                          {t("common.id")} {shortDriverId(driver.id)}
                         </p>
                         <p className="truncate text-xs text-ink-muted tabular-nums lg:hidden">{driver.phone}</p>
                       </div>
@@ -216,7 +220,7 @@ export function DriversTable({
                     <DriverStatusBadge status={driver.employment_status} />
                   </td>
                   <td className={`${tableCell} hidden align-middle truncate text-ink-muted md:table-cell`}>
-                    {driver.subcontractor_legal_name ?? "—"}
+                    {driver.subcontractor_legal_name ?? t("common.emDash")}
                   </td>
                   <td className={`${tableCell} align-middle text-right tabular-nums text-ink`}>
                     {driver.commission_rate}%

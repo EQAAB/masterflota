@@ -3,31 +3,55 @@ import { setAppLanguage, type AppLanguage } from "../../i18n";
 
 type LanguageSwitcherProps = {
   className?: string;
-  /** compact = select only; full = label + select */
+  /** compact = toggle only; full = label + toggle */
   variant?: "compact" | "full";
+  /** visual theme to match the surrounding surface */
+  tone?: "light" | "dark";
 };
 
-export function LanguageSwitcher({ className = "", variant = "full" }: LanguageSwitcherProps) {
+const LANGUAGES: { code: AppLanguage; short: string }[] = [
+  { code: "en", short: "EN" },
+  { code: "ro", short: "RO" },
+];
+
+export function LanguageSwitcher({ className = "", variant = "full", tone = "light" }: LanguageSwitcherProps) {
   const { t, i18n } = useTranslation();
   const value: AppLanguage = i18n.language?.startsWith("ro") ? "ro" : "en";
 
+  const trackClass = tone === "dark" ? "border-white/20 bg-white/10" : "border-border bg-surface-elevated";
+  const inactiveClass = tone === "dark" ? "text-white/60 hover:text-white" : "text-ink-muted hover:text-ink";
+  const activeClass = tone === "dark" ? "bg-white text-ink shadow-sm" : "bg-brand text-white shadow-sm";
+  const labelClass = tone === "dark" ? "text-white/70" : "text-ink-muted";
+
   return (
-    <label className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       {variant === "full" && (
-        <span className="text-sm font-medium text-ink-muted whitespace-nowrap">{t("common.language")}</span>
+        <span className={`text-sm font-medium whitespace-nowrap ${labelClass}`}>{t("common.language")}</span>
       )}
-      <select
-        className="rounded-lg border border-border bg-white px-2.5 py-1.5 text-sm text-ink shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-        value={value}
+      <div
+        role="radiogroup"
         aria-label={t("common.language")}
-        onChange={(e) => {
-          const next = e.target.value as AppLanguage;
-          void setAppLanguage(next);
-        }}
+        className={`inline-flex rounded-full border p-0.5 text-xs font-semibold ${trackClass}`}
       >
-        <option value="en">{t("common.english")}</option>
-        <option value="ro">{t("common.romanian")}</option>
-      </select>
-    </label>
+        {LANGUAGES.map(({ code, short }) => {
+          const active = value === code;
+          return (
+            <button
+              key={code}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={code === "en" ? t("common.english") : t("common.romanian")}
+              onClick={() => void setAppLanguage(code)}
+              className={`rounded-full px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
+                active ? activeClass : inactiveClass
+              }`}
+            >
+              {short}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

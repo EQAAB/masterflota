@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { actionMenuTrigger, transitionDefault } from "../../theme/classNames";
 import { DotsVerticalIcon } from "../theme/actionMenuIcons";
 import { driverRowHasActionMenu } from "./buildDriverActionMenuItems";
@@ -12,12 +13,13 @@ export function DriverRowActions({
   isActionMenuOpen,
   onActionMenuToggle,
 }: DriverRowActionsProps) {
+  const { t } = useTranslation();
   if (!driverRowHasActionMenu()) return null;
 
   return (
     <button
       type="button"
-      aria-label="Driver actions"
+      aria-label={t("pages.driversList.rowActionsAriaLabel")}
       aria-haspopup="menu"
       aria-expanded={isActionMenuOpen}
       onClick={onActionMenuToggle}

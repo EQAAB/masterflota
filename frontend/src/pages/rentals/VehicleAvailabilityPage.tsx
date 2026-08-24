@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getRentalAvailability, getRentalAvailabilitySummary } from "../../api/rentals";
 import { AvailabilityCalendarView } from "../../components/rentals/availability/AvailabilityCalendarView";
 import { AvailabilityKpiRow } from "../../components/rentals/availability/AvailabilityKpiRow";
@@ -32,6 +33,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function VehicleAvailabilityPage() {
+  const { t } = useTranslation();
   const canManage = useCanManageRentals();
   const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
   const initialRange = useMemo(() => defaultRange(30), []);
@@ -123,7 +125,7 @@ export function VehicleAvailabilityPage() {
 
             {availQuery.isError && (
               <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                Failed to load availability. Check your connection and try again.
+                {t("pages.availability.failedToLoad")}
               </p>
             )}
 

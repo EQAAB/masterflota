@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
+import i18n from "../../i18n";
 import { useCanAccessFinance, useCanAdjustPayouts, useCanApprovePayouts } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
@@ -31,17 +32,12 @@ function errMessage(e: unknown): string {
     if (m?.message) return m.message;
     return e.message;
   }
-  return e instanceof Error ? e.message : "Something went wrong";
+  return e instanceof Error ? e.message : i18n.t("pages.earningsImport.somethingWentWrong");
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  payable: "Ready to pay",
-  paid: "Paid",
-  debt: "Debt",
-  hold: "Hold",
-  partial: "Partial",
-  mixed: "Mixed",
-};
+function statusLabel(status: string): string {
+  return i18n.t(`pages.earningsPayouts.payoutStatus.${status}`, { defaultValue: status });
+}
 
 const PLATFORM_LABELS: Record<string, string> = {
   glovo: "Glovo",
@@ -170,28 +166,28 @@ export function EarningsPayoutsPage() {
   if (status) {
     activeChips.push({
       key: "status",
-      label: `Status: ${STATUS_LABELS[status] ?? status}`,
+      label: t("pages.earningsPayouts.statusChipLabel", { label: statusLabel(status) }),
       onRemove: () => setStatus(""),
     });
   }
   if (loanOnly) {
     activeChips.push({
       key: "loan",
-      label: "Outstanding loans",
+      label: t("pages.earningsPayouts.outstandingLoansChip"),
       onRemove: () => setLoanOnly(false),
     });
   }
   if (platform) {
     activeChips.push({
       key: "platform",
-      label: `Platform: ${PLATFORM_LABELS[platform] ?? platform}`,
+      label: t("pages.earningsPayouts.platformChipLabel", { label: PLATFORM_LABELS[platform] ?? platform }),
       onRemove: () => setPlatform(""),
     });
   }
   if (debouncedQ) {
     activeChips.push({
       key: "q",
-      label: `Search: ${debouncedQ}`,
+      label: t("pages.earningsPayouts.searchChipLabel", { query: debouncedQ }),
       onRemove: () => {
         setQ("");
         setDebouncedQ("");
@@ -201,7 +197,7 @@ export function EarningsPayoutsPage() {
   if (driverIdFromUrl) {
     activeChips.push({
       key: "driver",
-      label: "One driver",
+      label: t("pages.earningsPayouts.oneDriverChip"),
       onRemove: clearDriverFilter,
     });
   }
@@ -210,7 +206,7 @@ export function EarningsPayoutsPage() {
   const rows = payoutsQuery.data?.items ?? [];
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">{t("common.noAccess")}</p>;
   }
 
   return (
@@ -218,16 +214,16 @@ export function EarningsPayoutsPage() {
       <header className="shrink-0 border-b border-border/80 bg-white/80 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5">
         <nav className="mb-2 text-xs text-ink-muted">
           <Link to="/earnings" className="hover:text-brand hover:underline">
-            Earnings
+            {t("nav.earnings")}
           </Link>
           <span className="mx-1.5 text-slate-300">/</span>
-          <span className="font-medium text-ink">Payouts</span>
+          <span className="font-medium text-ink">{t("pages.earningsPayouts.title")}</span>
         </nav>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">{t("pages.earningsPayouts.title")}</h1>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-ink-muted">
-              Unified driver payouts across all connected platforms.
+              {t("pages.earningsPayouts.unifiedSubtitle")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +239,7 @@ export function EarningsPayoutsPage() {
               onClick={() => setFiltersOpen((o) => !o)}
               aria-expanded={filtersOpen}
             >
-              {filtersOpen ? "Hide filters" : "Filters"}
+              {filtersOpen ? t("pages.earningsPayouts.hideFilters") : t("pages.driversList.filtersButton")}
             </button>
             <button
               type="button"
@@ -251,7 +247,7 @@ export function EarningsPayoutsPage() {
               disabled={payoutsQuery.isFetching}
               onClick={() => void payoutsQuery.refetch()}
             >
-              {payoutsQuery.isFetching ? "Refreshing…" : "Refresh"}
+              {payoutsQuery.isFetching ? t("pages.earningsPayouts.refreshing") : t("common.refresh")}
             </button>
           </div>
         </div>
@@ -263,22 +259,24 @@ export function EarningsPayoutsPage() {
         {debtSummaryQuery.data && debtSummaryQuery.data.totalOutstanding > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200/70 bg-rose-50/50 px-3 py-2 text-sm">
             <span className="text-rose-900">
-              <span className="font-semibold tabular-nums">
-                {debtSummaryQuery.data.totalOutstanding.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                RON
-              </span>{" "}
-              outstanding across {debtSummaryQuery.data.driversWithDebt} driver
-              {debtSummaryQuery.data.driversWithDebt === 1 ? "" : "s"}
+              <Trans
+                i18nKey="pages.earningsPayouts.outstandingAcrossDrivers"
+                values={{
+                  amount: debtSummaryQuery.data.totalOutstanding.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
+                  count: debtSummaryQuery.data.driversWithDebt,
+                }}
+                components={{ b: <span className="font-semibold tabular-nums" /> }}
+              />
             </span>
             <button
               type="button"
               className="text-xs font-medium text-rose-800 hover:underline"
               onClick={() => setStatus("debt")}
             >
-              Show debt payouts
+              {t("pages.earningsPayouts.showDebtPayouts")}
             </button>
           </div>
         )}
@@ -294,14 +292,14 @@ export function EarningsPayoutsPage() {
                     className="text-xs font-medium text-sky-800 hover:underline"
                     onClick={() => setLoanOnly(true)}
                   >
-                    Show loan payouts
+                    {t("pages.earningsPayouts.showLoanPayouts")}
                   </button>
                 )}
                 <Link
                   to="/earnings/loans"
                   className="text-xs font-medium text-sky-800 hover:underline"
                 >
-                  View loan report
+                  {t("pages.driversList.viewLoanReport")}
                 </Link>
               </div>
             }

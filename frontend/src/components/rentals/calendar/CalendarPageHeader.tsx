@@ -19,7 +19,7 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
           to="/rentals"
           className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
         >
-          ← Back
+          ← {t("common.back")}
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
           {t("pages.rentalCalendar.title")}
@@ -27,7 +27,7 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
         <p className="mt-1.5 text-sm text-ink-muted">{t("pages.rentalCalendar.subtitle")}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="fm-rental-calendar__view-toggle" role="group" aria-label="Calendar view">
+        <div className="fm-rental-calendar__view-toggle" role="group" aria-label={t("pages.rentalCalendar.calendarViewAriaLabel")}>
           {(["month", "week", "list"] as CalendarViewMode[]).map((v) => (
             <button
               key={v}
@@ -35,7 +35,7 @@ export function CalendarPageHeader({ view, onViewChange }: CalendarPageHeaderPro
               className={`fm-rental-calendar__view-btn capitalize ${view === v ? "fm-rental-calendar__view-btn--active" : ""}`}
               onClick={() => onViewChange(v)}
             >
-              {v}
+              {t(`pages.rentalCalendar.view${v.charAt(0).toUpperCase()}${v.slice(1)}`)}
             </button>
           ))}
         </div>

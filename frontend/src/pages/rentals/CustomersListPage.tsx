@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getRentalCustomers, getRentalCustomersSummary } from "../../api/rentals";
 import { CustomersKpiRow } from "../../components/rentals/customers/CustomersKpiRow";
 import { CustomersPageHeader } from "../../components/rentals/customers/CustomersPageHeader";
@@ -21,6 +22,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function CustomersListPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<CustomersFilters>({
     q: "",
     customerType: "",
@@ -80,7 +82,7 @@ export function CustomersListPage() {
 
         {customersQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load customers. Check your connection and try again.
+            {t("pages.customers.failedToLoad")}
           </p>
         )}
 

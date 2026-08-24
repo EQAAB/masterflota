@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
@@ -11,13 +12,14 @@ type BookingCalendarDrawerProps = {
 };
 
 export function BookingCalendarDrawer({ booking, onClose }: BookingCalendarDrawerProps) {
+  const { t } = useTranslation();
   if (!booking) return null;
 
   const vehicle = [booking.make, booking.model].filter(Boolean).join(" ");
 
   return (
     <>
-      <button type="button" className="fm-rental-calendar__drawer-backdrop" aria-label="Close" onClick={onClose} />
+      <button type="button" className="fm-rental-calendar__drawer-backdrop" aria-label={t("common.close")} onClick={onClose} />
       <div className="fm-rental-calendar__drawer" role="dialog" aria-modal="true" aria-labelledby="calendar-drawer-title">
         <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
           <h2 id="calendar-drawer-title" className="text-lg font-semibold text-ink">
@@ -27,7 +29,7 @@ export function BookingCalendarDrawer({ booking, onClose }: BookingCalendarDrawe
             type="button"
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
             onClick={onClose}
-            aria-label="Close drawer"
+            aria-label={t("pages.rentalCalendar.closeDrawerAriaLabel")}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -42,22 +44,22 @@ export function BookingCalendarDrawer({ booking, onClose }: BookingCalendarDrawe
           </span>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
-              <dt className="text-xs font-semibold uppercase text-slate-500">Customer</dt>
+              <dt className="text-xs font-semibold uppercase text-slate-500">{t("pages.rentalCalendar.customerLabel")}</dt>
               <dd className="mt-0.5 font-medium text-ink">{booking.customer_name}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase text-slate-500">Vehicle</dt>
+              <dt className="text-xs font-semibold uppercase text-slate-500">{t("pages.rentalCalendar.vehicleLabel")}</dt>
               <dd className="mt-0.5">
                 <span className="fm-rental-bookings__plate-badge">{booking.license_plate}</span>
                 {vehicle && <span className="ml-2 text-ink">{vehicle}</span>}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase text-slate-500">Period</dt>
+              <dt className="text-xs font-semibold uppercase text-slate-500">{t("pages.bookingDetail.periodLabel")}</dt>
               <dd className="mt-0.5 text-ink">{formatEventDateRange(booking.start_at, booking.end_at)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase text-slate-500">Total</dt>
+              <dt className="text-xs font-semibold uppercase text-slate-500">{t("pages.bookingDetail.totalLabel")}</dt>
               <dd className="mt-0.5 text-xl font-bold tabular-nums text-ink">
                 {formatCurrency(Number(booking.total_amount))}
               </dd>
@@ -66,7 +68,7 @@ export function BookingCalendarDrawer({ booking, onClose }: BookingCalendarDrawe
         </div>
         <div className="flex flex-wrap gap-2 border-t border-border/70 p-5">
           <Link to={`/rentals/bookings/${booking.id}`} className={`${btnPrimary} flex-1 text-center`} onClick={onClose}>
-            View booking
+            {t("pages.bookings.viewBookingAction")}
           </Link>
           {booking.status === "draft" && (
             <Link
@@ -74,7 +76,7 @@ export function BookingCalendarDrawer({ booking, onClose }: BookingCalendarDrawe
               className={`${btnSecondary} flex-1 text-center`}
               onClick={onClose}
             >
-              Edit
+              {t("common.edit")}
             </Link>
           )}
         </div>

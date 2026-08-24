@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { bookingStatusClass, bookingStatusDisplayLabel } from "../rentalStatus";
 import { formatEventDateRange, groupBookingsByDay } from "./calendarUtils";
 import { formatCurrency } from "../../../utils/currency";
+import i18n from "../../../i18n";
 
 type CalendarListViewProps = {
   bookings: RentalAvailabilityBooking[];
@@ -11,6 +13,7 @@ type CalendarListViewProps = {
 };
 
 export function CalendarListView({ bookings, loading, onSelectBooking }: CalendarListViewProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="fm-rental-calendar__grid-card space-y-3 p-4">
@@ -24,9 +27,9 @@ export function CalendarListView({ bookings, loading, onSelectBooking }: Calenda
   if (bookings.length === 0) {
     return (
       <div className="fm-rental-calendar__grid-card px-6 py-16 text-center">
-        <p className="text-sm text-ink-muted">No bookings in this period.</p>
+        <p className="text-sm text-ink-muted">{t("pages.rentalCalendar.noBookingsInPeriod")}</p>
         <Link to="/rentals/bookings/new" className="mt-4 inline-block text-sm font-medium text-brand hover:underline">
-          Create a booking
+          {t("pages.rentalCalendar.createABooking")}
         </Link>
       </div>
     );
@@ -39,7 +42,7 @@ export function CalendarListView({ bookings, loading, onSelectBooking }: Calenda
       {[...grouped.entries()].map(([day, list]) => (
         <section key={day} className="p-4">
           <h3 className="mb-3 text-sm font-semibold text-ink">
-            {new Date(day + "T12:00:00").toLocaleDateString("en-GB", {
+            {new Date(day + "T12:00:00").toLocaleDateString(i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB", {
               weekday: "long",
               day: "numeric",
               month: "long",

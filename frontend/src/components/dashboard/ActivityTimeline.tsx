@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ActivityRow } from "./ActivityTable";
 import { DashboardChartCard } from "./DashboardChartCard";
 import { EmptyState } from "../theme/EmptyState";
@@ -41,22 +42,23 @@ export interface ActivityTimelineProps {
 }
 
 export function ActivityTimeline({
-  title = "Activity feed",
+  title,
   rows,
-  emptyMessage = "No recent activity.",
+  emptyMessage,
   isLoading,
   isError,
 }: ActivityTimelineProps) {
+  const { t } = useTranslation();
   return (
-    <DashboardChartCard title={title} minHeight={320}>
+    <DashboardChartCard title={title ?? t("dashboardCharts.activityFeedTitle")} minHeight={320}>
       {isLoading ? (
-        <p className="text-sm text-ink-muted py-8 text-center">Loading…</p>
+        <p className="text-sm text-ink-muted py-8 text-center">{t("common.loading")}</p>
       ) : isError ? (
-        <p className="text-sm text-danger py-8 text-center">Failed to load activity. Try refreshing.</p>
+        <p className="text-sm text-danger py-8 text-center">{t("common.failedToLoad")}</p>
       ) : rows.length === 0 ? (
         <EmptyState
-          title={emptyMessage}
-          description="Driver and document updates will appear here."
+          title={emptyMessage ?? t("dashboardCharts.noRecentActivity")}
+          description={t("dashboardCharts.activityEmptyDesc")}
           illustration={<ActivityEmptyIllustration />}
           className="border-0 bg-transparent py-8"
         />

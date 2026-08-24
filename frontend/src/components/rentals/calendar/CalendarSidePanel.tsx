@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilityBooking, RentalDashboard } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { bookingStatusDisplayLabel } from "../rentalStatus";
 import { todaysReturns, upcomingPickups } from "./calendarUtils";
+import i18n from "../../../i18n";
 
 type CalendarSidePanelProps = {
   bookings: RentalAvailabilityBooking[];
@@ -10,6 +12,7 @@ type CalendarSidePanelProps = {
 };
 
 export function CalendarSidePanel({ bookings, dashboard }: CalendarSidePanelProps) {
+  const { t } = useTranslation();
   const pickups = upcomingPickups(bookings);
   const returns = todaysReturns(bookings);
   const pending = dashboard?.upcoming_payments ?? [];
@@ -17,15 +20,15 @@ export function CalendarSidePanel({ bookings, dashboard }: CalendarSidePanelProp
   return (
     <aside className="fm-rental-calendar__side-panel">
       <section>
-        <h3 className="text-sm font-semibold text-ink">Upcoming pickups</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.rentalCalendar.upcomingPickupsTitle")}</h3>
         <ul className="mt-2 space-y-2">
-          {pickups.length === 0 && <li className="text-xs text-slate-500">None in the next 7 days</li>}
+          {pickups.length === 0 && <li className="text-xs text-slate-500">{t("pages.rentalCalendar.noneInNext7Days")}</li>}
           {pickups.map((b) => (
             <li key={b.id}>
               <Link to={`/rentals/bookings/${b.id}`} className="fm-rental-calendar__side-item block">
                 <p className="font-medium text-ink">{b.customer_name}</p>
                 <p className="text-xs text-slate-500">
-                  {b.license_plate} · {new Date(b.start_at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
+                  {b.license_plate} · {new Date(b.start_at).toLocaleString(i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB", { dateStyle: "short", timeStyle: "short" })}
                 </p>
               </Link>
             </li>
@@ -34,9 +37,9 @@ export function CalendarSidePanel({ bookings, dashboard }: CalendarSidePanelProp
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink">Today&apos;s returns</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.rentalCalendar.todaysReturnsTitle")}</h3>
         <ul className="mt-2 space-y-2">
-          {returns.length === 0 && <li className="text-xs text-slate-500">No returns due today</li>}
+          {returns.length === 0 && <li className="text-xs text-slate-500">{t("pages.rentalCalendar.noReturnsToday")}</li>}
           {returns.map((b) => (
             <li key={b.id}>
               <Link to={`/rentals/bookings/${b.id}`} className="fm-rental-calendar__side-item block">
@@ -51,9 +54,9 @@ export function CalendarSidePanel({ bookings, dashboard }: CalendarSidePanelProp
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink">Pending payments</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.rentalCalendar.pendingPaymentsTitle")}</h3>
         <ul className="mt-2 space-y-2">
-          {pending.length === 0 && <li className="text-xs text-slate-500">All caught up</li>}
+          {pending.length === 0 && <li className="text-xs text-slate-500">{t("pages.rentalCalendar.allCaughtUp")}</li>}
           {pending.slice(0, 6).map((p) => (
             <li key={p.id}>
               <Link to={`/rentals/bookings/${p.booking_id}`} className="fm-rental-calendar__side-item block">

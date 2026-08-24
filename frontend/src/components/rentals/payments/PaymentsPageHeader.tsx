@@ -17,7 +17,7 @@ export function PaymentsPageHeader({ canManage = false, onRecord, onExport }: Pa
           to="/rentals"
           className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
         >
-          ← Back
+          ← {t("common.back")}
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
           {t("pages.payments.title")}
@@ -28,7 +28,7 @@ export function PaymentsPageHeader({ canManage = false, onRecord, onExport }: Pa
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={btnSecondary} onClick={onExport}>
-          Export
+          {t("common.export")}
         </button>
         {canManage && (
           <button type="button" className={`${btnPrimary} fm-rental-payments__header-cta`} onClick={onRecord}>

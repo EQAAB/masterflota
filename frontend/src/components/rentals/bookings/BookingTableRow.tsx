@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalBooking } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -25,8 +26,9 @@ export function BookingTableRow({
   onActionMenuToggle,
   isMenuOpen,
 }: BookingTableRowProps) {
+  const { t } = useTranslation();
   const days = rentalDayCount(b.start_at, b.end_at);
-  const contact = b.customer_phone || b.customer_email || "—";
+  const contact = b.customer_phone || b.customer_email || t("common.emDash");
 
   return (
     <tr
@@ -64,7 +66,7 @@ export function BookingTableRow({
       <td>
         <span className="fm-rental-bookings__plate-badge">{b.license_plate}</span>
         <p className="mt-1 text-xs text-slate-600">
-          {[b.make, b.model].filter(Boolean).join(" ") || "—"}
+          {[b.make, b.model].filter(Boolean).join(" ") || t("common.emDash")}
         </p>
       </td>
       <td>
@@ -75,7 +77,7 @@ export function BookingTableRow({
           <div>
             <p className="text-sm font-medium text-ink">{formatShortDateRange(b.start_at, b.end_at)}</p>
             <p className="text-xs text-slate-500">
-              {days} day{days === 1 ? "" : "s"} rental
+              {t("pages.bookings.dayCount", { count: days })}
             </p>
           </div>
         </div>
@@ -97,7 +99,7 @@ export function BookingTableRow({
         <button
           type="button"
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
-          aria-label="Booking actions"
+          aria-label={t("pages.bookings.rowActionsAriaLabel")}
           aria-expanded={isMenuOpen}
           onClick={(e) => onActionMenuToggle(b.id, e.currentTarget)}
         >

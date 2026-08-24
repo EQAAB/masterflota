@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { VehicleListItem } from "../../api/vehicles";
 import type { SortableHeaderProps } from "../../hooks/useListSort";
 import { formatCurrency } from "../../utils/currency";
@@ -55,6 +56,7 @@ export function VehiclesTable({
   canCreate = false,
   embedded = false,
 }: VehiclesTableProps) {
+  const { t } = useTranslation();
   const shell = embedded ? "" : driversTableCard;
 
   if (isLoading) {
@@ -63,9 +65,9 @@ export function VehiclesTable({
         <span
           className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
           role="status"
-          aria-label="Loading vehicles"
+          aria-label={t("pages.vehiclesList.loadingAriaLabel")}
         />
-        <p className="text-sm text-ink-muted">Loading vehicles…</p>
+        <p className="text-sm text-ink-muted">{t("pages.vehiclesList.loading")}</p>
       </div>
     );
   }
@@ -74,8 +76,8 @@ export function VehiclesTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="Failed to load vehicles"
-          description="Check your connection and refresh the page."
+          title={t("pages.vehiclesList.failedTitle")}
+          description={t("pages.vehiclesList.failedDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -86,9 +88,9 @@ export function VehiclesTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No vehicles yet"
-          description="Add your first vehicle to start managing fleet assignments and availability."
-          action={canCreate ? { label: "Add Vehicle", to: "/vehicles/new" } : undefined}
+          title={t("pages.vehiclesList.emptyTitle")}
+          description={t("pages.vehiclesList.emptyDescription")}
+          action={canCreate ? { label: t("pages.vehiclesList.add"), to: "/vehicles/new" } : undefined}
           className="border-0 py-16"
         />
       </div>
@@ -99,8 +101,8 @@ export function VehiclesTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No vehicles match your filters"
-          description="Try adjusting search or filter criteria."
+          title={t("pages.vehiclesList.noMatchTitle")}
+          description={t("pages.vehiclesList.noMatchDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -130,21 +132,21 @@ export function VehiclesTable({
                     if (el) el.indeterminate = pageSomeSelected && !pageAllSelected;
                   }}
                   onChange={onTogglePageSelection}
-                  aria-label="Select all on page"
+                  aria-label={t("pages.vehiclesList.selectAllAriaLabel")}
                   className={checkboxClass}
                 />
               </th>
-              <SortableTableHeader label="Vehicle" {...getHeaderProps("model")} className={tableCell} />
-              <SortableTableHeader label="License Plate" {...getHeaderProps("plate_number")} className={tableCell} />
-              <SortableTableHeader label="Status" {...getHeaderProps("status")} className={tableCell} />
+              <SortableTableHeader label={t("pages.vehiclesList.colVehicle")} {...getHeaderProps("model")} className={tableCell} />
+              <SortableTableHeader label={t("pages.vehiclesList.colLicensePlate")} {...getHeaderProps("plate_number")} className={tableCell} />
+              <SortableTableHeader label={t("pages.vehiclesList.colStatus")} {...getHeaderProps("status")} className={tableCell} />
               <SortableTableHeader
-                label="Rent (Daily / Monthly)"
+                label={t("pages.vehiclesList.colRent")}
                 {...getHeaderProps("weekly_rent")}
                 className={tableCell}
               />
-              <SortableTableHeader label="Current Driver" {...getHeaderProps("current_driver_id")} className={tableCell} />
+              <SortableTableHeader label={t("pages.vehiclesList.colCurrentDriver")} {...getHeaderProps("current_driver_id")} className={tableCell} />
               <th className={`${tableCell} w-[56px] text-right`}>
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t("pages.vehiclesList.colActionsAriaLabel")}</span>
               </th>
             </tr>
           </thead>
@@ -164,7 +166,9 @@ export function VehiclesTable({
                       type="checkbox"
                       checked={selected}
                       onChange={() => onToggleRow(vehicle.id)}
-                      aria-label={`Select ${vehicle.make} ${vehicle.model}`}
+                      aria-label={t("pages.vehiclesList.selectRowAriaLabel", {
+                        name: `${vehicle.make} ${vehicle.model}`,
+                      })}
                       className={checkboxClass}
                     />
                   </td>
@@ -174,7 +178,9 @@ export function VehiclesTable({
                   <td className={`${tableCell} align-middle`}>
                     <div className="font-mono text-sm text-ink">{vehicle.license_plate}</div>
                     {vehicle.vin && (
-                      <div className="mt-0.5 truncate text-xs text-ink-muted">VIN: {vehicle.vin}</div>
+                      <div className="mt-0.5 truncate text-xs text-ink-muted">
+                        {t("pages.vehiclesList.vinLabel", { vin: vehicle.vin })}
+                      </div>
                     )}
                   </td>
                   <td className={`${tableCell} align-middle`}>

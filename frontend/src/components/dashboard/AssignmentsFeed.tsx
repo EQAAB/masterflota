@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RecentAssignmentItem } from "../../api/dashboard";
 import { formatCurrency } from "../../utils/currency";
 import { DashboardChartCard } from "./DashboardChartCard";
@@ -12,16 +13,17 @@ export interface AssignmentsFeedProps {
 }
 
 export function AssignmentsFeed({ items, isLoading, isError }: AssignmentsFeedProps) {
+  const { t } = useTranslation();
   return (
-    <DashboardChartCard title="Recent assignments" minHeight={320}>
-      {isLoading && <p className="text-sm text-ink-muted py-8 text-center">Loading…</p>}
+    <DashboardChartCard title={t("dashboardCharts.recentAssignmentsTitle")} minHeight={320}>
+      {isLoading && <p className="text-sm text-ink-muted py-8 text-center">{t("common.loading")}</p>}
       {!isLoading && isError && (
-        <p className="text-sm text-danger py-8 text-center">Failed to load assignments. Try refreshing.</p>
+        <p className="text-sm text-danger py-8 text-center">{t("common.failedToLoad")}</p>
       )}
       {!isLoading && !isError && items.length === 0 && (
         <EmptyState
-          title="No assignment history yet"
-          description="Vehicle assignments will show up here when drivers are linked to fleet vehicles."
+          title={t("dashboardCharts.noAssignmentsTitle")}
+          description={t("dashboardCharts.noAssignmentsDesc")}
           illustration={<ActivityEmptyIllustration />}
           className="border-0 bg-transparent py-6"
         />
@@ -37,21 +39,21 @@ export function AssignmentsFeed({ items, isLoading, isError }: AssignmentsFeedPr
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink">
                     <Link to={`/drivers/${a.driver_id}`} className="text-brand hover:underline">
-                      {a.driver_name || "Driver"}
+                      {a.driver_name || t("dashboardCharts.driverFallback")}
                     </Link>
                     <span className="mx-1.5 text-ink-muted">→</span>
                     <Link to={`/vehicles/${a.vehicle_id}`} className="text-brand hover:underline">
-                      {a.vehicle_name?.trim() || a.license_plate || "Vehicle"}
+                      {a.vehicle_name?.trim() || a.license_plate || t("dashboardCharts.vehicleFallback")}
                     </Link>
                   </p>
                   <p className="mt-1 text-xs text-ink-muted">
-                    Assigned {a.assigned_at.split("T")[0]}
+                    {t("dashboardCharts.assignedOn", { date: a.assigned_at.split("T")[0] })}
                     {a.is_active ? (
                       <span className="ml-2 inline-flex rounded-full bg-brand-mint px-2 py-0.5 text-xs font-medium text-brand-dark">
-                        Active
+                        {t("dashboardCharts.activeBadge")}
                       </span>
                     ) : a.unassigned_at ? (
-                      <span className="ml-1">· Returned {a.unassigned_at.split("T")[0]}</span>
+                      <span className="ml-1">{t("dashboardCharts.returnedOn", { date: a.unassigned_at.split("T")[0] })}</span>
                     ) : null}
                   </p>
                 </div>

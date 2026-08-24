@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { RentalBooking } from "../../../api/rentals";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 
@@ -44,7 +45,7 @@ export function buildBookingActionMenuItems({
   return [
     {
       id: "view",
-      label: "View booking",
+      label: i18n.t("pages.bookings.viewBookingAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -57,7 +58,7 @@ export function buildBookingActionMenuItems({
     },
     {
       id: "edit",
-      label: "Edit",
+      label: i18n.t("pages.bookings.editAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -70,7 +71,7 @@ export function buildBookingActionMenuItems({
     },
     {
       id: "invoice",
-      label: "Invoice",
+      label: i18n.t("pages.bookings.invoiceAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -83,7 +84,7 @@ export function buildBookingActionMenuItems({
     },
     {
       id: "complete",
-      label: "Mark completed",
+      label: i18n.t("pages.bookings.completeAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -96,7 +97,7 @@ export function buildBookingActionMenuItems({
     },
     {
       id: "renew",
-      label: "Renew 1 week",
+      label: i18n.t("pages.bookings.renew1WeekAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -109,7 +110,7 @@ export function buildBookingActionMenuItems({
     },
     {
       id: "cancel",
-      label: "Cancel booking",
+      label: i18n.t("pages.bookings.cancelBookingAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

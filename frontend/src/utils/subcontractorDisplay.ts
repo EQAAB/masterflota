@@ -1,3 +1,4 @@
+import i18n from "../i18n";
 import type { Subcontractor } from "../api/subcontractors";
 
 export type SubcontractorAvatarTone = "green" | "blue" | "orange" | "purple" | "gray";
@@ -48,10 +49,10 @@ export function formatSubcontractorDisplayId(
 }
 
 export function formatJoinedDate(createdAt: string | null | undefined): string {
-  if (!createdAt) return "—";
+  if (!createdAt) return i18n.t("common.emDash");
   const d = new Date(createdAt);
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", {
+  if (Number.isNaN(d.getTime())) return i18n.t("common.emDash");
+  return new Intl.DateTimeFormat(i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",

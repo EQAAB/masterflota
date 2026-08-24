@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   getRentalPayments,
   getRentalPaymentsActivity,
@@ -32,6 +33,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function PaymentsPage() {
+  const { t } = useTranslation();
   const canManage = useCanManageRentals();
   const [filters, setFilters] = useState<PaymentsFilters>({
     q: "",
@@ -125,7 +127,7 @@ export function PaymentsPage() {
 
         {paymentsQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load payments. Check your connection and try again.
+            {t("pages.payments.failedToLoad")}
           </p>
         )}
 

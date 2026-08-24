@@ -47,7 +47,7 @@ export function SubcontractorsPageHeader({
           title={t("pages.subcontractorsList.title")}
           description={t("pages.subcontractorsList.subtitle")}
           breadcrumbs={[
-            { label: "Dashboard", to: "/dashboard" },
+            { label: t("nav.dashboard"), to: "/dashboard" },
             { label: t("pages.subcontractorsList.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
@@ -60,7 +60,7 @@ export function SubcontractorsPageHeader({
                 className={`${btnSecondary} gap-2 text-sm`}
               >
                 <ExportIcon className="h-4 w-4" />
-                Export
+                {t("common.export")}
               </button>
               {canCreate && (
                 <Link to="/subcontractors/new" className={`${btnPrimary} text-sm`}>
@@ -70,7 +70,7 @@ export function SubcontractorsPageHeader({
               <button
                 type="button"
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-ink-muted shadow-sm transition-all duration-200 ease-out hover:bg-surface hover:text-ink"
-                aria-label="Notifications"
+                aria-label={t("common.notifications")}
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                   <path
@@ -94,7 +94,7 @@ export function SubcontractorsPageHeader({
                     {initials(user?.firstName, user?.lastName)}
                   </span>
                   <span className="hidden max-w-[120px] truncate text-sm font-medium text-ink sm:inline">
-                    {user?.firstName ?? "Account"}
+                    {user?.firstName ?? t("profile.account")}
                   </span>
                 </button>
                 {menuOpen && (
@@ -104,7 +104,7 @@ export function SubcontractorsPageHeader({
                   >
                     <div className="mb-2 border-b border-border px-3 pb-2">
                       <p className="truncate text-sm font-semibold text-ink">
-                        {user ? `${user.firstName} ${user.lastName}` : "User"}
+                        {user ? `${user.firstName} ${user.lastName}` : t("roles.user")}
                       </p>
                       <p className="truncate text-xs text-ink-muted">{user?.email}</p>
                       <p className="mt-0.5 text-xs text-brand">{roleLabel(user?.role)}</p>
@@ -115,7 +115,7 @@ export function SubcontractorsPageHeader({
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
                     >
-                      Dashboard
+                      {t("nav.dashboard")}
                     </Link>
                     <button
                       type="button"
@@ -126,7 +126,7 @@ export function SubcontractorsPageHeader({
                         logout();
                       }}
                     >
-                      Log out
+                      {t("auth.logOut")}
                     </button>
                   </div>
                 )}

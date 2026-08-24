@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { VehicleStatus } from "../../api/vehicles";
 
 const STATUS_STYLES: Record<VehicleStatus, string> = {
@@ -9,12 +10,14 @@ const STATUS_STYLES: Record<VehicleStatus, string> = {
 };
 
 export function VehicleStatusBadge({ status }: { status: VehicleStatus | string }) {
+  const { t } = useTranslation();
   const normalized = (status ?? "").toLowerCase() as VehicleStatus;
   const style = STATUS_STYLES[normalized] ?? "bg-surface text-ink-muted ring-1 ring-border";
+  const label = normalized && normalized in STATUS_STYLES ? t(`vehicleStatus.${normalized}`) : t("vehicleStatus.unknown");
 
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${style}`}>
-      {normalized || "unknown"}
+      {label}
     </span>
   );
 }

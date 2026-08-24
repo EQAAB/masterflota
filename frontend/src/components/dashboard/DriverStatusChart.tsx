@@ -1,4 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import { CHART_COLORS } from "./chartPalette";
 import { EmptyState } from "../theme/EmptyState";
 import { ChartEmptyIllustration } from "./illustrations/ChartEmptyIllustration";
@@ -26,13 +28,17 @@ function ChartTooltip({
 }
 
 export function DriverStatusChart(props: { data: DriverStatusItem[] }) {
-  const chartData = props.data.map((d) => ({ name: d.status, value: d.count }));
+  const { t } = useTranslation();
+  const chartData = props.data.map((d) => ({
+    name: i18n.exists(`driverStatus.${d.status?.toLowerCase()}`) ? t(`driverStatus.${d.status.toLowerCase()}`) : d.status,
+    value: d.count,
+  }));
   const empty = chartData.every((d) => d.value === 0);
   if (empty) {
     return (
       <EmptyState
-        title="No driver data"
-        description="Driver status breakdown will appear once drivers are onboarded."
+        title={t("dashboardCharts.noDriverDataTitle")}
+        description={t("dashboardCharts.noDriverDataDesc")}
         illustration={<ChartEmptyIllustration className="w-20 h-20" />}
         className="border-0 bg-transparent py-6"
       />

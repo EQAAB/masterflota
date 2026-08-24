@@ -1,3 +1,4 @@
+import i18n from "../../i18n";
 import type { ActionMenuItemConfig } from "../theme/ActionMenuDropdown";
 
 function MenuIconWrap({ children, tone }: { children: React.ReactNode; tone: "brand" | "muted" | "danger" }) {
@@ -79,7 +80,7 @@ export function buildVehicleActionMenuItems({
   return [
     {
       id: "view-vehicle",
-      label: "View vehicle",
+      label: i18n.t("pages.vehiclesList.viewVehicle"),
       icon: (
         <MenuIconWrap tone="brand">
           <ViewIcon />
@@ -89,7 +90,7 @@ export function buildVehicleActionMenuItems({
     },
     {
       id: "edit-vehicle",
-      label: "Edit vehicle",
+      label: i18n.t("pages.vehiclesList.editVehicleAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <EditIcon />
@@ -100,7 +101,7 @@ export function buildVehicleActionMenuItems({
     },
     {
       id: "assign-driver",
-      label: "Assign driver",
+      label: i18n.t("pages.vehiclesList.assignDriverAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <AssignIcon />
@@ -111,7 +112,7 @@ export function buildVehicleActionMenuItems({
     },
     {
       id: "change-status",
-      label: "Change status",
+      label: i18n.t("pages.vehiclesList.changeStatusAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <StatusIcon />
@@ -122,7 +123,7 @@ export function buildVehicleActionMenuItems({
     },
     {
       id: "delete-vehicle",
-      label: "Delete vehicle",
+      label: i18n.t("pages.vehiclesList.deleteVehicleAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <DeleteIcon />
