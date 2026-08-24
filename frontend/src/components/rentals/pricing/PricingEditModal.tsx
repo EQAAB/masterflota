@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalPricing } from "../../../api/rentals";
 import { createRentalPricing, updateRentalPricing } from "../../../api/rentals";
 import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../../api/vehicles";
@@ -12,6 +13,7 @@ type PricingEditModalProps = {
 };
 
 export function PricingEditModal({ open, editing, onClose }: PricingEditModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [vehicleId, setVehicleId] = useState("");
   const [vehicleType, setVehicleType] = useState("");
@@ -85,7 +87,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : null;
-      setError(msg ?? "Failed to save pricing");
+      setError(msg ?? t("pages.pricing.failedToSave"));
     },
   });
 
@@ -96,7 +98,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
       <button
         type="button"
         className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px]"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
       />
       <div
@@ -105,18 +107,18 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
         aria-modal="true"
       >
         <h2 className="text-lg font-semibold text-ink">
-          {editing ? "Edit pricing rule" : "Add pricing rule"}
+          {editing ? t("pages.pricing.editPricingRule") : t("pages.pricing.add")}
         </h2>
 
         <div className="mt-4 space-y-3">
           <label className="block text-sm font-medium text-ink">
-            Vehicle (optional)
+            {t("pages.pricing.vehicleOptional")}
             <select
               className="fm-rental-pricing__filter-select mt-1 w-full"
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
             >
-              <option value="">Default / all vehicles</option>
+              <option value="">{t("pages.pricing.defaultAllVehiclesOption")}</option>
               {(vehiclesQuery.data ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.license_plate} — {v.make} {v.model}
@@ -125,17 +127,17 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
             </select>
           </label>
           <label className="block text-sm font-medium text-ink">
-            Vehicle type filter (optional)
+            {t("pages.pricing.vehicleTypeFilterOptional")}
             <input
               className="fm-rental-pricing__filter-select mt-1 w-full"
               value={vehicleType}
               onChange={(e) => setVehicleType(e.target.value)}
-              placeholder="e.g. sedan"
+              placeholder={t("pages.pricing.vehicleTypeFilterPlaceholder")}
             />
           </label>
           <div className="grid grid-cols-3 gap-2">
             <label className="block text-sm font-medium text-ink">
-              Daily
+              {t("pages.pricing.dailyLabel")}
               <input
                 type="number"
                 min={0}
@@ -146,7 +148,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
               />
             </label>
             <label className="block text-sm font-medium text-ink">
-              Weekly
+              {t("pages.pricing.weeklyLabel")}
               <input
                 type="number"
                 min={0}
@@ -157,7 +159,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
               />
             </label>
             <label className="block text-sm font-medium text-ink">
-              Monthly
+              {t("pages.pricing.monthlyLabel")}
               <input
                 type="number"
                 min={0}
@@ -169,7 +171,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
             </label>
           </div>
           <label className="block text-sm font-medium text-ink">
-            Deposit default
+            {t("pages.pricing.depositDefault")}
             <input
               type="number"
               min={0}
@@ -181,7 +183,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
           </label>
           <div className="grid grid-cols-2 gap-2">
             <label className="block text-sm font-medium text-ink">
-              Effective from
+              {t("pages.pricing.effectiveFrom")}
               <input
                 type="date"
                 className="fm-rental-pricing__filter-select mt-1 w-full"
@@ -190,7 +192,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
               />
             </label>
             <label className="block text-sm font-medium text-ink">
-              Effective to
+              {t("pages.pricing.effectiveTo")}
               <input
                 type="date"
                 className="fm-rental-pricing__filter-select mt-1 w-full"
@@ -206,7 +208,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
               onChange={(e) => setIsActive(e.target.checked)}
               className="rounded border-slate-300 text-brand"
             />
-            Active rule
+            {t("pages.pricing.activeRule")}
           </label>
         </div>
 
@@ -218,7 +220,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
 
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" className={btnSecondary} onClick={onClose} disabled={mutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -226,7 +228,7 @@ export function PricingEditModal({ open, editing, onClose }: PricingEditModalPro
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Saving…" : "Save"}
+            {mutation.isPending ? t("common.saving") : t("common.save")}
           </button>
         </div>
       </div>

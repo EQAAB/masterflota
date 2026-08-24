@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalCustomer } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -22,6 +23,7 @@ export function CustomerTableRow({
   onActionMenuToggle,
   isMenuOpen,
 }: CustomerTableRowProps) {
+  const { t } = useTranslation();
   const active = c.active_bookings ?? 0;
   const completed = c.completed_rentals ?? 0;
   const since = formatCustomerSince(c.created_at);
@@ -35,17 +37,17 @@ export function CustomerTableRow({
           </span>
           <div className="min-w-0">
             <p className="font-semibold text-ink">{c.legal_name}</p>
-            {since ? <p className="text-xs text-slate-500">Customer since {since}</p> : null}
+            {since ? <p className="text-xs text-slate-500">{t("pages.customers.customerSince", { date: since })}</p> : null}
           </div>
         </div>
       </td>
       <td>
         <span className={customerTypeBadgeClass(c.customer_type)}>
-          {c.customer_type === "company" ? "Company" : "Individual"}
+          {c.customer_type === "company" ? t("pages.customers.typeCompany") : t("pages.customers.typeIndividual")}
         </span>
       </td>
       <td>
-        <p className="text-sm text-ink">{c.email || "—"}</p>
+        <p className="text-sm text-ink">{c.email || t("common.emDash")}</p>
         <p className="text-xs text-slate-500">{c.phone || ""}</p>
       </td>
       <td>
@@ -53,15 +55,15 @@ export function CustomerTableRow({
       </td>
       <td>
         <p className="font-semibold tabular-nums text-ink">{active}</p>
-        <p className="text-xs text-slate-500">active now</p>
+        <p className="text-xs text-slate-500">{t("pages.customers.activeNow")}</p>
       </td>
       <td>
         <p className="font-semibold tabular-nums text-ink">{completed}</p>
-        <p className="text-xs text-slate-500">completed</p>
+        <p className="text-xs text-slate-500">{t("pages.customers.completed")}</p>
       </td>
       <td>
         <p className="font-semibold tabular-nums text-ink">{formatCurrency(customerRevenue(c))}</p>
-        <p className="text-xs text-slate-500">Lifetime revenue</p>
+        <p className="text-xs text-slate-500">{t("pages.customers.lifetimeRevenue")}</p>
       </td>
       <td>
         <span className={customerStatusBadgeClass(c.is_active, active)}>
@@ -72,7 +74,7 @@ export function CustomerTableRow({
         <button
           type="button"
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-ink"
-          aria-label="Actions"
+          aria-label={t("pages.customers.rowActionsAriaLabel")}
           aria-expanded={isMenuOpen}
           onClick={(e) => onActionMenuToggle(c.id, e.currentTarget)}
         >

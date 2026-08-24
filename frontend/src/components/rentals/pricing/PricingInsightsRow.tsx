@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalPricingInsights } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -7,6 +8,7 @@ type PricingInsightsRowProps = {
 };
 
 export function PricingInsightsRow({ insights, loading }: PricingInsightsRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -23,33 +25,33 @@ export function PricingInsightsRow({ insights, loading }: PricingInsightsRowProp
   const cards = [
     {
       key: "rented",
-      label: "Most rented vehicle",
-      value: most ? most.license_plate : "—",
-      sub: most ? `${most.booking_count} completed/active rentals` : "No booking data yet",
+      label: t("pages.pricing.mostRentedVehicle"),
+      value: most ? most.license_plate : t("common.emDash"),
+      sub: most ? t("pages.pricing.completedActiveRentals", { count: most.booking_count }) : t("pages.pricing.noBookingDataYet"),
     },
     {
       key: "earning",
-      label: "Highest earning vehicle",
-      value: top ? top.license_plate : "—",
-      sub: top ? formatCurrency(Number(top.revenue)) + " paid rent" : "No payment data yet",
+      label: t("pages.pricing.highestEarningVehicle"),
+      value: top ? top.license_plate : t("common.emDash"),
+      sub: top ? t("pages.pricing.paidRent", { amount: formatCurrency(Number(top.revenue)) }) : t("pages.pricing.noPaymentDataYet"),
     },
     {
       key: "util",
-      label: "Fleet utilization",
+      label: t("pages.pricing.fleetUtilization"),
       value: `${insights?.best_utilization_pct ?? 0}%`,
-      sub: "Active rentals / fleet size",
+      sub: t("pages.pricing.activeRentalsPerFleet"),
     },
     {
       key: "forecast",
-      label: "Revenue (MTD)",
+      label: t("pages.pricing.revenueMtd"),
       value: formatCurrency(Number(insights?.revenue_forecast ?? 0)),
-      sub: "Paid rent this month",
+      sub: t("pages.pricing.paidRentThisMonth"),
     },
   ];
 
   return (
     <div className="mt-8">
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Pricing analytics</h2>
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">{t("pages.pricing.pricingAnalyticsTitle")}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <article key={card.key} className="fm-rental-pricing__insight-card">

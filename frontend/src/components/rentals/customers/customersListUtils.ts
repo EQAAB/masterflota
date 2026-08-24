@@ -1,11 +1,13 @@
 import type { RentalCustomer } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
+import i18n from "../../../i18n";
 
 export function formatCustomerSince(createdAt?: string): string {
   if (!createdAt) return "";
   const d = new Date(createdAt);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  const locale = i18n.language?.startsWith("ro") ? "ro-RO" : undefined;
+  return d.toLocaleDateString(locale, { month: "short", year: "numeric" });
 }
 
 export function customerRevenue(c: RentalCustomer): number {

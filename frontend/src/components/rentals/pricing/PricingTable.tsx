@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalPricing } from "../../../api/rentals";
+import i18n from "../../../i18n";
 import { createRentalPricing, updateRentalPricing } from "../../../api/rentals";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { buildPricingActionMenuItems } from "./buildPricingActionMenuItems";
@@ -17,6 +19,7 @@ type PricingTableProps = {
 };
 
 export function PricingTable({ rows, loading, canManage = false, onAdd, onEdit }: PricingTableProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -64,7 +67,7 @@ export function PricingTable({ rows, loading, canManage = false, onAdd, onEdit }
 
   const handleArchive = useCallback(
     async (row: RentalPricing) => {
-      if (!window.confirm("Archive this pricing rule?")) return;
+      if (!window.confirm(i18n.t("pages.pricing.archiveConfirm"))) return;
       closeMenu();
       await updateRentalPricing(row.id, { isActive: false });
       void queryClient.invalidateQueries({ queryKey: ["rentals", "pricing"] });
@@ -115,14 +118,14 @@ export function PricingTable({ rows, loading, canManage = false, onAdd, onEdit }
         <table className="w-full min-w-[1100px] text-sm">
           <thead>
             <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              <th className="px-4 py-3.5">Vehicle</th>
-              <th className="px-4 py-3.5">Daily rate</th>
-              <th className="px-4 py-3.5">Weekly rate</th>
-              <th className="px-4 py-3.5">Monthly rate</th>
-              <th className="px-4 py-3.5">Deposit</th>
-              <th className="px-4 py-3.5">Availability</th>
-              <th className="px-4 py-3.5">Pricing status</th>
-              {canManage ? <th className="px-4 py-3.5 text-right">Actions</th> : null}
+              <th className="px-4 py-3.5">{t("pages.pricing.colVehicle")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colDailyRate")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colWeeklyRate")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colMonthlyRate")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colDeposit")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colAvailability")}</th>
+              <th className="px-4 py-3.5">{t("pages.pricing.colPricingStatus")}</th>
+              {canManage ? <th className="px-4 py-3.5 text-right">{t("pages.pricing.colActions")}</th> : null}
             </tr>
           </thead>
           <tbody>

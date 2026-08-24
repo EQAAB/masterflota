@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type {
   RentalAvailabilityBlock,
   RentalAvailabilityBooking,
@@ -32,6 +33,7 @@ export function AvailabilityCalendarView({
   loading,
   focusVehicleId,
 }: AvailabilityCalendarViewProps) {
+  const { t } = useTranslation();
   const days = dateRangeDays(from, to);
   const showDays = days.length > 31 ? days.slice(0, 31) : days;
   const list = focusVehicleId ? vehicles.filter((v) => v.id === focusVehicleId) : vehicles;
@@ -48,7 +50,7 @@ export function AvailabilityCalendarView({
     <div className="fm-rental-availability__calendar-grid">
       <div className="min-w-[640px]">
         <div className="fm-rental-availability__calendar-row border-b border-slate-200 bg-slate-50/90">
-          <div className="w-36 shrink-0 px-3 py-2 text-xs font-semibold text-slate-500">Vehicle</div>
+          <div className="w-36 shrink-0 px-3 py-2 text-xs font-semibold text-slate-500">{t("pages.rentalCalendar.vehicleLabel")}</div>
           <div className="flex flex-1">
             {showDays.map((d) => (
               <div
@@ -85,7 +87,7 @@ export function AvailabilityCalendarView({
       </div>
       {days.length > 31 && (
         <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
-          Showing first 31 days of range. Narrow the date range for full detail.
+          {t("pages.availability.showingFirst31Days")}
         </p>
       )}
     </div>

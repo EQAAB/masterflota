@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalCustomer } from "../../../api/rentals";
+import i18n from "../../../i18n";
 import { deleteRentalCustomer } from "../../../api/rentals";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { CustomerDetailDrawer } from "./CustomerDetailDrawer";
@@ -19,6 +21,7 @@ type CustomersTableProps = {
 };
 
 export function CustomersTable({ customers, loading }: CustomersTableProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const canManage = useCanManageRentals();
   const queryClient = useQueryClient();
@@ -47,7 +50,7 @@ export function CustomersTable({ customers, loading }: CustomersTableProps) {
 
   const handleArchive = useCallback(
     async (c: RentalCustomer) => {
-      if (!window.confirm(`Archive ${c.legal_name}? They will be hidden from the active list.`)) return;
+      if (!window.confirm(i18n.t("pages.customers.confirmArchive", { name: c.legal_name }))) return;
       closeMenu();
       await deleteRentalCustomer(c.id);
       void queryClient.invalidateQueries({ queryKey: ["rentals", "customers"] });
@@ -104,15 +107,15 @@ export function CustomersTable({ customers, loading }: CustomersTableProps) {
         <table className="w-full min-w-[1100px] text-sm">
           <thead>
             <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              <th className="px-4 py-3.5">Customer</th>
-              <th className="px-4 py-3.5">Type</th>
-              <th className="px-4 py-3.5">Contact</th>
-              <th className="px-4 py-3.5">Vehicle</th>
-              <th className="px-4 py-3.5">Active bookings</th>
-              <th className="px-4 py-3.5">Total rentals</th>
-              <th className="px-4 py-3.5">Revenue</th>
-              <th className="px-4 py-3.5">Status</th>
-              <th className="px-4 py-3.5 text-right">Actions</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colCustomer")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colType")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colContact")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colVehicle")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colActiveBookings")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colTotalRentals")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colRevenue")}</th>
+              <th className="px-4 py-3.5">{t("pages.customers.colStatus")}</th>
+              <th className="px-4 py-3.5 text-right">{t("pages.customers.colActions")}</th>
             </tr>
           </thead>
           <tbody>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilityVehicle } from "../../../api/rentals";
 import { createAvailabilityBlock } from "../../../api/rentals";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
@@ -21,6 +22,7 @@ export function BlockDatesModal({
   defaultTo,
   onClose,
 }: BlockDatesModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [vehicleId, setVehicleId] = useState(initialVehicleId ?? "");
   const [from, setFrom] = useState(defaultFrom);
@@ -56,7 +58,7 @@ export function BlockDatesModal({
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : null;
-      setError(msg ?? "Failed to block dates");
+      setError(msg ?? t("pages.availability.failedToBlockDates"));
     },
   });
 
@@ -67,7 +69,7 @@ export function BlockDatesModal({
       <button
         type="button"
         className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px]"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
       />
       <div
@@ -77,21 +79,21 @@ export function BlockDatesModal({
         aria-labelledby="block-dates-title"
       >
         <h2 id="block-dates-title" className="text-lg font-semibold text-ink">
-          Block dates
+          {t("pages.availability.blockDates")}
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Mark dates unavailable for external rental (manual block).
+          {t("pages.availability.blockDatesModalDesc")}
         </p>
 
         <div className="mt-4 space-y-3">
           <label className="block text-sm font-medium text-ink">
-            Vehicle
+            {t("pages.rentalCalendar.vehicleLabel")}
             <select
               className="fm-rental-availability__filter-select mt-1 w-full"
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
             >
-              <option value="">Select vehicle</option>
+              <option value="">{t("pages.availability.selectVehicle")}</option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.license_plate} — {v.make} {v.model}
@@ -101,7 +103,7 @@ export function BlockDatesModal({
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm font-medium text-ink">
-              From
+              {t("pages.availability.fromLabel")}
               <input
                 type="date"
                 className="fm-rental-availability__filter-select mt-1 w-full"
@@ -110,7 +112,7 @@ export function BlockDatesModal({
               />
             </label>
             <label className="block text-sm font-medium text-ink">
-              To
+              {t("pages.availability.toLabel")}
               <input
                 type="date"
                 className="fm-rental-availability__filter-select mt-1 w-full"
@@ -120,7 +122,7 @@ export function BlockDatesModal({
             </label>
           </div>
           <label className="block text-sm font-medium text-ink">
-            Notes (optional)
+            {t("pages.availability.notesOptional")}
             <textarea
               className="fm-rental-availability__filter-select mt-1 w-full min-h-[72px] resize-y"
               value={notes}
@@ -137,7 +139,7 @@ export function BlockDatesModal({
 
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" className={btnSecondary} onClick={onClose} disabled={mutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -145,7 +147,7 @@ export function BlockDatesModal({
             disabled={!vehicleId || !from || !to || mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Saving…" : "Block dates"}
+            {mutation.isPending ? t("common.saving") : t("pages.availability.blockDates")}
           </button>
         </div>
       </div>

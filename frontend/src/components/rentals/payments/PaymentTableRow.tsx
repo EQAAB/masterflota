@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -27,6 +28,7 @@ export function PaymentTableRow({
   onActionMenuToggle,
   isMenuOpen,
 }: PaymentTableRowProps) {
+  const { t } = useTranslation();
   const dt = formatPaymentDateTime(row.paid_at ?? row.created_at);
   const amountClass = amountToneClass(row.status, row.payment_type);
 
@@ -44,7 +46,7 @@ export function PaymentTableRow({
           >
             {row.booking_number}
           </Link>
-          <p className="text-xs text-slate-500">Rental contract</p>
+          <p className="text-xs text-slate-500">{t("pages.payments.rentalContract")}</p>
         </td>
         <td>
           <div className="flex items-center gap-2.5">
@@ -68,7 +70,7 @@ export function PaymentTableRow({
               </p>
             </>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-400">{t("common.emDash")}</span>
           )}
         </td>
         <td>
@@ -91,7 +93,7 @@ export function PaymentTableRow({
           <button
             type="button"
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-            aria-label="Actions"
+            aria-label={t("pages.payments.rowActionsAriaLabel")}
             aria-expanded={isMenuOpen}
             onClick={(e) => onActionMenuToggle(row.id, e.currentTarget)}
           >

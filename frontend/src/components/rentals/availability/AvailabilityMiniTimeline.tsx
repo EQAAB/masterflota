@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { DaySegment } from "./availabilityListUtils";
 
 type AvailabilityMiniTimelineProps = {
@@ -12,10 +13,11 @@ const SEG_CLASS: Record<DaySegment["state"], string> = {
 };
 
 export function AvailabilityMiniTimeline({ segments }: AvailabilityMiniTimelineProps) {
+  const { t } = useTranslation();
   if (segments.length === 0) return null;
 
   return (
-    <div className="fm-rental-availability__timeline" role="img" aria-label="Availability timeline">
+    <div className="fm-rental-availability__timeline" role="img" aria-label={t("pages.availability.timelineAriaLabel")}>
       {segments.map((seg) => (
         <span
           key={seg.date}

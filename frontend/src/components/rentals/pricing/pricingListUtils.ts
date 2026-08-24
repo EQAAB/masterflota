@@ -1,6 +1,7 @@
 import type { RentalPricing } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import type { PricingDisplayStatus } from "../rentalStatus";
+import i18n from "../../../i18n";
 
 export type PricingFilters = {
   q: string;
@@ -17,8 +18,8 @@ export function weeklySavingsPct(daily: number, weekly: number): number | null {
   return Math.round(((fullWeek - weekly) / fullWeek) * 100);
 }
 
-export function depositLabel(deposit: number): "Required" | "Optional" {
-  return deposit > 0 ? "Required" : "Optional";
+export function depositLabel(deposit: number): string {
+  return deposit > 0 ? i18n.t("pages.pricing.required") : i18n.t("pages.pricing.optional");
 }
 
 export function derivePricingStatus(row: RentalPricing): PricingDisplayStatus {
@@ -35,8 +36,8 @@ export function vehicleDisplayName(row: RentalPricing): string {
   if (row.license_plate) {
     return `${row.make ?? ""} ${row.model ?? ""}`.trim();
   }
-  if (row.vehicle_type) return `Default · ${row.vehicle_type}`;
-  return "Default / all vehicles";
+  if (row.vehicle_type) return i18n.t("pages.pricing.defaultType", { type: row.vehicle_type });
+  return i18n.t("pages.pricing.defaultAllVehicles");
 }
 
 export function vehicleMeta(row: RentalPricing): string {

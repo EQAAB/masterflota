@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { RentalPricing } from "../../../api/rentals";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 
@@ -31,7 +32,7 @@ export function buildPricingActionMenuItems({
   return [
     {
       id: "edit",
-      label: "Edit pricing",
+      label: i18n.t("pages.pricing.editAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -43,7 +44,7 @@ export function buildPricingActionMenuItems({
     },
     {
       id: "duplicate",
-      label: "Duplicate pricing",
+      label: i18n.t("pages.pricing.duplicateAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -55,7 +56,7 @@ export function buildPricingActionMenuItems({
     },
     {
       id: "discount",
-      label: "Add discount",
+      label: i18n.t("pages.pricing.addDiscountAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -68,7 +69,7 @@ export function buildPricingActionMenuItems({
     },
     {
       id: "history",
-      label: "View history",
+      label: i18n.t("pages.pricing.viewHistoryAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -81,7 +82,7 @@ export function buildPricingActionMenuItems({
     },
     {
       id: "archive",
-      label: "Archive",
+      label: i18n.t("pages.pricing.archiveAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
