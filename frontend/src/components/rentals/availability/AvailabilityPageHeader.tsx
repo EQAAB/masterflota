@@ -36,7 +36,7 @@ export function AvailabilityPageHeader({
             to="/rentals"
             className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
           >
-            ← Back
+            ← {t("common.back")}
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
             {t("pages.availability.title")}
@@ -51,7 +51,7 @@ export function AvailabilityPageHeader({
             className="fm-rental-availability__filter-select"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            aria-label="From date"
+            aria-label={t("pages.bookings.fromDateAriaLabel")}
           />
           <span className="text-sm text-slate-400">–</span>
           <input
@@ -59,7 +59,7 @@ export function AvailabilityPageHeader({
             className="fm-rental-availability__filter-select"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            aria-label="To date"
+            aria-label={t("pages.bookings.toDateAriaLabel")}
           />
           <div className="fm-rental-availability__view-toggle">
             <button
@@ -67,20 +67,20 @@ export function AvailabilityPageHeader({
               className={`fm-rental-availability__view-btn ${view === "list" ? "fm-rental-availability__view-btn--active" : ""}`}
               onClick={() => onViewChange("list")}
             >
-              List
+              {t("pages.availability.listView")}
             </button>
             <button
               type="button"
               className={`fm-rental-availability__view-btn ${view === "calendar" ? "fm-rental-availability__view-btn--active" : ""}`}
               onClick={() => onViewChange("calendar")}
             >
-              Calendar
+              {t("pages.availability.calendarView")}
             </button>
           </div>
           {canManage ? (
             <>
               <button type="button" className={btnSecondary} onClick={onBlockDates}>
-                Block dates
+                {t("pages.availability.blockDates")}
               </button>
               {onQuickWeekly ? (
                 <button type="button" className={btnPrimary} onClick={onQuickWeekly}>
@@ -88,7 +88,7 @@ export function AvailabilityPageHeader({
                 </button>
               ) : null}
               <Link to="/rentals/bookings/new" className={`${btnSecondary} fm-rental-availability__header-cta`}>
-                Advanced booking
+                {t("pages.availability.advancedBooking")}
               </Link>
             </>
           ) : null}

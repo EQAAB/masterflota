@@ -1,3 +1,4 @@
+import i18n from "../i18n";
 import type { VehicleListItem } from "../api/vehicles";
 
 export type NormalizedVehicleType = "car" | "scooter" | "cycle" | "van" | "other";
@@ -13,17 +14,17 @@ export function normalizeVehicleType(raw: string | null | undefined): Normalized
 }
 
 export function formatVehicleDisplayName(v: Pick<VehicleListItem, "make" | "model">): string {
-  return `${v.make ?? ""} ${v.model ?? ""}`.trim() || "Unnamed vehicle";
+  return `${v.make ?? ""} ${v.model ?? ""}`.trim() || i18n.t("vehicleType.unnamed");
 }
 
 export function formatVehicleTypeLabel(raw: string | null | undefined): string {
   const normalized = normalizeVehicleType(raw);
-  if (normalized === "cycle") return "Cycle";
-  if (normalized === "scooter") return "Scooter";
-  if (normalized === "van") return "Van";
-  if (normalized === "car") return "Car";
+  if (normalized === "cycle") return i18n.t("vehicleType.cycle");
+  if (normalized === "scooter") return i18n.t("vehicleType.scooter");
+  if (normalized === "van") return i18n.t("vehicleType.van");
+  if (normalized === "car") return i18n.t("vehicleType.car");
   const t = (raw ?? "").trim();
-  if (!t) return "Vehicle";
+  if (!t) return i18n.t("vehicleType.generic");
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 

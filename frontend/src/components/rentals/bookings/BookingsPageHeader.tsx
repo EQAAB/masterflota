@@ -17,7 +17,7 @@ export function BookingsPageHeader({ onQuickWeekly }: BookingsPageHeaderProps) {
           to="/rentals"
           className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
         >
-          ← Dashboard
+          ← {t("pages.bookings.backToDashboard")}
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem]">
           {t("pages.bookings.title")}

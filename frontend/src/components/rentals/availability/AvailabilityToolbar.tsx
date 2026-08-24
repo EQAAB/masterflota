@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import type { AvailabilityFilters } from "./availabilityListUtils";
 
 type AvailabilityToolbarProps = {
@@ -13,6 +14,7 @@ export function AvailabilityToolbar({
   vehicleTypes,
   resultCount,
 }: AvailabilityToolbarProps) {
+  const { t } = useTranslation();
   return (
     <div className="fm-rental-availability__toolbar mb-5 space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -30,13 +32,13 @@ export function AvailabilityToolbar({
           <input
             type="search"
             className="fm-rental-availability__search"
-            placeholder="Search plate, model, vehicle…"
+            placeholder={t("pages.availability.searchPlaceholder")}
             value={filters.q}
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
         <p className="text-xs text-ink-muted lg:shrink-0">
-          {resultCount} vehicle{resultCount === 1 ? "" : "s"}
+          <Trans i18nKey="pages.availability.resultCount" count={resultCount} />
         </p>
       </div>
 
@@ -45,26 +47,26 @@ export function AvailabilityToolbar({
           className="fm-rental-availability__filter-select"
           value={filters.status}
           onChange={(e) => onChange({ status: e.target.value as AvailabilityFilters["status"] })}
-          aria-label="Availability status"
+          aria-label={t("pages.availability.statusAriaLabel")}
         >
-          <option value="">All statuses</option>
-          <option value="available">Available</option>
-          <option value="rented">Rented</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="blocked">Blocked</option>
-          <option value="unavailable">Unavailable</option>
+          <option value="">{t("pages.bookings.allStatuses")}</option>
+          <option value="available">{t("vehicleStatus.available")}</option>
+          <option value="rented">{t("vehicleStatus.rented")}</option>
+          <option value="maintenance">{t("vehicleStatus.maintenance")}</option>
+          <option value="blocked">{t("rentalStatus.vehicleAvailability.blocked")}</option>
+          <option value="unavailable">{t("rentalStatus.vehicleAvailability.unavailable")}</option>
         </select>
 
         <select
           className="fm-rental-availability__filter-select"
           value={filters.vehicleType}
           onChange={(e) => onChange({ vehicleType: e.target.value })}
-          aria-label="Vehicle type"
+          aria-label={t("pages.availability.vehicleTypeAriaLabel")}
         >
-          <option value="">All types</option>
-          {vehicleTypes.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          <option value="">{t("pages.availability.allTypes")}</option>
+          {vehicleTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
             </option>
           ))}
         </select>
@@ -73,22 +75,22 @@ export function AvailabilityToolbar({
           className="fm-rental-availability__filter-select"
           value={filters.rentalStatus}
           onChange={(e) => onChange({ rentalStatus: e.target.value as AvailabilityFilters["rentalStatus"] })}
-          aria-label="Rental status"
+          aria-label={t("pages.availability.rentalStatusAriaLabel")}
         >
-          <option value="">Any rental</option>
-          <option value="active">Active rental</option>
-          <option value="confirmed">Confirmed upcoming</option>
+          <option value="">{t("pages.availability.anyRental")}</option>
+          <option value="active">{t("pages.availability.activeRentalOption")}</option>
+          <option value="confirmed">{t("pages.availability.confirmedUpcomingOption")}</option>
         </select>
 
         <select
           className="fm-rental-availability__filter-select"
           value={filters.sort}
           onChange={(e) => onChange({ sort: e.target.value as AvailabilityFilters["sort"] })}
-          aria-label="Sort"
+          aria-label={t("pages.availability.sortAriaLabel")}
         >
-          <option value="plate">Sort: Plate</option>
-          <option value="availability">Sort: Availability %</option>
-          <option value="booked">Sort: Days booked</option>
+          <option value="plate">{t("pages.availability.sortPlate")}</option>
+          <option value="availability">{t("pages.availability.sortAvailability")}</option>
+          <option value="booked">{t("pages.availability.sortBooked")}</option>
         </select>
       </div>
     </div>

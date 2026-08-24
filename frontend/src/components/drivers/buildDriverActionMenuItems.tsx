@@ -1,3 +1,4 @@
+import i18n from "../../i18n";
 import type { ActionMenuItemConfig } from "../theme/ActionMenuDropdown";
 
 function MenuIconWrap({ children, tone }: { children: React.ReactNode; tone: "brand" | "muted" | "danger" }) {
@@ -56,7 +57,7 @@ export function buildDriverActionMenuItems({
   return [
     {
       id: "view-profile",
-      label: "View profile",
+      label: i18n.t("pages.driversList.viewProfile"),
       icon: (
         <MenuIconWrap tone="brand">
           <ViewProfileIcon />
@@ -66,7 +67,7 @@ export function buildDriverActionMenuItems({
     },
     {
       id: "edit-driver",
-      label: "Edit driver",
+      label: i18n.t("pages.driversList.editDriverAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <EditIcon />
@@ -77,7 +78,7 @@ export function buildDriverActionMenuItems({
     },
     {
       id: "suspend-driver",
-      label: "Suspend driver",
+      label: i18n.t("pages.driversList.suspendDriverAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <SuspendIcon />

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Papa from "papaparse";
+import { Trans, useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import { useCanAdjustPayouts, useCanImportEarnings, useCanViewImports, usePermission } from "../../lib/permissions";
 import {
   previewEarningsImport,
@@ -47,10 +49,11 @@ function errMessage(e: unknown): string {
     if (m?.message) return m.message;
     return e.message;
   }
-  return e instanceof Error ? e.message : "Something went wrong";
+  return e instanceof Error ? e.message : i18n.t("pages.earningsImport.somethingWentWrong");
 }
 
 export function EarningsImportPage() {
+  const { t } = useTranslation();
   const canViewImports = useCanViewImports();
   const canImport = useCanImportEarnings();
   const canAdjustPayouts = useCanAdjustPayouts();
@@ -311,7 +314,7 @@ export function EarningsImportPage() {
     periodValidation.valid && PROVIDER_OPTIONS.some((o) => o.value === selectedPlatform);
 
   if (!canViewImports) {
-    return <p className="p-6 text-ink-muted">You do not have access to earnings import.</p>;
+    return <p className="p-6 text-ink-muted">{t("pages.earningsImport.noAccess")}</p>;
   }
 
   return (
@@ -323,14 +326,14 @@ export function EarningsImportPage() {
 
         {importSuccess && (
           <div className={`${alertSuccess} rounded-2xl border-emerald-200/60 shadow-soft`}>
-            <p className="font-medium">Import complete</p>
-            <p className="mt-1 opacity-90">{importSuccess.insertedRows} row(s) saved.</p>
+            <p className="font-medium">{t("pages.earningsImport.importCompleteTitle")}</p>
+            <p className="mt-1 opacity-90">{t("pages.earningsImport.rowsSaved", { count: importSuccess.insertedRows })}</p>
           </div>
         )}
 
         {importSuccess?.warnings && importSuccess.warnings.length > 0 && (
           <div className="rounded-[20px] border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-ink">
-            <p className="text-xs font-semibold text-warning">Vehicle return check</p>
+            <p className="text-xs font-semibold text-warning">{t("pages.earningsImport.vehicleReturnCheck")}</p>
             <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs text-ink-muted">
               {importSuccess.warnings.map((w, i) => (
                 <li key={i}>{w}</li>
@@ -393,7 +396,7 @@ export function EarningsImportPage() {
           />
         ) : !preview ? (
           <p className="rounded-2xl border border-border/60 bg-white px-4 py-3 text-sm text-ink-muted">
-            You can view recent imports below. Uploading new files requires import permission.
+            {t("pages.earningsImport.viewOnlyHint")}
           </p>
         ) : null}
 
@@ -416,31 +419,31 @@ export function EarningsImportPage() {
       <ConfirmDialog
         open={commitImportOpen && Boolean(preview)}
         onClose={() => !commitMut.isPending && setCommitImportOpen(false)}
-        title={appendWeek ? "Add this file to the existing week?" : "Commit this CSV import?"}
+        title={appendWeek ? t("pages.earningsImport.addToExistingWeekTitle") : t("pages.earningsImport.commitImportTitle")}
         description={
           preview ? (
             <div className="space-y-2">
               <p>
-                <span className="text-ink-muted">File:</span>{" "}
+                <span className="text-ink-muted">{t("pages.earningsImport.fileLabel")}</span>{" "}
                 <span className="font-medium text-ink">{preview.fileName}</span>
               </p>
               <p>
-                <span className="text-ink-muted">Provider:</span>{" "}
+                <span className="text-ink-muted">{t("pages.earningsImport.providerLabel")}</span>{" "}
                 <span className="font-medium text-ink">{providerLabel(selectedPlatform)}</span>
               </p>
               <p>
-                <span className="text-ink-muted">Pay period:</span>{" "}
+                <span className="text-ink-muted">{t("pages.earningsImport.payPeriodLabel")}</span>{" "}
                 <span className="font-medium text-ink">
                   {periodStart} → {periodEnd}
                 </span>
               </p>
               <p>
-                <span className="text-ink-muted">Rows in file:</span>{" "}
+                <span className="text-ink-muted">{t("pages.earningsImport.rowsInFileLabel")}</span>{" "}
                 <span className="font-medium tabular-nums text-ink">{preview.totalRows.toLocaleString()}</span>
               </p>
               {preview.aggregates != null && (
                 <p>
-                  <span className="text-ink-muted">Estimated valid rows to insert:</span>{" "}
+                  <span className="text-ink-muted">{t("pages.earningsImport.estimatedValidRowsLabel")}</span>{" "}
                   <span className="font-semibold tabular-nums text-brand">
                     {(preview.aggregates.valid ?? 0).toLocaleString()}
                   </span>
@@ -448,9 +451,11 @@ export function EarningsImportPage() {
               )}
               {appendWeek && (
                 <p className="rounded-lg border border-brand/20 bg-brand/5 px-2 py-1.5 text-xs text-ink">
-                  Appends alongside{" "}
-                  <span className="font-medium">{appendWeek.fileName ?? "the existing import"}</span>.
-                  Payouts for this week will be recomputed from both files.
+                  <Trans
+                    i18nKey="pages.earningsImport.appendsAlongside"
+                    values={{ fileName: appendWeek.fileName ?? t("pages.earningsImport.theExistingImport") }}
+                    components={{ b: <span className="font-medium" /> }}
+                  />
                 </p>
               )}
               {debtSummaryLine && (
@@ -459,13 +464,13 @@ export function EarningsImportPage() {
                 </p>
               )}
               <p className="pt-1 text-xs text-ink-muted">
-                Only rows with a matched driver and money fields are written.
+                {t("pages.earningsImport.onlyMatchedRowsWritten")}
               </p>
             </div>
           ) : null
         }
-        confirmLabel={appendWeek ? "Add to this week" : "Import now"}
-        cancelLabel="Go back"
+        confirmLabel={appendWeek ? t("pages.earningsImport.addToThisWeek") : t("pages.earningsImport.importNow")}
+        cancelLabel={t("pages.earningsImport.goBack")}
         confirmVariant="primary"
         isLoading={commitMut.isPending}
         onConfirm={async () => {
@@ -484,14 +489,14 @@ export function EarningsImportPage() {
       <ConfirmDialog
         open={deleteImportId != null}
         onClose={() => !deleteImportMut.isPending && setDeleteImportId(null)}
-        title="Delete this import?"
+        title={t("pages.earningsImport.deleteImportTitle")}
         description={
           <p className="text-sm text-ink-muted">
-            This import has no processed earnings rows. It will be permanently removed from import history.
+            {t("pages.earningsImport.deleteImportDesc")}
           </p>
         }
-        confirmLabel="Delete import"
-        cancelLabel="Cancel"
+        confirmLabel={t("pages.earningsImport.deleteImportConfirm")}
+        cancelLabel={t("common.cancel")}
         confirmVariant="danger"
         isLoading={deleteImportMut.isPending}
         onConfirm={async () => {
@@ -503,19 +508,19 @@ export function EarningsImportPage() {
       <ConfirmDialog
         open={revertImportId != null}
         onClose={() => !revertMut.isPending && setRevertImportId(null)}
-        title="Revert this import?"
+        title={t("pages.earningsImport.revertImportTitle")}
         description={
           <div className="space-y-2 text-sm text-ink-muted">
             <p>
-              This creates offsetting negative earnings records and marks the import as reverted.
+              {t("pages.earningsImport.revertImportDesc1")}
             </p>
             <p className="font-medium text-warning">
-              Revert is blocked if any payout for this period is already marked paid.
+              {t("pages.earningsImport.revertImportDesc2")}
             </p>
           </div>
         }
-        confirmLabel="Revert import"
-        cancelLabel="Cancel"
+        confirmLabel={t("pages.earningsImport.revertImportConfirm")}
+        cancelLabel={t("common.cancel")}
         confirmVariant="danger"
         isLoading={revertMut.isPending}
         onConfirm={async () => {
@@ -528,15 +533,14 @@ export function EarningsImportPage() {
         open={importNavBlocker.state === "blocked"}
         rootClassName="z-[110]"
         onClose={() => importNavBlocker.reset?.()}
-        title="Discard unsaved import?"
+        title={t("pages.earningsImport.discardUnsavedTitle")}
         description={
           <p>
-            You have a staged import preview. Leaving will delete it on the server and you will need to upload
-            again.
+            {t("pages.earningsImport.discardUnsavedDesc")}
           </p>
         }
-        confirmLabel="Leave page"
-        cancelLabel="Stay on import"
+        confirmLabel={t("pages.earningsImport.leavePage")}
+        cancelLabel={t("pages.earningsImport.stayOnImport")}
         confirmVariant="danger"
         isLoading={cancelMut.isPending && importNavBlocker.state === "blocked"}
         onConfirm={async () => {

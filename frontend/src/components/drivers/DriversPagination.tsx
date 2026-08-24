@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnGhost, input, transitionDefault } from "../../theme/classNames";
 
 const PAGE_SIZES = [10, 25, 50, 100] as const;
@@ -31,6 +32,7 @@ export function DriversPagination({
   onPageSizeChange,
   selectId = "drivers-page-size",
 }: DriversPaginationProps) {
+  const { t } = useTranslation();
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
   const from = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
@@ -42,7 +44,7 @@ export function DriversPagination({
     >
       <div className="flex flex-wrap items-center gap-2.5 text-sm text-ink-muted">
         <label htmlFor={selectId} className="text-xs font-medium sm:text-sm">
-          Rows per page
+          {t("pagination.rowsPerPage")}
         </label>
         <select
           id={selectId}
@@ -57,18 +59,18 @@ export function DriversPagination({
           ))}
         </select>
         <span className="text-xs tabular-nums sm:text-sm">
-          {from}–{to} of {totalItems.toLocaleString()}
+          {t("pagination.range", { from, to, total: totalItems.toLocaleString() })}
         </span>
       </div>
 
-      <nav className="flex items-center gap-0.5" aria-label="Pagination">
+      <nav className="flex items-center gap-0.5" aria-label={t("pagination.ariaLabel")}>
         <button
           type="button"
           disabled={safePage <= 1}
           onClick={() => onPageChange(safePage - 1)}
           className={`${btnGhost} rounded-lg px-2.5 py-1.5 text-sm disabled:opacity-40`}
         >
-          Prev
+          {t("pagination.prev")}
         </button>
         {pageNumbers(safePage, totalPages).map((p, i) =>
           p === "ellipsis" ? (
@@ -97,7 +99,7 @@ export function DriversPagination({
           onClick={() => onPageChange(safePage + 1)}
           className={`${btnGhost} rounded-lg px-2.5 py-1.5 text-sm disabled:opacity-40`}
         >
-          Next
+          {t("pagination.next")}
         </button>
       </nav>
     </div>

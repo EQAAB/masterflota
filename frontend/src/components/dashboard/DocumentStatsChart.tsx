@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useTranslation } from "react-i18next";
 import { CHART_SUCCESS, CHART_WARNING } from "./chartPalette";
 import { EmptyState } from "../theme/EmptyState";
 import { ChartEmptyIllustration } from "./illustrations/ChartEmptyIllustration";
@@ -10,19 +11,10 @@ export interface DocumentStatsItem {
   pending: number;
 }
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  trc_card: "TRC Card",
-  drivers_license: "License",
-  contract: "Contract",
-  insurance: "Insurance",
-  vehicle_permit: "Permit",
-  passport: "Passport",
-  other: "Other",
-};
-
 export function DocumentStatsChart({ data }: { data: DocumentStatsItem[] }) {
+  const { t } = useTranslation();
   const chartData = data.map((d) => ({
-    name: DOC_TYPE_LABELS[d.documentType] ?? d.documentType,
+    name: t(`dashboardCharts.docType.${d.documentType}`, { defaultValue: d.documentType }),
     verified: d.verified,
     pending: d.pending,
     total: d.total,
@@ -30,8 +22,8 @@ export function DocumentStatsChart({ data }: { data: DocumentStatsItem[] }) {
   if (chartData.every((d) => d.total === 0)) {
     return (
       <EmptyState
-        title="No document data"
-        description="Upload and verify driver documents to see stats here."
+        title={t("dashboardCharts.noDocumentDataTitle")}
+        description={t("dashboardCharts.noDocumentDataDesc")}
         illustration={<ChartEmptyIllustration className="w-20 h-20" />}
         className="border-0 bg-transparent py-6"
       />
@@ -51,8 +43,8 @@ export function DocumentStatsChart({ data }: { data: DocumentStatsItem[] }) {
           }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="verified" fill={CHART_SUCCESS} name="Verified" stackId="a" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="pending" fill={CHART_WARNING} name="Pending" stackId="a" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="verified" fill={CHART_SUCCESS} name={t("dashboardCharts.verified")} stackId="a" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="pending" fill={CHART_WARNING} name={t("dashboardCharts.pending")} stackId="a" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

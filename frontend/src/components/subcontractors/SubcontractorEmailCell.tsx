@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 
 function EmailIcon({ className }: { className?: string }) {
@@ -14,6 +15,7 @@ function EmailIcon({ className }: { className?: string }) {
 }
 
 export function SubcontractorEmailCell({ subcontractor }: { subcontractor: Subcontractor }) {
+  const { t } = useTranslation();
   const email = subcontractor.email?.trim();
 
   if (email) {
@@ -28,7 +30,7 @@ export function SubcontractorEmailCell({ subcontractor }: { subcontractor: Subco
   return (
     <div className="flex min-w-0 items-center gap-2 text-sm text-ink-muted">
       <EmailIcon className="h-4 w-4 shrink-0 opacity-50" />
-      <span className="truncate">No email available</span>
+      <span className="truncate">{t("pages.subcontractorsList.noEmailAvailable")}</span>
     </div>
   );
 }

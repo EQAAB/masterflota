@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
 import type { PaginationMeta, VehicleListItem, VehicleStatus } from "../../api/vehicles";
 import { updateVehicle } from "../../api/vehicles";
@@ -22,13 +23,7 @@ import { VehiclesFilterBar } from "./VehiclesFilterBar";
 import { VehiclesPageHeader } from "./VehiclesPageHeader";
 import { VehiclesTable } from "./VehiclesTable";
 
-const VEHICLE_STATUSES: { value: VehicleStatus; label: string }[] = [
-  { value: "available", label: "Available" },
-  { value: "rented", label: "Rented" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "sold", label: "Sold" },
-  { value: "scrapped", label: "Scrapped" },
-];
+const VEHICLE_STATUS_VALUES: VehicleStatus[] = ["available", "rented", "maintenance", "sold", "scrapped"];
 
 type VehiclesListProps = {
   vehicles: VehicleListItem[] | undefined;
@@ -57,6 +52,7 @@ export function VehiclesList({
   filters,
   onDeleteRequest,
 }: VehiclesListProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canCreate = usePermission("vehicles.create");
@@ -225,7 +221,7 @@ export function VehiclesList({
           : null;
       setImportMessage({
         type: "error",
-        text: msg ?? "Vehicle CSV import failed",
+        text: msg ?? t("pages.vehiclesList.importFailedDefault"),
       });
     },
   });
@@ -341,9 +337,9 @@ export function VehiclesList({
       {assignTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Assign driver</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.vehiclesList.assignModalTitle")}</h3>
             <p className="mt-1 text-sm text-ink-muted">
-              Search and select a driver for {assignTarget.make} {assignTarget.model}.
+              {t("pages.vehiclesList.assignModalBody", { vehicle: `${assignTarget.make} ${assignTarget.model}` })}
             </p>
             <div className="mt-4">
               <DriverSearchCombobox
@@ -364,7 +360,7 @@ export function VehiclesList({
                 }
                 className={`${btnPrimary} flex-1 justify-center`}
               >
-                {assignMutation.isPending ? "Assigning…" : "Assign"}
+                {assignMutation.isPending ? t("pages.vehiclesList.assigning") : t("pages.vehiclesList.assign")}
               </button>
               <button
                 type="button"
@@ -375,7 +371,7 @@ export function VehiclesList({
                 disabled={assignMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -385,18 +381,18 @@ export function VehiclesList({
       {statusTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Change status</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.vehiclesList.changeStatusModalTitle")}</h3>
             <p className="mt-1 text-sm text-ink-muted">
-              Update status for {statusTarget.make} {statusTarget.model}.
+              {t("pages.vehiclesList.changeStatusModalBody", { vehicle: `${statusTarget.make} ${statusTarget.model}` })}
             </p>
             <select
               className={`${input} mt-4`}
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value as VehicleStatus)}
             >
-              {VEHICLE_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
+              {VEHICLE_STATUS_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {t(`vehicleStatus.${value}`)}
                 </option>
               ))}
             </select>
@@ -409,7 +405,7 @@ export function VehiclesList({
                 }
                 className={`${btnPrimary} flex-1 justify-center`}
               >
-                {statusMutation.isPending ? "Saving…" : "Save"}
+                {statusMutation.isPending ? t("common.saving") : t("common.save")}
               </button>
               <button
                 type="button"
@@ -417,7 +413,7 @@ export function VehiclesList({
                 disabled={statusMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

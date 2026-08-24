@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 import {
   formatSubcontractorDisplayId,
@@ -13,6 +14,7 @@ type SubcontractorNameCellProps = {
 };
 
 export function SubcontractorNameCell({ subcontractor, displayIndex }: SubcontractorNameCellProps) {
+  const { t } = useTranslation();
   const tone = subcontractorAvatarTone(subcontractor.id);
   const displayId = formatSubcontractorDisplayId(subcontractor, displayIndex);
 
@@ -26,7 +28,7 @@ export function SubcontractorNameCell({ subcontractor, displayIndex }: Subcontra
       </span>
       <div className="min-w-0">
         <p className="truncate font-semibold text-ink group-hover:text-brand">{subcontractor.legal_name}</p>
-        <p className="truncate text-xs text-ink-muted tabular-nums">ID: {displayId}</p>
+        <p className="truncate text-xs text-ink-muted tabular-nums">{t("common.id")}: {displayId}</p>
       </div>
     </Link>
   );

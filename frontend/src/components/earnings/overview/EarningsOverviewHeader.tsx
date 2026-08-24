@@ -44,7 +44,7 @@ export function EarningsOverviewHeader({
           title={t("pages.earningsOverview.title")}
           description={t("pages.earningsOverview.subtitle")}
           breadcrumbs={[
-            { label: "Dashboard", to: "/dashboard" },
+            { label: t("nav.dashboard"), to: "/dashboard" },
             { label: t("pages.earningsOverview.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
@@ -62,7 +62,7 @@ export function EarningsOverviewHeader({
                 className={`${btnSecondary} gap-2 text-sm`}
               >
                 <ExportIcon className="h-4 w-4" />
-                Export
+                {t("common.export")}
               </button>
               <button
                 type="button"
@@ -71,7 +71,7 @@ export function EarningsOverviewHeader({
                 aria-pressed={filtersOpen}
               >
                 <FilterIcon className="h-4 w-4" />
-                Filters
+                {t("pages.driversList.filtersButton")}
               </button>
             </div>
           }

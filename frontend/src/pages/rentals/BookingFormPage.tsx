@@ -18,6 +18,7 @@ import { BookingFormCard } from "../../components/rentals/booking-form/BookingFo
 import { BookingFormFooter } from "../../components/rentals/booking-form/BookingFormFooter";
 import { BookingFormHeader } from "../../components/rentals/booking-form/BookingFormHeader";
 import { BookingSummarySidebar } from "../../components/rentals/booking-form/BookingSummarySidebar";
+import { bookingStatusDisplayLabel } from "../../components/rentals/rentalStatus";
 import { CustomerSelectField } from "../../components/rentals/booking-form/CustomerSelectField";
 import { ExtraServicesChips } from "../../components/rentals/booking-form/ExtraServicesChips";
 import { RentalTypeSegment } from "../../components/rentals/booking-form/RentalTypeSegment";
@@ -132,11 +133,11 @@ export function BookingFormPage() {
     }
     if (new Date(endIso) <= new Date(startIso)) {
       setQuote(null);
-      setQuoteError("Return must be after pickup");
+      setQuoteError(t("pages.bookingForm.returnAfterPickup"));
       return;
     }
     setQuoteLoading(true);
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       quoteRental({
         vehicleId,
         rentalType,
@@ -149,11 +150,11 @@ export function BookingFormPage() {
         })
         .catch(() => {
           setQuote(null);
-          setQuoteError("Could not get quote");
+          setQuoteError(t("pages.bookingForm.couldNotGetQuote"));
         })
         .finally(() => setQuoteLoading(false));
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [vehicleId, rentalType, startIso, endIso]);
 
   const customers = customersQuery.data ?? [];
@@ -259,8 +260,8 @@ export function BookingFormPage() {
         title={isEdit ? t("pages.bookingForm.editTitle") : t("pages.bookingForm.createTitle")}
         subtitle={t("pages.bookingForm.subtitle")}
         backTo={isEdit ? `/rentals/bookings/${id}` : "/rentals/bookings"}
-        backLabel={isEdit ? "Booking" : "Bookings"}
-        statusBadge={isEdit ? existing?.status ?? "draft" : "Draft"}
+        backLabel={isEdit ? t("pages.bookingForm.backBooking") : t("nav.bookings")}
+        statusBadge={bookingStatusDisplayLabel(isEdit ? existing?.status ?? "draft" : "draft")}
         onSaveDraft={!formDisabled ? handleSaveDraft : undefined}
         saveDraftPending={saveMut.isPending}
         saveDraftDisabled={!canSubmit && !(customerId && vehicleId && startIso && endIso)}
@@ -268,7 +269,7 @@ export function BookingFormPage() {
 
       {formDisabled && (
         <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200/60">
-          Only draft bookings can be edited.
+          {t("pages.bookingForm.onlyDraftEditable")}
         </div>
       )}
 
@@ -276,8 +277,8 @@ export function BookingFormPage() {
         <div className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-8">
           <div className="space-y-6">
             <BookingFormCard
-              title="Reservation details"
-              description="Choose customer, vehicle, rental period, and optional services."
+              title={t("pages.bookingForm.reservationDetailsTitle")}
+              description={t("pages.bookingForm.reservationDetailsDesc")}
             >
               <div className="space-y-6">
                 <CustomerSelectField
@@ -295,7 +296,7 @@ export function BookingFormPage() {
                   disabled={formDisabled}
                 />
                 <div>
-                  <span className="block text-sm font-medium text-ink">Rental type</span>
+                  <span className="block text-sm font-medium text-ink">{t("pages.bookingForm.rentalTypeLabel")}</span>
                   <div className="mt-1.5">
                     <RentalTypeSegment
                       value={rentalType}
@@ -329,14 +330,14 @@ export function BookingFormPage() {
               className="text-sm font-medium text-brand hover:underline"
               onClick={() => setShowMoreOptions((v) => !v)}
             >
-              {showMoreOptions ? "Hide more options" : "More options"}
+              {showMoreOptions ? t("pages.bookingForm.hideMoreOptions") : t("pages.bookingForm.moreOptions")}
             </button>
 
             {showMoreOptions && (
               <>
                 <BookingFormCard
-                  title="Booking details"
-                  description="Optional pickup information, notes, and pricing adjustments."
+                  title={t("pages.bookingForm.bookingDetailsTitle")}
+                  description={t("pages.bookingForm.bookingDetailsDesc")}
                 >
                   <BookingDetailsSection
                     pickupLocation={pickupLocation}
@@ -353,7 +354,7 @@ export function BookingFormPage() {
                   />
                 </BookingFormCard>
 
-                <BookingFormCard title="Extra services" description="Add optional services to this rental.">
+                <BookingFormCard title={t("pages.bookingForm.extraServicesTitle")} description={t("pages.bookingForm.extraServicesDesc")}>
                   <ExtraServicesChips
                     selected={selectedExtras}
                     onChange={setSelectedExtras}
@@ -389,17 +390,17 @@ export function BookingFormPage() {
 
       {savedFlash && (
         <p className="mt-2 text-sm font-medium text-emerald-700" role="status">
-          Draft saved.
+          {t("pages.bookingForm.draftSaved")}
         </p>
       )}
       {saveMut.isError && (
         <p className="mt-2 text-sm text-rose-700" role="alert">
-          Could not save booking. Check required fields and availability.
+          {t("pages.bookingForm.couldNotSaveBooking")}
         </p>
       )}
       {quickStartMut.isError && (
         <p className="mt-2 text-sm text-rose-700" role="alert">
-          Could not start weekly rental. Check availability and try again.
+          {t("pages.bookingForm.couldNotStartWeekly")}
         </p>
       )}
     </div>

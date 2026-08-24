@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { actionMenuTrigger, transitionDefault } from "../../theme/classNames";
 import { DotsVerticalIcon } from "../theme/actionMenuIcons";
 
@@ -7,10 +8,11 @@ type SubcontractorRowActionsProps = {
 };
 
 export function SubcontractorRowActions({ isActionMenuOpen, onActionMenuToggle }: SubcontractorRowActionsProps) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
-      aria-label="Subcontractor actions"
+      aria-label={t("pages.subcontractorsList.rowActionsAriaLabel")}
       aria-haspopup="menu"
       aria-expanded={isActionMenuOpen}
       onClick={onActionMenuToggle}

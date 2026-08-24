@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { btnSecondary } from "../../../theme/classNames";
 
 type BookingFormHeaderProps = {
@@ -22,6 +23,7 @@ export function BookingFormHeader({
   saveDraftPending,
   saveDraftDisabled,
 }: BookingFormHeaderProps) {
+  const { t } = useTranslation();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -45,7 +47,7 @@ export function BookingFormHeader({
           onClick={onSaveDraft}
           disabled={saveDraftDisabled || saveDraftPending}
         >
-          {saveDraftPending ? "Saving…" : "Save draft"}
+          {saveDraftPending ? t("common.saving") : t("pages.bookingForm.saveDraft")}
         </button>
       )}
     </header>

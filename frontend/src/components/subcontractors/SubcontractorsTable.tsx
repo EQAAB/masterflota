@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 import { transitionDefault } from "../../theme/classNames";
 import { EmptyState } from "../theme/EmptyState";
@@ -39,6 +40,7 @@ export function SubcontractorsTable({
   canCreate = false,
   embedded = false,
 }: SubcontractorsTableProps) {
+  const { t } = useTranslation();
   const shell = embedded ? "" : "overflow-hidden rounded-2xl border border-border/80 bg-white shadow-sm";
 
   if (isLoading) {
@@ -47,9 +49,9 @@ export function SubcontractorsTable({
         <span
           className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
           role="status"
-          aria-label="Loading subcontractors"
+          aria-label={t("pages.subcontractorsList.loadingAriaLabel")}
         />
-        <p className="text-sm text-ink-muted">Loading subcontractors…</p>
+        <p className="text-sm text-ink-muted">{t("pages.subcontractorsList.loading")}</p>
       </div>
     );
   }
@@ -58,8 +60,8 @@ export function SubcontractorsTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="Failed to load subcontractors"
-          description="Check your connection and refresh the page."
+          title={t("pages.subcontractorsList.failedTitle")}
+          description={t("pages.subcontractorsList.failedDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -70,9 +72,9 @@ export function SubcontractorsTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No subcontractors yet"
-          description="Add your first subcontractor to start managing B2B fleet partnerships."
-          action={canCreate ? { label: "Add subcontractor", to: "/subcontractors/new" } : undefined}
+          title={t("pages.subcontractorsList.emptyTitle")}
+          description={t("pages.subcontractorsList.emptyDescription")}
+          action={canCreate ? { label: t("pages.subcontractorsList.add"), to: "/subcontractors/new" } : undefined}
           className="border-0 py-16"
         />
       </div>
@@ -83,8 +85,8 @@ export function SubcontractorsTable({
     return (
       <div className={shell}>
         <EmptyState
-          title="No subcontractors match your filters"
-          description="Try adjusting search or filter criteria."
+          title={t("pages.subcontractorsList.noMatchTitle")}
+          description={t("pages.subcontractorsList.noMatchDescription")}
           className="border-0 py-16"
         />
       </div>
@@ -107,25 +109,25 @@ export function SubcontractorsTable({
           <thead className="bg-[#F7F8FC]">
             <tr>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Subcontractor</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colSubcontractor")}</span>
               </th>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Contact</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colContact")}</span>
               </th>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Email</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colEmail")}</span>
               </th>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Status</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colStatus")}</span>
               </th>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Drivers</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colDrivers")}</span>
               </th>
               <th className={tableHeaderCell}>
-                <span className={headerLabel}>Joined On</span>
+                <span className={headerLabel}>{t("pages.subcontractorsList.colJoinedOn")}</span>
               </th>
               <th className={`${tableHeaderCell} w-[56px] text-right`}>
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t("pages.subcontractorsList.colActionsAriaLabel")}</span>
               </th>
             </tr>
           </thead>

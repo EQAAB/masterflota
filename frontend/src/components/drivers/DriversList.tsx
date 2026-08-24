@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
 import { updateDriver } from "../../api/drivers";
 import { getLoansSummary } from "../../api/driverLoans";
@@ -29,6 +30,7 @@ type DriversListProps = {
 };
 
 export function DriversList({ drivers, isLoading, isError, getHeaderProps }: DriversListProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canCreate = usePermission("drivers.create");
@@ -182,7 +184,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
           : null;
       setImportMessage({
         type: "error",
-        text: msg ?? "Driver CSV import failed",
+        text: msg ?? t("pages.driversList.importFailedDefault"),
       });
     },
   });
@@ -243,7 +245,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
                 to="/earnings/loans"
                 className="text-xs font-medium text-sky-800 hover:underline"
               >
-                View loan report
+                {t("pages.driversList.viewLoanReport")}
               </Link>
             }
           />
@@ -315,10 +317,11 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
       {suspendTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Suspend driver?</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.driversList.suspendModalTitle")}</h3>
             <p className="mt-2 text-sm text-ink-muted">
-              {suspendTarget.first_name} {suspendTarget.last_name} will be marked as suspended and
-              removed from active fleet operations until reactivated.
+              {t("pages.driversList.suspendModalBody", {
+                name: `${suspendTarget.first_name} ${suspendTarget.last_name}`,
+              })}
             </p>
             <div className="mt-5 flex gap-2">
               <button
@@ -327,7 +330,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
                 disabled={suspendMutation.isPending}
                 className={`${btnDangerOutline} flex-1 justify-center`}
               >
-                {suspendMutation.isPending ? "Suspending…" : "Suspend"}
+                {suspendMutation.isPending ? t("pages.driversList.suspending") : t("pages.driversList.suspend")}
               </button>
               <button
                 type="button"
@@ -335,7 +338,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
                 disabled={suspendMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

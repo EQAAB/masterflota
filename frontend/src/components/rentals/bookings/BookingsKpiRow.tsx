@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalBooking, RentalDashboard } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { formatTrendDelta } from "../dashboard/rentalDashboardUtils";
@@ -10,6 +11,7 @@ type BookingsKpiRowProps = {
 };
 
 export function BookingsKpiRow({ dashboard, bookings, loading }: BookingsKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -22,13 +24,13 @@ export function BookingsKpiRow({ dashboard, bookings, loading }: BookingsKpiRowP
 
   const upcoming = countUpcomingPickups(bookings);
   const completed = countCompleted(bookings);
-  const activeTrend = formatTrendDelta(dashboard?.trends?.active_week_delta ?? 0, "this week");
+  const activeTrend = formatTrendDelta(dashboard?.trends?.active_week_delta ?? 0, t("pages.rentalDashboard.thisWeek"));
   const revenuePct = dashboard?.trends?.revenue_mom_pct;
 
   const cards = [
     {
       key: "active",
-      label: "Active bookings",
+      label: t("pages.bookings.kpiActiveBookings"),
       value: dashboard?.active_bookings ?? bookings.filter((b) => b.status === "active").length,
       trend: activeTrend.text,
       trendPositive: activeTrend.positive,
@@ -37,32 +39,32 @@ export function BookingsKpiRow({ dashboard, bookings, loading }: BookingsKpiRowP
     },
     {
       key: "upcoming",
-      label: "Upcoming pickups",
+      label: t("pages.bookings.kpiUpcomingPickups"),
       value: upcoming,
-      trend: upcoming === 0 ? "None in next 7 days" : `${upcoming} returning soon`,
+      trend: upcoming === 0 ? t("pages.bookings.noneInNext7Days") : t("pages.bookings.returningSoon", { count: upcoming }),
       trendPositive: upcoming > 0 ? true : undefined,
       variant: "fm-rental-bookings__kpi--upcoming",
       iconBg: "bg-amber-100 text-amber-800",
     },
     {
       key: "completed",
-      label: "Completed rentals",
+      label: t("pages.bookings.kpiCompletedRentals"),
       value: completed,
-      trend: `${completed} total completed`,
+      trend: t("pages.bookings.totalCompleted", { count: completed }),
       trendPositive: undefined,
       variant: "fm-rental-bookings__kpi--completed",
       iconBg: "bg-violet-100 text-violet-800",
     },
     {
       key: "revenue",
-      label: "Monthly revenue",
+      label: t("pages.bookings.kpiMonthlyRevenue"),
       value: formatCurrency(Number(dashboard?.mtd_revenue ?? 0)),
       trend:
         revenuePct == null
-          ? "MTD paid rent"
+          ? t("pages.bookings.mtdPaidRent")
           : revenuePct === 0
-            ? "Same as last month"
-            : `${revenuePct > 0 ? "+" : ""}${revenuePct}% vs last month`,
+            ? t("pages.rentalDashboard.sameAsLastMonth")
+            : t("pages.rentalDashboard.vsLastMonth", { sign: revenuePct > 0 ? "+" : "", pct: revenuePct }),
       trendPositive: revenuePct != null && revenuePct > 0,
       variant: "fm-rental-bookings__kpi--revenue",
       iconBg: "bg-brand-mint text-brand-dark",

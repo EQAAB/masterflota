@@ -1,3 +1,5 @@
+import i18n from "../../i18n";
+
 export function bookingStatusClass(status: string): string {
   switch (status) {
     case "active":
@@ -16,25 +18,25 @@ export function bookingStatusClass(status: string): string {
 }
 
 export function formatBookingStatus(status: string): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  return i18n.t(`rentalStatus.booking.${status}`, {
+    defaultValue: status.charAt(0).toUpperCase() + status.slice(1),
+  });
 }
 
 /** UI label — maps draft to Pending for list display */
 export function bookingStatusDisplayLabel(status: string): string {
-  if (status === "draft") return "Pending";
+  if (status === "draft") return i18n.t("rentalStatus.booking.pending");
   return formatBookingStatus(status);
 }
 
 export function rentPaymentStateLabel(state?: string): string {
   switch (state) {
     case "paid":
-      return "Paid";
     case "partial":
-      return "Partially paid";
     case "unpaid":
-      return "Unpaid";
+      return i18n.t(`rentalStatus.rentPaymentState.${state}`);
     default:
-      return "—";
+      return i18n.t("common.emDash");
   }
 }
 
@@ -83,18 +85,7 @@ export function vehicleAvailabilityStatusClass(status: VehicleAvailabilityDispla
 }
 
 export function vehicleAvailabilityStatusLabel(status: VehicleAvailabilityDisplayStatus): string {
-  switch (status) {
-    case "available":
-      return "Available";
-    case "rented":
-      return "Rented";
-    case "maintenance":
-      return "Maintenance";
-    case "blocked":
-      return "Blocked";
-    case "unavailable":
-      return "Unavailable";
-  }
+  return i18n.t(`rentalStatus.vehicleAvailability.${status}`);
 }
 
 export type PricingDisplayStatus = "active" | "draft" | "seasonal" | "discounted";
@@ -104,16 +95,7 @@ export function pricingStatusClass(status: PricingDisplayStatus): string {
 }
 
 export function pricingStatusLabel(status: PricingDisplayStatus): string {
-  switch (status) {
-    case "active":
-      return "Active";
-    case "draft":
-      return "Draft";
-    case "seasonal":
-      return "Seasonal";
-    case "discounted":
-      return "Discounted";
-  }
+  return i18n.t(`rentalStatus.pricing.${status}`);
 }
 
 export function vehicleFleetStatusClass(status: string): string {
@@ -130,7 +112,9 @@ export function vehicleFleetStatusClass(status: string): string {
 }
 
 export function vehicleFleetStatusLabel(status: string): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  return i18n.t(`rentalStatus.vehicleAvailability.${status}`, {
+    defaultValue: status.charAt(0).toUpperCase() + status.slice(1),
+  });
 }
 
 export type PaymentDisplayStatus = "paid" | "pending" | "failed" | "refunded";
@@ -144,18 +128,9 @@ export function paymentStatusClass(status: string): string {
 }
 
 export function paymentStatusLabel(status: string): string {
-  switch (status) {
-    case "paid":
-      return "Paid";
-    case "pending":
-      return "Pending";
-    case "failed":
-      return "Failed";
-    case "refunded":
-      return "Refunded";
-    default:
-      return status.charAt(0).toUpperCase() + status.slice(1);
-  }
+  return i18n.t(`rentalStatus.payment.${status}`, {
+    defaultValue: status.charAt(0).toUpperCase() + status.slice(1),
+  });
 }
 
 export function paymentTypeClass(type: string): string {
@@ -176,20 +151,7 @@ export function paymentTypeClass(type: string): string {
 }
 
 export function paymentTypeLabel(type: string): string {
-  switch (type) {
-    case "rent":
-      return "Rent";
-    case "deposit":
-      return "Deposit";
-    case "deposit_refund":
-      return "Refund";
-    case "extra":
-      return "Extra / fee";
-    case "damage":
-      return "Damage";
-    default:
-      return type;
-  }
+  return i18n.t(`rentalStatus.paymentType.${type}`, { defaultValue: type });
 }
 
 export function amountToneClass(status: string, paymentType: string): string {
@@ -201,9 +163,9 @@ export function amountToneClass(status: string, paymentType: string): string {
 }
 
 export function customerStatusLabel(isActive: boolean, activeBookings: number): string {
-  if (!isActive) return "Inactive";
-  if (activeBookings > 0) return "Active rental";
-  return "Active account";
+  if (!isActive) return i18n.t("rentalStatus.customer.inactive");
+  if (activeBookings > 0) return i18n.t("rentalStatus.customer.activeRental");
+  return i18n.t("rentalStatus.customer.activeAccount");
 }
 
 export function rentPaymentStateClass(state?: string): string {

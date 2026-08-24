@@ -1,3 +1,5 @@
+import i18n from "../../../i18n";
+
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -9,11 +11,12 @@ export function formatShortDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
-  return `${s.toLocaleDateString("en-GB", opts)} – ${e.toLocaleDateString("en-GB", opts)}`;
+  const locale = i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB";
+  return `${s.toLocaleDateString(locale, opts)} – ${e.toLocaleDateString(locale, opts)}`;
 }
 
 export function formatTrendDelta(delta: number, unit: string): { text: string; positive: boolean | undefined } {
-  if (delta === 0) return { text: `No change ${unit}`, positive: undefined };
+  if (delta === 0) return { text: i18n.t("pages.rentalDashboard.noChangeUnit", { unit }), positive: undefined };
   const sign = delta > 0 ? "+" : "";
-  return { text: `${sign}${delta} ${unit}`, positive: delta > 0 };
+  return { text: i18n.t("pages.rentalDashboard.deltaUnit", { sign, delta, unit }), positive: delta > 0 };
 }

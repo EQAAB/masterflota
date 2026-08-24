@@ -1,4 +1,5 @@
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
+import i18n from "../../../i18n";
 
 export type CalendarViewMode = "month" | "week" | "list";
 
@@ -91,7 +92,8 @@ export function formatEventDateRange(start: string, end: string): string {
   const s = new Date(start);
   const e = new Date(end);
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
-  return `${s.toLocaleDateString("en-GB", opts)} → ${e.toLocaleDateString("en-GB", opts)}`;
+  const locale = i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB";
+  return `${s.toLocaleDateString(locale, opts)} → ${e.toLocaleDateString(locale, opts)}`;
 }
 
 export function groupBookingsByDay(bookings: RentalAvailabilityBooking[]): Map<string, RentalAvailabilityBooking[]> {

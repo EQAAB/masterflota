@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalDashboardFleet } from "../../../api/rentals";
 import { RentalDashboardCard } from "./RentalDashboardCard";
 
@@ -15,6 +16,7 @@ export function FleetAvailabilityOverview({
   loading,
   className,
 }: FleetAvailabilityOverviewProps) {
+  const { t } = useTranslation();
   const total = fleet?.total ?? 0;
   const available = fleet?.available ?? 0;
   const rented = fleet?.rented ?? 0;
@@ -22,13 +24,13 @@ export function FleetAvailabilityOverview({
   const occupancyPct = total > 0 ? Math.round((activeBookings / total) * 100) : 0;
 
   const segments = [
-    { label: "Available", count: available, color: "bg-emerald-500", pct: total ? (available / total) * 100 : 0 },
-    { label: "Rented", count: rented, color: "bg-sky-500", pct: total ? (rented / total) * 100 : 0 },
-    { label: "Maintenance", count: maintenance, color: "bg-amber-500", pct: total ? (maintenance / total) * 100 : 0 },
+    { label: t("vehicleStatus.available"), count: available, color: "bg-emerald-500", pct: total ? (available / total) * 100 : 0 },
+    { label: t("vehicleStatus.rented"), count: rented, color: "bg-sky-500", pct: total ? (rented / total) * 100 : 0 },
+    { label: t("vehicleStatus.maintenance"), count: maintenance, color: "bg-amber-500", pct: total ? (maintenance / total) * 100 : 0 },
   ];
 
   return (
-    <RentalDashboardCard title="Fleet availability" viewAllTo="/rentals/availability" className={className}>
+    <RentalDashboardCard title={t("pages.rentalDashboard.fleetAvailabilityTitle")} viewAllTo="/rentals/availability" className={className}>
       {loading ? (
         <div className="fm-rental-dashboard__skeleton h-40" />
       ) : (
@@ -36,9 +38,9 @@ export function FleetAvailabilityOverview({
           <div className="mb-4 flex items-end justify-between gap-2">
             <div>
               <p className="text-3xl font-bold tabular-nums text-ink">{occupancyPct}%</p>
-              <p className="text-xs text-ink-muted">Rental occupancy (active / fleet)</p>
+              <p className="text-xs text-ink-muted">{t("pages.rentalDashboard.occupancySubtitle")}</p>
             </div>
-            <p className="text-sm font-medium text-ink-muted">{total} vehicles</p>
+            <p className="text-sm font-medium text-ink-muted">{t("pages.rentalDashboard.vehiclesCount", { count: total })}</p>
           </div>
           <div className="fm-rental-dashboard__fleet-bar mb-4 flex">
             {segments.map((s) =>
@@ -64,7 +66,7 @@ export function FleetAvailabilityOverview({
             ))}
           </ul>
           <Link to="/vehicles" className="mt-4 block text-xs font-medium text-brand hover:underline">
-            Manage fleet vehicles →
+            {t("pages.rentalDashboard.manageFleetVehicles")} →
           </Link>
         </>
       )}

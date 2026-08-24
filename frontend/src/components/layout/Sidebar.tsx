@@ -795,7 +795,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               ) : null}
             </div>
             <div className="px-1">
-              <LanguageSwitcher variant="compact" className="w-full [&_select]:w-full [&_select]:bg-white/10 [&_select]:text-white [&_select]:border-white/20" />
+              <LanguageSwitcher variant="compact" tone="dark" className="w-full justify-center" />
             </div>
           </>
         )}

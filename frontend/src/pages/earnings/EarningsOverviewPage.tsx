@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getEarningsOverview, getPayoutIntegrityRows } from "../../api/earnings";
 import { useCanAccessFinance } from "../../lib/permissions";
 import { driversPage } from "../../theme/classNames";
@@ -20,6 +21,7 @@ import {
 } from "../../components/earnings/overview/useEarningsOverviewDerived";
 
 export function EarningsOverviewPage() {
+  const { t } = useTranslation();
   const canAccess = useCanAccessFinance();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -64,7 +66,7 @@ export function EarningsOverviewPage() {
   const platforms = useMemo(() => uniquePlatforms(allIntegrityRows), [allIntegrityRows]);
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access to earnings.</p>;
+    return <p className="p-6 text-ink-muted">{t("pages.earningsOverview.noAccess")}</p>;
   }
 
   const handleExport = () => {
@@ -92,7 +94,7 @@ export function EarningsOverviewPage() {
       {overviewQuery.isLoading ? (
         <EarningsOverviewSkeleton />
       ) : overviewQuery.isError || !overviewQuery.data ? (
-        <p className="p-6 text-danger">Could not load earnings overview.</p>
+        <p className="p-6 text-danger">{t("pages.earningsOverview.couldNotLoad")}</p>
       ) : (
         <div className={driversPage}>
           <EarningsKpiCards kpis={overviewQuery.data.kpis} monthly={overviewQuery.data.monthly} />

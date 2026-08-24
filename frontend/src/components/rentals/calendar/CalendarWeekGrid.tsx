@@ -1,6 +1,7 @@
 import type { RentalAvailabilityBooking } from "../../../api/rentals";
 import { bookingsForDay, buildWeekDays, toDateKey } from "./calendarUtils";
 import { CalendarEventCard } from "./CalendarEventCard";
+import i18n from "../../../i18n";
 
 type CalendarWeekGridProps = {
   cursorDate: Date;
@@ -33,7 +34,7 @@ export function CalendarWeekGrid({ cursorDate, bookings, loading, onSelectBookin
               className={`fm-rental-calendar__week-col ${key === todayKey ? "bg-brand-mint/15" : ""}`}
             >
               <p className="mb-2 text-center text-xs font-semibold text-slate-600">
-                {d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}
+                {d.toLocaleDateString(i18n.language?.startsWith("ro") ? "ro-RO" : "en-GB", { weekday: "short", day: "numeric" })}
               </p>
               <div className="space-y-1">
                 {dayBookings.map((b) => (

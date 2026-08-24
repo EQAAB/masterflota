@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import { getVehicles, deleteVehicle, type VehicleListItem } from "../../api/vehicles";
 import { VehiclesList } from "../../components/vehicles/VehiclesList";
 import { useListSort } from "../../hooks/useListSort";
@@ -9,6 +10,7 @@ import { useVehiclesListFilters } from "../../hooks/useVehiclesListFilters";
 import { btnSecondary, btnDangerOutline } from "../../theme/classNames";
 
 export function VehiclesListPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<VehicleListItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function VehiclesListPage() {
         setDeleteError(err.response.data.message);
         return;
       }
-      setDeleteError("Failed to delete vehicle.");
+      setDeleteError(t("pages.vehiclesList.deleteFailedDefault"));
     },
   });
 
@@ -95,11 +97,12 @@ export function VehiclesListPage() {
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
           <div className="w-full max-w-sm rounded-2xl border border-border bg-surface-card p-6 shadow-card-hover">
-            <h3 className="text-lg font-semibold text-ink">Delete vehicle?</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.vehiclesList.deleteModalTitle")}</h3>
             <p className="mt-2 text-sm text-ink-muted">
-              {deleteTarget.make} {deleteTarget.model} ({deleteTarget.license_plate}) will be
-              permanently deleted. Maintenance records and related data will be removed. This vehicle
-              cannot be deleted while rental bookings exist.
+              {t("pages.vehiclesList.deleteModalBody", {
+                vehicle: `${deleteTarget.make} ${deleteTarget.model}`,
+                plate: deleteTarget.license_plate,
+              })}
             </p>
             {deleteError && (
               <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -113,7 +116,7 @@ export function VehiclesListPage() {
                 disabled={deleteMutation.isPending}
                 className={`${btnDangerOutline} flex-1 justify-center`}
               >
-                {deleteMutation.isPending ? "Deleting…" : "Delete"}
+                {deleteMutation.isPending ? t("pages.vehiclesList.deleting") : t("common.delete")}
               </button>
               <button
                 type="button"
@@ -121,7 +124,7 @@ export function VehiclesListPage() {
                 disabled={deleteMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

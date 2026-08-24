@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 import { formatKpiCount } from "../../utils/subcontractorDisplay";
 import { KpiStatCard } from "../dashboard/KpiStatCard";
@@ -59,6 +60,7 @@ type SubcontractorsKpiCardsProps = {
 };
 
 export function SubcontractorsKpiCards({ subcontractors }: SubcontractorsKpiCardsProps) {
+  const { t } = useTranslation();
   const rows = subcontractors ?? [];
   const totalDrivers = rows.reduce((sum, s) => sum + (s.driver_count ?? 0), 0);
   const activeCount = rows.filter((s) => s.status === "active").length;
@@ -67,29 +69,29 @@ export function SubcontractorsKpiCards({ subcontractors }: SubcontractorsKpiCard
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiStatCard
-        title="Total subcontractors"
+        title={t("pages.subcontractorsList.kpiTotalSubcontractors")}
         value={formatKpiCount(rows.length)}
-        subtitle="Active partners"
+        subtitle={t("pages.subcontractorsList.kpiActivePartners")}
         icon={<BuildingIcon className="h-5 w-5" />}
         iconClassName="bg-success/10 text-success"
       />
       <KpiStatCard
-        title="Total drivers"
+        title={t("pages.subcontractorsList.kpiTotalDrivers")}
         value={formatKpiCount(totalDrivers)}
-        subtitle="Across all subcontractors"
+        subtitle={t("pages.subcontractorsList.kpiAcrossAll")}
         icon={<UsersIcon className="h-5 w-5" />}
       />
       <KpiStatCard
-        title="Active subcontractors"
+        title={t("pages.subcontractorsList.kpiActiveSubcontractors")}
         value={formatKpiCount(activeCount)}
-        subtitle="Currently active"
+        subtitle={t("pages.subcontractorsList.kpiCurrentlyActive")}
         icon={<NetworkIcon className="h-5 w-5" />}
         iconClassName="bg-warning/10 text-warning"
       />
       <KpiStatCard
-        title="Inactive subcontractors"
+        title={t("pages.subcontractorsList.kpiInactiveSubcontractors")}
         value={formatKpiCount(inactiveCount)}
-        subtitle="Not active"
+        subtitle={t("pages.subcontractorsList.kpiNotActive")}
         icon={<UserOffIcon className="h-5 w-5" />}
         iconClassName="bg-purple-100 text-purple-700"
       />

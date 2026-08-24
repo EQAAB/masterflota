@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   getRentalPricing,
   getRentalPricingInsights,
@@ -31,6 +32,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 export function PricingPage() {
+  const { t } = useTranslation();
   const canManage = useCanManageRentals();
   const [filters, setFilters] = useState<PricingFilters>({
     q: "",
@@ -101,7 +103,7 @@ export function PricingPage() {
 
         {pricingQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load pricing. Check your connection and try again.
+            {t("pages.pricing.failedToLoad")}
           </p>
         )}
 

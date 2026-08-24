@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 import { getVehicles, RENTAL_VEHICLE_DROPDOWN_LIMIT } from "../../../api/vehicles";
 import { btnSecondary } from "../../../theme/classNames";
 import type { BookingsDensity } from "./bookingsListUtils";
@@ -29,6 +30,7 @@ export function BookingsToolbar({
   onExport,
   resultCount,
 }: BookingsToolbarProps) {
+  const { t } = useTranslation();
   const vehiclesQuery = useQuery({
     queryKey: ["vehicles", "bookings-filter"],
     queryFn: () => getVehicles({ limit: RENTAL_VEHICLE_DROPDOWN_LIMIT }).then((r) => r.data.data),
@@ -51,13 +53,13 @@ export function BookingsToolbar({
           <input
             type="search"
             className="fm-rental-bookings__search"
-            placeholder="Search booking ID, customer, vehicle…"
+            placeholder={t("pages.bookings.searchPlaceholder")}
             value={filters.q}
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
         <p className="text-xs text-ink-muted lg:shrink-0">
-          {resultCount} booking{resultCount === 1 ? "" : "s"}
+          <Trans i18nKey="pages.bookings.resultCount" count={resultCount} />
         </p>
       </div>
 
@@ -66,14 +68,14 @@ export function BookingsToolbar({
           className="fm-rental-bookings__filter-select"
           value={filters.status}
           onChange={(e) => onChange({ status: e.target.value })}
-          aria-label="Booking status"
+          aria-label={t("pages.bookings.statusAriaLabel")}
         >
-          <option value="">All statuses</option>
-          <option value="draft">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">{t("pages.bookings.allStatuses")}</option>
+          <option value="draft">{t("rentalStatus.booking.pending")}</option>
+          <option value="confirmed">{t("rentalStatus.booking.confirmed")}</option>
+          <option value="active">{t("rentalStatus.booking.active")}</option>
+          <option value="completed">{t("rentalStatus.booking.completed")}</option>
+          <option value="cancelled">{t("rentalStatus.booking.cancelled")}</option>
         </select>
 
         <input
@@ -81,14 +83,14 @@ export function BookingsToolbar({
           className="fm-rental-bookings__filter-select"
           value={filters.from}
           onChange={(e) => onChange({ from: e.target.value })}
-          aria-label="From date"
+          aria-label={t("pages.bookings.fromDateAriaLabel")}
         />
         <input
           type="date"
           className="fm-rental-bookings__filter-select"
           value={filters.to}
           onChange={(e) => onChange({ to: e.target.value })}
-          aria-label="To date"
+          aria-label={t("pages.bookings.toDateAriaLabel")}
         />
 
         {filters.customerId ? (
@@ -97,7 +99,7 @@ export function BookingsToolbar({
             className="fm-rental-bookings__filter-select !border-brand/40 !bg-brand-mint/30 text-brand-dark"
             onClick={() => onChange({ customerId: "" })}
           >
-            Clear customer filter ×
+            {t("pages.bookings.clearCustomerFilter")}
           </button>
         ) : null}
 
@@ -105,9 +107,9 @@ export function BookingsToolbar({
           className="fm-rental-bookings__filter-select min-w-[140px]"
           value={filters.vehicleId}
           onChange={(e) => onChange({ vehicleId: e.target.value })}
-          aria-label="Vehicle"
+          aria-label={t("pages.bookings.vehicleAriaLabel")}
         >
-          <option value="">All vehicles</option>
+          <option value="">{t("pages.bookings.allVehicles")}</option>
           {(vehiclesQuery.data ?? []).map((v) => (
             <option key={v.id} value={v.id}>
               {v.license_plate}
@@ -116,16 +118,16 @@ export function BookingsToolbar({
         </select>
 
         <button type="button" className={btnSecondary} onClick={onExport}>
-          Export
+          {t("common.export")}
         </button>
 
         <button
           type="button"
           className={btnSecondary}
           onClick={() => onDensityChange(density === "comfortable" ? "compact" : "comfortable")}
-          title="Toggle row density"
+          title={t("pages.bookings.toggleDensityTitle")}
         >
-          {density === "comfortable" ? "Compact rows" : "Comfortable rows"}
+          {density === "comfortable" ? t("pages.bookings.compactRows") : t("pages.bookings.comfortableRows")}
         </button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalBooking } from "../../../api/rentals";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { BookingTableRow } from "./BookingTableRow";
@@ -18,6 +19,7 @@ type BookingsTableProps = {
 };
 
 export function BookingsTable({ bookings, loading, density, onRenewNavigate }: BookingsTableProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const canManage = useCanManageRentals();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -100,13 +102,13 @@ export function BookingsTable({ bookings, loading, density, onRenewNavigate }: B
         <table className="w-full min-w-[960px] text-sm">
           <thead>
             <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              <th className="px-4 py-3.5">Booking</th>
-              <th className="px-4 py-3.5">Customer</th>
-              <th className="px-4 py-3.5">Vehicle</th>
-              <th className="px-4 py-3.5">Period</th>
-              <th className="px-4 py-3.5">Total</th>
-              <th className="px-4 py-3.5">Status</th>
-              <th className="px-4 py-3.5 text-right">Actions</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colBooking")}</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colCustomer")}</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colVehicle")}</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colPeriod")}</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colTotal")}</th>
+              <th className="px-4 py-3.5">{t("pages.bookings.colStatus")}</th>
+              <th className="px-4 py-3.5 text-right">{t("pages.bookings.colActions")}</th>
             </tr>
           </thead>
           <tbody>

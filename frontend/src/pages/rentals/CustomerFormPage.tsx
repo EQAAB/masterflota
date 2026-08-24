@@ -149,7 +149,7 @@ export function CustomerFormPage() {
 
       {saveMut.isError && (
         <p className="mt-4 text-sm text-rose-700" role="alert">
-          Could not save customer. Please try again.
+          {t("pages.customerForm.couldNotSave")}
         </p>
       )}
     </div>

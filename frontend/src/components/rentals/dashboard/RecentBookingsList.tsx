@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalDashboardBookingRow } from "../../../api/rentals";
 import { bookingStatusClass, formatBookingStatus } from "../rentalStatus";
 import { RentalDashboardCard } from "./RentalDashboardCard";
@@ -11,8 +12,9 @@ type RecentBookingsListProps = {
 };
 
 export function RecentBookingsList({ bookings = [], loading, className }: RecentBookingsListProps) {
+  const { t } = useTranslation();
   return (
-    <RentalDashboardCard title="Recent bookings" viewAllTo="/rentals/bookings" className={className}>
+    <RentalDashboardCard title={t("pages.rentalDashboard.recentBookingsTitle")} viewAllTo="/rentals/bookings" className={className}>
       {loading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -21,7 +23,7 @@ export function RecentBookingsList({ bookings = [], loading, className }: Recent
         </div>
       )}
       {!loading && bookings.length === 0 && (
-        <p className="py-6 text-center text-sm text-ink-muted">No bookings yet. Create your first rental booking.</p>
+        <p className="py-6 text-center text-sm text-ink-muted">{t("pages.rentalDashboard.noBookingsYet")}</p>
       )}
       {!loading && bookings.length > 0 && (
         <ul className="space-y-1">

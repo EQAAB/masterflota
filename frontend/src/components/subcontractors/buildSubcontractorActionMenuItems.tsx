@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import i18n from "../../i18n";
 import type { ActionMenuItemConfig } from "../theme/ActionMenuDropdown";
 
 function MenuIconWrap({ children, tone }: { children: ReactNode; tone: "brand" | "muted" | "danger" }) {
@@ -58,7 +59,7 @@ export function buildSubcontractorActionMenuItems({
   return [
     {
       id: "view-profile",
-      label: "View profile",
+      label: i18n.t("pages.subcontractorsList.viewProfile"),
       icon: (
         <MenuIconWrap tone="brand">
           <ViewIcon />
@@ -68,7 +69,7 @@ export function buildSubcontractorActionMenuItems({
     },
     {
       id: "edit-subcontractor",
-      label: "Edit subcontractor",
+      label: i18n.t("pages.subcontractorsList.editSubcontractorAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <EditIcon />
@@ -79,7 +80,7 @@ export function buildSubcontractorActionMenuItems({
     },
     {
       id: "suspend-subcontractor",
-      label: "Suspend subcontractor",
+      label: i18n.t("pages.subcontractorsList.suspendSubcontractorAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <SuspendIcon />

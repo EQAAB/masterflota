@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalAvailabilitySummary } from "../../../api/rentals";
 
 type AvailabilityKpiRowProps = {
@@ -6,6 +7,7 @@ type AvailabilityKpiRowProps = {
 };
 
 export function AvailabilityKpiRow({ summary, loading }: AvailabilityKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -19,33 +21,33 @@ export function AvailabilityKpiRow({ summary, loading }: AvailabilityKpiRowProps
   const cards = [
     {
       key: "available",
-      label: "Available vehicles",
+      label: t("pages.availability.kpiAvailableVehicles"),
       value: summary?.available_vehicles ?? 0,
-      trend: "Fleet status: available",
+      trend: t("pages.availability.kpiAvailableVehiclesTrend"),
       variant: "fm-rental-availability__kpi--available",
       iconBg: "bg-emerald-100 text-emerald-700",
     },
     {
       key: "rented",
-      label: "Currently rented",
+      label: t("pages.availability.kpiCurrentlyRented"),
       value: summary?.currently_rented ?? 0,
-      trend: "Active rental bookings",
+      trend: t("pages.availability.kpiCurrentlyRentedTrend"),
       variant: "fm-rental-availability__kpi--rented",
       iconBg: "bg-sky-100 text-sky-800",
     },
     {
       key: "upcoming",
-      label: "Upcoming bookings",
+      label: t("pages.availability.kpiUpcomingBookings"),
       value: summary?.upcoming_bookings ?? 0,
-      trend: "Confirmed in selected range",
+      trend: t("pages.availability.kpiUpcomingBookingsTrend"),
       variant: "fm-rental-availability__kpi--upcoming",
       iconBg: "bg-amber-100 text-amber-800",
     },
     {
       key: "blocked",
-      label: "Blocked days",
+      label: t("pages.availability.kpiBlockedDays"),
       value: summary?.blocked_days ?? 0,
-      trend: "Manual + booking blocks in range",
+      trend: t("pages.availability.kpiBlockedDaysTrend"),
       variant: "fm-rental-availability__kpi--blocked",
       iconBg: "bg-rose-100 text-rose-800",
     },

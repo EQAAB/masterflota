@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { Subcontractor } from "../../api/subcontractors";
 
 function PhoneIcon({ className }: { className?: string }) {
@@ -14,6 +15,7 @@ function PhoneIcon({ className }: { className?: string }) {
 }
 
 export function SubcontractorContactCell({ subcontractor }: { subcontractor: Subcontractor }) {
+  const { t } = useTranslation();
   const phone = subcontractor.phone?.trim();
 
   if (phone) {
@@ -28,7 +30,7 @@ export function SubcontractorContactCell({ subcontractor }: { subcontractor: Sub
   return (
     <div className="flex min-w-0 items-center gap-2 text-sm text-ink-muted">
       <PhoneIcon className="h-4 w-4 shrink-0 opacity-50" />
-      <span className="truncate">No phone available</span>
+      <span className="truncate">{t("pages.subcontractorsList.noPhoneAvailable")}</span>
     </div>
   );
 }

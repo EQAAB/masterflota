@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalDashboard } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { formatTrendDelta } from "./rentalDashboardUtils";
@@ -16,6 +17,7 @@ function KpiSkeleton() {
 }
 
 export function RentalKpiRow({ data, loading }: RentalKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -27,21 +29,23 @@ export function RentalKpiRow({ data, loading }: RentalKpiRowProps) {
   }
 
   const trends = data?.trends;
-  const activeTrend = formatTrendDelta(trends?.active_week_delta ?? 0, "this week");
-  const confirmedTrend = formatTrendDelta(trends?.confirmed_week_delta ?? 0, "this week");
-  const customerTrend = formatTrendDelta(trends?.customers_month_delta ?? 0, "this month");
+  const thisWeek = t("pages.rentalDashboard.thisWeek");
+  const thisMonth = t("pages.rentalDashboard.thisMonth");
+  const activeTrend = formatTrendDelta(trends?.active_week_delta ?? 0, thisWeek);
+  const confirmedTrend = formatTrendDelta(trends?.confirmed_week_delta ?? 0, thisWeek);
+  const customerTrend = formatTrendDelta(trends?.customers_month_delta ?? 0, thisMonth);
   const revenuePct = trends?.revenue_mom_pct;
   const revenueTrendText =
     revenuePct == null
-      ? "No prior month to compare"
+      ? t("pages.rentalDashboard.noPriorMonth")
       : revenuePct === 0
-        ? "Same as last month"
-        : `${revenuePct > 0 ? "+" : ""}${revenuePct}% vs last month`;
+        ? t("pages.rentalDashboard.sameAsLastMonth")
+        : t("pages.rentalDashboard.vsLastMonth", { sign: revenuePct > 0 ? "+" : "", pct: revenuePct });
 
   const cards = [
     {
       key: "active",
-      label: "Active rentals",
+      label: t("pages.rentalDashboard.kpiActiveRentals"),
       value: data?.active_bookings ?? 0,
       trend: activeTrend,
       variant: "fm-rental-dashboard__kpi--active",
@@ -54,11 +58,11 @@ export function RentalKpiRow({ data, loading }: RentalKpiRowProps) {
     },
     {
       key: "confirmed",
-      label: "Confirmed upcoming",
+      label: t("pages.rentalDashboard.kpiConfirmedUpcoming"),
       value: data?.confirmed_bookings ?? 0,
       trend:
         (data?.confirmed_bookings ?? 0) === 0
-          ? { text: "No upcoming bookings", positive: undefined as boolean | undefined }
+          ? { text: t("pages.rentalDashboard.noUpcomingBookings"), positive: undefined as boolean | undefined }
           : confirmedTrend,
       variant: "fm-rental-dashboard__kpi--upcoming",
       iconBg: "bg-amber-100 text-amber-800",
@@ -70,7 +74,7 @@ export function RentalKpiRow({ data, loading }: RentalKpiRowProps) {
     },
     {
       key: "customers",
-      label: "Customers",
+      label: t("pages.rentalDashboard.kpiCustomers"),
       value: data?.active_customers ?? 0,
       trend: customerTrend,
       variant: "fm-rental-dashboard__kpi--customers",
@@ -83,8 +87,8 @@ export function RentalKpiRow({ data, loading }: RentalKpiRowProps) {
     },
     {
       key: "revenue",
-      label: "Revenue (MTD)",
-      value: data ? formatCurrency(Number(data.mtd_revenue)) : "—",
+      label: t("pages.rentalDashboard.kpiRevenueMtd"),
+      value: data ? formatCurrency(Number(data.mtd_revenue)) : t("common.emDash"),
       trend: { text: revenueTrendText, positive: revenuePct != null && revenuePct > 0 },
       variant: "fm-rental-dashboard__kpi--revenue",
       iconBg: "bg-brand-mint text-brand-dark",

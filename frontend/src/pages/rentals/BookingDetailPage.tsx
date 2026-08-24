@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import {
   cancelRentalBooking,
   confirmRentalBooking,
@@ -35,6 +36,7 @@ import { btnPrimary, btnSecondary } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 
 export function BookingDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -100,7 +102,7 @@ export function BookingDetailPage() {
     mutationFn: () => confirmRentalBooking(id!),
     onSuccess: invalidate,
     onError: (err: unknown) => {
-      setActionError(extractError(err) ?? "Failed to confirm booking");
+      setActionError(extractError(err) ?? t("pages.bookingDetail.confirmFailedDefault"));
     },
   });
   const cancelMut = useMutation({
@@ -109,12 +111,12 @@ export function BookingDetailPage() {
       invalidate();
       navigate("/rentals/bookings");
     },
-    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to cancel"),
+    onError: (err: unknown) => setActionError(extractError(err) ?? t("pages.bookingDetail.cancelFailedDefault")),
   });
   const pickupMut = useMutation({
     mutationFn: () => pickupRentalBooking(id!, mileageOut ? Number(mileageOut) : undefined),
     onSuccess: invalidate,
-    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to record pickup"),
+    onError: (err: unknown) => setActionError(extractError(err) ?? t("pages.bookingDetail.pickupFailedDefault")),
   });
   const returnMut = useMutation({
     mutationFn: () =>
@@ -124,7 +126,7 @@ export function BookingDetailPage() {
         damageReported: !!damageNotes,
       }),
     onSuccess: invalidate,
-    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to return vehicle"),
+    onError: (err: unknown) => setActionError(extractError(err) ?? t("pages.bookingDetail.returnFailedDefault")),
   });
   const payMut = useMutation({
     mutationFn: () =>
@@ -138,7 +140,7 @@ export function BookingDetailPage() {
       setPayAmount("");
       invalidate();
     },
-    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to record payment"),
+    onError: (err: unknown) => setActionError(extractError(err) ?? t("pages.bookingDetail.paymentFailedDefault")),
   });
   const renewMut = useMutation({
     mutationFn: () =>
@@ -151,11 +153,11 @@ export function BookingDetailPage() {
       setActionError(null);
       invalidate();
     },
-    onError: (err: unknown) => setActionError(extractError(err) ?? "Failed to renew booking"),
+    onError: (err: unknown) => setActionError(extractError(err) ?? t("pages.bookingDetail.renewFailedDefault")),
   });
 
-  if (bookingQuery.isLoading) return <p className="p-8">Loading…</p>;
-  if (!b) return <p className="p-8 text-rose-700">Booking not found.</p>;
+  if (bookingQuery.isLoading) return <p className="p-8">{t("common.loading")}</p>;
+  if (!b) return <p className="p-8 text-rose-700">{t("pages.bookingDetail.notFound")}</p>;
 
   const showRenew =
     canManage && b.rental_type === "weekly" && (b.status === "active" || b.status === "confirmed");
@@ -166,7 +168,7 @@ export function BookingDetailPage() {
         title={b.booking_number}
         subtitle={`${b.customer_name} · ${b.license_plate}`}
         backTo="/rentals/bookings"
-        backLabel="Bookings"
+        backLabel={t("nav.bookings")}
       />
 
       {actionError && (
@@ -176,7 +178,7 @@ export function BookingDetailPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold text-ink">Details</h2>
+            <h2 className="font-semibold text-ink">{t("pages.bookingDetail.detailsTitle")}</h2>
             <span
               className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${bookingStatusClass(b.status)}`}
             >
@@ -185,32 +187,32 @@ export function BookingDetailPage() {
           </div>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">Period</dt>
+              <dt className="text-slate-500">{t("pages.bookingDetail.periodLabel")}</dt>
               <dd>
                 {b.start_at.slice(0, 16)} – {b.end_at.slice(0, 16)}
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Type</dt>
+              <dt className="text-slate-500">{t("pages.bookingDetail.typeLabel")}</dt>
               <dd className="capitalize">{b.rental_type}</dd>
             </div>
             <div className="flex justify-between font-semibold">
-              <dt>Total</dt>
+              <dt>{t("pages.bookingDetail.totalLabel")}</dt>
               <dd className="tabular-nums">{formatCurrency(Number(b.total_amount))}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Deposit</dt>
+              <dt className="text-slate-500">{t("pages.bookingDetail.depositLabel")}</dt>
               <dd className="tabular-nums">{formatCurrency(Number(b.deposit_amount))}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Rent payment</dt>
+              <dt className="text-slate-500">{t("pages.bookingDetail.rentPaymentLabel")}</dt>
               <dd className={`font-medium ${rentPaymentStateClass(paymentSummary.rentState)}`}>
                 {rentPaymentStateLabel(paymentSummary.rentState)}
               </dd>
             </div>
             {paymentSummary.latestPaidAt && (
               <div className="flex justify-between">
-                <dt className="text-slate-500">Last payment</dt>
+                <dt className="text-slate-500">{t("pages.bookingDetail.lastPaymentLabel")}</dt>
                 <dd>
                   {paymentSummary.latestPaidAt.date}
                   {paymentSummary.latestPaidAt.time ? ` · ${paymentSummary.latestPaidAt.time}` : ""}
@@ -222,17 +224,17 @@ export function BookingDetailPage() {
             {canManage && b.status === "draft" && (
               <>
                 <button type="button" className={btnPrimary} disabled={confirmMut.isPending} onClick={() => confirmMut.mutate()}>
-                  Confirm
+                  {t("pages.bookingDetail.confirm")}
                 </button>
                 <Link to={`/rentals/bookings/${id}/edit`} className={btnSecondary}>
-                  Edit
+                  {t("common.edit")}
                 </Link>
               </>
             )}
             {canManage && b.status === "confirmed" && (
               <div className="flex flex-wrap items-end gap-2">
                 <label className="text-xs text-slate-500">
-                  Mileage out
+                  {t("pages.bookingDetail.mileageOut")}
                   <input
                     type="number"
                     className="mt-1 block rounded-lg border border-slate-200 px-2 py-1 text-sm"
@@ -241,14 +243,14 @@ export function BookingDetailPage() {
                   />
                 </label>
                 <button type="button" className={btnPrimary} disabled={pickupMut.isPending} onClick={() => pickupMut.mutate()}>
-                  Pickup
+                  {t("pages.bookingDetail.pickup")}
                 </button>
               </div>
             )}
             {canManage && b.status === "active" && (
               <div className="w-full space-y-2">
                 <label className="block text-xs text-slate-500">
-                  Mileage in
+                  {t("pages.bookingDetail.mileageIn")}
                   <input
                     type="number"
                     className="mt-1 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm"
@@ -257,19 +259,19 @@ export function BookingDetailPage() {
                   />
                 </label>
                 <textarea
-                  placeholder="Damage notes (optional)"
+                  placeholder={t("pages.bookingDetail.damageNotesPlaceholder")}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
                   value={damageNotes}
                   onChange={(e) => setDamageNotes(e.target.value)}
                 />
                 <button type="button" className={btnPrimary} disabled={returnMut.isPending} onClick={() => returnMut.mutate()}>
-                  Return vehicle
+                  {t("pages.bookingDetail.returnVehicle")}
                 </button>
               </div>
             )}
             {canManage && (b.status === "draft" || b.status === "confirmed") && (
               <button type="button" className={btnSecondary} disabled={cancelMut.isPending} onClick={() => cancelMut.mutate()}>
-                Cancel booking
+                {t("pages.bookings.cancelBookingAction")}
               </button>
             )}
           </div>
@@ -278,12 +280,12 @@ export function BookingDetailPage() {
         <div className="space-y-6">
           {showRenew && (
             <article className="rounded-2xl border border-brand/20 bg-brand-mint/10 p-5 shadow-sm">
-              <h2 className="font-semibold text-ink">Renew 1 week</h2>
+              <h2 className="font-semibold text-ink">{t("pages.bookings.renew1WeekAction")}</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Extends rental to <strong>{nextEndDate}</strong> and records weekly payment.
+                <Trans i18nKey="pages.bookingDetail.extendsRentalTo" values={{ date: nextEndDate }} components={{ b: <strong /> }} />
               </p>
               <label className="mt-4 block text-sm">
-                <span className="font-medium text-ink">Payment amount</span>
+                <span className="font-medium text-ink">{t("pages.bookingDetail.paymentAmount")}</span>
                 <input
                   type="number"
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
@@ -292,7 +294,7 @@ export function BookingDetailPage() {
                 />
               </label>
               <label className="mt-3 block text-sm">
-                <span className="font-medium text-ink">Payment method</span>
+                <span className="font-medium text-ink">{t("pages.bookingDetail.paymentMethod")}</span>
                 <select
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
                   value={renewMethod}
@@ -310,18 +312,18 @@ export function BookingDetailPage() {
                 className={`${btnPrimary} mt-4`}
                 disabled={renewMut.isPending || b.status !== "active"}
                 onClick={() => renewMut.mutate()}
-                title={b.status !== "active" ? "Pickup required before renew" : undefined}
+                title={b.status !== "active" ? t("pages.bookingDetail.pickupRequiredTitle") : undefined}
               >
-                {renewMut.isPending ? "Renewing…" : "Renew & record payment"}
+                {renewMut.isPending ? t("pages.bookingDetail.renewing") : t("pages.bookingDetail.renewAndRecordPayment")}
               </button>
               {b.status !== "active" && (
-                <p className="mt-2 text-xs text-slate-500">Complete pickup before renewing.</p>
+                <p className="mt-2 text-xs text-slate-500">{t("pages.bookingDetail.completePickupHint")}</p>
               )}
             </article>
           )}
 
           <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-ink">Payments</h2>
+            <h2 className="font-semibold text-ink">{t("pages.bookingDetail.paymentsTitle")}</h2>
             <ul className="mt-3 space-y-2 text-sm">
               {(b.payments ?? []).map((p) => {
                 const dt = formatPaymentDateTime(p.paid_at ?? p.created_at);
@@ -347,7 +349,7 @@ export function BookingDetailPage() {
                   </li>
                 );
               })}
-              {(b.payments ?? []).length === 0 && <li className="text-slate-500">No payments recorded.</li>}
+              {(b.payments ?? []).length === 0 && <li className="text-slate-500">{t("pages.bookingDetail.noPaymentsRecorded")}</li>}
             </ul>
             {canManage && (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -356,15 +358,15 @@ export function BookingDetailPage() {
                   value={payType}
                   onChange={(e) => setPayType(e.target.value as RentalPayment["payment_type"])}
                 >
-                  <option value="rent">Rent</option>
-                  <option value="deposit">Deposit</option>
-                  <option value="deposit_refund">Deposit refund</option>
-                  <option value="extra">Extra</option>
-                  <option value="damage">Damage</option>
+                  <option value="rent">{t("rentalStatus.paymentType.rent")}</option>
+                  <option value="deposit">{t("rentalStatus.paymentType.deposit")}</option>
+                  <option value="deposit_refund">{t("rentalStatus.paymentType.deposit_refund")}</option>
+                  <option value="extra">{t("rentalStatus.paymentType.extra")}</option>
+                  <option value="damage">{t("rentalStatus.paymentType.damage")}</option>
                 </select>
                 <input
                   type="number"
-                  placeholder="Amount"
+                  placeholder={t("pages.bookingDetail.amountPlaceholder")}
                   className="min-w-[120px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
@@ -386,7 +388,7 @@ export function BookingDetailPage() {
                   disabled={payMut.isPending || !payAmount}
                   onClick={() => payMut.mutate()}
                 >
-                  Record payment
+                  {t("pages.bookingDetail.recordPayment")}
                 </button>
               </div>
             )}
@@ -403,7 +405,7 @@ export function BookingDetailPage() {
                 }
               }}
             >
-              {contractLoading ? "Downloading…" : "Download contract"}
+              {contractLoading ? t("pages.bookingDetail.downloading") : t("pages.bookingDetail.downloadContract")}
             </button>
           </article>
         </div>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import type { RentalDashboardCustomerRow } from "../../../api/rentals";
 import { RentalDashboardCard } from "./RentalDashboardCard";
 import { initialsFromName } from "./rentalDashboardUtils";
@@ -10,8 +11,9 @@ type RecentCustomersListProps = {
 };
 
 export function RecentCustomersList({ customers = [], loading, className }: RecentCustomersListProps) {
+  const { t } = useTranslation();
   return (
-    <RentalDashboardCard title="Recent customers" viewAllTo="/rentals/customers" className={className}>
+    <RentalDashboardCard title={t("pages.rentalDashboard.recentCustomersTitle")} viewAllTo="/rentals/customers" className={className}>
       {loading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -20,7 +22,7 @@ export function RecentCustomersList({ customers = [], loading, className }: Rece
         </div>
       )}
       {!loading && customers.length === 0 && (
-        <p className="py-6 text-center text-sm text-ink-muted">No customers yet.</p>
+        <p className="py-6 text-center text-sm text-ink-muted">{t("pages.rentalDashboard.noCustomersYet")}</p>
       )}
       {!loading && customers.length > 0 && (
         <ul className="space-y-1">
@@ -34,13 +36,17 @@ export function RecentCustomersList({ customers = [], loading, className }: Rece
                   <span className="block truncate text-sm font-medium text-ink group-hover:text-brand">
                     {c.legal_name}
                   </span>
-                  <span className="block text-xs capitalize text-ink-muted">
-                    {c.customer_type} · {c.booking_count} booking{c.booking_count === 1 ? "" : "s"}
+                  <span className="block text-xs text-ink-muted">
+                    {t(`rentalStatus.customerType.${c.customer_type}`, { defaultValue: c.customer_type })} ·{" "}
+                    <Trans
+                      i18nKey="pages.rentalDashboard.bookingCount"
+                      count={c.booking_count}
+                    />
                   </span>
                 </span>
                 {c.has_active_booking && (
                   <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 ring-1 ring-sky-200/60">
-                    Active rental
+                    {t("rentalStatus.customer.activeRental")}
                   </span>
                 )}
               </Link>
