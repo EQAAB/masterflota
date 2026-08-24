@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalPricing } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import {
@@ -32,6 +33,7 @@ export function PricingTableRow({
   onActionMenuToggle,
   isMenuOpen,
 }: PricingTableRowProps) {
+  const { t } = useTranslation();
   const status = derivePricingStatus(row);
   const daily = Number(row.daily_rate);
   const weekly = Number(row.weekly_rate);
@@ -55,28 +57,28 @@ export function PricingTableRow({
               {row.license_plate ? (
                 <span className="fm-rental-pricing__plate-badge">{row.license_plate}</span>
               ) : (
-                <span className="text-xs font-medium text-slate-500">Default rule</span>
+                <span className="text-xs font-medium text-slate-500">{t("pages.pricing.defaultRule")}</span>
               )}
               <p className="mt-1 font-medium text-ink">{vehicleDisplayName(row)}</p>
-              <p className="text-xs capitalize text-slate-500">{vehicleMeta(row) || "—"}</p>
+              <p className="text-xs capitalize text-slate-500">{vehicleMeta(row) || t("common.emDash")}</p>
             </div>
           </div>
         </td>
         <td>
           <p className="font-bold tabular-nums text-ink">{formatCurrency(daily)}</p>
-          <p className="fm-rental-pricing__rate-sublabel">Per day</p>
+          <p className="fm-rental-pricing__rate-sublabel">{t("pages.pricing.perDay")}</p>
         </td>
         <td>
           <p className="font-bold tabular-nums text-ink">{formatCurrency(weekly)}</p>
           {savings != null ? (
-            <p className="text-xs font-medium text-emerald-700">Save {savings}%</p>
+            <p className="text-xs font-medium text-emerald-700">{t("pages.pricing.savePct", { pct: savings })}</p>
           ) : (
-            <p className="fm-rental-pricing__rate-sublabel">Per week</p>
+            <p className="fm-rental-pricing__rate-sublabel">{t("pages.pricing.perWeek")}</p>
           )}
         </td>
         <td>
           <p className="font-bold tabular-nums text-ink">{formatCurrency(Number(row.monthly_rate))}</p>
-          <p className="fm-rental-pricing__rate-sublabel">Long-term rental</p>
+          <p className="fm-rental-pricing__rate-sublabel">{t("pages.pricing.longTermRental")}</p>
         </td>
         <td>
           <p className="font-semibold tabular-nums text-ink">{formatCurrency(deposit)}</p>
@@ -101,7 +103,7 @@ export function PricingTableRow({
             <button
               type="button"
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
-              aria-label="Actions"
+              aria-label={t("pages.pricing.rowActionsAriaLabel")}
               aria-expanded={isMenuOpen}
               onClick={(e) => onActionMenuToggle(row.id, e.currentTarget)}
             >

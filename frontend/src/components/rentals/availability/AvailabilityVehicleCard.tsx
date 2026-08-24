@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type {
   RentalAvailabilityBlock,
   RentalAvailabilityBooking,
@@ -40,6 +41,7 @@ export function AvailabilityVehicleCard({
   onViewCalendar,
   onQuickWeekly,
 }: AvailabilityVehicleCardProps) {
+  const { t } = useTranslation();
   const segments = buildDaySegments(vehicle, bookings, blocks, from, to);
   const displayStatus = deriveVehicleDisplayStatus(vehicle, segments, bookings);
   const counts = countSegmentStates(segments);
@@ -66,13 +68,13 @@ export function AvailabilityVehicleCard({
               {vehicleAvailabilityStatusLabel(displayStatus)}
             </span>
             {vehicle.driver_assigned ? (
-              <p className="mt-1 text-xs text-amber-700">Driver assigned — check conflicts</p>
+              <p className="mt-1 text-xs text-amber-700">{t("pages.availability.driverAssignedWarning")}</p>
             ) : null}
           </div>
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Availability</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("pages.availability.availabilityLabel")}</p>
           <AvailabilityMiniTimeline segments={segments} />
           <p className="mt-2 text-xs text-slate-600">{summarizePeriodText(segments)}</p>
         </div>
@@ -80,9 +82,9 @@ export function AvailabilityVehicleCard({
         <div className="flex shrink-0 flex-col items-start gap-3 lg:w-[140px] lg:items-end">
           <div className="text-left lg:text-right">
             <p className="text-2xl font-bold tabular-nums text-ink">{pct}%</p>
-            <p className="text-xs text-slate-500">Available</p>
+            <p className="text-xs text-slate-500">{t("pages.availability.availablePct")}</p>
             <p className="mt-1 text-xs text-slate-600">
-              {counts.booked} booked · {counts.blocked} blocked
+              {t("pages.availability.bookedBlockedCount", { booked: counts.booked, blocked: counts.blocked })}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -91,7 +93,7 @@ export function AvailabilityVehicleCard({
               className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50 hover:text-ink"
               onClick={() => onViewCalendar(vehicle.id)}
             >
-              Calendar
+              {t("pages.availability.calendarView")}
             </button>
             {canManage ? (
               <>
@@ -100,14 +102,14 @@ export function AvailabilityVehicleCard({
                   className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-brand-mint/30"
                   onClick={() => onQuickWeekly?.(vehicle.id)}
                 >
-                  Book
+                  {t("pages.availability.bookButton")}
                 </button>
                 <button
                   type="button"
                   className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"
                   onClick={() => onBlockDates(vehicle.id)}
                 >
-                  Block
+                  {t("pages.availability.blockButton")}
                 </button>
               </>
             ) : null}
@@ -115,7 +117,7 @@ export function AvailabilityVehicleCard({
               to={`/vehicles/${vehicle.id}`}
               className="rounded-lg border border-border/80 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-muted shadow-sm hover:bg-slate-50"
             >
-              Vehicle
+              {t("pages.availability.vehicleLinkLabel")}
             </Link>
           </div>
         </div>

@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type {
   RentalAvailabilityBooking,
   RentalAvailabilityVehicle,
 } from "../../../api/rentals";
 import { formatShortDateRange } from "../dashboard/rentalDashboardUtils";
+import i18n from "../../../i18n";
 
 type AvailabilitySidePanelProps = {
   bookings: RentalAvailabilityBooking[];
@@ -13,10 +15,12 @@ type AvailabilitySidePanelProps = {
 
 function formatSoon(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const locale = i18n.language?.startsWith("ro") ? "ro-RO" : undefined;
+  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
 }
 
 export function AvailabilitySidePanel({ bookings, vehicles, className = "" }: AvailabilitySidePanelProps) {
+  const { t } = useTranslation();
   const now = Date.now();
   const in7d = now + 7 * 24 * 60 * 60 * 1000;
 
@@ -47,9 +51,9 @@ export function AvailabilitySidePanel({ bookings, vehicles, className = "" }: Av
   return (
     <aside className={`fm-rental-availability__side-panel ${className}`}>
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Upcoming pickups</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t("pages.rentalCalendar.upcomingPickupsTitle")}</h3>
         {pickups.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">None in the next 7 days</p>
+          <p className="mt-2 text-sm text-slate-500">{t("pages.rentalCalendar.noneInNext7Days")}</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {pickups.map((b) => (
@@ -67,9 +71,9 @@ export function AvailabilitySidePanel({ bookings, vehicles, className = "" }: Av
       </section>
 
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Upcoming returns</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t("pages.availability.upcomingReturnsTitle")}</h3>
         {returns.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">None in the next 7 days</p>
+          <p className="mt-2 text-sm text-slate-500">{t("pages.rentalCalendar.noneInNext7Days")}</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {returns.map((b) => (
@@ -87,9 +91,9 @@ export function AvailabilitySidePanel({ bookings, vehicles, className = "" }: Av
       </section>
 
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">In maintenance</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t("pages.availability.inMaintenanceTitle")}</h3>
         {maintenance.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">No vehicles in maintenance</p>
+          <p className="mt-2 text-sm text-slate-500">{t("pages.availability.noVehiclesInMaintenance")}</p>
         ) : (
           <ul className="mt-2 space-y-2">
             {maintenance.map((v) => (
@@ -108,12 +112,12 @@ export function AvailabilitySidePanel({ bookings, vehicles, className = "" }: Av
 
       {alerts.length > 0 && (
         <section>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-800">Availability alerts</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-800">{t("pages.availability.availabilityAlertsTitle")}</h3>
           <ul className="mt-2 space-y-2">
             {alerts.map((v) => (
               <li key={v.id} className="rounded-xl border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-sm">
                 <p className="font-medium text-amber-900">{v.license_plate}</p>
-                <p className="text-xs text-amber-800">Driver assigned — external rental may conflict</p>
+                <p className="text-xs text-amber-800">{t("pages.availability.driverAssignedConflict")}</p>
               </li>
             ))}
           </ul>

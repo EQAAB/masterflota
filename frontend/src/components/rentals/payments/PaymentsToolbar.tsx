@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import type { PaymentsFilters } from "./paymentsListUtils";
 import { formatCurrency } from "../../../utils/currency";
 import { btnSecondary } from "../../../theme/classNames";
@@ -23,6 +24,7 @@ export function PaymentsToolbar({
   summaryLoading,
   onTodayPreset,
 }: PaymentsToolbarProps) {
+  const { t } = useTranslation();
   const truncated = filteredCount > visibleCount;
 
   return (
@@ -42,13 +44,13 @@ export function PaymentsToolbar({
           <input
             type="search"
             className="fm-rental-payments__search"
-            placeholder="Search booking, customer, invoice…"
+            placeholder={t("pages.payments.searchPlaceholder")}
             value={filters.q}
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
         <button type="button" className={`${btnSecondary} !text-xs`} onClick={onTodayPreset}>
-          Today
+          {t("pages.payments.today")}
         </button>
       </div>
 
@@ -57,13 +59,13 @@ export function PaymentsToolbar({
           className="fm-rental-payments__filter-select"
           value={filters.status}
           onChange={(e) => onChange({ status: e.target.value })}
-          aria-label="Payment status"
+          aria-label={t("pages.payments.statusAriaLabel")}
         >
-          <option value="">All statuses</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
-          <option value="failed">Failed</option>
-          <option value="refunded">Refunded</option>
+          <option value="">{t("pages.payments.allStatuses")}</option>
+          <option value="paid">{t("rentalStatus.payment.paid")}</option>
+          <option value="pending">{t("rentalStatus.payment.pending")}</option>
+          <option value="failed">{t("rentalStatus.payment.failed")}</option>
+          <option value="refunded">{t("rentalStatus.payment.refunded")}</option>
         </select>
 
         <input
@@ -71,37 +73,37 @@ export function PaymentsToolbar({
           className="fm-rental-payments__filter-select"
           value={filters.from}
           onChange={(e) => onChange({ from: e.target.value })}
-          aria-label="From date"
+          aria-label={t("pages.bookings.fromDateAriaLabel")}
         />
         <input
           type="date"
           className="fm-rental-payments__filter-select"
           value={filters.to}
           onChange={(e) => onChange({ to: e.target.value })}
-          aria-label="To date"
+          aria-label={t("pages.bookings.toDateAriaLabel")}
         />
 
         <select
           className="fm-rental-payments__filter-select"
           value={filters.paymentType}
           onChange={(e) => onChange({ paymentType: e.target.value })}
-          aria-label="Payment type"
+          aria-label={t("pages.payments.paymentTypeAriaLabel")}
         >
-          <option value="">All types</option>
-          <option value="rent">Rent</option>
-          <option value="deposit">Deposit</option>
-          <option value="deposit_refund">Refund</option>
-          <option value="extra">Extra / fee</option>
-          <option value="damage">Damage</option>
+          <option value="">{t("pages.payments.allTypes")}</option>
+          <option value="rent">{t("rentalStatus.paymentType.rent")}</option>
+          <option value="deposit">{t("rentalStatus.paymentType.deposit")}</option>
+          <option value="deposit_refund">{t("rentalStatus.paymentType.deposit_refund")}</option>
+          <option value="extra">{t("rentalStatus.paymentType.extra")}</option>
+          <option value="damage">{t("rentalStatus.paymentType.damage")}</option>
         </select>
 
         <select
           className="fm-rental-payments__filter-select min-w-[140px]"
           value={filters.customerId}
           onChange={(e) => onChange({ customerId: e.target.value })}
-          aria-label="Customer"
+          aria-label={t("pages.payments.customerAriaLabel")}
         >
-          <option value="">All customers</option>
+          <option value="">{t("pages.payments.allCustomers")}</option>
           {customers.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -113,26 +115,26 @@ export function PaymentsToolbar({
           className="fm-rental-payments__filter-select"
           value={filters.sort}
           onChange={(e) => onChange({ sort: e.target.value as PaymentsFilters["sort"] })}
-          aria-label="Sort"
+          aria-label={t("pages.availability.sortAriaLabel")}
         >
-          <option value="date">Sort: Date</option>
-          <option value="amount">Sort: Amount</option>
-          <option value="customer">Sort: Customer</option>
+          <option value="date">{t("pages.payments.sortDate")}</option>
+          <option value="amount">{t("pages.payments.sortAmount")}</option>
+          <option value="customer">{t("pages.payments.sortCustomer")}</option>
         </select>
       </div>
 
       <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-sm">
         {summaryLoading ? (
-          <p className="text-slate-500">Calculating totals…</p>
+          <p className="text-slate-500">{t("pages.payments.calculatingTotals")}</p>
         ) : (
           <>
             <p className="font-semibold text-ink">
-              {filteredCount} payment{filteredCount === 1 ? "" : "s"} · Total{" "}
-              {formatCurrency(filteredTotal)}
+              <Trans i18nKey="pages.payments.paymentCount" count={filteredCount} /> ·{" "}
+              {t("pages.payments.totalLabel", { amount: formatCurrency(filteredTotal) })}
             </p>
             {truncated && (
               <p className="mt-1 text-xs text-slate-600">
-                Showing {visibleCount} of {filteredCount} — export CSV for the visible list
+                {t("pages.payments.showingOfExport", { visible: visibleCount, total: filteredCount })}
               </p>
             )}
           </>

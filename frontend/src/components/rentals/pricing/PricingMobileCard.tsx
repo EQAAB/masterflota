@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalPricing } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { pricingStatusClass, pricingStatusLabel } from "../rentalStatus";
@@ -23,6 +24,7 @@ export function PricingMobileCard({
   onActionMenuToggle,
   isMenuOpen,
 }: PricingMobileCardProps) {
+  const { t } = useTranslation();
   const status = derivePricingStatus(row);
   const savings = weeklySavingsPct(Number(row.daily_rate), Number(row.weekly_rate));
 
@@ -40,7 +42,7 @@ export function PricingMobileCard({
           <button
             type="button"
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-            aria-label="Actions"
+            aria-label={t("pages.pricing.rowActionsAriaLabel")}
             aria-expanded={isMenuOpen}
             onClick={(e) => {
               e.stopPropagation();
@@ -60,11 +62,11 @@ export function PricingMobileCard({
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <div>
-          <dt className="text-xs text-slate-500">Daily</dt>
+          <dt className="text-xs text-slate-500">{t("pages.pricing.daily")}</dt>
           <dd className="font-bold">{formatCurrency(Number(row.daily_rate))}</dd>
         </div>
         <div>
-          <dt className="text-xs text-slate-500">Weekly</dt>
+          <dt className="text-xs text-slate-500">{t("pages.pricing.weekly")}</dt>
           <dd className="font-bold">
             {formatCurrency(Number(row.weekly_rate))}
             {savings != null ? <span className="ml-1 text-xs text-emerald-700">-{savings}%</span> : null}

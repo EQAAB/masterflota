@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalPricingSummary } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -7,6 +8,7 @@ type PricingKpiRowProps = {
 };
 
 export function PricingKpiRow({ summary, loading }: PricingKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -20,15 +22,15 @@ export function PricingKpiRow({ summary, loading }: PricingKpiRowProps) {
   const trend = summary?.daily_rate_trend_pct;
   const trendText =
     trend == null
-      ? "Across active rules"
+      ? t("pages.pricing.acrossActiveRules")
       : trend === 0
-        ? "Same as last month"
-        : `${trend > 0 ? "+" : ""}${trend}% from last month`;
+        ? t("pages.pricing.sameAsLastMonth")
+        : t("pages.pricing.vsLastMonth", { sign: trend > 0 ? "+" : "", pct: trend });
 
   const cards = [
     {
       key: "daily",
-      label: "Average daily rate",
+      label: t("pages.pricing.avgDailyRate"),
       value: formatCurrency(Number(summary?.avg_daily_rate ?? 0)),
       trend: trendText,
       variant: "fm-rental-pricing__kpi--daily",
@@ -36,25 +38,25 @@ export function PricingKpiRow({ summary, loading }: PricingKpiRowProps) {
     },
     {
       key: "weekly",
-      label: "Average weekly rate",
+      label: t("pages.pricing.avgWeeklyRate"),
       value: formatCurrency(Number(summary?.avg_weekly_rate ?? 0)),
-      trend: `${summary?.pricing_rules_active ?? 0} active rules`,
+      trend: t("pages.pricing.activeRulesCount", { count: summary?.pricing_rules_active ?? 0 }),
       variant: "fm-rental-pricing__kpi--weekly",
       iconBg: "bg-sky-100 text-sky-800",
     },
     {
       key: "revenue",
-      label: "Monthly revenue estimate",
+      label: t("pages.pricing.monthlyRevenueEstimate"),
       value: formatCurrency(Number(summary?.monthly_revenue_estimate ?? 0)),
-      trend: "Sum of monthly rates (vehicle rules)",
+      trend: t("pages.pricing.sumOfMonthlyRates"),
       variant: "fm-rental-pricing__kpi--revenue",
       iconBg: "bg-violet-100 text-violet-800",
     },
     {
       key: "custom",
-      label: "Vehicles with custom pricing",
+      label: t("pages.pricing.vehiclesWithCustomPricing"),
       value: summary?.vehicles_with_custom_pricing ?? 0,
-      trend: "Per-vehicle rate cards",
+      trend: t("pages.pricing.perVehicleRateCards"),
       variant: "fm-rental-pricing__kpi--custom",
       iconBg: "bg-amber-100 text-amber-800",
     },

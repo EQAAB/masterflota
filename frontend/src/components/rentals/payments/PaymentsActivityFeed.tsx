@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentsActivityItem } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { formatPaymentDateTime } from "./paymentsListUtils";
@@ -9,6 +10,7 @@ type PaymentsActivityFeedProps = {
 };
 
 export function PaymentsActivityFeed({ items, loading }: PaymentsActivityFeedProps) {
+  const { t } = useTranslation();
   if (loading) {
     return <div className="fm-rental-payments__skeleton fm-rental-payments__activity-card mb-6 h-32" />;
   }
@@ -18,7 +20,7 @@ export function PaymentsActivityFeed({ items, loading }: PaymentsActivityFeedPro
   return (
     <section className="fm-rental-payments__activity-card">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
-        Recent payment activity
+        {t("pages.payments.recentActivityTitle")}
       </h2>
       <ul className="space-y-1">
         {items.map((item) => {
@@ -48,7 +50,7 @@ export function PaymentsActivityFeed({ items, loading }: PaymentsActivityFeedPro
         })}
       </ul>
       <Link to="/rentals/bookings" className="mt-3 inline-block text-xs font-medium text-brand hover:underline">
-        View all bookings →
+        {t("pages.payments.viewAllBookings")}
       </Link>
     </section>
   );

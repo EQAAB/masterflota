@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentsSummary } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -7,6 +8,7 @@ type PaymentsKpiRowProps = {
 };
 
 export function PaymentsKpiRow({ summary, loading }: PaymentsKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -20,39 +22,39 @@ export function PaymentsKpiRow({ summary, loading }: PaymentsKpiRowProps) {
   const trend = summary?.revenue_trend_pct;
   const mtdTrend =
     trend == null
-      ? "Paid rent this month"
+      ? t("pages.payments.paidRentThisMonth")
       : trend === 0
-        ? "Same as last month"
-        : `${trend > 0 ? "+" : ""}${trend}% this month`;
+        ? t("pages.payments.sameAsLastMonth")
+        : t("pages.payments.vsLastMonthShort", { sign: trend > 0 ? "+" : "", pct: trend });
 
   const cards = [
     {
       key: "total",
-      label: "Total revenue",
+      label: t("pages.payments.kpiTotalRevenue"),
       value: formatCurrency(Number(summary?.total_revenue ?? 0)),
-      trend: "All paid transactions",
+      trend: t("pages.payments.kpiTotalRevenueTrend"),
       variant: "fm-rental-payments__kpi--total",
       iconBg: "bg-brand-mint text-brand-dark",
     },
     {
       key: "paid",
-      label: "Paid payments",
+      label: t("pages.payments.kpiPaidPayments"),
       value: summary?.paid_count ?? 0,
-      trend: "Completed successfully",
+      trend: t("pages.payments.kpiPaidPaymentsTrend"),
       variant: "fm-rental-payments__kpi--paid",
       iconBg: "bg-emerald-100 text-emerald-700",
     },
     {
       key: "pending",
-      label: "Pending payments",
+      label: t("pages.payments.kpiPendingPayments"),
       value: summary?.pending_count ?? 0,
-      trend: "Awaiting collection",
+      trend: t("pages.payments.kpiPendingPaymentsTrend"),
       variant: "fm-rental-payments__kpi--pending",
       iconBg: "bg-amber-100 text-amber-800",
     },
     {
       key: "mtd",
-      label: "This month revenue",
+      label: t("pages.payments.kpiMonthRevenue"),
       value: formatCurrency(Number(summary?.mtd_revenue ?? 0)),
       trend: mtdTrend,
       variant: "fm-rental-payments__kpi--mtd",

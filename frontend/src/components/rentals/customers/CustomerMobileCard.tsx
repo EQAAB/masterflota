@@ -1,6 +1,7 @@
 import type { RentalCustomer } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
 import {
   customerStatusBadgeClass,
@@ -29,6 +30,7 @@ export function CustomerMobileCard({
   onActionMenuToggle,
   isMenuOpen,
 }: CustomerMobileCardProps) {
+  const { t } = useTranslation();
   const active = c.active_bookings ?? 0;
   const since = formatCustomerSince(c.created_at);
   const vehicleLabel = formatCustomerVehicleLabel(c);
@@ -46,13 +48,13 @@ export function CustomerMobileCard({
           </span>
           <div className="min-w-0">
             <p className="truncate font-semibold text-ink">{c.legal_name}</p>
-            {since ? <p className="text-xs text-slate-500">Since {since}</p> : null}
+            {since ? <p className="text-xs text-slate-500">{t("pages.customers.since", { date: since })}</p> : null}
           </div>
         </div>
         <button
           type="button"
           className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-          aria-label="Actions"
+          aria-label={t("pages.customers.rowActionsAriaLabel")}
           aria-expanded={isMenuOpen}
           onClick={(e) => {
             e.stopPropagation();
@@ -69,7 +71,7 @@ export function CustomerMobileCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={customerTypeBadgeClass(c.customer_type)}>
-          {c.customer_type === "company" ? "Company" : "Individual"}
+          {c.customer_type === "company" ? t("pages.customers.typeCompany") : t("pages.customers.typeIndividual")}
         </span>
         <span className={customerStatusBadgeClass(c.is_active, active)}>
           {customerStatusLabel(c.is_active, active)}
@@ -95,15 +97,15 @@ export function CustomerMobileCard({
 
       <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
         <div>
-          <dt className="text-xs text-slate-500">Active bookings</dt>
+          <dt className="text-xs text-slate-500">{t("pages.customers.colActiveBookings")}</dt>
           <dd className="font-semibold tabular-nums">{active}</dd>
         </div>
         <div>
-          <dt className="text-xs text-slate-500">Completed</dt>
+          <dt className="text-xs text-slate-500">{t("pages.customers.completed")}</dt>
           <dd className="font-semibold tabular-nums">{c.completed_rentals ?? 0}</dd>
         </div>
         <div className="col-span-2">
-          <dt className="text-xs text-slate-500">Lifetime revenue</dt>
+          <dt className="text-xs text-slate-500">{t("pages.customers.lifetimeRevenue")}</dt>
           <dd className="font-semibold tabular-nums">{formatCurrency(customerRevenue(c))}</dd>
         </div>
       </dl>

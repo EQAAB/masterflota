@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -24,6 +25,7 @@ export function PaymentMobileCard({
   onActionMenuToggle,
   isMenuOpen,
 }: PaymentMobileCardProps) {
+  const { t } = useTranslation();
   const dt = formatPaymentDateTime(row.paid_at ?? row.created_at);
   const amountClass = amountToneClass(row.status, row.payment_type);
 
@@ -49,7 +51,7 @@ export function PaymentMobileCard({
         <button
           type="button"
           className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-          aria-label="Actions"
+          aria-label={t("pages.payments.rowActionsAriaLabel")}
           aria-expanded={isMenuOpen}
           onClick={(e) => {
             e.stopPropagation();

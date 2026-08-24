@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 
@@ -33,7 +34,7 @@ export function buildPaymentActionMenuItems({
   return [
     {
       id: "invoice",
-      label: "View invoice",
+      label: i18n.t("pages.payments.viewInvoiceAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -45,7 +46,7 @@ export function buildPaymentActionMenuItems({
     },
     {
       id: "receipt",
-      label: "Download receipt",
+      label: i18n.t("pages.payments.downloadReceiptAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -58,7 +59,7 @@ export function buildPaymentActionMenuItems({
     },
     {
       id: "edit",
-      label: "Edit payment",
+      label: i18n.t("pages.payments.editPayment"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -70,7 +71,7 @@ export function buildPaymentActionMenuItems({
     },
     {
       id: "paid",
-      label: "Mark as paid",
+      label: i18n.t("pages.payments.markPaidAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -83,7 +84,7 @@ export function buildPaymentActionMenuItems({
     },
     {
       id: "refund",
-      label: "Refund payment",
+      label: i18n.t("pages.payments.refundAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

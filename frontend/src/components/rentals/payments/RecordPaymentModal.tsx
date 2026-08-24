@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentListItem } from "../../../api/rentals";
 import { createRentalPayment, getRentalBookings, updateRentalPayment } from "../../../api/rentals";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
@@ -17,6 +18,7 @@ type RecordPaymentModalProps = {
 };
 
 export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [bookingId, setBookingId] = useState("");
   const [paymentType, setPaymentType] = useState("rent");
@@ -72,7 +74,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
       if (editing) {
         return updateRentalPayment(editing.id, body);
       }
-      if (!bookingId) throw new Error("Select a booking");
+      if (!bookingId) throw new Error(t("pages.payments.selectBookingError"));
       return createRentalPayment(bookingId, body);
     },
     onSuccess: () => {
@@ -88,7 +90,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
           : err instanceof Error
             ? err.message
             : null;
-      setError(msg ?? "Failed to save payment");
+      setError(msg ?? t("pages.payments.failedToSave"));
     },
   });
 
@@ -99,7 +101,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
       <button
         type="button"
         className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px]"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
       />
       <div
@@ -108,19 +110,19 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
         aria-modal="true"
       >
         <h2 className="text-lg font-semibold text-ink">
-          {editing ? "Edit payment" : "Record payment"}
+          {editing ? t("pages.payments.editPayment") : t("pages.payments.recordPayment")}
         </h2>
 
         <div className="mt-4 space-y-3">
           {!editing ? (
             <label className="block text-sm font-medium text-ink">
-              Booking
+              {t("pages.payments.bookingLabel")}
               <select
                 className="fm-rental-payments__filter-select mt-1 w-full"
                 value={bookingId}
                 onChange={(e) => setBookingId(e.target.value)}
               >
-                <option value="">Select booking</option>
+                <option value="">{t("pages.payments.selectBooking")}</option>
                 {(bookingsQuery.data ?? []).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.booking_number} — {b.customer_name}
@@ -130,42 +132,42 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
             </label>
           ) : (
             <p className="text-sm text-slate-600">
-              Booking: <span className="font-semibold">{editing.booking_number}</span>
+              {t("pages.payments.bookingColonLabel")} <span className="font-semibold">{editing.booking_number}</span>
             </p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm font-medium text-ink">
-              Type
+              {t("pages.payments.typeSelectLabel")}
               <select
                 className="fm-rental-payments__filter-select mt-1 w-full"
                 value={paymentType}
                 onChange={(e) => setPaymentType(e.target.value)}
               >
-                <option value="rent">Rent</option>
-                <option value="deposit">Deposit</option>
-                <option value="deposit_refund">Refund</option>
-                <option value="extra">Extra / fee</option>
-                <option value="damage">Damage</option>
+                <option value="rent">{t("rentalStatus.paymentType.rent")}</option>
+                <option value="deposit">{t("rentalStatus.paymentType.deposit")}</option>
+                <option value="deposit_refund">{t("rentalStatus.paymentType.deposit_refund")}</option>
+                <option value="extra">{t("rentalStatus.paymentType.extra")}</option>
+                <option value="damage">{t("rentalStatus.paymentType.damage")}</option>
               </select>
             </label>
             <label className="block text-sm font-medium text-ink">
-              Status
+              {t("pages.payments.statusSelectLabel")}
               <select
                 className="fm-rental-payments__filter-select mt-1 w-full"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
+                <option value="paid">{t("rentalStatus.payment.paid")}</option>
+                <option value="pending">{t("rentalStatus.payment.pending")}</option>
+                <option value="failed">{t("rentalStatus.payment.failed")}</option>
+                <option value="refunded">{t("rentalStatus.payment.refunded")}</option>
               </select>
             </label>
           </div>
 
           <label className="block text-sm font-medium text-ink">
-            Amount
+            {t("pages.payments.amountLabel")}
             <input
               type="number"
               min="0"
@@ -177,7 +179,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
           </label>
 
           <label className="block text-sm font-medium text-ink">
-            Payment method
+            {t("pages.payments.paymentMethodLabel")}
             <select
               className="fm-rental-payments__filter-select mt-1 w-full"
               value={method}
@@ -192,7 +194,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
           </label>
 
           <label className="block text-sm font-medium text-ink">
-            Reference
+            {t("pages.payments.referenceFieldLabel")}
             <input
               className="fm-rental-payments__filter-select mt-1 w-full"
               value={reference}
@@ -201,7 +203,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
           </label>
 
           <label className="block text-sm font-medium text-ink">
-            Notes
+            {t("pages.payments.notesFieldLabel")}
             <textarea
               className="fm-rental-payments__filter-select mt-1 w-full min-h-[72px] resize-y"
               value={notes}
@@ -218,7 +220,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
 
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" className={btnSecondary} onClick={onClose} disabled={mutation.isPending}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -226,7 +228,7 @@ export function RecordPaymentModal({ open, editing, onClose }: RecordPaymentModa
             disabled={mutation.isPending || (!editing && !bookingId) || !amount}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "Saving…" : editing ? "Save changes" : "Record payment"}
+            {mutation.isPending ? t("common.saving") : editing ? t("pages.payments.saveChanges") : t("pages.payments.recordPayment")}
           </button>
         </div>
       </div>

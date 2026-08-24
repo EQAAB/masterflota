@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { RentalPaymentListItem } from "../../../api/rentals";
+import i18n from "../../../i18n";
 import { downloadRentalContract, updateRentalPayment } from "../../../api/rentals";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
 import { buildPaymentActionMenuItems } from "./buildPaymentActionMenuItems";
@@ -19,6 +21,7 @@ type PaymentsTableProps = {
 const MANAGE_PAYMENT_MENU_IDS = new Set(["edit", "paid", "refund"]);
 
 export function PaymentsTable({ rows, loading, canManage = false, onRecord, onEdit }: PaymentsTableProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -58,7 +61,7 @@ export function PaymentsTable({ rows, loading, canManage = false, onRecord, onEd
 
   const handleRefund = useCallback(
     async (row: RentalPaymentListItem) => {
-      if (!window.confirm("Mark this payment as refunded?")) return;
+      if (!window.confirm(i18n.t("pages.payments.confirmRefund"))) return;
       closeMenu();
       await updateRentalPayment(row.id, { status: "refunded" });
       invalidate();
@@ -112,15 +115,15 @@ export function PaymentsTable({ rows, loading, canManage = false, onRecord, onEd
         <table className="w-full min-w-[1200px] text-sm">
           <thead>
             <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              <th className="px-4 py-3.5">Booking</th>
-              <th className="px-4 py-3.5">Customer</th>
-              <th className="px-4 py-3.5">Vehicle</th>
-              <th className="px-4 py-3.5">Payment type</th>
-              <th className="px-4 py-3.5">Amount</th>
-              <th className="px-4 py-3.5">Method</th>
-              <th className="px-4 py-3.5">Date</th>
-              <th className="px-4 py-3.5">Status</th>
-              <th className="px-4 py-3.5 text-right">Actions</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colBooking")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colCustomer")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colVehicle")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colPaymentType")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colAmount")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colMethod")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colDate")}</th>
+              <th className="px-4 py-3.5">{t("pages.payments.colStatus")}</th>
+              <th className="px-4 py-3.5 text-right">{t("pages.payments.colActions")}</th>
             </tr>
           </thead>
           <tbody>
