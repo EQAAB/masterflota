@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { EarningsImportListItem } from "../../../api/earnings";
 import { importProcessedRows, importTotalRows } from "../../../api/earnings";
 import type { PlatformBadgeKey } from "../../drivers/platformLogos";
@@ -60,19 +61,19 @@ export type ImportStatusTone =
 export function importStatusDisplay(status: string): { label: string; tone: ImportStatusTone } {
   switch (status) {
     case "completed":
-      return { label: "Completed", tone: "success" };
+      return { label: i18n.t("status.completed"), tone: "success" };
     case "reverted":
-      return { label: "Reverted", tone: "purple" };
+      return { label: i18n.t("status.reverted"), tone: "purple" };
     case "preview":
-      return { label: "Preview", tone: "warning" };
+      return { label: i18n.t("status.preview"), tone: "warning" };
     case "processing":
-      return { label: "Processing", tone: "processing" };
+      return { label: i18n.t("status.processing"), tone: "processing" };
     case "pending":
-      return { label: "Pending", tone: "pending" };
+      return { label: i18n.t("status.pending"), tone: "pending" };
     case "validating":
-      return { label: "Validating", tone: "validating" };
+      return { label: i18n.t("status.validating"), tone: "validating" };
     case "failed":
-      return { label: "Failed", tone: "failed" };
+      return { label: i18n.t("status.failed"), tone: "failed" };
     default:
       return { label: status.charAt(0).toUpperCase() + status.slice(1), tone: "muted" };
   }

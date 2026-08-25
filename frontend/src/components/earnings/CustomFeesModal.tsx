@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { CustomFeeType, DriverPayoutCustomFee, PayoutListItem } from "../../api/earnings";
@@ -22,6 +23,7 @@ function toNum(value: string | null | undefined): number {
 }
 
 export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesModalProps) {
+  const { t } = useTranslation();
   const [feeName, setFeeName] = useState("");
   const [feeType, setFeeType] = useState<CustomFeeType>("deduction");
   const [amount, setAmount] = useState("");
@@ -77,8 +79,8 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
     } catch (e: unknown) {
       const msg =
         e && typeof e === "object" && "response" in e
-          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Request failed")
-          : "Request failed";
+          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? t("pages.payoutModals.requestFailedError"))
+          : t("pages.payoutModals.requestFailedError");
       setErr(msg);
     } finally {
       setBusy(false);
@@ -95,8 +97,8 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
     } catch (e: unknown) {
       const msg =
         e && typeof e === "object" && "response" in e
-          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Request failed")
-          : "Request failed";
+          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? t("pages.payoutModals.requestFailedError"))
+          : t("pages.payoutModals.requestFailedError");
       setErr(msg);
     } finally {
       setDeleteBusyId(null);
@@ -125,10 +127,10 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
             item.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
           }`}
         >
-          {item.fee_type === "deduction" ? "Deduction" : "Addition"}
+          {item.fee_type === "deduction" ? t("pages.driverDetail.deductionLabel") : t("pages.driverDetail.additionLabel")}
         </span>
         {readOnly && (
-          <span className="ml-2 text-xs text-violet-600">(recurring)</span>
+          <span className="ml-2 text-xs text-violet-600">{t("pages.payoutModals.recurringSuffix")}</span>
         )}
         <div className="text-ink tabular-nums mt-0.5">
           {item.fee_type === "deduction" ? "−" : "+"}
@@ -143,7 +145,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
           onClick={() => void removeFee(item.id)}
           className="shrink-0 text-xs text-rose-700 hover:underline disabled:opacity-50"
         >
-          {deleteBusyId === item.id ? "Removing…" : "Delete"}
+          {deleteBusyId === item.id ? t("pages.payoutModals.removingEllipsis") : t("common.delete")}
         </button>
       )}
     </li>
@@ -161,7 +163,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold text-ink">Custom fees</h2>
+          <h2 className="text-lg font-semibold text-ink">{t("pages.payoutModals.customFeesTitle")}</h2>
           <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {row.payment_period_start?.slice(0, 10)} –{" "}
             {row.payment_period_end?.slice(0, 10)}
@@ -171,29 +173,29 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
         <div className="px-4 py-3 space-y-4">
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
-          {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
-          {q.isError && <p className="text-sm text-red-700">Failed to load custom fees.</p>}
+          {q.isLoading && <p className="text-sm text-ink-muted">{t("common.loading")}</p>}
+          {q.isError && <p className="text-sm text-red-700">{t("pages.payoutModals.failedToLoadCustomFees")}</p>}
 
           {data && (
             <div className="rounded-lg bg-slate-50 border border-border px-3 py-2 text-sm space-y-1">
               <div className="flex justify-between">
-                <span className="text-ink-muted">Base payout</span>
+                <span className="text-ink-muted">{t("pages.payoutModals.basePayoutLabel")}</span>
                 <span className="tabular-nums font-medium">{formatCurrency(toNum(data.base_raw_net))}</span>
               </div>
               <div className="flex justify-between text-rose-800">
-                <span>Custom deductions</span>
+                <span>{t("pages.payoutModals.customDeductionsLabel")}</span>
                 <span className="tabular-nums">−{formatCurrency(toNum(data.total_deductions))}</span>
               </div>
               <div className="flex justify-between text-emerald-800">
-                <span>Custom additions</span>
+                <span>{t("pages.payoutModals.customAdditionsLabel")}</span>
                 <span className="tabular-nums">+{formatCurrency(toNum(data.total_additions))}</span>
               </div>
               <div className="flex justify-between border-t border-border pt-1">
-                <span className="text-ink-muted">Adjusted raw net</span>
+                <span className="text-ink-muted">{t("pages.payoutModals.adjustedRawNetLabel")}</span>
                 <span className="tabular-nums font-medium">{formatCurrency(toNum(data.raw_net_amount))}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-ink-muted">Final net payout</span>
+                <span className="text-ink-muted">{t("pages.payoutModals.finalNetPayoutLabel")}</span>
                 <span className="tabular-nums font-semibold text-ink">
                   {formatCurrency(toNum(data.net_driver_payout))}
                 </span>
@@ -205,7 +207,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                  Recurring fees (auto)
+                  {t("pages.payoutModals.recurringFeesAutoTitle")}
                 </h3>
                 {row.driver_id && (
                   <Link
@@ -213,13 +215,13 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                     className="text-xs text-brand hover:underline"
                     onClick={handleClose}
                   >
-                    Manage on profile
+                    {t("pages.payoutModals.manageOnProfileLink")}
                   </Link>
                 )}
               </div>
               {showAnchorHint && (
                 <p className="text-xs text-violet-700 mb-2">
-                  Weekly recurring fees are deducted on the {formatPlatformLabel(anchorPlatform)} payout for this week.
+                  {t("pages.payoutModals.weeklyRecurringFeesDeductedHint", { platform: formatPlatformLabel(anchorPlatform) })}
                 </p>
               )}
               <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
@@ -231,7 +233,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
           {manualItems.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-2">
-                Manual adjustments
+                {t("pages.payoutModals.manualAdjustmentsTitle")}
               </h3>
               <ul className="divide-y divide-border border border-border rounded-lg overflow-hidden">
                 {manualItems.map((item) => renderFeeLine(item, false))}
@@ -242,35 +244,35 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
           {!locked && (
             <div className="space-y-3 border-t border-border pt-3">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                Add manual adjustment
+                {t("pages.payoutModals.addManualAdjustmentTitle")}
               </h3>
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Fee name</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.feeNameLabel")}</label>
                 <input
                   type="text"
                   maxLength={100}
                   value={feeName}
                   onChange={(e) => setFeeName(e.target.value)}
-                  placeholder="e.g. Accommodation"
+                  placeholder={t("pages.payoutModals.accommodationPlaceholder")}
                   disabled={busy}
                   className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-ink-muted mb-1">Type</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.typeLabel")}</label>
                   <select
                     value={feeType}
                     onChange={(e) => setFeeType(e.target.value as CustomFeeType)}
                     disabled={busy}
                     className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                   >
-                    <option value="deduction">Deduction</option>
-                    <option value="addition">Addition</option>
+                    <option value="deduction">{t("pages.driverDetail.deductionLabel")}</option>
+                    <option value="addition">{t("pages.driverDetail.additionLabel")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-muted mb-1">Amount (RON)</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.driverDetail.amountRonLabel")}</label>
                   <input
                     type="number"
                     min={0}
@@ -283,7 +285,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Notes (optional)</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.driverDocuments.notesOptionalLabel")}</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -298,14 +300,14 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
                 onClick={() => void submit()}
                 className="w-full rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
-                {busy ? "Saving…" : "Add manual fee"}
+                {busy ? t("pages.payoutModals.savingEllipsis") : t("pages.payoutModals.addManualFeeButton")}
               </button>
             </div>
           )}
 
           {locked && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              This payout is {row.payment_status} and cannot be edited.
+              {t("pages.payoutModals.payoutLockedStatusMsg", { status: row.payment_status })}
             </p>
           )}
         </div>
@@ -317,7 +319,7 @@ export function CustomFeesModal({ row, open, onClose, onSuccess }: CustomFeesMod
             onClick={handleClose}
             className="rounded-lg border border-border px-4 py-2 text-sm text-ink hover:bg-slate-50 disabled:opacity-50"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>

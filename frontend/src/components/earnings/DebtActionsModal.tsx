@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { DebtAdjustType, PayoutListItem } from "../../api/earnings";
 import { postPayoutAdjustDebt } from "../../api/earnings";
 import { formatCurrency } from "../../utils/currency";
@@ -20,6 +21,7 @@ function round2(n: number): number {
 }
 
 export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsModalProps) {
+  const { t } = useTranslation();
   const [note, setNote] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -74,8 +76,8 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
     } catch (e: unknown) {
       const msg =
         e && typeof e === "object" && "response" in e
-          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Request failed")
-          : "Request failed";
+          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? t("pages.payoutModals.requestFailedError"))
+          : t("pages.payoutModals.requestFailedError");
       setErr(msg);
     } finally {
       setBusy(false);
@@ -94,12 +96,12 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold text-ink">Debt actions</h2>
+          <h2 className="text-lg font-semibold text-ink">{t("pages.payoutModals.debtActionsTitle")}</h2>
           <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {row.payment_period_start?.slice(0, 10)} – {row.payment_period_end?.slice(0, 10)}
           </p>
           <p className="text-xs text-ink-muted mt-1 tabular-nums">
-            Raw net: {formatCurrency(rawNet)} · Remaining debt: {formatCurrency(remaining)}
+            {t("pages.payoutModals.rawNetRemainingDebtLine", { rawNet: formatCurrency(rawNet), debt: formatCurrency(remaining) })}
           </p>
         </div>
 
@@ -107,18 +109,18 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Note (optional)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.noteOptionalLabel")}</label>
             <textarea
               className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[72px]"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               disabled={busy}
-              placeholder="Reason for adjustment…"
+              placeholder={t("pages.payoutModals.reasonForAdjustmentPlaceholder")}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Amount (RON, where needed)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.amountRonWhereNeededLabel")}</label>
             <input
               type="number"
               step="0.01"
@@ -126,23 +128,30 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               disabled={busy}
-              placeholder="e.g. 83.07"
+              placeholder={t("pages.payoutModals.amountExamplePlaceholder")}
             />
           </div>
 
           {(reducePreviewRem !== null || (adjustPreviewRem !== null && showAdjustOnlyPreview)) && (
             <div className="rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs text-ink space-y-1 tabular-nums">
-              <p className="font-medium text-ink">Preview (before you confirm)</p>
+              <p className="font-medium text-ink">{t("pages.payoutModals.previewBeforeConfirmTitle")}</p>
               {reducePreviewRem !== null && (
                 <p>
-                  Forgive, cash, or positive manual adjust: remaining →{" "}
-                  <span className="font-semibold">{formatCurrency(reducePreviewRem)}</span>
+                  <Trans
+                    i18nKey="pages.payoutModals.forgiveCashPositiveAdjustPreview"
+                    values={{ amount: formatCurrency(reducePreviewRem) }}
+                    components={{ b: <span className="font-semibold" /> }}
+                  />
                 </p>
               )}
               {adjustPreviewRem !== null && showAdjustOnlyPreview && (
                 <p>
-                  Manual adjust: remaining → <span className="font-semibold">{formatCurrency(adjustPreviewRem)}</span>{" "}
-                  <span className="text-ink-muted">(negative amount increases what is owed)</span>
+                  <Trans
+                    i18nKey="pages.payoutModals.manualAdjustPreview"
+                    values={{ amount: formatCurrency(adjustPreviewRem) }}
+                    components={{ b: <span className="font-semibold" /> }}
+                  />{" "}
+                  <span className="text-ink-muted">{t("pages.payoutModals.negativeAmountIncreasesHint")}</span>
                 </p>
               )}
             </div>
@@ -155,14 +164,14 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               onClick={() => {
                 const v = amount.trim() === "" ? undefined : parseFloat(amount);
                 if (v !== undefined && (!Number.isFinite(v) || v <= 0)) {
-                  setErr("Partial forgive: enter a positive amount, or leave empty to forgive all remaining.");
+                  setErr(t("pages.payoutModals.partialForgiveError"));
                   return;
                 }
                 void submit("forgive", v !== undefined ? { amount: v } : undefined);
               }}
               className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
             >
-              Forgive debt (optional partial amount)
+              {t("pages.payoutModals.forgiveDebtOption")}
             </button>
             <button
               type="button"
@@ -170,14 +179,14 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               onClick={() => {
                 const v = parseFloat(amount);
                 if (!Number.isFinite(v) || v <= 0) {
-                  setErr("Cash received: enter a positive amount collected from the driver.");
+                  setErr(t("pages.payoutModals.cashReceivedError"));
                   return;
                 }
                 void submit("cash_received", { amount: v });
               }}
               className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
             >
-              Cash received
+              {t("pages.payoutModals.cashReceivedOption")}
             </button>
             <button
               type="button"
@@ -185,14 +194,14 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               onClick={() => {
                 const v = parseFloat(amount);
                 if (!Number.isFinite(v)) {
-                  setErr("Enter a number for manual adjust: positive reduces remaining debt; negative increases it.");
+                  setErr(t("pages.payoutModals.manualAdjustError"));
                   return;
                 }
                 void submit("adjust", { amount: v });
               }}
               className="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
             >
-              Manual adjust (advanced)
+              {t("pages.payoutModals.manualAdjustAdvancedOption")}
             </button>
             <button
               type="button"
@@ -200,12 +209,11 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
               onClick={() => void submit("carry_forward")}
               className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
             >
-              Carry forward (re-run full allocation for driver)
+              {t("pages.payoutModals.carryForwardOption")}
             </button>
           </div>
           <p className="text-[11px] text-ink-muted">
-            Carry forward rebuilds debt from raw payouts for this driver. Use after data fixes; may reset edge cases on
-            forgiven rows.
+            {t("pages.payoutModals.carryForwardDesc")}
           </p>
         </div>
 
@@ -216,7 +224,7 @@ export function DebtActionsModal({ row, open, onClose, onSuccess }: DebtActionsM
             onClick={handleClose}
             className="rounded-lg border border-border px-4 py-2 text-sm text-ink hover:bg-slate-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </div>

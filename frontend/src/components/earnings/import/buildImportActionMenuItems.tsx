@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import i18n from "../../../i18n";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 
 function MenuIconWrap({ children, tone }: { children: ReactNode; tone: "brand" | "muted" | "danger" }) {
@@ -49,7 +50,7 @@ export function buildImportActionMenuItems({
   if (canRevert) {
     items.push({
       id: "revert-import",
-      label: "Revert import",
+      label: i18n.t("pages.earningsImport.revertImportAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <RevertIcon />
@@ -62,7 +63,7 @@ export function buildImportActionMenuItems({
   if (canDelete) {
     items.push({
       id: "delete-import",
-      label: "Delete import",
+      label: i18n.t("pages.earningsImport.deleteImportAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <DeleteIcon />

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getActiveDriverLoan } from "../../../api/driverLoans";
@@ -15,6 +16,7 @@ export function DriverLoanSummaryCard({
   driverFirstName,
   driverLastName,
 }: DriverLoanSummaryCardProps) {
+  const { t } = useTranslation();
   const q = useQuery({
     queryKey: ["driver-loan-active", driverId],
     queryFn: () => getActiveDriverLoan(driverId).then((r) => r.data.loan),
@@ -33,34 +35,34 @@ export function DriverLoanSummaryCard({
   return (
     <section className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5">
       <div className="mb-2">
-        <h2 className="text-sm font-semibold text-ink">Loans</h2>
+        <h2 className="text-sm font-semibold text-ink">{t("pages.driverDetail.loansTitle")}</h2>
         <p className="text-xs text-ink-muted mt-0.5">
-          Cash loans are managed under Earnings → Driver loans. Separate from platform bad-week debt.
+          {t("pages.driverDetail.loansDesc")}
         </p>
       </div>
 
-      {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
-      {q.isError && <p className="text-sm text-red-700">Failed to load loan info.</p>}
+      {q.isLoading && <p className="text-sm text-ink-muted">{t("common.loading")}</p>}
+      {q.isError && <p className="text-sm text-red-700">{t("pages.driverDetail.failedToLoadLoanInfo")}</p>}
 
       {!q.isLoading && !q.isError && (
         <>
           {hasActive && loan ? (
             <div className="rounded-xl border border-sky-200/70 bg-sky-50/40 px-3 py-3 text-sm">
               <p className="text-sky-900">
-                Active loan:{" "}
+                {t("pages.driverDetail.activeLoanPrefix")}{" "}
                 <span className="font-semibold tabular-nums">
                   {formatCurrency(Number(loan.remaining_balance))}
                 </span>{" "}
-                remaining of {formatCurrency(Number(loan.principal))}
+                {t("pages.driverDetail.remainingOfSuffix", { principal: formatCurrency(Number(loan.principal)) })}
               </p>
               {loan.planned_repayment_week && (
                 <p className="text-xs text-sky-800 mt-1">
-                  Planned week: {loan.planned_repayment_week.slice(0, 10)}
+                  {t("pages.driverDetail.plannedWeekPrefix", { date: loan.planned_repayment_week.slice(0, 10) })}
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-ink-muted">No active loan for this driver.</p>
+            <p className="text-sm text-ink-muted">{t("pages.driverDetail.noActiveLoanForDriver")}</p>
           )}
 
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
@@ -69,7 +71,7 @@ export function DriverLoanSummaryCard({
                 to={`/earnings/loans/${loan.id}`}
                 className="font-medium text-brand hover:underline"
               >
-                View loan
+                {t("pages.driverDetail.viewLoanLink")}
               </Link>
             )}
             <Link
@@ -80,7 +82,7 @@ export function DriverLoanSummaryCard({
               }
               className="font-medium text-brand hover:underline"
             >
-              All driver loans
+              {t("pages.driverDetail.allDriverLoansLink")}
             </Link>
           </div>
         </>

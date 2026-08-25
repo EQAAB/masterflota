@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { EarningsOverviewResponse } from "../../../api/earnings";
 import { CHART_BRAND } from "../../dashboard/chartPalette";
 import { formatCurrency } from "../../../utils/currency";
@@ -15,19 +16,20 @@ type CommissionGrossDonutCardProps = {
 };
 
 export function CommissionGrossDonutCard({ kpis, monthly }: CommissionGrossDonutCardProps) {
+  const { t } = useTranslation();
   const gross = kpis.totalEarningsLast30Days;
   const commission = estimatedCommission30d(kpis, monthly);
   const pct = commissionSharePct(commission, gross);
 
   const segments = [
     {
-      name: `Commission (${pct.toFixed(0)}%)`,
+      name: t("pages.earningsOverview.commissionPctLabel", { pct: pct.toFixed(0) }),
       value: commission,
       color: CHART_BRAND,
       amountLabel: formatCurrency(commission),
     },
     {
-      name: `Gross (${(100 - pct).toFixed(0)}%)`,
+      name: t("pages.earningsOverview.grossPctLabel", { pct: (100 - pct).toFixed(0) }),
       value: Math.max(0, gross),
       color: GRAY,
       amountLabel: formatCurrency(gross),
@@ -36,14 +38,14 @@ export function CommissionGrossDonutCard({ kpis, monthly }: CommissionGrossDonut
 
   return (
     <EarningsDonutCard
-      title="Commission vs Gross (30 days)"
+      title={t("pages.earningsOverview.commissionVsGrossTitle")}
       centerPct={pct}
-      centerLabel="Commission"
+      centerLabel={t("pages.earningsOverview.commissionCenterLabel")}
       segments={segments}
       footerNote={
-        monthly.length > 0 ? "Estimated from monthly commission ratio" : undefined
+        monthly.length > 0 ? t("pages.earningsOverview.estimatedFromMonthlyRatio") : undefined
       }
-      footerAction={{ label: "View commission report", to: "/earnings/reports" }}
+      footerAction={{ label: t("pages.earningsOverview.viewCommissionReportLink"), to: "/earnings/reports" }}
     />
   );
 }

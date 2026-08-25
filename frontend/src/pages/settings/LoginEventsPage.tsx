@@ -1,23 +1,39 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import i18n from "../../i18n";
 import { fetchLoginEvents, fetchLoginEventsSummary } from "../../api/loginEvents";
 import { OrgContextGate } from "../../components/layout/OrgContextGate";
 import { usePermission } from "../../lib/permissions";
 import { btnSecondary, dashboardPage } from "../../theme/classNames";
 
-const EVENT_LABELS: Record<string, string> = {
-  "login.success": "Login success",
-  "login.failed": "Login failed",
-  "logout.success": "Logout",
-  "session.revoked": "Session revoked",
-};
+function eventLabel(eventType: string): string {
+  switch (eventType) {
+    case "login.success":
+      return i18n.t("pages.loginActivity.eventLoginSuccess");
+    case "login.failed":
+      return i18n.t("pages.loginActivity.eventLoginFailed");
+    case "logout.success":
+      return i18n.t("pages.loginActivity.eventLogout");
+    case "session.revoked":
+      return i18n.t("pages.loginActivity.eventSessionRevoked");
+    default:
+      return eventType;
+  }
+}
 
-const FAILURE_LABELS: Record<string, string> = {
-  invalid_credentials: "Invalid password",
-  inactive_user: "Inactive account",
-  unknown_email: "Unknown email",
-};
+function failureLabel(reason: string): string {
+  switch (reason) {
+    case "invalid_credentials":
+      return i18n.t("pages.loginActivity.failureInvalidPassword");
+    case "inactive_user":
+      return i18n.t("pages.loginActivity.failureInactiveAccount");
+    case "unknown_email":
+      return i18n.t("pages.loginActivity.failureUnknownEmail");
+    default:
+      return reason;
+  }
+}
 
 function formatDate(iso: string): string {
   try {
@@ -126,7 +142,7 @@ export function LoginEventsPage() {
     return (
       <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
         <div className={dashboardPage}>
-          <p className="text-ink-muted">You do not have access to view login activity.</p>
+          <p className="text-ink-muted">{t("pages.loginActivity.noAccessLoginActivity")}</p>
         </div>
       </div>
     );
@@ -148,31 +164,30 @@ export function LoginEventsPage() {
               className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
               role="status"
             >
-              Unusual failed-login activity detected in the last hour. Review suspicious IPs and
-              emails below.
+              {t("pages.loginActivity.failedSpikeWarning")}
             </div>
           )}
 
           <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <KpiCard
-              label="Successful logins (24h)"
+              label={t("pages.loginActivity.kpiSuccessfulLogins")}
               value={summary?.success_count ?? 0}
               loading={summaryQuery.isLoading}
             />
             <KpiCard
-              label="Failed logins (24h)"
+              label={t("pages.loginActivity.kpiFailedLogins")}
               value={summary?.failed_count ?? 0}
               warn
               loading={summaryQuery.isLoading}
             />
             <KpiCard
-              label="Suspicious IPs"
+              label={t("pages.loginActivity.kpiSuspiciousIps")}
               value={summary?.suspicious_ips.length ?? 0}
               warn
               loading={summaryQuery.isLoading}
             />
             <KpiCard
-              label="Suspicious emails"
+              label={t("pages.loginActivity.kpiSuspiciousEmails")}
               value={summary?.suspicious_emails.length ?? 0}
               warn
               loading={summaryQuery.isLoading}
@@ -181,7 +196,7 @@ export function LoginEventsPage() {
 
           {(summary?.suspicious_ips.length ?? 0) > 0 || (summary?.suspicious_emails.length ?? 0) > 0 ? (
             <div className="mb-5 rounded-2xl border border-border/60 bg-slate-50/50 px-4 py-3 text-sm">
-              <p className="mb-2 font-medium text-ink">Monitoring alerts (≥5 failures in 24h)</p>
+              <p className="mb-2 font-medium text-ink">{t("pages.loginActivity.monitoringAlertsTitle")}</p>
               <div className="flex flex-wrap gap-2">
                 {summary?.suspicious_ips.map((s) => (
                   <span
@@ -211,35 +226,35 @@ export function LoginEventsPage() {
                 setEventType(e.target.value);
                 setPage(1);
               }}
-              aria-label="Filter by event type"
+              aria-label={t("pages.loginActivity.filterByEventTypeAria")}
             >
-              <option value="">All events</option>
-              <option value="login.success">Login success</option>
-              <option value="login.failed">Login failed</option>
-              <option value="logout.success">Logout</option>
-              <option value="session.revoked">Session revoked</option>
+              <option value="">{t("pages.loginActivity.allEventsOption")}</option>
+              <option value="login.success">{t("pages.loginActivity.eventLoginSuccess")}</option>
+              <option value="login.failed">{t("pages.loginActivity.eventLoginFailed")}</option>
+              <option value="logout.success">{t("pages.loginActivity.eventLogout")}</option>
+              <option value="session.revoked">{t("pages.loginActivity.eventSessionRevoked")}</option>
             </select>
             <input
               type="search"
               className="fm-settings-roles__filter-select min-w-[10rem]"
-              placeholder="Email…"
+              placeholder={t("pages.loginActivity.emailPlaceholder")}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
                 setPage(1);
               }}
-              aria-label="Filter by email"
+              aria-label={t("pages.loginActivity.filterByEmailAria")}
             />
             <input
               type="search"
               className="fm-settings-roles__filter-select min-w-[8rem]"
-              placeholder="IP address…"
+              placeholder={t("pages.loginActivity.ipPlaceholder")}
               value={ip}
               onChange={(e) => {
                 setIp(e.target.value);
                 setPage(1);
               }}
-              aria-label="Filter by IP"
+              aria-label={t("pages.loginActivity.filterByIpAria")}
             />
             <input
               type="datetime-local"
@@ -249,7 +264,7 @@ export function LoginEventsPage() {
                 setFrom(e.target.value);
                 setPage(1);
               }}
-              aria-label="From date"
+              aria-label={t("pages.loginActivity.fromDateAria")}
             />
             <input
               type="datetime-local"
@@ -259,7 +274,7 @@ export function LoginEventsPage() {
                 setTo(e.target.value);
                 setPage(1);
               }}
-              aria-label="To date"
+              aria-label={t("pages.loginActivity.toDateAria")}
             />
             <label className="flex items-center gap-2 rounded-xl border border-border/60 bg-white px-3 py-2 text-sm text-ink">
               <input
@@ -270,7 +285,7 @@ export function LoginEventsPage() {
                   setPage(1);
                 }}
               />
-              Suspicious only
+              {t("pages.loginActivity.suspiciousOnlyLabel")}
             </label>
           </div>
 
@@ -283,19 +298,19 @@ export function LoginEventsPage() {
               </div>
             ) : items.length === 0 ? (
               <div className="px-6 py-14 text-center text-sm text-ink-muted">
-                No login events recorded yet.
+                {t("pages.loginActivity.noLoginEventsRecorded")}
               </div>
             ) : (
               <table className="w-full min-w-[960px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200/90 bg-slate-50/90 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="px-5 py-3.5">When</th>
-                    <th className="px-5 py-3.5">User / email</th>
-                    <th className="px-5 py-3.5">Event</th>
-                    <th className="px-5 py-3.5">IP</th>
-                    <th className="px-5 py-3.5">Location</th>
-                    <th className="px-5 py-3.5">Device</th>
-                    <th className="px-5 py-3.5">Details</th>
+                    <th className="px-5 py-3.5">{t("pages.auditLog.colWhen")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colUserEmail")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colEvent")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colIp")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colLocation")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colDevice")}</th>
+                    <th className="px-5 py-3.5">{t("pages.loginActivity.colDetails")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,7 +327,7 @@ export function LoginEventsPage() {
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${eventBadgeClass(item.eventType)}`}
                         >
-                          {EVENT_LABELS[item.eventType] ?? item.eventType}
+                          {eventLabel(item.eventType)}
                         </span>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs text-ink-muted">
@@ -324,7 +339,7 @@ export function LoginEventsPage() {
                       </td>
                       <td className="px-5 py-4 text-ink-muted">
                         {item.failureReason
-                          ? FAILURE_LABELS[item.failureReason] ?? item.failureReason
+                          ? failureLabel(item.failureReason)
                           : "—"}
                       </td>
                     </tr>
@@ -336,7 +351,7 @@ export function LoginEventsPage() {
             {data && data.total > 0 && (
               <footer className="flex flex-col gap-3 border-t border-border/60 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-ink-muted">
-                  Page {data.page} of {data.totalPages} · {data.total} events
+                  {t("pages.auditLog.pageOfTotal", { page: data.page, totalPages: data.totalPages, total: data.total })}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -345,7 +360,7 @@ export function LoginEventsPage() {
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
-                    Previous
+                    {t("pages.auditLog.previousButton")}
                   </button>
                   <button
                     type="button"
@@ -353,7 +368,7 @@ export function LoginEventsPage() {
                     disabled={page >= data.totalPages}
                     onClick={() => setPage((p) => p + 1)}
                   >
-                    Next
+                    {t("pagination.next")}
                   </button>
                 </div>
               </footer>

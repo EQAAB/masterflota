@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getVehicleDocuments,
   deleteVehicleDocument,
@@ -7,7 +8,7 @@ import {
   downloadVehicleDocument,
   type VehicleDocument,
 } from "../../api/vehicleDocuments";
-import { VEHICLE_DOCUMENT_LABELS, type VehicleDocumentType } from "../../constants/vehicleDocumentTypes";
+import { getVehicleDocumentLabels, type VehicleDocumentType } from "../../constants/vehicleDocumentTypes";
 import { usePermission } from "../../lib/permissions";
 
 const DOC_TYPE_COLORS: Record<string, string> = {
@@ -56,6 +57,8 @@ interface VehicleDocumentListProps {
 }
 
 export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: VehicleDocumentListProps) {
+  const { t } = useTranslation();
+  const documentLabels = getVehicleDocumentLabels();
   const canEditFromPermission = usePermission("vehicles.edit");
   const canEdit = canEditProp ?? canEditFromPermission;
   const queryClient = useQueryClient();
@@ -118,33 +121,33 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
 
   return (
     <div className="space-y-3">
-      {isLoading && <p className="text-sm text-ink-muted">Loading documents...</p>}
-      {isError && <p className="text-sm text-red-600">Failed to load documents.</p>}
+      {isLoading && <p className="text-sm text-ink-muted">{t("pages.vehicleDocuments.loadingDocumentsEllipsis")}</p>}
+      {isError && <p className="text-sm text-red-600">{t("pages.vehicleDocuments.failedToLoadDocuments")}</p>}
       {!isLoading && !isError && docs.length === 0 && (
         <div className="rounded-[14px] border border-dashed border-border/80 bg-brand-mint/10 px-6 py-8 text-center">
           <span className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand">
             <FileIcon className="h-5 w-5" />
           </span>
-          <p className="text-sm font-medium text-slate-800">No vehicle documents yet</p>
+          <p className="text-sm font-medium text-slate-800">{t("pages.vehicleDocuments.noVehicleDocumentsYetTitle")}</p>
           <p className="mt-1 text-sm text-slate-500">
             {canEdit
-              ? "Upload the first document using the form above."
-              : "No documents have been uploaded for this vehicle yet."}
+              ? t("pages.vehicleDocuments.uploadFirstDocumentDesc")
+              : t("pages.vehicleDocuments.noDocumentsUploadedDesc")}
           </p>
         </div>
       )}
       {!isLoading && !isError && docs.length > 0 && (
         <div className="overflow-hidden rounded-[14px] border border-border/70 bg-white shadow-soft">
           <div className="border-b border-border/70 px-4 py-2.5">
-            <p className="text-sm font-medium text-slate-800">Vehicle documents</p>
-            <p className="text-xs text-slate-500">{docs.length} file{docs.length === 1 ? "" : "s"} uploaded</p>
+            <p className="text-sm font-medium text-slate-800">{t("pages.vehicleDocuments.vehicleDocumentsTitle")}</p>
+            <p className="text-xs text-slate-500">{t("pages.vehicleDocuments.fileCount", { count: docs.length })}</p>
           </div>
           <div className="grid grid-cols-1 gap-2.5 border-b border-border/70 bg-slate-50/70 px-4 py-2.5 sm:grid-cols-[1fr_11rem_11rem]">
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search file name, number, type…"
+              placeholder={t("pages.vehicleDocuments.searchFileNameNumberTypePlaceholder")}
               className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             />
             <select
@@ -152,8 +155,8 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
               onChange={(e) => setTypeFilter(e.target.value)}
               className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             >
-              <option value="all">All types</option>
-              {Object.entries(VEHICLE_DOCUMENT_LABELS).map(([value, label]) => (
+              <option value="all">{t("pages.vehicleDocuments.allTypesOption")}</option>
+              {Object.entries(documentLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -164,26 +167,26 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
               onChange={(e) => setSortBy(e.target.value as "newest" | "expiry")}
               className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             >
-              <option value="newest">Newest first</option>
-              <option value="expiry">Expiry soonest</option>
+              <option value="newest">{t("pages.vehicleDocuments.newestFirstOption")}</option>
+              <option value="expiry">{t("pages.vehicleDocuments.expirySoonestOption")}</option>
             </select>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
                 <tr className="border-b border-slate-200">
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Type</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Number</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">File</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Issue / Expiry</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Status</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">Actions</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("pages.vehicleDocuments.typeShortLabel")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("pages.vehicleDocuments.numberLabel")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("pages.vehicleDocuments.fileSectionTitle")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("pages.vehicleDocuments.issueExpiryColumnLabel")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("common.status")}</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDocs.map((doc) => {
                   const type = (doc.document_type as VehicleDocumentType) ?? "other";
-                  const label = VEHICLE_DOCUMENT_LABELS[type] ?? doc.document_type;
+                  const label = documentLabels[type] ?? doc.document_type;
                   const colorClass = DOC_TYPE_COLORS[type] ?? "bg-gray-100 text-gray-800";
                   const expired = isExpired(doc.expiry_date);
                   return (
@@ -210,13 +213,13 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                             )}
                           </button>
                         ) : (
-                          <span className="text-xs text-ink-muted">No file</span>
+                          <span className="text-xs text-ink-muted">{t("pages.vehicleDocuments.noFileText")}</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-xs text-ink-muted">
-                        <div>Issue: {formatDate(doc.issue_date)}</div>
-                        <div>
-                          Expiry: <span className={expired ? "font-medium text-red-600" : ""}>{formatDate(doc.expiry_date)}</span>
+                        <div>{t("pages.vehicleDocuments.issuePrefix", { date: formatDate(doc.issue_date) })}</div>
+                        <div className={expired ? "font-medium text-red-600" : ""}>
+                          {t("pages.vehicleDocuments.expiryPrefix", { date: formatDate(doc.expiry_date) })}
                         </div>
                       </td>
                       <td className="px-3 py-2.5">
@@ -227,7 +230,7 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                               : "bg-amber-100 text-amber-800 ring-1 ring-amber-200/70"
                           }`}
                         >
-                          {doc.is_verified ? "Verified" : "Pending"}
+                          {doc.is_verified ? t("pages.vehicleDocuments.verifiedLabel") : t("pages.vehicleDocuments.pendingBadge")}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
@@ -239,14 +242,14 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                               disabled={verifyMutation.isPending}
                               className="font-medium text-emerald-700 hover:text-emerald-800 disabled:opacity-60"
                             >
-                              {doc.is_verified ? "Mark unverified" : "Mark verified"}
+                              {doc.is_verified ? t("pages.vehicleDocuments.markUnverifiedButton") : t("pages.vehicleDocuments.markVerifiedButton")}
                           </button>
                             <button
                               type="button"
                               onClick={() => setDeleteConfirm(doc.id)}
                               className="font-medium text-red-600 hover:text-red-800"
                             >
-                              Delete
+                              {t("common.delete")}
                             </button>
                           </div>
                         ) : (
@@ -259,7 +262,7 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                 {filteredDocs.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-500">
-                      No documents match your current filters.
+                      {t("pages.vehicleDocuments.noDocumentsMatchFilters")}
                     </td>
                   </tr>
                 )}
@@ -272,9 +275,9 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-ink">Delete document?</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.vehicleDocuments.deleteDocumentModalTitle")}</h3>
             <p className="text-sm text-ink-muted mt-2">
-              This will permanently delete the vehicle document and its file from the server.
+              {t("pages.vehicleDocuments.deleteDocumentModalDesc")}
             </p>
             <div className="flex gap-2 mt-4">
               <button
@@ -283,7 +286,7 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                 disabled={deleteMutation.isPending}
                 className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                {deleteMutation.isPending ? t("pages.driverDetail.deletingButton") : t("common.delete")}
               </button>
               <button
                 type="button"
@@ -291,7 +294,7 @@ export function VehicleDocumentList({ vehicleId, canEdit: canEditProp }: Vehicle
                 disabled={deleteMutation.isPending}
                 className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

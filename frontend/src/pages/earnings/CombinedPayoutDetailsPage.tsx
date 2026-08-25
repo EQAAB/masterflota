@@ -1,8 +1,10 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Papa from "papaparse";
 import axios from "axios";
+import i18n from "../../i18n";
 import { useCanAccessFinance, useCanAdjustPayouts, useCanApprovePayouts } from "../../lib/permissions";
 import {
   getConsolidatedPayouts,
@@ -33,10 +35,11 @@ function errMessage(e: unknown): string {
     if (m?.message) return m.message;
     return e.message;
   }
-  return e instanceof Error ? e.message : "Something went wrong";
+  return e instanceof Error ? e.message : i18n.t("pages.combinedPayoutDetailsPage.somethingWentWrong");
 }
 
 export function CombinedPayoutDetailsPage() {
+  const { t } = useTranslation();
   const { driverId } = useParams<{ driverId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -173,7 +176,7 @@ export function CombinedPayoutDetailsPage() {
     mutationFn: () => postPayDriverConsolidated({ driverId: driverId!, weekStart, weekEnd }),
     onSuccess: () => {
       setError(null);
-      setSuccessMsg("Driver marked as paid.");
+      setSuccessMsg(t("pages.combinedPayoutDetailsPage.driverMarkedPaidMsg"));
       setPayConfirmOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["earnings"] });
     },
@@ -235,7 +238,7 @@ export function CombinedPayoutDetailsPage() {
   }
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">{t("common.noAccess")}</p>;
   }
 
   if (consolidatedQuery.isLoading || (row && payoutsQuery.isLoading)) {
@@ -243,7 +246,7 @@ export function CombinedPayoutDetailsPage() {
       <div className="flex flex-col flex-1 overflow-auto bg-[#f4f6f8]">
         {weekNavigator}
         <div className="flex flex-1 items-center justify-center p-12">
-          <p className="text-sm text-slate-500">Loading combined payout details…</p>
+          <p className="text-sm text-slate-500">{t("pages.combinedPayoutDetailsPage.loadingCombinedDetails")}</p>
         </div>
       </div>
     );
@@ -255,9 +258,9 @@ export function CombinedPayoutDetailsPage() {
         {weekNavigator}
         <div className="mx-auto max-w-[1600px] p-6 sm:p-8">
           <Link to={backUrl} className={`${btnSecondary} !text-xs mb-4`}>
-            ← Back to payouts
+            ← {t("pages.earningsPayouts.detail.backToPayouts")}
           </Link>
-          <p className="text-sm text-rose-700">No combined payout found for this driver and period.</p>
+          <p className="text-sm text-rose-700">{t("pages.combinedPayoutDetailsPage.noCombinedPayoutFound")}</p>
         </div>
       </div>
     );
@@ -307,10 +310,10 @@ export function CombinedPayoutDetailsPage() {
       <ConfirmDialog
         open={payConfirmOpen}
         onClose={() => !payMut.isPending && setPayConfirmOpen(false)}
-        title="Pay this driver?"
-        description={`Mark all platform payouts for ${driverName} as paid for ${weekStart} – ${weekEnd}.`}
-        confirmLabel="Confirm payment"
-        cancelLabel="Cancel"
+        title={t("pages.earningsPayouts.payThisDriverTitle")}
+        description={t("pages.combinedPayoutDetailsPage.markAllPlatformPayoutsDesc", { name: driverName, from: weekStart, to: weekEnd })}
+        confirmLabel={t("pages.earningsPayouts.confirmPayment")}
+        cancelLabel={t("common.cancel")}
         isLoading={payMut.isPending}
         onConfirm={async () => {
           await payMut.mutateAsync();
@@ -341,7 +344,7 @@ export function CombinedPayoutDetailsPage() {
         onClose={() => setReleaseHoldRow(null)}
         onSuccess={() => {
           void queryClient.invalidateQueries({ queryKey: ["earnings"] });
-          setSuccessMsg("Hold released successfully.");
+          setSuccessMsg(t("pages.combinedPayoutDetailsPage.holdReleasedSuccessMsg"));
         }}
       />
       )}

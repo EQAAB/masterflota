@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import i18n from "../../i18n";
 import type { VehicleHistoryEventType } from "../../api/vehicles";
 
 export type EventVisualConfig = {
@@ -105,110 +106,89 @@ function IconRentalRenewed({ className }: { className?: string }) {
   );
 }
 
-const DEFAULT_EVENT_VISUAL: EventVisualConfig = {
-  label: "Event",
-  iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
-  iconTextClass: "text-slate-600",
-  badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
-  Icon: IconStatus,
+const EVENT_TYPE_LABEL_KEYS: Record<VehicleHistoryEventType, string> = {
+  assigned: "pages.vehicleDetail.eventTypeAssigned",
+  unassigned: "pages.vehicleDetail.eventTypeUnassigned",
+  status_change: "pages.vehicleDetail.eventTypeStatusChange",
+  maintenance: "pages.vehicleDetail.maintenance",
+  incident: "pages.vehicleDetail.eventTypeIncident",
+  rent_changed: "pages.vehicleDetail.eventTypeRentChanged",
+  rent_collected: "pages.vehicleDetail.eventTypeRentCollected",
+  rental_booked: "pages.vehicleDetail.eventTypeRentalBooked",
+  rental_pickup: "pages.vehicleDetail.eventTypeRentalPickup",
+  rental_return: "pages.vehicleDetail.eventTypeRentalReturn",
+  rental_cancelled: "pages.vehicleDetail.eventTypeRentalCancelled",
+  rental_renewed: "pages.vehicleDetail.eventTypeRentalRenewed",
 };
 
-export const EVENT_TYPE_OPTIONS: { value: "" | VehicleHistoryEventType; label: string }[] = [
-  { value: "", label: "All events" },
-  { value: "assigned", label: "Assigned" },
-  { value: "unassigned", label: "Unassigned" },
-  { value: "status_change", label: "Status change" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "incident", label: "Incident" },
-  { value: "rent_changed", label: "Rent changed" },
-  { value: "rent_collected", label: "Rent collected" },
-  { value: "rental_booked", label: "Rental booked" },
-  { value: "rental_pickup", label: "Rental pickup" },
-  { value: "rental_return", label: "Rental return" },
-  { value: "rental_cancelled", label: "Rental cancelled" },
-  { value: "rental_renewed", label: "Rental renewed" },
-];
-
-export const EVENT_VISUALS: Record<VehicleHistoryEventType, EventVisualConfig> = {
+const EVENT_VISUAL_STYLES: Record<VehicleHistoryEventType, Omit<EventVisualConfig, "label">> = {
   assigned: {
-    label: "Assigned",
     iconBgClass: "bg-brand-mint ring-1 ring-brand/20",
     iconTextClass: "text-brand-dark",
     badgeClass: "bg-brand-mint/70 text-brand-dark ring-1 ring-brand/15",
     Icon: IconAssigned,
   },
   unassigned: {
-    label: "Unassigned",
     iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
     iconTextClass: "text-slate-600",
     badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
     Icon: IconUnassigned,
   },
   status_change: {
-    label: "Status change",
     iconBgClass: "bg-sky-50 ring-1 ring-sky-200/80",
     iconTextClass: "text-sky-700",
     badgeClass: "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70",
     Icon: IconStatus,
   },
   maintenance: {
-    label: "Maintenance",
     iconBgClass: "bg-amber-50 ring-1 ring-amber-200/80",
     iconTextClass: "text-amber-700",
     badgeClass: "bg-amber-50 text-amber-900 ring-1 ring-amber-200/70",
     Icon: IconMaintenance,
   },
   incident: {
-    label: "Incident",
     iconBgClass: "bg-red-50 ring-1 ring-red-200/80",
     iconTextClass: "text-red-700",
     badgeClass: "bg-red-50 text-red-800 ring-1 ring-red-200/70",
     Icon: IconIncident,
   },
   rent_changed: {
-    label: "Rent changed",
     iconBgClass: "bg-violet-50 ring-1 ring-violet-200/80",
     iconTextClass: "text-violet-700",
     badgeClass: "bg-violet-50 text-violet-800 ring-1 ring-violet-200/70",
     Icon: IconRentChanged,
   },
   rent_collected: {
-    label: "Rent collected",
     iconBgClass: "bg-emerald-50 ring-1 ring-emerald-200/80",
     iconTextClass: "text-emerald-700",
     badgeClass: "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/70",
     Icon: IconRentCollected,
   },
   rental_booked: {
-    label: "Rental booked",
     iconBgClass: "bg-sky-50 ring-1 ring-sky-200/80",
     iconTextClass: "text-sky-700",
     badgeClass: "bg-sky-50 text-sky-800 ring-1 ring-sky-200/70",
     Icon: IconRentalBooked,
   },
   rental_pickup: {
-    label: "Rental pickup",
     iconBgClass: "bg-brand-mint ring-1 ring-brand/20",
     iconTextClass: "text-brand-dark",
     badgeClass: "bg-brand-mint/70 text-brand-dark ring-1 ring-brand/15",
     Icon: IconRentalPickup,
   },
   rental_return: {
-    label: "Rental return",
     iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
     iconTextClass: "text-slate-600",
     badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
     Icon: IconRentalReturn,
   },
   rental_cancelled: {
-    label: "Rental cancelled",
     iconBgClass: "bg-red-50 ring-1 ring-red-200/80",
     iconTextClass: "text-red-700",
     badgeClass: "bg-red-50 text-red-800 ring-1 ring-red-200/70",
     Icon: IconRentalCancelled,
   },
   rental_renewed: {
-    label: "Rental renewed",
     iconBgClass: "bg-violet-50 ring-1 ring-violet-200/80",
     iconTextClass: "text-violet-700",
     badgeClass: "bg-violet-50 text-violet-800 ring-1 ring-violet-200/70",
@@ -216,9 +196,26 @@ export const EVENT_VISUALS: Record<VehicleHistoryEventType, EventVisualConfig> =
   },
 };
 
+export function getEventTypeOptions(): { value: "" | VehicleHistoryEventType; label: string }[] {
+  return [
+    { value: "", label: i18n.t("pages.vehicleDetail.eventTypeAllOption") },
+    ...(Object.keys(EVENT_TYPE_LABEL_KEYS) as VehicleHistoryEventType[]).map((value) => ({
+      value,
+      label: i18n.t(EVENT_TYPE_LABEL_KEYS[value]),
+    })),
+  ];
+}
+
 export function getEventVisual(type: VehicleHistoryEventType | string): EventVisualConfig {
-  return EVENT_VISUALS[type as VehicleHistoryEventType] ?? {
-    ...DEFAULT_EVENT_VISUAL,
+  const styles = EVENT_VISUAL_STYLES[type as VehicleHistoryEventType];
+  if (styles) {
+    return { ...styles, label: i18n.t(EVENT_TYPE_LABEL_KEYS[type as VehicleHistoryEventType]) };
+  }
+  return {
+    iconBgClass: "bg-slate-100 ring-1 ring-slate-200/80",
+    iconTextClass: "text-slate-600",
+    badgeClass: "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80",
+    Icon: IconStatus,
     label: type.replace(/_/g, " "),
   };
 }

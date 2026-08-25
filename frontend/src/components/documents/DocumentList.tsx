@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getDocuments,
   deleteDocument,
@@ -10,14 +11,14 @@ import {
 } from "../../api/documents";
 import { usePermission } from "../../lib/permissions";
 
-const DOC_TYPE_LABELS: Record<DocumentType, string> = {
-  trc_card: "TRC Card",
-  drivers_license: "Driver's License",
-  contract: "Contract",
-  insurance: "Insurance",
-  vehicle_permit: "Vehicle Permit",
-  passport: "Passport",
-  other: "Other",
+const DOC_TYPE_LABEL_KEYS: Record<DocumentType, string> = {
+  trc_card: "pages.driverDocuments.trcCardType",
+  drivers_license: "pages.driverDocuments.driversLicenseType",
+  contract: "pages.driverDocuments.contractType",
+  insurance: "pages.driverDocuments.insuranceType",
+  vehicle_permit: "pages.driverDocuments.vehiclePermitType",
+  passport: "pages.driverDocuments.passportType",
+  other: "pages.driverDocuments.otherType",
 };
 
 const DOC_TYPE_COLORS: Record<DocumentType, string> = {
@@ -67,6 +68,7 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListProps) {
+  const { t } = useTranslation();
   const canEditFromPermission = usePermission("drivers.edit");
   const canEdit = canEditProp ?? canEditFromPermission;
   const queryClient = useQueryClient();
@@ -114,14 +116,14 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
     return (
       <div className="flex items-center gap-2 text-sm text-ink-muted">
         <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-        Loading documents...
+        {t("pages.driverDocuments.loadingDocumentsEllipsis")}
       </div>
     );
   }
 
   if (isError) {
     return (
-      <p className="text-sm text-red-600">Failed to load documents.</p>
+      <p className="text-sm text-red-600">{t("pages.driverDocuments.failedToLoadDocuments")}</p>
     );
   }
 
@@ -131,8 +133,8 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
         <span className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand">
           <DocumentStackIcon className="h-5 w-5" />
         </span>
-        <p className="text-sm font-medium text-slate-800">No documents yet</p>
-        <p className="mt-1 text-sm text-slate-500">Upload the first document using the form above.</p>
+        <p className="text-sm font-medium text-slate-800">{t("pages.driverDocuments.noDocumentsYetTitle")}</p>
+        <p className="mt-1 text-sm text-slate-500">{t("pages.driverDocuments.uploadFirstDocumentDesc")}</p>
       </div>
     );
   }
@@ -150,20 +152,20 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
                 DOC_TYPE_COLORS[doc.document_type]
               }`}
             >
-              {DOC_TYPE_LABELS[doc.document_type]}
+              {t(DOC_TYPE_LABEL_KEYS[doc.document_type])}
             </span>
             {doc.is_verified ? (
               <span className="inline-flex h-6 items-center rounded-full bg-emerald-100 px-2.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
-                Verified
+                {t("pages.driverDocuments.verifiedBadge")}
               </span>
             ) : (
               <span className="inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-xs font-medium text-ink-muted ring-1 ring-slate-200/80">
-                Pending
+                {t("pages.driverDocuments.pendingBadge")}
               </span>
             )}
             {doc.expiry_date && isExpired(doc.expiry_date) && (
               <span className="inline-flex h-6 items-center rounded-full bg-red-100 px-2.5 text-xs font-medium text-red-800 ring-1 ring-red-200/70">
-                Expired
+                {t("pages.driverDocuments.expiredBadge")}
               </span>
             )}
           </div>
@@ -172,13 +174,13 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
             {doc.file_name}
           </p>
           <p className="mt-0.5 text-xs text-ink-muted">
-            {formatSize(doc.file_size)} · Uploaded {formatDate(doc.created_at)}
+            {t("pages.driverDocuments.sizeUploadedPrefix", { size: formatSize(doc.file_size), date: formatDate(doc.created_at) })}
           </p>
           {doc.expiry_date && (
             <p className="text-xs text-ink-muted">
-              Expires {formatDate(doc.expiry_date)}
+              {t("pages.driverDocuments.expiresPrefix", { date: formatDate(doc.expiry_date) })}
               {isExpired(doc.expiry_date) && (
-                <span className="text-red-600 ml-1">(expired)</span>
+                <span className="text-red-600 ml-1">{t("pages.driverDocuments.expiredSuffix")}</span>
               )}
             </p>
           )}
@@ -189,7 +191,7 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
               onClick={() => handleDownload(doc)}
               className="text-sm font-medium text-brand hover:text-brand-dark"
             >
-              Download
+              {t("common.download")}
             </button>
             {canEdit && (
               <>
@@ -204,7 +206,7 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
                   disabled={verifyMutation.isPending}
                   className="text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-60"
                 >
-                  {doc.is_verified ? "Unverify" : "Verify"}
+                  {doc.is_verified ? t("pages.driverDocuments.unverifyButton") : t("pages.driverDocuments.verifyButton")}
                 </button>
                 {deleteConfirm === doc.id ? (
                   <>
@@ -214,14 +216,14 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
                       disabled={deleteMutation.isPending}
                       className="text-sm font-medium text-red-600 hover:text-red-800"
                     >
-                      Confirm delete
+                      {t("pages.driverDocuments.confirmDeleteButton")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeleteConfirm(null)}
                       className="text-sm text-ink-muted hover:text-ink"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                   </>
                 ) : (
@@ -230,7 +232,7 @@ export function DocumentList({ driverId, canEdit: canEditProp }: DocumentListPro
                     onClick={() => setDeleteConfirm(doc.id)}
                     className="text-sm font-medium text-red-600 hover:text-red-800"
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 )}
               </>

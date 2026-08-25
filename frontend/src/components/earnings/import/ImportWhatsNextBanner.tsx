@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 function SparklesIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -11,13 +13,13 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
-const STEPS = [
-  "Validate file against the platform template",
-  "Match drivers and calculate earnings",
-  "Track status updates in the table above",
-] as const;
-
 export function ImportWhatsNextBanner() {
+  const { t } = useTranslation();
+  const STEPS = [
+    t("pages.earningsImport.validateFileAgainstTemplateStep"),
+    t("pages.earningsImport.matchDriversCalculateStep"),
+    t("pages.earningsImport.trackStatusInTableStep"),
+  ];
   return (
     <div className="border-t border-border/30 bg-gradient-to-r from-brand-mint/20 via-brand-mint/8 to-white px-4 py-3 sm:px-5">
       <div className="flex items-start gap-2.5">
@@ -25,7 +27,7 @@ export function ImportWhatsNextBanner() {
           <SparklesIcon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h4 className="text-[13px] font-semibold tracking-tight text-ink">What happens next?</h4>
+          <h4 className="text-[13px] font-semibold tracking-tight text-ink">{t("pages.earningsImport.whatHappensNextTitle")}</h4>
           <ul className="mt-1.5 space-y-1">
             {STEPS.map((step, i) => (
               <li key={step} className="flex items-center gap-2 text-[11px] leading-snug text-slate-600">
@@ -58,25 +60,27 @@ function UploadIllustration() {
 }
 
 export function ImportEmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center px-6 py-14 text-center">
       <UploadIllustration />
-      <h3 className="mt-4 text-sm font-semibold text-ink">No imports yet</h3>
+      <h3 className="mt-4 text-sm font-semibold text-ink">{t("pages.earningsImport.noImportsYetTitle")}</h3>
       <p className="mt-1 max-w-sm text-sm leading-relaxed text-ink-muted">
-        Upload your first platform export above. Import history and status will appear here.
+        {t("pages.earningsImport.uploadFirstExportDesc")}
       </p>
     </div>
   );
 }
 
 export function ImportFailedEmptyHint() {
+  const { t } = useTranslation();
   return (
     <div className="mx-4 mb-4 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50/60 px-3 py-2.5">
       <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
       </svg>
       <p className="text-xs leading-relaxed text-red-800">
-        Failed imports stay in this list. Delete or re-upload with the correct template.
+        {t("pages.earningsImport.failedImportsStayHint")}
       </p>
     </div>
   );

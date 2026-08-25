@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { alertSuccess, btnSecondary } from "../../theme/classNames";
 
 type TemporaryPasswordAlertProps = {
@@ -10,8 +11,9 @@ type TemporaryPasswordAlertProps = {
 export function TemporaryPasswordAlert({
   password,
   onDismiss,
-  heading = "User created successfully.",
+  heading,
 }: TemporaryPasswordAlertProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -27,19 +29,19 @@ export function TemporaryPasswordAlert({
   return (
     <div className={`${alertSuccess} flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between`}>
       <div>
-        <p className="font-medium">{heading}</p>
+        <p className="font-medium">{heading ?? t("common.userCreatedSuccessfully")}</p>
         <p className="mt-1 text-sm">
-          One-time password — copy now; it will not be shown again:{" "}
+          {t("common.oneTimePasswordCopyNowPrefix")}{" "}
           <code className="rounded bg-white/60 px-1.5 py-0.5 font-mono text-sm">{password}</code>
         </p>
-        {copied && <p className="mt-1 text-xs text-emerald-800">Copied to clipboard</p>}
+        {copied && <p className="mt-1 text-xs text-emerald-800">{t("common.copiedToClipboard")}</p>}
       </div>
       <div className="flex shrink-0 gap-2">
         <button type="button" className={btnSecondary} onClick={handleCopy}>
-          Copy password
+          {t("common.copyPassword")}
         </button>
         <button type="button" className={btnSecondary} onClick={onDismiss}>
-          Dismiss
+          {t("common.dismiss")}
         </button>
       </div>
     </div>

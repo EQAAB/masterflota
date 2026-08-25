@@ -1,11 +1,6 @@
+import { useTranslation } from "react-i18next";
 import type { CommissionType } from "./CommissionPreview";
 import { CommissionPreview } from "./CommissionPreview";
-
-const COMMISSION_TYPES: { value: CommissionType; label: string }[] = [
-  { value: "percentage", label: "Percentage" },
-  { value: "fixed_amount", label: "Fixed amount" },
-  { value: "hybrid", label: "Hybrid" },
-];
 
 export interface CommissionValues {
   commissionType: CommissionType;
@@ -36,6 +31,12 @@ export function CommissionInput({
   onChange,
   errors = {},
 }: CommissionInputProps) {
+  const { t } = useTranslation();
+  const COMMISSION_TYPES: { value: CommissionType; label: string }[] = [
+    { value: "percentage", label: t("pages.driverForm.percentageOption") },
+    { value: "fixed_amount", label: t("pages.driverForm.fixedAmountOption") },
+    { value: "hybrid", label: t("pages.driverForm.hybridOption") },
+  ];
   const setType = (value: CommissionType) => onChange({ commissionType: value });
   const setRate = (value: number) => onChange({ commissionRate: value });
   const setFixed = (value: number) =>
@@ -46,7 +47,7 @@ export function CommissionInput({
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-ink mb-1">
-          Commission type
+          {t("pages.driverForm.commissionTypeLabel")}
         </label>
         <select
           className={errors.commissionType ? inputErrorClass : inputClass}
@@ -67,7 +68,7 @@ export function CommissionInput({
       {(commissionType === "percentage" || commissionType === "hybrid") && (
         <div>
           <label className="block text-sm font-medium text-ink mb-1">
-            Commission rate (%)
+            {t("pages.driverForm.commissionRatePercentLabel")}
           </label>
           <input
             type="number"
@@ -89,7 +90,7 @@ export function CommissionInput({
       {(commissionType === "fixed_amount" || commissionType === "hybrid") && (
         <div>
           <label className="block text-sm font-medium text-ink mb-1">
-            Fixed commission amount (RON)
+            {t("pages.driverForm.fixedCommissionAmountLabel")}
           </label>
           <input
             type="number"
@@ -113,7 +114,7 @@ export function CommissionInput({
 
       <div>
         <label className="block text-sm font-medium text-ink mb-1">
-          Minimum commission (RON) <span className="text-slate-400">optional</span>
+          {t("pages.driverForm.minimumCommissionLabel")} <span className="text-slate-400">{t("pages.driverForm.optionalSuffix")}</span>
         </label>
         <input
           type="number"

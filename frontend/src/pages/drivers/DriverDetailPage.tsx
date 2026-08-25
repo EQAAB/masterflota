@@ -45,20 +45,6 @@ const STATUS_COLORS: Record<string, string> = {
   terminated: "bg-red-100 text-red-800 ring-1 ring-red-200/70",
 };
 
-const ACTIVITY_LABELS: Record<string, string> = {
-  profile_update: "Profile updated",
-  profile_photo_update: "Profile photo updated",
-  status_change: "Status changed",
-  document_upload: "Document uploaded",
-  document_verify: "Document verified",
-  document_delete: "Document deleted",
-  driver_delete: "Driver deleted",
-  notes_update: "Notes updated",
-  recurring_fee_create: "Recurring fee added",
-  recurring_fee_update: "Recurring fee updated",
-  recurring_fee_delete: "Recurring fee removed",
-};
-
 const cardClass = "bg-white rounded-[16px] border border-border/70 shadow-soft p-4 sm:p-5";
 const sectionTitleClass = "text-sm font-semibold text-ink mb-3";
 
@@ -128,6 +114,20 @@ export function DriverDetailPage() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleListItem | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const ACTIVITY_LABELS: Record<string, string> = {
+    profile_update: t("pages.driverDetail.activityProfileUpdate"),
+    profile_photo_update: t("pages.driverDetail.activityProfilePhotoUpdate"),
+    status_change: t("pages.driverDetail.activityStatusChange"),
+    document_upload: t("pages.driverDetail.activityDocumentUpload"),
+    document_verify: t("pages.driverDetail.activityDocumentVerify"),
+    document_delete: t("pages.driverDetail.activityDocumentDelete"),
+    driver_delete: t("pages.driverDetail.activityDriverDelete"),
+    notes_update: t("pages.driverDetail.activityNotesUpdate"),
+    recurring_fee_create: t("pages.driverDetail.activityRecurringFeeCreate"),
+    recurring_fee_update: t("pages.driverDetail.activityRecurringFeeUpdate"),
+    recurring_fee_delete: t("pages.driverDetail.activityRecurringFeeDelete"),
+  };
 
   const { data: driverRes, isLoading: loadingDriver, isError: driverError } = useQuery({
     queryKey: ["driver", id],
@@ -200,8 +200,8 @@ export function DriverDetailPage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-ink-muted">Missing driver ID.</p>
-        <Link to="/drivers" className="ml-2 text-brand hover:underline">Back to drivers</Link>
+        <p className="text-ink-muted">{t("pages.driverForm.missingDriverIdError")}</p>
+        <Link to="/drivers" className="ml-2 text-brand hover:underline">{t("pages.driverForm.backToDrivers")}</Link>
       </div>
     );
   }
@@ -211,7 +211,7 @@ export function DriverDetailPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-ink-muted">Loading driver...</p>
+          <p className="text-sm text-ink-muted">{t("pages.driverForm.loadingDriver")}</p>
         </div>
       </div>
     );
@@ -221,8 +221,8 @@ export function DriverDetailPage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
-          <p className="text-red-600">Failed to load driver.</p>
-          <Link to="/drivers" className="mt-3 inline-block text-sm text-brand hover:underline">Back to drivers</Link>
+          <p className="text-red-600">{t("pages.driverForm.failedToLoadDriver")}</p>
+          <Link to="/drivers" className="mt-3 inline-block text-sm text-brand hover:underline">{t("pages.driverForm.backToDrivers")}</Link>
         </div>
       </div>
     );
@@ -264,7 +264,7 @@ export function DriverDetailPage() {
                     disabled={photoMutation.isPending}
                     className="text-xs text-brand hover:text-brand-dark font-medium disabled:opacity-60"
                   >
-                    {photoMutation.isPending ? "Uploading..." : "Change photo"}
+                    {photoMutation.isPending ? t("pages.driverDetail.uploadingButton") : t("pages.driverDetail.changePhotoButton")}
                   </button>
                 </div>
               )}
@@ -272,14 +272,14 @@ export function DriverDetailPage() {
             <div className="pt-0.5">
               <div className="flex items-center gap-3">
                 <Link to="/drivers" className="text-sm text-ink-muted hover:text-ink">
-                  ← Back to drivers
+                  ← {t("pages.driverForm.backToDrivers")}
                 </Link>
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
                 {d.first_name} {d.last_name}
               </h1>
               <p className="mt-1 text-xs font-medium text-slate-500">
-                Driver ID: <span className="font-mono">{id}</span>
+                {t("pages.driverDetail.driverIdLabel")} <span className="font-mono">{id}</span>
               </p>
             </div>
           </div>
@@ -298,25 +298,25 @@ export function DriverDetailPage() {
                 onClick={() => setDeleteModalOpen(true)}
                 className="inline-flex h-10 items-center rounded-xl border border-red-200 bg-white px-4 text-sm font-medium text-red-700 shadow-sm hover:bg-red-50"
               >
-                Delete driver
+                {t("pages.driverDetail.deleteDriverButton")}
               </button>
             )}
           </div>
         </div>
 
         <nav className="mx-auto mt-2 flex max-w-[1600px] gap-2 px-4 pb-3 sm:px-6 lg:px-8">
-          {(["profile", "documents", "activity"] as TabId[]).map((t) => (
+          {(["profile", "documents", "activity"] as TabId[]).map((tabId) => (
             <button
-              key={t}
+              key={tabId}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => setTab(tabId)}
               className={`rounded-full px-4 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
-                tab === t
+                tab === tabId
                   ? "bg-white text-slate-900 shadow-sm ring-1 ring-border/70"
                   : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
               }`}
             >
-              {t}
+              {t(`pages.driverDetail.${tabId}`)}
             </button>
           ))}
         </nav>
@@ -326,41 +326,41 @@ export function DriverDetailPage() {
         {tab === "profile" && (
           <div className="space-y-4">
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Personal information</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverForm.personalInfoTitle")}</h2>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
-                <div><dt className="text-xs font-medium text-slate-500">First name</dt><dd className="mt-0.5 font-medium text-slate-900">{d.first_name ?? "—"}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">Last name</dt><dd className="mt-0.5 font-medium text-slate-900">{d.last_name ?? "—"}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">Email</dt><dd className="mt-0.5 text-slate-900">{d.email ?? "—"}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">Phone</dt><dd className="mt-0.5 text-slate-900">{d.phone ?? "—"}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">Date of birth</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.date_of_birth)}</dd></div>
-                <div className="md:col-span-2"><dt className="text-xs font-medium text-slate-500">Address</dt><dd className="mt-0.5 text-slate-900">{d.address ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.firstNameLabel")}</dt><dd className="mt-0.5 font-medium text-slate-900">{d.first_name ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.lastNameLabel")}</dt><dd className="mt-0.5 font-medium text-slate-900">{d.last_name ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.users.emailLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.email ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.invoiceForm.phoneLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.phone ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverForm.dateOfBirthLabel")}</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.date_of_birth)}</dd></div>
+                <div className="md:col-span-2"><dt className="text-xs font-medium text-slate-500">{t("pages.invoiceDetail.addressLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.address ?? "—"}</dd></div>
               </dl>
             </section>
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>License information</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverForm.licenseInfoTitle")}</h2>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
-                <div><dt className="text-xs font-medium text-slate-500">License number</dt><dd className="mt-0.5 text-slate-900">{d.license_number ?? "—"}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">License expiry</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.license_expiry)}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">License class</dt><dd className="mt-0.5 text-slate-900">{d.license_class ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverForm.licenseNumberLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.license_number ?? "—"}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverForm.licenseExpiryLabel")}</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.license_expiry)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverForm.licenseClassLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.license_class ?? "—"}</dd></div>
               </dl>
             </section>
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Employment</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverForm.employmentTitle")}</h2>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
-                <div><dt className="text-xs font-medium text-slate-500">Hire date</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.hire_date)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverForm.hireDateLabel")}</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.hire_date)}</dd></div>
                 <div>
-                  <dt className="text-xs font-medium text-slate-500">Status</dt>
+                  <dt className="text-xs font-medium text-slate-500">{t("common.status")}</dt>
                   <dd className="mt-1">
                     <span className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-medium capitalize ${STATUS_COLORS[d.employment_status] ?? "bg-slate-100 text-ink ring-1 ring-slate-200/70"}`}>
-                      {d.employment_status}
+                      {t(`driverStatus.${d.employment_status}`, d.employment_status)}
                     </span>
                   </dd>
                 </div>
-                <div><dt className="text-xs font-medium text-slate-500">Commission rate</dt><dd className="mt-0.5 text-slate-900">{d.commission_rate ?? "—"}%</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.commissionRateLabel")}</dt><dd className="mt-0.5 text-slate-900">{d.commission_rate ?? "—"}%</dd></div>
                 <div className="md:col-span-2">
-                  <dt className="text-xs font-medium text-slate-500">Subcontractor</dt>
+                  <dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.subcontractorLabel")}</dt>
                   <dd className="mt-0.5 text-slate-900">
                     {d.subcontractor_id && d.subcontractor_legal_name ? (
                       <>
@@ -380,41 +380,41 @@ export function DriverDetailPage() {
             </section>
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Platform IDs</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverForm.platformIdsTitle")}</h2>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID
+                    {t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.UBER] })}
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.uber_driver_id ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID
+                    {t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT] })}
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.bolt_driver_id ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID
+                    {t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO] })}
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.glovo_courier_id ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID
+                    {t("pages.driverForm.platformIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER] })}
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.bolt_courier_id ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID
+                    {t("pages.driverForm.driverUuidSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI] })}
                   </dt>
                   <dd className="mt-0.5 font-mono text-sm text-slate-900">{d.bolt_taxi_driver_uuid ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium text-slate-500">
-                    {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
+                    {t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT] })}
                   </dt>
                   <dd className="mt-0.5 text-slate-900">{d.wolt_courier_id ?? "—"}</dd>
                 </div>
@@ -422,7 +422,7 @@ export function DriverDetailPage() {
             </section>
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Current vehicle</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverDetail.currentVehicleTitle")}</h2>
               {d.current_vehicle_id ? (
                 <div className="flex flex-wrap items-center gap-2.5">
                   <Link
@@ -440,20 +440,20 @@ export function DriverDetailPage() {
                       disabled={unassignMutation.isPending}
                       className="inline-flex h-8 items-center rounded-lg border border-border/80 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
-                      Unassign vehicle
+                      {t("pages.driverDetail.unassignVehicleButton")}
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <p className="text-sm text-ink-muted">No vehicle assigned.</p>
+                  <p className="text-sm text-ink-muted">{t("pages.driverDetail.noVehicleAssigned")}</p>
                   {canAssignVehicle && (
                     <button
                       type="button"
                       onClick={() => setAssignOpen(true)}
                       className="inline-flex h-8 items-center rounded-lg bg-brand-gradient px-3 text-xs font-medium text-white hover:opacity-95"
                     >
-                      Assign vehicle
+                      {t("pages.driverDetail.assignVehicleButton")}
                     </button>
                   )}
                 </div>
@@ -461,14 +461,14 @@ export function DriverDetailPage() {
             </section>
 
             {canViewDriver && id && (
-              <VehicleAssignmentHistoryPanel mode="driver" entityId={id} title="Vehicle history" />
+              <VehicleAssignmentHistoryPanel mode="driver" entityId={id} title={t("pages.driverDetail.vehicleHistoryTitle")} />
             )}
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Notes</h2>
+              <h2 className={sectionTitleClass}>{t("pages.invoiceDetail.notesLabel")}</h2>
               {!notesEdit ? (
                 <div className="flex items-start justify-between gap-2">
-                  <p className="whitespace-pre-wrap text-sm text-slate-700">{d.notes || "No notes."}</p>
+                  <p className="whitespace-pre-wrap text-sm text-slate-700">{d.notes || t("pages.driverDetail.noNotesFallback")}</p>
                   {canEdit && (
                     <button
                       type="button"
@@ -478,7 +478,7 @@ export function DriverDetailPage() {
                       }}
                       className="text-sm text-brand hover:underline shrink-0"
                     >
-                      Edit notes
+                      {t("pages.driverDetail.editNotesButton")}
                     </button>
                   )}
                 </div>
@@ -497,14 +497,14 @@ export function DriverDetailPage() {
                       disabled={notesMutation.isPending}
                       className="inline-flex h-9 items-center rounded-lg bg-brand-gradient px-3.5 text-sm text-white hover:opacity-95 disabled:opacity-60"
                     >
-                      Save
+                      {t("common.save")}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setNotesEdit(false); setNotesValue(d.notes ?? ""); }}
                       className="inline-flex h-9 items-center rounded-lg border border-border/80 px-3.5 text-sm text-slate-700 hover:bg-slate-50"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                   </div>
                 </div>
@@ -523,24 +523,24 @@ export function DriverDetailPage() {
 
             {canViewPayouts && (
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Payout history</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverDetail.payoutHistoryTitle")}</h2>
               <p className="mb-2 text-sm text-slate-600">
-                View weekly payouts and one-off adjustments for this driver.
+                {t("pages.driverDetail.payoutHistoryDesc")}
               </p>
               <Link
                 to={`/earnings/payouts?driverId=${encodeURIComponent(id)}`}
                 className="text-sm text-brand hover:underline font-medium"
               >
-                Open payouts for this driver
+                {t("pages.driverDetail.openPayoutsLink")}
               </Link>
             </section>
             )}
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>Metadata</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverDetail.metadataTitle")}</h2>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
-                <div><dt className="text-xs font-medium text-slate-500">Created</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.created_at)}</dd></div>
-                <div><dt className="text-xs font-medium text-slate-500">Last updated</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.updated_at)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.createdLabel")}</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.created_at)}</dd></div>
+                <div><dt className="text-xs font-medium text-slate-500">{t("pages.driverDetail.lastUpdatedLabel")}</dt><dd className="mt-0.5 text-slate-900">{formatDate(d.updated_at)}</dd></div>
               </dl>
             </section>
           </div>
@@ -550,12 +550,12 @@ export function DriverDetailPage() {
           <div className="space-y-4">
             {canEdit && (
               <div className={cardClass}>
-                <h2 className={sectionTitleClass}>Upload new document</h2>
+                <h2 className={sectionTitleClass}>{t("pages.driverDetail.uploadNewDocumentTitle")}</h2>
                 <DocumentUpload driverId={id} />
               </div>
             )}
             <div className={cardClass}>
-              <h2 className={sectionTitleClass}>Documents</h2>
+              <h2 className={sectionTitleClass}>{t("pages.driverDetail.documents")}</h2>
               <DocumentList driverId={id} canEdit={canEdit} />
             </div>
           </div>
@@ -564,17 +564,17 @@ export function DriverDetailPage() {
         {tab === "activity" && (
           <div className={`${cardClass} min-h-[360px]`}>
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold tracking-tight text-slate-900">Activity history</h2>
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">{t("pages.driverDetail.activityHistoryTitle")}</h2>
               <span className="inline-flex h-7 items-center rounded-full bg-slate-100 px-3 text-xs font-medium text-slate-600 ring-1 ring-slate-200/80">
-                {activities.length} event{activities.length === 1 ? "" : "s"}
+                {t("pages.driverDetail.eventCount", { count: activities.length })}
               </span>
             </div>
             {loadingActivity ? (
-              <p className="text-sm text-ink-muted">Loading...</p>
+              <p className="text-sm text-ink-muted">{t("pages.driverDetail.loadingEllipsis")}</p>
             ) : activities.length === 0 ? (
               <div className="rounded-[14px] border border-dashed border-border/80 bg-brand-mint/10 px-5 py-10 text-center">
-                <p className="text-sm font-medium text-slate-800">No activity yet</p>
-                <p className="mt-1 text-sm text-slate-500">Driver updates and actions will appear here.</p>
+                <p className="text-sm font-medium text-slate-800">{t("pages.driverDetail.noActivityYetTitle")}</p>
+                <p className="mt-1 text-sm text-slate-500">{t("pages.driverDetail.noActivityYetDesc")}</p>
               </div>
             ) : (
               <ul className="space-y-2">
@@ -617,9 +617,9 @@ export function DriverDetailPage() {
       {deleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-ink">Delete driver?</h3>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.driverDetail.deleteDriverModalTitle")}</h3>
             <p className="text-sm text-ink-muted mt-2">
-              This will soft delete the driver. They will be removed from the active list and you will no longer be able to view or edit them here.
+              {t("pages.driverDetail.deleteDriverModalDesc")}
             </p>
             <div className="flex gap-2 mt-4">
               <button
@@ -628,7 +628,7 @@ export function DriverDetailPage() {
                 disabled={deleteMutation.isPending}
                 className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                {deleteMutation.isPending ? t("pages.driverDetail.deletingButton") : t("pages.driverDetail.deleteButton")}
               </button>
               <button
                 type="button"
@@ -636,7 +636,7 @@ export function DriverDetailPage() {
                 disabled={deleteMutation.isPending}
                 className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>
@@ -646,8 +646,8 @@ export function DriverDetailPage() {
       {assignOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-ink">Assign vehicle</h3>
-            <p className="text-sm text-ink-muted mt-1">Search and select a vehicle for this driver.</p>
+            <h3 className="text-lg font-semibold text-ink">{t("pages.driverDetail.assignVehicleModalTitle")}</h3>
+            <p className="text-sm text-ink-muted mt-1">{t("pages.driverDetail.assignVehicleModalDesc")}</p>
             <div className="mt-4">
               <VehicleSearchCombobox
                 value={selectedVehicle}
@@ -664,7 +664,7 @@ export function DriverDetailPage() {
                 onClick={() => assignMutation.mutate(selectedVehicle!.id)}
                 className="rounded-md bg-brand-gradient px-3 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
               >
-                {assignMutation.isPending ? "Assigning…" : "Assign"}
+                {assignMutation.isPending ? t("pages.driverDetail.assigningButton") : t("pages.driverDetail.assignButton")}
               </button>
               <button
                 type="button"
@@ -674,7 +674,7 @@ export function DriverDetailPage() {
                 }}
                 className="rounded-md border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

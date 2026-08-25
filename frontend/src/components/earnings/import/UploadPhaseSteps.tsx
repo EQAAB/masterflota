@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 import type { UploadPhase } from "../../../hooks/useUploadPhase";
 import { PHASE_ORDER } from "../../../hooks/useUploadPhase";
@@ -7,13 +8,13 @@ type UploadPhaseStepsProps = {
   active: boolean;
 };
 
-const STEP_LABELS: Record<UploadPhase, string> = {
-  uploading: "Upload",
-  validating: "Validate",
-  processing: "Process",
-};
-
 export function UploadPhaseSteps({ phase, active }: UploadPhaseStepsProps) {
+  const { t } = useTranslation();
+  const STEP_LABELS: Record<UploadPhase, string> = {
+    uploading: t("pages.earningsImport.uploadStepLabel"),
+    validating: t("pages.earningsImport.validateStepLabel"),
+    processing: t("pages.earningsImport.processStepLabel"),
+  };
   if (!active) return null;
 
   const currentIdx = phase ? PHASE_ORDER.indexOf(phase) : 0;

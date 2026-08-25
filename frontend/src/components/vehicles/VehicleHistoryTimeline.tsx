@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   createVehicleIncident,
   getVehicleHistory,
@@ -39,6 +40,7 @@ function TimelineSkeleton() {
 }
 
 function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center rounded-2xl border border-dashed border-border/80 bg-white px-6 py-12 text-center shadow-soft">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-mint/60 ring-1 ring-brand/15">
@@ -46,15 +48,16 @@ function EmptyState() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h3 className="mt-4 text-base font-semibold text-ink">No events yet</h3>
+      <h3 className="mt-4 text-base font-semibold text-ink">{t("pages.vehicleDetail.noEventsYetTitle")}</h3>
       <p className="mt-1 max-w-sm text-sm leading-relaxed text-ink-muted">
-        No events match this filter. Assignments, status changes, maintenance, incidents, and rent actions will appear here automatically.
+        {t("pages.vehicleDetail.noEventsMatchFilterDesc")}
       </p>
     </div>
   );
 }
 
 export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
+  const { t } = useTranslation();
   const canView = usePermission("vehicles.view");
   const canEdit = usePermission("vehicles.edit");
   const qc = useQueryClient();
@@ -106,7 +109,7 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
   });
 
   if (!canView) {
-    return <p className="text-sm text-ink-muted">You do not have access to vehicle history.</p>;
+    return <p className="text-sm text-ink-muted">{t("pages.vehicleDetail.noAccessVehicleHistory")}</p>;
   }
 
   const rows = historyQuery.data ?? [];
@@ -117,18 +120,18 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="text-lg font-semibold tracking-tight text-ink">Audit trail</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-ink">{t("pages.vehicleDetail.auditTrailTitle")}</h2>
         <p className="mt-1 text-sm text-ink-muted">
-          Assignments, status and rent changes, maintenance, incidents, and payroll rent deductions.
+          {t("pages.vehicleDetail.auditTrailDesc")}
         </p>
         {!historyQuery.isLoading && !historyQuery.isError && (
           <div className="mt-3 flex flex-wrap gap-2">
             <span className="inline-flex items-center rounded-full bg-brand-mint/50 px-3 py-1 text-xs font-medium text-brand-dark ring-1 ring-brand/10">
-              {eventCount} {eventCount === 1 ? "event" : "events"}
+              {t("pages.driverDetail.eventCount", { count: eventCount })}
             </span>
             {lastUpdated && (
               <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs text-ink-muted">
-                Last updated {lastUpdated}
+                {t("pages.vehicleDetail.lastUpdatedPrefix", { date: lastUpdated })}
               </span>
             )}
           </div>
@@ -168,7 +171,7 @@ export function VehicleHistoryTimeline({ vehicleId }: { vehicleId: string }) {
 
       {historyQuery.isError && (
         <div className={alertError} role="alert">
-          Failed to load vehicle history. Please try again.
+          {t("pages.vehicleDetail.failedToLoadVehicleHistoryDesc")}
         </div>
       )}
 

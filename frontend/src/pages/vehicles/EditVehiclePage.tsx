@@ -13,14 +13,6 @@ import {
 } from "../../api/vehicles";
 import { getDrivers } from "../../api/drivers";
 
-const VEHICLE_STATUSES = [
-  { value: "available", label: "Available" },
-  { value: "rented", label: "Rented" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "sold", label: "Sold" },
-  { value: "scrapped", label: "Scrapped" },
-] as const;
-
 function toDateInputValue(value: string | null | undefined): string {
   if (!value) return "";
   const d = value.split("T")[0];
@@ -54,6 +46,13 @@ function vehicleToForm(v: Vehicle): VehicleFormState {
 
 export function EditVehiclePage() {
   const { t } = useTranslation();
+  const VEHICLE_STATUSES = [
+    { value: "available", label: t("vehicleStatus.available") },
+    { value: "rented", label: t("vehicleStatus.rented") },
+    { value: "maintenance", label: t("vehicleStatus.maintenance") },
+    { value: "sold", label: t("vehicleStatus.sold") },
+    { value: "scrapped", label: t("vehicleStatus.scrapped") },
+  ] as const;
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -94,26 +93,26 @@ export function EditVehiclePage() {
         const msg =
           typeof err.response?.data?.message === "string"
             ? err.response.data.message
-            : "Failed to update vehicle.";
+            : t("pages.vehicleForm.failedToUpdateVehicle");
         setFormError(msg);
         return;
       }
-      setFormError(err instanceof Error ? err.message : "Failed to update vehicle.");
+      setFormError(err instanceof Error ? err.message : t("pages.vehicleForm.failedToUpdateVehicle"));
     },
   });
 
   const validate = (): string | null => {
     if (!form) return null;
-    if (!form.vehicleType?.trim()) return "Vehicle type is required.";
-    if (!form.make?.trim()) return "Make is required.";
-    if (!form.model?.trim()) return "Model is required.";
-    if (!form.licensePlate?.trim()) return "License plate is required.";
+    if (!form.vehicleType?.trim()) return t("pages.vehicleForm.vehicleTypeRequiredError");
+    if (!form.make?.trim()) return t("pages.vehicleForm.makeRequiredError");
+    if (!form.model?.trim()) return t("pages.vehicleForm.modelRequiredError");
+    if (!form.licensePlate?.trim()) return t("pages.vehicleForm.licensePlateRequiredError");
     const daily = Number(form.dailyRent);
     const weekly = Number(form.weeklyRent);
     const monthly = Number(form.monthlyRent);
-    if (!Number.isNaN(daily) && daily < 0) return "Daily rent cannot be negative.";
-    if (!Number.isNaN(weekly) && weekly < 0) return "Weekly rent cannot be negative.";
-    if (!Number.isNaN(monthly) && monthly < 0) return "Monthly rent cannot be negative.";
+    if (!Number.isNaN(daily) && daily < 0) return t("pages.vehicleForm.dailyRentNegativeError");
+    if (!Number.isNaN(weekly) && weekly < 0) return t("pages.vehicleForm.weeklyRentNegativeError");
+    if (!Number.isNaN(monthly) && monthly < 0) return t("pages.vehicleForm.monthlyRentNegativeError");
     return null;
   };
 
@@ -156,8 +155,8 @@ export function EditVehiclePage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-ink-muted">Missing vehicle ID.</p>
-        <Link to="/vehicles" className="ml-2 text-brand hover:underline">Back to vehicles</Link>
+        <p className="text-ink-muted">{t("pages.vehicleDocuments.missingVehicleIdError")}</p>
+        <Link to="/vehicles" className="ml-2 text-brand hover:underline">{t("pages.vehicleDocuments.backToVehicles")}</Link>
       </div>
     );
   }
@@ -167,7 +166,7 @@ export function EditVehiclePage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-ink-muted">Loading vehicle...</p>
+          <p className="text-sm text-ink-muted">{t("pages.vehicleForm.loadingVehicle")}</p>
         </div>
       </div>
     );
@@ -177,9 +176,9 @@ export function EditVehiclePage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
-          <p className="text-red-600">Failed to load vehicle.</p>
+          <p className="text-red-600">{t("pages.vehicleForm.failedToLoadVehicle")}</p>
           <Link to="/vehicles" className="mt-3 inline-block text-sm text-brand hover:underline">
-            Back to vehicles
+            {t("pages.vehicleDocuments.backToVehicles")}
           </Link>
         </div>
       </div>
@@ -190,8 +189,8 @@ export function EditVehiclePage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
-          <p className="text-green-600 font-medium">Vehicle updated successfully.</p>
-          <p className="text-sm text-ink-muted mt-1">Redirecting to vehicles list...</p>
+          <p className="text-green-600 font-medium">{t("pages.vehicleForm.vehicleUpdatedSuccess")}</p>
+          <p className="text-sm text-ink-muted mt-1">{t("pages.vehicleForm.redirectingToVehiclesList")}</p>
         </div>
       </div>
     );
@@ -202,7 +201,7 @@ export function EditVehiclePage() {
       <header className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">{t("pages.vehicleEdit.title")}</h1>
         <Link to={`/vehicles/${id}`} className="text-sm text-ink-muted hover:text-ink">
-          ← Back to vehicle
+          ← {t("pages.vehicleForm.backToVehicle")}
         </Link>
       </header>
 
@@ -213,10 +212,10 @@ export function EditVehiclePage() {
           )}
 
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Basic info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.vehicleForm.basicInfoTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Vehicle type *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.vehicleTypeRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -226,7 +225,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Make *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.makeRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -236,7 +235,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Model *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.modelRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -246,7 +245,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Year</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.yearLabel")}</label>
                 <input
                   type="number"
                   min={1900}
@@ -259,7 +258,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Color</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.colorLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -268,7 +267,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License plate *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.licensePlateRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -278,7 +277,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">VIN</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.vinLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -287,13 +286,13 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Current driver</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.currentDriverLabel")}</label>
                 <select
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.currentDriverId}
                   onChange={(e) => update("currentDriverId", e.target.value)}
                 >
-                  <option value="">— None —</option>
+                  <option value="">{t("pages.vehicleForm.noneOption")}</option>
                   {driversList?.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.first_name} {d.last_name}
@@ -302,7 +301,7 @@ export function EditVehiclePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Fuel type</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.fuelTypeLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -311,7 +310,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Transmission</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.transmissionLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -320,7 +319,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Seating capacity</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.seatingCapacityLabel")}</label>
                 <input
                   type="number"
                   min={1}
@@ -338,10 +337,10 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Rental rates (RON)</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.vehicleForm.rentalRatesTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Daily rent</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.dailyRentLabel")}</label>
                 <input
                   type="number"
                   min={0}
@@ -352,8 +351,8 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1" title="Deducted from each weekly driver payout while this vehicle is assigned to the driver.">
-                  Weekly rent (payroll deduction)
+                <label className="block text-sm font-medium text-ink mb-1" title={t("pages.vehicleForm.weeklyRentTooltip")}>
+                  {t("pages.vehicleForm.weeklyRentLabel")}
                 </label>
                 <input
                   type="number"
@@ -365,7 +364,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Monthly rent</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.monthlyRentLabel")}</label>
                 <input
                   type="number"
                   min={0}
@@ -379,10 +378,10 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Dates & status</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.vehicleForm.datesStatusTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Insurance expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.insuranceExpiryLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -391,7 +390,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Registration expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.vehicleForm.registrationExpiryLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -400,7 +399,7 @@ export function EditVehiclePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Status</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("common.status")}</label>
                 <select
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.status}
@@ -417,7 +416,7 @@ export function EditVehiclePage() {
           </section>
 
           <section>
-            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ink mb-1">{t("pages.invoiceDetail.notesLabel")}</label>
             <textarea
               rows={3}
               className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -432,13 +431,13 @@ export function EditVehiclePage() {
               disabled={mutation.isPending}
               className="rounded-md bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
             >
-              {mutation.isPending ? "Saving..." : "Save changes"}
+              {mutation.isPending ? t("pages.vehicleForm.savingButton") : t("pages.users.saveChangesButton")}
             </button>
             <Link
               to={`/vehicles/${id}`}
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50"
             >
-              Cancel
+              {t("common.cancel")}
             </Link>
           </div>
         </form>

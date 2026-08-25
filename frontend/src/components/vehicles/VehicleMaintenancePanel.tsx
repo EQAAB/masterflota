@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { VehicleMaintenance } from "../../api/vehicles";
 import { formatCurrency } from "../../utils/currency";
 
@@ -18,6 +19,13 @@ const STATUS_STYLES: Record<string, string> = {
   in_progress: "bg-sky-100 text-sky-800 ring-1 ring-sky-200/70",
   completed: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200/70",
   cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200/80",
+};
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  pending: "pages.vehicleDetail.pendingOption",
+  in_progress: "pages.vehicleDetail.inProgressOption",
+  completed: "pages.vehicleDetail.completedOption",
+  cancelled: "pages.vehicleDetail.cancelledOption",
 };
 
 function maintenanceTypeVisual(type: string): { iconClass: string; label: string } {
@@ -68,6 +76,7 @@ type VehicleMaintenancePanelProps = {
 };
 
 export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMaintenancePanelProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -89,10 +98,10 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
   }, [records, search, statusFilter]);
 
   const statCards = [
-    { label: "Total jobs", value: stats.total, className: "bg-slate-50" },
-    { label: "Pending", value: stats.pending, className: "bg-amber-50/80" },
-    { label: "In progress", value: stats.inProgress, className: "bg-sky-50/80" },
-    { label: "Completed", value: stats.completed, className: "bg-emerald-50/80" },
+    { label: t("pages.vehicleDetail.totalJobsLabel"), value: stats.total, className: "bg-slate-50" },
+    { label: t("pages.vehicleDetail.pendingOption"), value: stats.pending, className: "bg-amber-50/80" },
+    { label: t("pages.vehicleDetail.inProgressOption"), value: stats.inProgress, className: "bg-sky-50/80" },
+    { label: t("pages.vehicleDetail.completedOption"), value: stats.completed, className: "bg-emerald-50/80" },
   ];
 
   return (
@@ -113,9 +122,9 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
         <div className="border-b border-border/70 px-4 py-4 sm:px-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold tracking-tight text-slate-900">Maintenance</h2>
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">{t("pages.vehicleDetail.maintenance")}</h2>
               <p className="mt-0.5 text-sm text-slate-500">
-                Track scheduled work, costs, and service status for this vehicle.
+                {t("pages.vehicleDetail.maintenanceDesc")}
               </p>
             </div>
             {canEdit && (
@@ -125,7 +134,7 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-gradient px-4 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md"
               >
                 <PlusIcon className="h-4 w-4" />
-                Add maintenance
+                {t("pages.vehicleDetail.addMaintenanceModalTitle")}
               </button>
             )}
           </div>
@@ -135,7 +144,7 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search type, description, mechanic…"
+              placeholder={t("pages.vehicleDetail.searchTypeDescMechanicPlaceholder")}
               className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             />
             <select
@@ -143,11 +152,11 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t("pages.vehicleDetail.allStatusesOption")}</option>
+              <option value="pending">{t("pages.vehicleDetail.pendingOption")}</option>
+              <option value="in_progress">{t("pages.vehicleDetail.inProgressOption")}</option>
+              <option value="completed">{t("pages.vehicleDetail.completedOption")}</option>
+              <option value="cancelled">{t("pages.vehicleDetail.cancelledOption")}</option>
             </select>
           </div>
         </div>
@@ -158,12 +167,12 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
               <WrenchIcon className="h-5 w-5" />
             </span>
             <p className="text-sm font-medium text-slate-800">
-              {records.length === 0 ? "No maintenance records yet" : "No matching records"}
+              {records.length === 0 ? t("pages.vehicleDetail.noMaintenanceRecordsYet") : t("pages.vehicleDetail.noMatchingRecords")}
             </p>
             <p className="mt-1 text-sm text-slate-500">
               {records.length === 0
-                ? "Add the first service entry to start tracking maintenance history."
-                : "Try adjusting your search or status filter."}
+                ? t("pages.vehicleDetail.addFirstServiceEntryDesc")
+                : t("pages.vehicleDetail.tryAdjustingSearchDesc")}
             </p>
           </div>
         ) : (
@@ -172,19 +181,19 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
               <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
                 <tr className="border-b border-slate-200">
                   <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    Type
+                    {t("pages.vehicleDetail.typeColumnLabel")}
                   </th>
                   <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    Description
+                    {t("pages.vehicleDetail.descriptionLabel")}
                   </th>
                   <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    Scheduled
+                    {t("pages.vehicleDetail.scheduledColumnLabel")}
                   </th>
                   <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    Cost
+                    {t("pages.vehicleDetail.costColumnLabel")}
                   </th>
                   <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                    Status
+                    {t("common.status")}
                   </th>
                 </tr>
               </thead>
@@ -209,7 +218,7 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
                       <td className="max-w-xs px-4 py-3">
                         <p className="text-slate-800">{m.description ?? "—"}</p>
                         {m.mechanic_name && (
-                          <p className="mt-0.5 text-xs text-slate-500">Mechanic: {m.mechanic_name}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{t("pages.vehicleDetail.mechanicPrefix", { name: m.mechanic_name })}</p>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-700">
@@ -222,7 +231,7 @@ export function VehicleMaintenancePanel({ records, canEdit, onAdd }: VehicleMain
                         <span
                           className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-medium capitalize ${STATUS_STYLES[m.status] ?? STATUS_STYLES.pending}`}
                         >
-                          {m.status.replace("_", " ")}
+                          {STATUS_LABEL_KEYS[m.status] ? t(STATUS_LABEL_KEYS[m.status]) : m.status.replace("_", " ")}
                         </span>
                       </td>
                     </tr>

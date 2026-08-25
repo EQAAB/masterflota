@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { VehicleListItem } from "../../api/vehicles";
 import { useVehicleCombobox } from "../../hooks/useVehicleCombobox";
 
@@ -30,6 +31,7 @@ export function VehicleSearchCombobox({
   hideLabel = false,
   inputClassName,
 }: VehicleSearchComboboxProps) {
+  const { t } = useTranslation();
   const baseId = useId();
   const inputId = `${baseId}-input`;
   const listboxId = `${baseId}-listbox`;
@@ -113,7 +115,7 @@ export function VehicleSearchCombobox({
     <div ref={rootRef} className="relative">
       {!hideLabel && (
         <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink">
-          Vehicle *
+          {t("pages.searchCombobox.vehicleRequiredLabel")}
         </label>
       )}
       <input
@@ -128,7 +130,7 @@ export function VehicleSearchCombobox({
         aria-autocomplete="list"
         aria-required={!hideLabel}
         aria-activedescendant={activeDescendantId}
-        placeholder="Search by plate, make, model, or VIN…"
+        placeholder={t("pages.searchCombobox.searchByPlateMakeModelVinPlaceholder")}
         className={inputClassName ?? defaultInputClass}
         value={inputValue}
         onChange={(e) => handleInputChange(e.target.value)}
@@ -141,7 +143,7 @@ export function VehicleSearchCombobox({
           <button
             type="button"
             className="fixed inset-0 z-[55] cursor-default bg-slate-900/35 backdrop-blur-[1px] md:hidden"
-            aria-label="Close vehicle list"
+            aria-label={t("pages.searchCombobox.closeVehicleListAria")}
             onClick={() => setOpen(false)}
           />
           <ul
@@ -153,7 +155,7 @@ export function VehicleSearchCombobox({
               role="presentation"
               className="sticky top-0 z-10 border-b border-border/80 bg-white/95 px-3 py-2 text-center text-xs font-medium text-ink-muted backdrop-blur-sm md:hidden"
             >
-              Select a vehicle
+              {t("pages.searchCombobox.selectAVehicleText")}
             </li>
             {isFetching && (
               <li role="presentation" className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-ink-muted">
@@ -161,20 +163,20 @@ export function VehicleSearchCombobox({
                   className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-border border-t-sky-600"
                   aria-hidden
                 />
-                Loading vehicles…
+                {t("pages.searchCombobox.loadingVehiclesEllipsis")}
               </li>
             )}
             {!isFetching && isError && (
               <li role="presentation" className="px-3 py-3 text-center text-sm text-red-600">
-                Could not load vehicles.{" "}
+                {t("pages.searchCombobox.couldNotLoadVehicles")}{" "}
                 <button type="button" className="font-medium text-brand underline" onClick={() => refetch()}>
-                  Retry
+                  {t("common.retry")}
                 </button>
               </li>
             )}
             {!isFetching && !isError && results.length === 0 && (
               <li role="presentation" className="px-3 py-4 text-center text-sm text-ink-muted">
-                No vehicles match your search.
+                {t("pages.searchCombobox.noVehiclesMatchSearch")}
               </li>
             )}
             {!isFetching &&
@@ -204,13 +206,13 @@ export function VehicleSearchCombobox({
                       <span className="font-medium">{v.license_plate}</span>
                       {isReassign && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-                          reassign
+                          {t("pages.searchCombobox.reassignBadge")}
                         </span>
                       )}
                     </div>
                     <div className="text-xs text-ink-muted">{vehicleSubtitle(v)}</div>
                     {isReassign && driverName && (
-                      <div className="text-xs text-ink-muted">Currently: {driverName}</div>
+                      <div className="text-xs text-ink-muted">{t("pages.searchCombobox.currentlyPrefix", { name: driverName })}</div>
                     )}
                   </li>
                 );

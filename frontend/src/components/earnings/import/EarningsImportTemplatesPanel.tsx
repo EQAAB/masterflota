@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BoltPlatformLogo,
   GlovoPlatformLogo,
@@ -69,6 +70,7 @@ type ImportTemplateMiniCardProps = {
 };
 
 function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
+  const { t } = useTranslation();
   const Logo = LOGO_BY_PLATFORM[config.id];
 
   return (
@@ -88,10 +90,10 @@ function ImportTemplateMiniCard({ config }: ImportTemplateMiniCardProps) {
         type="button"
         onClick={() => downloadPlatformImportTemplate(config.id)}
         className="platform-template-card__download inline-flex items-center justify-center gap-1 text-[11px] font-medium text-brand"
-        aria-label={`Download ${config.label} ${config.category} template`}
+        aria-label={t("pages.earningsImport.downloadTemplateAriaLabel", { platform: config.label, category: config.category })}
       >
         <DownloadIcon className="h-3 w-3 shrink-0" />
-        Download
+        {t("common.download")}
       </button>
     </div>
   );
@@ -103,6 +105,7 @@ type ViewAllPopoverRowProps = {
 };
 
 function ViewAllPopoverRow({ config, onDownload }: ViewAllPopoverRowProps) {
+  const { t } = useTranslation();
   const Logo = LOGO_BY_PLATFORM[config.id];
 
   return (
@@ -118,7 +121,7 @@ function ViewAllPopoverRow({ config, onDownload }: ViewAllPopoverRowProps) {
         type="button"
         onClick={onDownload}
         className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-brand/25 text-brand ${transitionDefault} hover:bg-brand-mint/30`}
-        aria-label={`Download ${platformDisplayLabel(config)} template`}
+        aria-label={t("pages.earningsImport.downloadPlatformTemplateAriaLabel", { platform: platformDisplayLabel(config) })}
       >
         <DownloadIcon className="h-4 w-4" />
       </button>
@@ -127,6 +130,7 @@ function ViewAllPopoverRow({ config, onDownload }: ViewAllPopoverRowProps) {
 }
 
 export function EarningsImportTemplatesPanel() {
+  const { t } = useTranslation();
   const [viewAllOpen, setViewAllOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -144,9 +148,9 @@ export function EarningsImportTemplatesPanel() {
     <div className="flex h-full min-h-[148px] flex-col rounded-xl border border-border/50 bg-gradient-to-br from-surface/40 to-white p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-ink">Download templates</h3>
+          <h3 className="text-sm font-semibold text-ink">{t("pages.earningsImport.downloadTemplatesTitle")}</h3>
           <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
-            Correct CSV format per platform
+            {t("pages.earningsImport.correctCsvFormatDesc")}
           </p>
         </div>
         <div className="relative shrink-0" ref={popoverRef}>
@@ -157,13 +161,13 @@ export function EarningsImportTemplatesPanel() {
             aria-expanded={viewAllOpen}
             aria-haspopup="menu"
           >
-            View all
+            {t("pages.earningsImport.viewAllButton")}
             <ArrowIcon className="h-3 w-3" />
           </button>
           {viewAllOpen && (
             <div className="absolute right-0 z-50 mt-1.5 w-60 rounded-xl border border-border bg-white p-1.5 shadow-card-hover">
               <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-muted">
-                All platforms
+                {t("pages.earningsImport.allPlatformsOption")}
               </p>
               <div className="max-h-64 overflow-y-auto">
                 {IMPORT_TEMPLATE_PLATFORMS.map((config) => (
@@ -203,7 +207,7 @@ export function EarningsImportTemplatesPanel() {
           <InfoIcon className="h-3 w-3" />
         </span>
         <p className="text-[11px] leading-snug text-slate-600">
-          Using the right template prevents validation errors.
+          {t("pages.earningsImport.rightTemplatePreventsErrorsHint")}
         </p>
       </div>
     </div>

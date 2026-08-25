@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -22,13 +23,14 @@ export function ConfirmDialog({
   title,
   description,
   children,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   confirmVariant = "primary",
   isLoading = false,
   onConfirm,
   rootClassName = "",
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -124,7 +126,7 @@ export function ConfirmDialog({
             onClick={onClose}
             className="inline-flex min-h-[44px] items-center justify-center rounded-btn border border-border bg-white px-4 py-2.5 text-sm font-medium text-ink shadow-sm hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {cancelLabel}
+            {cancelLabel ?? t("common.cancel")}
           </button>
           <button
             type="button"
@@ -138,10 +140,10 @@ export function ConfirmDialog({
                   className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
                   aria-hidden
                 />
-                Please wait…
+                {t("common.pleaseWaitEllipsis")}
               </span>
             ) : (
-              confirmLabel
+              confirmLabel ?? t("common.confirm")
             )}
           </button>
         </div>

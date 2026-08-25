@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 import type { UploadPhase } from "../../../hooks/useUploadPhase";
 import {
@@ -65,6 +66,7 @@ export function EarningsImportUploadCard({
   onBrowseClick,
   onRetry,
 }: EarningsImportUploadCardProps) {
+  const { t } = useTranslation();
   const hasError = Boolean(uploadError);
   const zoneActive = dragActive || isPending;
   const progress = uploadPhaseProgress(uploadPhase, isPending);
@@ -100,9 +102,9 @@ export function EarningsImportUploadCard({
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <h2 className="text-sm font-semibold tracking-tight text-ink">
                 {hasError
-                  ? "Upload failed"
+                  ? t("pages.earningsImport.uploadFailedTitle")
                   : dragActive && !isPending
-                    ? "Drop to upload"
+                    ? t("pages.earningsImport.dropToUploadText")
                     : uploadPhaseLabel(uploadPhase, isPending)}
               </h2>
               <p className="mt-0.5 text-[13px] leading-snug text-ink-muted">
@@ -112,15 +114,15 @@ export function EarningsImportUploadCard({
                   uploadPhaseDescription(uploadPhase, isPending)
                 ) : (
                   <>
-                    or{" "}
-                    <span className="font-medium text-brand group-hover:underline">browse files</span>{" "}
-                    from your computer
+                    {t("pages.earningsImport.orWord")}{" "}
+                    <span className="font-medium text-brand group-hover:underline">{t("pages.earningsImport.browseFilesLowercase")}</span>{" "}
+                    {t("pages.earningsImport.orBrowseFilesSuffix")}
                   </>
                 )}
               </p>
               {!isPending && !hasError && (
                 <p className="mt-1 text-[11px] text-ink-muted/80">
-                  CSV, XLSX, ZIP, XML, PDF · Max 25 MB
+                  {t("pages.earningsImport.csvXlsxZipXmlPdfMax25MbText")}
                 </p>
               )}
 
@@ -139,7 +141,7 @@ export function EarningsImportUploadCard({
               {!isPending && !hasError && (
                 <span className="import-browse-btn mt-2">
                   <FolderUploadIcon className="h-4 w-4 shrink-0" />
-                  Browse files
+                  {t("pages.earningsImport.browseFilesButton")}
                 </span>
               )}
 
@@ -154,7 +156,7 @@ export function EarningsImportUploadCard({
                     }}
                     className="import-browse-btn"
                   >
-                    Try again
+                    {t("pages.earningsImport.tryAgainButton")}
                   </button>
                 </span>
               )}
@@ -174,7 +176,7 @@ export function EarningsImportUploadCard({
               {hasError && (
                 <span className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium text-red-600">
                   <AlertIcon className="h-3.5 w-3.5 shrink-0" />
-                  Check file format and try again
+                  {t("pages.earningsImport.checkFileFormatHint")}
                 </span>
               )}
             </div>

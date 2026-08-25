@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { ConsolidatedDriverPayout } from "../../api/earnings";
 import { postLoanRepaymentFromPayout } from "../../api/driverLoans";
 import { formatCurrency } from "../../utils/currency";
@@ -29,6 +30,7 @@ export function LoanRepaymentModal({
   onClose,
   onSuccess,
 }: LoanRepaymentModalProps) {
+  const { t } = useTranslation();
   const [note, setNote] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -80,8 +82,8 @@ export function LoanRepaymentModal({
     } catch (e: unknown) {
       const msg =
         e && typeof e === "object" && "response" in e
-          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Request failed")
-          : "Request failed";
+          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? t("pages.payoutModals.requestFailedError"))
+          : t("pages.payoutModals.requestFailedError");
       setErr(msg);
     } finally {
       setBusy(false);
@@ -104,22 +106,22 @@ export function LoanRepaymentModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold text-ink">Loan repayment</h2>
+          <h2 className="text-lg font-semibold text-ink">{t("pages.payoutModals.loanRepaymentTitle")}</h2>
           <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {weekStart} – {weekEnd}
           </p>
           <p className="text-xs text-ink-muted mt-1 tabular-nums">
-            Week net: {formatCurrency(weekNet)} · Loan outstanding: {formatCurrency(outstanding)}
+            {t("pages.payoutModals.weekNetLoanOutstandingLine", { weekNet: formatCurrency(weekNet), outstanding: formatCurrency(outstanding) })}
           </p>
           {maxRepay < outstanding && weekNet > 0.02 && (
             <p className="text-xs text-amber-800 mt-1">
-              Up to {formatCurrency(maxRepay)} can be taken from this week&apos;s payout.
+              {t("pages.payoutModals.upToCanBeTakenHint", { amount: formatCurrency(maxRepay) })}
             </p>
           )}
           {row.planned_repayment_week?.slice(0, 10) === weekStart.slice(0, 10) && (
             <p className="text-xs text-sky-800 mt-1">
-              Planned repayment week
-              {row.planned_repayment_note?.trim() ? `: ${row.planned_repayment_note.trim()}` : ""}
+              {t("pages.payoutModals.plannedRepaymentWeekLabel")}
+              {row.planned_repayment_note?.trim() ? t("pages.payoutModals.plannedRepaymentNoteSuffix", { note: row.planned_repayment_note.trim() }) : ""}
             </p>
           )}
         </div>
@@ -128,19 +130,19 @@ export function LoanRepaymentModal({
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Note (optional)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.noteOptionalLabel")}</label>
             <textarea
               className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[72px]"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               disabled={busy}
-              placeholder="Repayment note…"
+              placeholder={t("pages.payoutModals.repaymentNotePlaceholder")}
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
-              Amount from this payout (RON)
+              {t("pages.payoutModals.amountFromThisPayoutLabel")}
             </label>
             <input
               type="number"
@@ -149,15 +151,19 @@ export function LoanRepaymentModal({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               disabled={busy}
-              placeholder={`Max ${maxRepay.toFixed(2)}`}
+              placeholder={t("pages.payoutModals.maxAmountPlaceholder", { amount: maxRepay.toFixed(2) })}
             />
           </div>
 
           {previewRem !== null && (
             <div className="rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs text-ink tabular-nums">
-              <p className="font-medium text-ink">Preview</p>
+              <p className="font-medium text-ink">{t("pages.payoutModals.previewLabel")}</p>
               <p>
-                Loan remaining → <span className="font-semibold">{formatCurrency(previewRem)}</span>
+                <Trans
+                  i18nKey="pages.payoutModals.loanRemainingPreview"
+                  values={{ amount: formatCurrency(previewRem) }}
+                  components={{ b: <span className="font-semibold" /> }}
+                />
               </p>
             </div>
           )}
@@ -169,14 +175,14 @@ export function LoanRepaymentModal({
               onClick={() => {
                 const v = amount.trim() === "" ? undefined : parseFloat(amount);
                 if (v !== undefined && (!Number.isFinite(v) || v <= 0)) {
-                  setErr("Enter a positive amount, or use Settle full loan.");
+                  setErr(t("pages.payoutModals.loanAmountPositiveError"));
                   return;
                 }
                 void submit({ amount: v });
               }}
               className="rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900 hover:bg-sky-100 disabled:opacity-50"
             >
-              Take from this payout
+              {t("pages.payoutModals.takeFromThisPayoutButton")}
             </button>
             <button
               type="button"
@@ -184,8 +190,8 @@ export function LoanRepaymentModal({
               onClick={() => void submit({ settle_full: true })}
               className="rounded-lg bg-sky-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-800 disabled:opacity-50"
             >
-              Settle full loan from payout
-              {maxRepay < outstanding ? ` (up to ${formatCurrency(maxRepay)})` : ""}
+              {t("pages.payoutModals.settleFullLoanButton")}
+              {maxRepay < outstanding ? t("pages.payoutModals.settleFullLoanUpToSuffix", { amount: formatCurrency(maxRepay) }) : ""}
             </button>
             <button
               type="button"
@@ -193,7 +199,7 @@ export function LoanRepaymentModal({
               onClick={handleClose}
               className="rounded-lg border border-border px-4 py-2 text-sm text-ink-muted hover:bg-slate-50"
             >
-              Skip this week
+              {t("pages.payoutModals.skipThisWeekButton")}
             </button>
           </div>
         </div>

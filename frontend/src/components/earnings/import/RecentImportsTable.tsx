@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { EarningsImportListItem } from "../../../api/earnings";
 import { importProcessedRows, importTotalRows } from "../../../api/earnings";
 import { PlatformBadge } from "../../drivers/platformLogos";
@@ -160,6 +161,7 @@ export function RecentImportsTable({
   onDelete,
   onRevert,
 }: RecentImportsTableProps) {
+  const { t } = useTranslation();
   const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -199,9 +201,9 @@ export function RecentImportsTable({
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 px-4 py-3.5 sm:px-5">
         <div>
-          <h2 className="text-base font-semibold tracking-tight text-ink">Recent imports</h2>
+          <h2 className="text-base font-semibold tracking-tight text-ink">{t("pages.earningsImport.recentImportsTitle")}</h2>
           <p className="mt-0.5 text-xs text-ink-muted">
-            {rows.length > 0 ? `${rows.length} import${rows.length === 1 ? "" : "s"} · validation & processing status` : "Track validation, processing, and completion"}
+            {rows.length > 0 ? t("pages.earningsImport.importCountStatus", { count: rows.length }) : t("pages.earningsImport.trackValidationProcessingDesc")}
           </p>
         </div>
         {canResync && (
@@ -212,7 +214,7 @@ export function RecentImportsTable({
           className={`${btnSecondary} h-9 gap-2 rounded-xl border-border/60 px-3 text-sm shadow-sm ${transitionDefault} hover:shadow-md`}
         >
           <RefreshIcon className={`h-4 w-4 text-ink-muted ${resyncPending ? "animate-spin" : ""}`} />
-          {resyncPending ? "Re-syncing…" : "Re-sync rentals"}
+          {resyncPending ? t("pages.earningsImport.resyncingEllipsis") : t("pages.earningsImport.resyncRentalsButton")}
         </button>
         )}
       </div>
@@ -224,9 +226,9 @@ export function RecentImportsTable({
           <span
             className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent"
             role="status"
-            aria-label="Loading imports"
+            aria-label={t("pages.earningsImport.loadingImportsAria")}
           />
-          <p className="text-sm text-ink-muted">Loading recent imports…</p>
+          <p className="text-sm text-ink-muted">{t("pages.earningsImport.loadingRecentImportsEllipsis")}</p>
         </div>
       ) : rows.length === 0 ? (
         <ImportEmptyState />
@@ -236,26 +238,26 @@ export function RecentImportsTable({
             <thead className="sticky top-0 z-10 border-b border-border/50 bg-white/95 backdrop-blur-sm">
               <tr>
                 <th className={`${tableHeaderCell} min-w-[220px]`}>
-                  <span className={headerLabel}>File</span>
+                  <span className={headerLabel}>{t("pages.earningsImport.colFile")}</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[140px]`}>
-                  <span className={headerLabel}>Platform</span>
+                  <span className={headerLabel}>{t("pages.earningsOverview.platformLabel")}</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[128px]`}>
-                  <span className={headerLabel}>Period</span>
+                  <span className={headerLabel}>{t("pages.earningsImport.colPeriod")}</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[108px]`}>
-                  <span className={headerLabel}>Status</span>
+                  <span className={headerLabel}>{t("common.status")}</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[96px] text-right`}>
-                  <span className={headerLabel}>Processed</span>
+                  <span className={headerLabel}>{t("pages.earningsImport.colProcessed")}</span>
                 </th>
                 <th className={`${tableHeaderCell} w-[116px]`}>
-                  <span className={headerLabel}>Created</span>
+                  <span className={headerLabel}>{t("pages.earningsImport.colCreated")}</span>
                 </th>
                 {showImportActions && (
                   <th className={`${tableHeaderCell} w-[48px] text-right`}>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{t("pages.earningsImport.actionsSrLabel")}</span>
                   </th>
                 )}
               </tr>
@@ -322,7 +324,7 @@ export function RecentImportsTable({
                         {hasActions ? (
                           <button
                             type="button"
-                            aria-label="Import actions"
+                            aria-label={t("pages.earningsImport.importActionsAriaLabel")}
                             aria-haspopup="menu"
                             aria-expanded={openMenuRowId === row.id}
                             onClick={(e) => {

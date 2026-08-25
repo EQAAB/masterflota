@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bar,
   BarChart,
@@ -44,6 +45,7 @@ function BarTooltip({
 }
 
 export function MonthlyGrossBarChart({ monthly, dateFrom, dateTo }: MonthlyGrossBarChartProps) {
+  const { t } = useTranslation();
   const [preset, setPreset] = useState<MonthRangePreset>("6");
 
   const chartData = useMemo(() => {
@@ -60,22 +62,22 @@ export function MonthlyGrossBarChart({ monthly, dateFrom, dateTo }: MonthlyGross
   return (
     <div className={chartCard}>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <h3 className="text-sm font-semibold text-ink">Monthly gross (bars)</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.earningsOverview.monthlyGrossBarsTitle")}</h3>
         <select
           value={preset}
           onChange={(e) => setPreset(e.target.value as MonthRangePreset)}
           className={`${inputCompact} w-auto min-w-[140px] text-sm`}
-          aria-label="Month range"
+          aria-label={t("pages.earningsOverview.monthRangeAriaLabel")}
         >
-          <option value="6">Last 6 months</option>
-          <option value="12">Last 12 months</option>
-          <option value="all">All months</option>
+          <option value="6">{t("pages.earningsOverview.last6MonthsPreset")}</option>
+          <option value="12">{t("pages.earningsOverview.last12MonthsOption")}</option>
+          <option value="all">{t("pages.earningsOverview.allMonthsOption")}</option>
         </select>
       </div>
 
       {chartData.length === 0 ? (
         <div className="flex h-64 items-center justify-center text-sm text-ink-muted">
-          No monthly data for this range.
+          {t("pages.earningsOverview.noMonthlyDataForRange")}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>

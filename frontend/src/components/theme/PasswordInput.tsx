@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { input, sectionLabel } from "../../theme/classNames";
 import { generateStrongPassword } from "../../utils/generateStrongPassword";
 import {
@@ -56,6 +57,7 @@ export function PasswordInput({
   helperText,
   className,
 }: PasswordInputProps) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -99,7 +101,7 @@ export function PasswordInput({
         />
         <div className="fm-password-input__actions">
           <IconButton
-            label={visible ? "Hide password" : "Show password"}
+            label={visible ? t("common.hidePassword") : t("common.showPassword")}
             onClick={() => setVisible((v) => !v)}
           >
             {visible ? (
@@ -128,7 +130,7 @@ export function PasswordInput({
               </svg>
             )}
           </IconButton>
-          <IconButton label="Generate strong password" onClick={handleGenerate}>
+          <IconButton label={t("common.generateStrongPassword")} onClick={handleGenerate}>
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path
                 strokeLinecap="round"
@@ -138,7 +140,7 @@ export function PasswordInput({
               />
             </svg>
           </IconButton>
-          <IconButton label="Copy password" onClick={handleCopy} disabled={!value}>
+          <IconButton label={t("common.copyPassword")} onClick={handleCopy} disabled={!value}>
             {copied ? (
               <svg className="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -156,12 +158,12 @@ export function PasswordInput({
           </IconButton>
         </div>
       </div>
-      {copied && <p className="mt-1 text-xs text-emerald-700">Copied to clipboard</p>}
+      {copied && <p className="mt-1 text-xs text-emerald-700">{t("common.copiedToClipboard")}</p>}
       {helperText && <p className="mt-1 text-xs text-ink-muted">{helperText}</p>}
       {showStrength && value.length > 0 && (
         <div className="mt-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-ink-muted">Password strength</span>
+            <span className="text-ink-muted">{t("common.passwordStrength")}</span>
             <span className="font-medium text-ink">{strengthLabel(strength)}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">

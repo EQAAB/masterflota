@@ -46,9 +46,9 @@ export function SubcontractorDetailPage() {
             title={d?.legal_name ?? t("pages.subcontractorDetail.title")}
             description={t("pages.subcontractorDetail.subtitle")}
             breadcrumbs={[
-              { label: "Dashboard", to: "/dashboard" },
-              { label: "Subcontractors", to: "/subcontractors" },
-              { label: d?.legal_name ?? "Detail" },
+              { label: t("nav.dashboard"), to: "/dashboard" },
+              { label: t("nav.subcontractors"), to: "/subcontractors" },
+              { label: d?.legal_name ?? t("pages.subcontractorDetail.detailFallback") },
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5"
             actions={
@@ -66,55 +66,55 @@ export function SubcontractorDetailPage() {
       </div>
 
       <main className="mx-auto w-full max-w-[1200px] flex-1 p-4 sm:p-6">
-        {detailQ.isLoading && <p className="text-sm text-slate-500">Loading subcontractor…</p>}
+        {detailQ.isLoading && <p className="text-sm text-slate-500">{t("pages.subcontractorDetail.loadingSubcontractor")}</p>}
         {detailQ.isError && (
-          <p className="text-sm text-red-700">Could not load subcontractor.</p>
+          <p className="text-sm text-red-700">{t("pages.subcontractorDetail.couldNotLoadSubcontractor")}</p>
         )}
 
         {d && (
           <div className={`grid gap-4 ${d.drivers.length > 0 ? "lg:grid-cols-[1fr_320px]" : ""}`}>
             <article className={`${cardClass} space-y-5`}>
               <section>
-                <h2 className="text-sm font-semibold text-slate-900">Business information</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.businessInfoTitle")}</h2>
                 <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Legal name" value={d.legal_name} />
-                  <Field label="Status" value={<span className="capitalize">{d.status}</span>} />
-                  <Field label="Registration type" value={d.registration_type?.toUpperCase() ?? "—"} />
-                  <Field label="Registration number" value={d.registration_number ?? "—"} />
-                  <Field label="Tax ID" value={d.tax_id ?? "—"} />
+                  <Field label={t("pages.subcontractorDetail.legalNameLabel")} value={d.legal_name} />
+                  <Field label={t("common.status")} value={<span className="capitalize">{d.status}</span>} />
+                  <Field label={t("pages.subcontractorDetail.registrationTypeLabel")} value={d.registration_type?.toUpperCase() ?? "—"} />
+                  <Field label={t("pages.subcontractorDetail.registrationNumberLabel")} value={d.registration_number ?? "—"} />
+                  <Field label={t("pages.subcontractorDetail.taxIdLabel")} value={d.tax_id ?? "—"} />
                 </dl>
               </section>
 
               <section>
-                <h2 className="text-sm font-semibold text-slate-900">Contact</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.contactTitle")}</h2>
                 <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Email" value={d.email ?? "—"} />
-                  <Field label="Phone" value={d.phone ?? "—"} />
+                  <Field label={t("pages.users.emailLabel")} value={d.email ?? "—"} />
+                  <Field label={t("pages.invoiceForm.phoneLabel")} value={d.phone ?? "—"} />
                   <div className="sm:col-span-2">
-                    <Field label="Address" value={d.address ?? "—"} />
+                    <Field label={t("pages.invoiceDetail.addressLabel")} value={d.address ?? "—"} />
                   </div>
                 </dl>
               </section>
 
               <section>
-                <h2 className="text-sm font-semibold text-slate-900">Banking</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.bankingTitle")}</h2>
                 <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Bank name" value={d.bank_name ?? "—"} />
-                  <Field label="IBAN" value={d.bank_account_iban ?? "—"} />
+                  <Field label={t("pages.invoiceForm.bankNameLabel")} value={d.bank_name ?? "—"} />
+                  <Field label={t("pages.invoiceForm.ibanLabel")} value={d.bank_account_iban ?? "—"} />
                 </dl>
               </section>
 
               <section>
-                <h2 className="text-sm font-semibold text-slate-900">Contract</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.contractTitle")}</h2>
                 <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Start date" value={formatDate(d.contract_start_date)} />
-                  <Field label="End date" value={formatDate(d.contract_end_date)} />
+                  <Field label={t("pages.subcontractorDetail.startDateLabel")} value={formatDate(d.contract_start_date)} />
+                  <Field label={t("pages.subcontractorDetail.endDateLabel")} value={formatDate(d.contract_end_date)} />
                 </dl>
               </section>
 
               {d.notes && (
                 <section>
-                  <h2 className="text-sm font-semibold text-slate-900">Notes</h2>
+                  <h2 className="text-sm font-semibold text-slate-900">{t("pages.invoiceDetail.notesLabel")}</h2>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{d.notes}</p>
                 </section>
               )}
@@ -122,8 +122,8 @@ export function SubcontractorDetailPage() {
 
             {d.drivers.length > 0 && (
               <aside className={cardClass}>
-                <h2 className="text-sm font-semibold text-slate-900">Linked drivers</h2>
-                <p className="mt-0.5 text-xs text-slate-500">{d.drivers.length} assigned</p>
+                <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.linkedDriversTitle")}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{t("pages.subcontractorDetail.assignedSuffix", { count: d.drivers.length })}</p>
                 <ul className="mt-3 max-h-[420px] space-y-2 overflow-y-auto">
                   {d.drivers.map((driver) => (
                     <li key={driver.id}>

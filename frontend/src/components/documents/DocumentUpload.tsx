@@ -1,19 +1,20 @@
 import type { DragEvent, FormEvent, ChangeEvent } from "react";
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   uploadDocument,
   type DocumentType,
 } from "../../api/documents";
 
-const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
-  { value: "trc_card", label: "TRC Card" },
-  { value: "drivers_license", label: "Driver's License" },
-  { value: "contract", label: "Contract" },
-  { value: "insurance", label: "Insurance" },
-  { value: "vehicle_permit", label: "Vehicle Permit" },
-  { value: "passport", label: "Passport" },
-  { value: "other", label: "Other" },
+const DOCUMENT_TYPE_KEYS: { value: DocumentType; labelKey: string }[] = [
+  { value: "trc_card", labelKey: "pages.driverDocuments.trcCardType" },
+  { value: "drivers_license", labelKey: "pages.driverDocuments.driversLicenseType" },
+  { value: "contract", labelKey: "pages.driverDocuments.contractType" },
+  { value: "insurance", labelKey: "pages.driverDocuments.insuranceType" },
+  { value: "vehicle_permit", labelKey: "pages.driverDocuments.vehiclePermitType" },
+  { value: "passport", labelKey: "pages.driverDocuments.passportType" },
+  { value: "other", labelKey: "pages.driverDocuments.otherType" },
 ];
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -33,11 +34,11 @@ function UploadCloudIcon({ className }: { className?: string }) {
   );
 }
 
-function validateFile(file: File): string | null {
-  if (file.size > MAX_SIZE) return "File must be 10MB or smaller.";
+function validateFile(file: File, t: (key: string) => string): string | null {
+  if (file.size > MAX_SIZE) return t("pages.driverDocuments.fileTooLargeError");
   const ext = "." + (file.name.split(".").pop() ?? "").toLowerCase();
   const ok = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
-  if (!ok) return "Only PDF, JPG and PNG files are allowed.";
+  if (!ok) return t("pages.driverDocuments.onlyPdfJpgPngError");
   return null;
 }
 
@@ -47,6 +48,7 @@ interface DocumentUploadProps {
 }
 
 export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +76,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
       return uploadDocument(driverId, form, onProgress);
     },
     onSuccess: () => {
-      setToast({ type: "success", message: "Document uploaded successfully." });
+      setToast({ type: "success", message: t("pages.driverDocuments.documentUploadedSuccess") });
       setSelectedFile(null);
       setExpiryDate("");
       setNotes("");
@@ -86,7 +88,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
     onError: (err: Error) => {
       setToast({
         type: "error",
-        message: (err as Error).message || "Upload failed.",
+        message: (err as Error).message || t("pages.driverDocuments.uploadFailedError"),
       });
       setUploadProgress(0);
     },
@@ -104,7 +106,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (!file) return;
-    const err = validateFile(file);
+    const err = validateFile(file, t);
     if (err) {
       setToast({ type: "error", message: err });
       return;
@@ -116,7 +118,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const err = validateFile(file);
+    const err = validateFile(file, t);
     if (err) {
       setToast({ type: "error", message: err });
       return;
@@ -129,7 +131,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      setToast({ type: "error", message: "Please select a file." });
+      setToast({ type: "error", message: t("pages.driverDocuments.pleaseSelectFileError") });
       return;
     }
     setToast(null);
@@ -183,7 +185,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
               )}
               {!isImage && !isPdf && (
                 <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center text-ink-muted text-xs">
-                  File
+                  {t("pages.vehicleDocuments.fileSectionTitle")}
                 </div>
               )}
               <p className="max-w-full truncate text-sm font-medium text-ink">
@@ -206,7 +208,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
                   onClick={() => fileInputRef.current?.click()}
                   className="text-sm font-medium text-brand hover:underline"
                 >
-                  Change file
+                  {t("pages.driverDocuments.changeFileButton")}
                 </button>
                 {mutation.isPending && (
                   <button
@@ -214,7 +216,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
                     onClick={handleCancel}
                     className="text-sm text-ink-muted hover:underline"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 )}
               </div>
@@ -225,18 +227,18 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
                 <UploadCloudIcon className="h-5 w-5" />
               </span>
               <p className="mb-1 text-sm font-medium text-slate-800">
-                Drag & drop a file here, or click to browse
+                {t("pages.driverDocuments.dragDropOrClickText")}
               </p>
-              <p className="mb-3 text-xs text-slate-500">Upload PDF, JPG, or PNG documents in seconds.</p>
+              <p className="mb-3 text-xs text-slate-500">{t("pages.driverDocuments.uploadInSecondsDesc")}</p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="inline-flex h-10 items-center rounded-xl border border-brand/60 bg-white px-4 text-sm font-medium text-brand shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-mint/20"
               >
-                Select file
+                {t("pages.driverDocuments.selectFileButton")}
               </button>
               <p className="mt-2 text-xs text-slate-500">
-                PDF, JPG, PNG only. Max 10MB.
+                {t("pages.driverDocuments.pdfJpgPngMax10MbText")}
               </p>
             </>
           )}
@@ -245,7 +247,7 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Document type *
+              {t("pages.driverDocuments.documentTypeRequiredLabel")}
             </label>
             <select
               required
@@ -253,16 +255,16 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value as DocumentType)}
             >
-              {DOCUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {DOCUMENT_TYPE_KEYS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Expiry date (optional)
+              {t("pages.driverDocuments.expiryDateOptionalLabel")}
             </label>
             <input
               type="date"
@@ -275,14 +277,14 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">
-            Notes (optional)
+            {t("pages.driverDocuments.notesOptionalLabel")}
           </label>
           <input
             type="text"
             className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Optional notes"
+            placeholder={t("pages.driverDocuments.optionalNotesPlaceholder")}
           />
         </div>
 
@@ -304,10 +306,10 @@ export function DocumentUpload({ driverId, onSuccess }: DocumentUploadProps) {
           {mutation.isPending ? (
             <>
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              Uploading...
+              {t("pages.driverDetail.uploadingButton")}
             </>
           ) : (
-            "Upload"
+            t("pages.driverDocuments.uploadButton")
           )}
         </button>
       </form>
