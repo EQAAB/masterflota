@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatCurrency, getCurrencyCode } from "../../utils/currency";
 
 export type CommissionType = "percentage" | "fixed_amount" | "hybrid";
@@ -25,12 +26,6 @@ function calculateCommission(
   return { companyCommission, driverPayout };
 }
 
-const TYPE_LABELS: Record<CommissionType, string> = {
-  percentage: "Percentage",
-  fixed_amount: "Fixed amount",
-  hybrid: "Hybrid",
-};
-
 export interface CommissionPreviewProps {
   commissionType: CommissionType;
   commissionRate: number;
@@ -40,6 +35,12 @@ export interface CommissionPreviewProps {
 }
 
 export function CommissionPreview(props: CommissionPreviewProps) {
+  const { t } = useTranslation();
+  const TYPE_LABELS: Record<CommissionType, string> = {
+    percentage: t("pages.driverForm.percentageOption"),
+    fixed_amount: t("pages.driverForm.fixedAmountOption"),
+    hybrid: t("pages.driverForm.hybridOption"),
+  };
   const {
     commissionType,
     commissionRate,
@@ -61,7 +62,7 @@ export function CommissionPreview(props: CommissionPreviewProps) {
     <div className="rounded-xl border border-border bg-slate-50/80 p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-ink">
-          Commission preview
+          {t("pages.driverForm.commissionPreviewTitle")}
         </span>
         <span className="rounded-full bg-brand-mint px-2 py-0.5 text-xs font-medium text-brand">
           {TYPE_LABELS[commissionType]}
@@ -70,7 +71,7 @@ export function CommissionPreview(props: CommissionPreviewProps) {
       {controlledEarnings == null && (
         <div className="mb-3">
           <label className="block text-xs font-medium text-ink-muted mb-1">
-            Example earnings ({getCurrencyCode()})
+            {t("pages.driverForm.exampleEarningsLabel", { currency: getCurrencyCode() })}
           </label>
           <input
             type="number"
@@ -86,19 +87,19 @@ export function CommissionPreview(props: CommissionPreviewProps) {
       )}
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-ink-muted">
-          <span>Gross earnings</span>
+          <span>{t("pages.driverForm.grossEarningsLabel")}</span>
           <span className="font-medium text-ink">
             {formatCurrency(earnings)}
           </span>
         </div>
         <div className="flex justify-between text-ink-muted">
-          <span>Company commission</span>
+          <span>{t("pages.driverForm.companyCommissionLabel")}</span>
           <span className="font-medium text-brand">
             {formatCurrency(companyCommission)}
           </span>
         </div>
         <div className="flex justify-between text-ink-muted border-t border-border pt-2">
-          <span>Driver payout</span>
+          <span>{t("pages.driverForm.driverPayoutLabel")}</span>
           <span className="font-medium text-ink">
             {formatCurrency(driverPayout)}
           </span>

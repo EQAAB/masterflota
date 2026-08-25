@@ -84,7 +84,7 @@ export function OrganizationsPage() {
     return (
       <div className="fm-settings-users flex min-h-full flex-1 flex-col">
         <div className={dashboardPage}>
-          <p className="text-ink-muted">You do not have access to manage organizations.</p>
+          <p className="text-ink-muted">{t("pages.organizations.noAccessOrgs")}</p>
         </div>
       </div>
     );
@@ -93,16 +93,16 @@ export function OrganizationsPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setFormError("Organization name is required.");
+      setFormError(t("pages.organizations.orgNameRequiredError"));
       return;
     }
     if (!form.adminEmail.includes("@")) {
-      setFormError("Please enter a valid admin email.");
+      setFormError(t("pages.organizations.validAdminEmailError"));
       return;
     }
     const pwd = form.adminPassword.trim();
     if (pwd.length > 0 && pwd.length < 8) {
-      setFormError("Admin password must be at least 8 characters.");
+      setFormError(t("pages.organizations.adminPasswordMinLengthError"));
       return;
     }
     setFormError(null);
@@ -130,7 +130,7 @@ export function OrganizationsPage() {
 
         {temporaryPassword && (
           <TemporaryPasswordAlert
-            heading="Organization and admin user created successfully."
+            heading={t("pages.organizations.orgCreatedSuccessHeading")}
             password={temporaryPassword}
             onDismiss={() => setTemporaryPassword(null)}
           />
@@ -138,14 +138,14 @@ export function OrganizationsPage() {
 
         {showForm && (
           <div className={`${card} p-5 shadow-card`}>
-            <h2 className="text-sm font-semibold text-ink">New organization</h2>
+            <h2 className="text-sm font-semibold text-ink">{t("pages.organizations.newOrganizationTitle")}</h2>
             <p className="mt-1 text-xs text-ink-muted">
-              Creates the organization and its first admin user.
+              {t("pages.organizations.createsOrgAndAdminDesc")}
             </p>
             <form onSubmit={onSubmit} className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={sectionLabel}>Organization name *</label>
+                  <label className={sectionLabel}>{t("pages.organizations.orgNameRequiredLabel")}</label>
                   <input
                     className={input}
                     value={form.name}
@@ -154,7 +154,7 @@ export function OrganizationsPage() {
                   />
                 </div>
                 <div>
-                  <label className={sectionLabel}>Organization email</label>
+                  <label className={sectionLabel}>{t("pages.organizations.orgEmailLabel")}</label>
                   <input
                     type="email"
                     className={input}
@@ -163,7 +163,7 @@ export function OrganizationsPage() {
                   />
                 </div>
                 <div>
-                  <label className={sectionLabel}>Phone</label>
+                  <label className={sectionLabel}>{t("pages.invoiceForm.phoneLabel")}</label>
                   <input
                     className={input}
                     value={form.phone}
@@ -174,11 +174,11 @@ export function OrganizationsPage() {
 
               <div className="border-t border-border pt-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                  First admin user
+                  {t("pages.organizations.firstAdminUserTitle")}
                 </h3>
                 <div className="mt-3 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={sectionLabel}>Admin email *</label>
+                    <label className={sectionLabel}>{t("pages.organizations.adminEmailRequiredLabel")}</label>
                     <input
                       type="email"
                       className={input}
@@ -188,13 +188,13 @@ export function OrganizationsPage() {
                     />
                   </div>
                   <PasswordInput
-                    label="Admin password"
+                    label={t("pages.organizations.adminPasswordLabel")}
                     value={form.adminPassword}
                     onChange={(adminPassword) => setForm((f) => ({ ...f, adminPassword }))}
-                    helperText="Generate a strong password or leave blank to auto-generate on create."
+                    helperText={t("pages.users.passwordHelperText")}
                   />
                   <div>
-                    <label className={sectionLabel}>First name</label>
+                    <label className={sectionLabel}>{t("pages.users.firstNameLabel")}</label>
                     <input
                       className={input}
                       value={form.adminFirstName}
@@ -202,7 +202,7 @@ export function OrganizationsPage() {
                     />
                   </div>
                   <div>
-                    <label className={sectionLabel}>Last name</label>
+                    <label className={sectionLabel}>{t("pages.users.lastNameLabel")}</label>
                     <input
                       className={input}
                       value={form.adminLastName}
@@ -215,12 +215,12 @@ export function OrganizationsPage() {
               {(formError || createMut.isError) && (
                 <p className={alertError}>
                   {formError ||
-                    ((createMut.error as Error)?.message ?? "Failed to create organization.")}
+                    ((createMut.error as Error)?.message ?? t("pages.organizations.failedToCreateOrg"))}
                 </p>
               )}
 
               <button type="submit" disabled={createMut.isPending} className={btnPrimary}>
-                {createMut.isPending ? "Creating…" : "Create organization"}
+                {createMut.isPending ? t("pages.driverLoans.creatingButton") : t("pages.organizations.add")}
               </button>
             </form>
           </div>
@@ -228,28 +228,28 @@ export function OrganizationsPage() {
 
         <div className={`${card} overflow-hidden shadow-card`}>
           {orgsQuery.isLoading ? (
-            <p className="p-5 text-sm text-ink-muted">Loading organizations…</p>
+            <p className="p-5 text-sm text-ink-muted">{t("pages.organizations.loadingOrganizations")}</p>
           ) : orgsQuery.isError ? (
-            <p className="p-5 text-sm text-rose-700">Failed to load organizations.</p>
+            <p className="p-5 text-sm text-rose-700">{t("pages.organizations.failedToLoadOrganizations")}</p>
           ) : (orgsQuery.data ?? []).length === 0 ? (
-            <p className="p-8 text-center text-sm text-ink-muted">No organizations yet.</p>
+            <p className="p-8 text-center text-sm text-ink-muted">{t("pages.organizations.noOrganizationsYet")}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Created</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">{t("pages.users.colName")}</th>
+                  <th className="px-4 py-3">{t("pages.users.emailLabel")}</th>
+                  <th className="px-4 py-3">{t("pages.invoiceForm.phoneLabel")}</th>
+                  <th className="px-4 py-3">{t("pages.organizations.colCreated")}</th>
+                  <th className="px-4 py-3 text-right">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {(orgsQuery.data ?? []).map((org) => (
                   <tr key={org.id} className="border-b border-slate-100">
                     <td className="px-4 py-3 font-medium text-ink">{org.name}</td>
-                    <td className="px-4 py-3 text-ink-muted">{org.email ?? "—"}</td>
-                    <td className="px-4 py-3 text-ink-muted">{org.phone ?? "—"}</td>
+                    <td className="px-4 py-3 text-ink-muted">{org.email ?? t("common.emDash")}</td>
+                    <td className="px-4 py-3 text-ink-muted">{org.phone ?? t("common.emDash")}</td>
                     <td className="px-4 py-3 text-ink-muted">
                       {new Date(org.createdAt).toLocaleDateString()}
                     </td>
@@ -262,7 +262,7 @@ export function OrganizationsPage() {
                           navigate("/dashboard");
                         }}
                       >
-                        Enter
+                        {t("pages.organizations.enterButton")}
                       </button>
                     </td>
                   </tr>

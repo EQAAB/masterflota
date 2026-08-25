@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import i18n from "../i18n";
 
 export type UploadPhase = "uploading" | "validating" | "processing";
 
@@ -25,30 +26,30 @@ export function useUploadPhase(isPending: boolean): UploadPhase | null {
 }
 
 export function uploadPhaseLabel(phase: UploadPhase | null, isPending: boolean): string {
-  if (!isPending) return "Drag & drop your file here";
+  if (!isPending) return i18n.t("pages.earningsImport.dragDropFileHereText");
   switch (phase) {
     case "uploading":
-      return "Uploading file…";
+      return i18n.t("pages.earningsImport.uploadingFileEllipsis");
     case "validating":
-      return "Validating columns…";
+      return i18n.t("pages.earningsImport.validatingColumnsEllipsis");
     case "processing":
-      return "Processing rows…";
+      return i18n.t("pages.earningsImport.processingRowsEllipsis");
     default:
-      return "Processing your file…";
+      return i18n.t("pages.earningsImport.processingYourFileEllipsis");
   }
 }
 
 export function uploadPhaseDescription(phase: UploadPhase | null, isPending: boolean): string {
-  if (!isPending) return "Supports CSV, XLSX, ZIP, XML, PDF · Max 25 MB";
+  if (!isPending) return i18n.t("pages.earningsImport.supportsFileTypesDesc");
   switch (phase) {
     case "uploading":
-      return "Securely receiving your platform export";
+      return i18n.t("pages.earningsImport.securelyReceivingDesc");
     case "validating":
-      return "Checking headers and matching drivers";
+      return i18n.t("pages.earningsImport.checkingHeadersDesc");
     case "processing":
-      return "Building preview and calculating totals";
+      return i18n.t("pages.earningsImport.buildingPreviewDesc");
     default:
-      return "This usually takes a few seconds";
+      return i18n.t("pages.earningsImport.usuallyTakesSecondsDesc");
   }
 }
 

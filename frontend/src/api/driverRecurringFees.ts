@@ -1,4 +1,5 @@
 import { api } from "../lib/api";
+import i18n from "../i18n";
 import type { CustomFeeType } from "./earnings";
 
 export type RecurringFeeFrequency = "weekly" | "monthly_first_week";
@@ -71,9 +72,9 @@ export function deleteDriverRecurringFee(driverId: string, feeId: string) {
 export function recurringFeeFrequencyLabel(frequency: RecurringFeeFrequency): string {
   switch (frequency) {
     case "monthly_first_week":
-      return "Monthly · 1st week";
+      return i18n.t("pages.driverDetail.monthlyFirstWeekBadge");
     case "weekly":
     default:
-      return "Weekly";
+      return i18n.t("pages.driverDetail.weeklyOption");
   }
 }

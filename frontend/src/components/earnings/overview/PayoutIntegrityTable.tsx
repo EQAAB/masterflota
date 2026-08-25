@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { PayoutIntegrityRow } from "../../../api/earnings";
 import { DriversPagination } from "../../drivers/DriversPagination";
 import { EmptyState } from "../../theme/EmptyState";
@@ -22,6 +23,7 @@ type PayoutIntegrityTableProps = {
 };
 
 export function PayoutIntegrityTable({ rows, isLoading }: PayoutIntegrityTableProps) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -44,9 +46,9 @@ export function PayoutIntegrityTable({ rows, isLoading }: PayoutIntegrityTablePr
           <span
             className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
             role="status"
-            aria-label="Loading integrity rows"
+            aria-label={t("pages.earningsOverview.loadingIntegrityRowsAria")}
           />
-          <p className="text-sm text-ink-muted">Loading payout integrity…</p>
+          <p className="text-sm text-ink-muted">{t("pages.earningsOverview.loadingPayoutIntegrityEllipsis")}</p>
         </div>
       </div>
     );
@@ -55,17 +57,16 @@ export function PayoutIntegrityTable({ rows, isLoading }: PayoutIntegrityTablePr
   return (
     <div className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-card">
       <div className="border-b border-border/60 px-5 py-5 sm:px-6">
-        <h3 className="text-sm font-semibold text-ink">Driver payout integrity</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.earningsOverview.driverPayoutIntegrityTitle")}</h3>
         <p className="mt-1 max-w-4xl text-xs leading-relaxed text-ink-muted">
-          Expected payout = net income (gross + tips + taxa) minus fleet commission minus the absolute value of
-          daily cash deduction.
+          {t("pages.earningsOverview.expectedPayoutFormulaDesc")}
         </p>
       </div>
 
       {rows.length === 0 ? (
         <EmptyState
-          title="No integrity rows"
-          description="Rows appear when earnings records include commission or daily cash adjustments."
+          title={t("pages.earningsOverview.noIntegrityRowsTitle")}
+          description={t("pages.earningsOverview.noIntegrityRowsDesc")}
           className="border-0 py-16"
         />
       ) : (
@@ -74,17 +75,17 @@ export function PayoutIntegrityTable({ rows, isLoading }: PayoutIntegrityTablePr
             <table className="w-full min-w-[1200px] table-fixed text-sm">
               <thead className="bg-[#F7F8FC]">
                 <tr>
-                  <th className={`${tableHeaderCell} w-[88px]`}><span className={headerLabel}>Status</span></th>
-                  <th className={`${tableHeaderCell} w-[100px]`}><span className={headerLabel}>Date</span></th>
-                  <th className={`${tableHeaderCell} w-[100px]`}><span className={headerLabel}>Platform</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>TVT</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Acct. fee</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Comm. base</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Commission</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Vehicle rental</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Driver payout</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Expected</span></th>
-                  <th className={tableHeaderCell}><span className={headerLabel}>Delta</span></th>
+                  <th className={`${tableHeaderCell} w-[88px]`}><span className={headerLabel}>{t("common.status")}</span></th>
+                  <th className={`${tableHeaderCell} w-[100px]`}><span className={headerLabel}>{t("pages.earningsOverview.colDate")}</span></th>
+                  <th className={`${tableHeaderCell} w-[100px]`}><span className={headerLabel}>{t("pages.earningsOverview.platformLabel")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colTvt")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colAcctFee")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colCommBase")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colCommission")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colVehicleRental")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colDriverPayout")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colExpected")}</span></th>
+                  <th className={tableHeaderCell}><span className={headerLabel}>{t("pages.earningsOverview.colDelta")}</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -104,7 +105,7 @@ export function PayoutIntegrityTable({ rows, isLoading }: PayoutIntegrityTablePr
                             r.ok ? "bg-success/10 text-success ring-1 ring-success/20" : "bg-danger/10 text-danger ring-1 ring-danger/20"
                           }`}
                         >
-                          {r.ok ? "OK" : "BROKEN"}
+                          {r.ok ? t("pages.earningsOverview.integrityOk") : t("pages.earningsOverview.integrityBroken")}
                         </span>
                       </td>
                       <td className={`${tableCell} tabular-nums text-ink-muted`}>{r.trip_date}</td>

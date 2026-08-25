@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { VehicleHistoryEvent } from "../../api/vehicles";
+import i18n from "../../i18n";
 import { linkAccent, transitionDefault } from "../../theme/classNames";
 import { formatCurrency } from "../../utils/currency";
 import {
@@ -18,10 +20,11 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 function StatusPill({ status }: { status: string }) {
+  const { t } = useTranslation();
   const cls = STATUS_BADGE[status] ?? "bg-slate-100 text-slate-700 ring-1 ring-slate-200/80";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
-      {status.replace(/_/g, " ")}
+      {t(`vehicleStatus.${status}`, status.replace(/_/g, " "))}
     </span>
   );
 }
@@ -36,9 +39,9 @@ function MetadataRow({ label, children }: { label: string; children: ReactNode }
 }
 
 function amountLabel(eventType: VehicleHistoryEvent["event_type"]): string {
-  if (eventType === "rent_collected") return "Amount collected";
-  if (eventType === "maintenance" || eventType === "incident") return "Amount deducted";
-  return "Amount";
+  if (eventType === "rent_collected") return i18n.t("pages.vehicleDetail.amountCollectedLabel");
+  if (eventType === "maintenance" || eventType === "incident") return i18n.t("pages.vehicleDetail.amountDeductedLabel");
+  return i18n.t("pages.vehicleDetail.amountLabel");
 }
 
 export function VehicleHistoryTimelineItem({
@@ -48,6 +51,7 @@ export function VehicleHistoryTimelineItem({
   event: VehicleHistoryEvent;
   isLast: boolean;
 }) {
+  const { t } = useTranslation();
   const visual = getEventVisual(event.event_type);
   const { Icon } = visual;
 
@@ -68,7 +72,7 @@ export function VehicleHistoryTimelineItem({
 
   if (driverName && driverName !== "—" && driverId) {
     metadataRows.push(
-      <MetadataRow key="driver" label="Driver">
+      <MetadataRow key="driver" label={t("pages.vehicleDetail.driverLabel")}>
         <Link to={`/drivers/${driverId}`} className={linkAccent}>
           {driverName}
         </Link>
@@ -78,7 +82,7 @@ export function VehicleHistoryTimelineItem({
 
   if (loggedBy) {
     metadataRows.push(
-      <MetadataRow key="logged-by" label="Logged by">
+      <MetadataRow key="logged-by" label={t("pages.vehicleDetail.loggedByLabel")}>
         {loggedBy}
       </MetadataRow>,
     );
@@ -86,7 +90,7 @@ export function VehicleHistoryTimelineItem({
 
   if (event.previous_status && event.new_status) {
     metadataRows.push(
-      <MetadataRow key="status" label="Status">
+      <MetadataRow key="status" label={t("common.status")}>
         <span className="inline-flex flex-wrap items-center gap-1.5">
           <StatusPill status={event.previous_status} />
           <span className="text-ink-muted" aria-hidden>
@@ -100,7 +104,7 @@ export function VehicleHistoryTimelineItem({
 
   if (event.previous_rent != null && event.new_rent != null) {
     metadataRows.push(
-      <MetadataRow key="rent" label="Weekly rent">
+      <MetadataRow key="rent" label={t("pages.vehicleDetail.weeklyRentShortLabel")}>
         {formatCurrency(Number(event.previous_rent))} → {formatCurrency(Number(event.new_rent))}
       </MetadataRow>,
     );
@@ -108,7 +112,7 @@ export function VehicleHistoryTimelineItem({
 
   if (hasCost && event.event_type !== "rent_collected" && event.event_type !== "maintenance" && event.event_type !== "incident") {
     metadataRows.push(
-      <MetadataRow key="amount" label="Amount">
+      <MetadataRow key="amount" label={t("pages.vehicleDetail.amountLabel")}>
         {formatCurrency(Number(event.cost))}
       </MetadataRow>,
     );
@@ -116,7 +120,7 @@ export function VehicleHistoryTimelineItem({
 
   if (event.odometer_reading != null) {
     metadataRows.push(
-      <MetadataRow key="odometer" label="Odometer">
+      <MetadataRow key="odometer" label={t("pages.vehicleDetail.odometerLabel")}>
         {event.odometer_reading.toLocaleString()} km
       </MetadataRow>,
     );

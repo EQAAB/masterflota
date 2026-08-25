@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { sectionLabel } from "../../theme/classNames";
 
 type LoginAuthFieldProps = {
@@ -77,6 +78,7 @@ export function LoginAuthField({
   autoComplete,
   required,
 }: LoginAuthFieldProps) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword && !visible ? "password" : isPassword ? "text" : "email";
@@ -103,7 +105,7 @@ export function LoginAuthField({
           <button
             type="button"
             className="fm-login-page__toggle"
-            aria-label={visible ? "Hide password" : "Show password"}
+            aria-label={visible ? t("common.hidePassword") : t("common.showPassword")}
             onClick={() => setVisible((v) => !v)}
           >
             <EyeIcon hidden={visible} />

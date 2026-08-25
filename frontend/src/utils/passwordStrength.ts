@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 export type PasswordStrength = "weak" | "fair" | "good" | "strong";
 
 export function getPasswordStrength(password: string): PasswordStrength {
@@ -20,13 +22,13 @@ export function getPasswordStrength(password: string): PasswordStrength {
 export function strengthLabel(strength: PasswordStrength): string {
   switch (strength) {
     case "weak":
-      return "Weak";
+      return i18n.t("common.passwordStrengthWeak");
     case "fair":
-      return "Fair";
+      return i18n.t("common.passwordStrengthFair");
     case "good":
-      return "Good";
+      return i18n.t("common.passwordStrengthGood");
     case "strong":
-      return "Strong";
+      return i18n.t("common.passwordStrengthStrong");
   }
 }
 

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { getRentalBookings } from "../../api/rentals";
 import { QuickWeeklyRentalModal } from "./QuickWeeklyRentalModal";
@@ -9,6 +10,7 @@ import { formatCurrency } from "../../utils/currency";
 import { btnPrimary } from "../../theme/classNames";
 
 export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const canManage = useCanManageRentals();
   const { quickWeeklyModal, openQuickWeeklyRental, closeQuickWeeklyRental } = useQuickWeeklyRentalModal();
@@ -23,9 +25,9 @@ export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) 
     <section className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">External rentals</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t("pages.vehicleDetail.externalRentalsTitle")}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            B2B/B2C customer rentals — separate from driver payroll rent.
+            {t("pages.vehicleDetail.externalRentalsDesc")}
           </p>
         </div>
         {canManage && (
@@ -34,20 +36,24 @@ export function VehicleRentalHistoryPanel({ vehicleId }: { vehicleId: string }) 
             className={`${btnPrimary} !text-xs`}
             onClick={() => openQuickWeeklyRental({ vehicleId })}
           >
-            Quick weekly rental
+            {t("pages.vehicleDetail.quickWeeklyRentalButton")}
           </button>
         )}
       </div>
 
       {active && (
         <p className="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 ring-1 ring-sky-200/60">
-          Active/upcoming booking: <strong>{active.booking_number}</strong> ({formatBookingStatus(active.status)})
+          <Trans
+            i18nKey="pages.vehicleDetail.activeUpcomingBookingPrefix"
+            values={{ bookingNumber: active.booking_number, status: formatBookingStatus(active.status) }}
+            components={{ b: <strong /> }}
+          />
         </p>
       )}
 
-      {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
+      {isLoading && <p className="text-sm text-slate-500">{t("common.loading")}</p>}
       {!isLoading && (data ?? []).length === 0 && (
-        <p className="text-sm text-slate-500">No rental bookings for this vehicle.</p>
+        <p className="text-sm text-slate-500">{t("pages.vehicleDetail.noRentalBookingsForVehicle")}</p>
       )}
       <ul className="space-y-2">
         {(data ?? []).map((b) => (

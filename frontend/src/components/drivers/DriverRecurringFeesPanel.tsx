@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   deleteDriverRecurringFee,
   getDriverRecurringFees,
@@ -18,8 +19,9 @@ type DriverRecurringFeesPanelProps = {
 };
 
 function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
+  const { t } = useTranslation();
   if (!items.length) {
-    return <p className="text-sm text-ink-muted">No recurring fees configured.</p>;
+    return <p className="text-sm text-ink-muted">{t("pages.driverDetail.noRecurringFeesConfigured")}</p>;
   }
   return (
     <ul className="overflow-hidden rounded-xl border border-border/70 text-sm">
@@ -35,10 +37,10 @@ function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
                 f.fee_type === "deduction" ? "text-rose-700" : "text-emerald-700"
               }`}
             >
-              {f.fee_type === "deduction" ? "Deduction" : "Addition"}
+              {f.fee_type === "deduction" ? t("pages.driverDetail.deductionLabel") : t("pages.driverDetail.additionLabel")}
             </span>
             {!f.is_active && (
-              <span className="ml-2 text-xs text-ink-muted">(paused)</span>
+              <span className="ml-2 text-xs text-ink-muted">{t("pages.driverDetail.pausedSuffix")}</span>
             )}
             <span className="ml-2 text-xs text-ink-muted">
               {recurringFeeFrequencyLabel(f.frequency ?? "weekly")}
@@ -61,6 +63,7 @@ function FeeRowList({ items }: { items: DriverRecurringFee[] }) {
 }
 
 export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringFeesPanelProps) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DriverRecurringFee | null>(null);
@@ -117,7 +120,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
     mutationFn: async () => {
       const amountNum = parseFloat(amount);
       if (!feeName.trim() || !Number.isFinite(amountNum) || amountNum < 0) {
-        throw new Error("Name and a non-negative amount are required.");
+        throw new Error(t("pages.driverDetail.nameAmountRequiredError"));
       }
       const body = {
         fee_name: feeName.trim(),
@@ -156,10 +159,9 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
     <section className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-ink">Recurring fees</h2>
+          <h2 className="text-sm font-semibold text-ink">{t("pages.driverDetail.recurringFeesTitle")}</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Applied to weekly payouts when the period overlaps the fee dates (weekly every time;
-            monthly only in the week that includes the 1st).
+            {t("pages.driverDetail.recurringFeesDesc")}
           </p>
         </div>
         {canEdit && (
@@ -168,13 +170,13 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             onClick={openCreate}
             className="inline-flex h-9 items-center rounded-lg bg-brand-gradient px-3.5 text-sm font-medium text-white hover:opacity-95"
           >
-            Add recurring fee
+            {t("pages.driverDetail.addRecurringFeeButton")}
           </button>
         )}
       </div>
 
-      {q.isLoading && <p className="text-sm text-ink-muted">Loading…</p>}
-      {q.isError && <p className="text-sm text-red-700">Failed to load recurring fees.</p>}
+      {q.isLoading && <p className="text-sm text-ink-muted">{t("common.loading")}</p>}
+      {q.isError && <p className="text-sm text-red-700">{t("pages.driverDetail.failedToLoadRecurringFees")}</p>}
       {q.data && (
         <>
           <FeeRowList items={q.data} />
@@ -187,7 +189,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                     onClick={() => openEdit(f)}
                     className="text-xs text-brand hover:underline"
                   >
-                    Edit {f.fee_name}
+                    {t("pages.driverDetail.editFeePrefix", { feeName: f.fee_name })}
                   </button>
                   <span className="text-slate-300">·</span>
                   <button
@@ -196,20 +198,20 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                     disabled={toggleMut.isPending}
                     className="text-xs text-ink-muted hover:underline disabled:opacity-50"
                   >
-                    {f.is_active ? "Pause" : "Enable"}
+                    {f.is_active ? t("pages.driverDetail.pauseButton") : t("pages.driverDetail.enableButton")}
                   </button>
                   <span className="text-slate-300">·</span>
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`Delete recurring fee "${f.fee_name}"?`)) {
+                      if (window.confirm(t("pages.driverDetail.deleteRecurringFeeConfirm", { feeName: f.fee_name }))) {
                         deleteMut.mutate(f.id);
                       }
                     }}
                     disabled={deleteMut.isPending}
                     className="text-xs text-rose-700 hover:underline disabled:opacity-50"
                   >
-                    Delete
+                    {t("common.delete")}
                   </button>
                 </span>
               ))}
@@ -230,11 +232,11 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold text-ink">
-              {editing ? "Edit recurring fee" : "Add recurring fee"}
+              {editing ? t("pages.driverDetail.editRecurringFeeTitle") : t("pages.driverDetail.addRecurringFeeButton")}
             </h3>
             {err && <p className="text-sm text-red-700">{err}</p>}
             <div>
-              <label className="block text-xs text-ink-muted mb-1">Fee name</label>
+              <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.feeNameLabel")}</label>
               <input
                 className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={feeName}
@@ -244,18 +246,18 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-ink-muted mb-1">Type</label>
+                <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.typeLabel")}</label>
                 <select
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   value={feeType}
                   onChange={(e) => setFeeType(e.target.value as CustomFeeType)}
                 >
-                  <option value="deduction">Deduction</option>
-                  <option value="addition">Addition</option>
+                  <option value="deduction">{t("pages.driverDetail.deductionLabel")}</option>
+                  <option value="addition">{t("pages.driverDetail.additionLabel")}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-ink-muted mb-1">Amount (RON)</label>
+                <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.amountRonLabel")}</label>
                 <input
                   type="number"
                   min={0}
@@ -267,25 +269,24 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
               </div>
             </div>
             <div>
-              <label className="block text-xs text-ink-muted mb-1">Frequency</label>
+              <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.frequencyLabel")}</label>
               <select
                 className="w-full rounded-md border border-border px-3 py-2 text-sm"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as RecurringFeeFrequency)}
               >
-                <option value="weekly">Weekly</option>
-                <option value="monthly_first_week">Monthly (first week of month)</option>
+                <option value="weekly">{t("pages.driverDetail.weeklyOption")}</option>
+                <option value="monthly_first_week">{t("pages.driverDetail.monthlyFirstWeekOption")}</option>
               </select>
               {frequency === "monthly_first_week" && (
                 <p className="text-xs text-ink-muted mt-1">
-                  Deducted only in the payout week that includes the 1st of the month (e.g.
-                  accommodation rent).
+                  {t("pages.driverDetail.monthlyFirstWeekHint")}
                 </p>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-ink-muted mb-1">Start date (optional)</label>
+                <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.startDateOptionalLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -294,7 +295,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                 />
               </div>
               <div>
-                <label className="block text-xs text-ink-muted mb-1">End date (optional)</label>
+                <label className="block text-xs text-ink-muted mb-1">{t("pages.driverDetail.endDateOptionalLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -309,10 +310,10 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
               />
-              Active (apply to matching payout weeks)
+              {t("pages.driverDetail.activeApplyLabel")}
             </label>
             <div>
-              <label className="block text-xs text-ink-muted mb-1">Notes</label>
+              <label className="block text-xs text-ink-muted mb-1">{t("pages.invoiceDetail.notesLabel")}</label>
               <textarea
                 rows={2}
                 className="w-full rounded-md border border-border px-3 py-2 text-sm"
@@ -327,7 +328,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                 onClick={() => setModalOpen(false)}
                 disabled={saveMut.isPending}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -338,7 +339,7 @@ export function DriverRecurringFeesPanel({ driverId, canEdit }: DriverRecurringF
                   saveMut.mutate();
                 }}
               >
-                {saveMut.isPending ? "Saving…" : "Save"}
+                {saveMut.isPending ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>

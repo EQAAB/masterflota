@@ -15,12 +15,6 @@ import {
 import { CommissionInput } from "../../components/drivers/CommissionInput";
 import { getSubcontractors } from "../../api/subcontractors";
 
-const EMPLOYMENT_STATUSES = [
-  { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspended" },
-  { value: "terminated", label: "Terminated" },
-] as const;
-
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -35,6 +29,12 @@ export function AddDriverPage() {
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const EMPLOYMENT_STATUSES = [
+    { value: "active", label: t("driverStatus.active") },
+    { value: "suspended", label: t("driverStatus.suspended") },
+    { value: "terminated", label: t("driverStatus.terminated") },
+  ] as const;
 
   const [form, setForm] = useState<CreateDriverPayload & {
     commissionType: CommissionType;
@@ -82,25 +82,25 @@ export function AddDriverPage() {
   });
 
   const validate = (): string | null => {
-    if (!form.firstName?.trim()) return "First name is required.";
-    if (!form.lastName?.trim()) return "Last name is required.";
-    if (!form.phone?.trim()) return "Phone number is required.";
-    if (form.phone && !validatePhone(form.phone)) return "Enter a valid phone number.";
-    if (form.email?.trim() && !validateEmail(form.email)) return "Enter a valid email address.";
+    if (!form.firstName?.trim()) return t("pages.driverForm.firstNameRequiredError");
+    if (!form.lastName?.trim()) return t("pages.driverForm.lastNameRequiredError");
+    if (!form.phone?.trim()) return t("pages.driverForm.phoneRequiredError");
+    if (form.phone && !validatePhone(form.phone)) return t("pages.driverForm.invalidPhoneError");
+    if (form.email?.trim() && !validateEmail(form.email)) return t("pages.driverForm.invalidEmailError");
     const errs: Partial<Record<string, string>> = {};
     const type = form.commissionType ?? "percentage";
     if (type === "percentage" || type === "hybrid") {
       const rate = Number(form.commissionRate);
-      if (Number.isNaN(rate) || rate < 0 || rate > 100) errs.commissionRate = "Commission rate must be between 0 and 100%.";
+      if (Number.isNaN(rate) || rate < 0 || rate > 100) errs.commissionRate = t("pages.driverForm.commissionRateRangeError");
     }
     if (type === "fixed_amount" || type === "hybrid") {
       const fixed = Number(form.fixedCommissionAmount ?? 0);
-      if (Number.isNaN(fixed) || fixed < 0) errs.fixedCommissionAmount = "Fixed amount must be 0 or greater.";
+      if (Number.isNaN(fixed) || fixed < 0) errs.fixedCommissionAmount = t("pages.driverForm.fixedAmountMinError");
     }
     const min = Number(form.minimumCommission ?? 0);
-    if (!Number.isNaN(min) && min < 0) errs.minimumCommission = "Minimum commission cannot be negative.";
+    if (!Number.isNaN(min) && min < 0) errs.minimumCommission = t("pages.driverForm.minimumCommissionNegativeError");
     setCommissionErrors(errs);
-    if (Object.keys(errs).length > 0) return "Please fix commission errors.";
+    if (Object.keys(errs).length > 0) return t("pages.driverForm.fixCommissionErrorsError");
     return null;
   };
 
@@ -160,8 +160,8 @@ export function AddDriverPage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
-          <p className="text-green-600 font-medium">Driver created successfully.</p>
-          <p className="text-sm text-ink-muted mt-1">Redirecting to drivers list...</p>
+          <p className="text-green-600 font-medium">{t("pages.driverForm.driverCreatedSuccess")}</p>
+          <p className="text-sm text-ink-muted mt-1">{t("pages.driverForm.redirectingToDriversList")}</p>
         </div>
       </div>
     );
@@ -175,7 +175,7 @@ export function AddDriverPage() {
           to="/drivers"
           className="text-sm text-ink-muted hover:text-ink"
         >
-          ← Back to drivers
+          ← {t("pages.driverForm.backToDrivers")}
         </Link>
       </header>
 
@@ -183,10 +183,10 @@ export function AddDriverPage() {
         <form onSubmit={onSubmit} className="bg-white shadow-sm rounded-xl p-6 space-y-6">
           {/* Personal Info */}
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Personal info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.driverForm.personalInfoTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">First name *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.firstNameRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -196,7 +196,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Last name *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.lastNameRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -206,7 +206,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Email</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.users.emailLabel")}</label>
                 <input
                   type="email"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -215,7 +215,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.phoneRequiredLabel")}</label>
                 <input
                   type="tel"
                   required
@@ -225,7 +225,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Date of birth</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.dateOfBirthLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -234,7 +234,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink mb-1">Address</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.invoiceDetail.addressLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -247,10 +247,10 @@ export function AddDriverPage() {
 
           {/* License Info */}
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">License info</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.driverForm.licenseInfoTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License number</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.licenseNumberLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -259,7 +259,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License expiry</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.licenseExpiryLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -268,7 +268,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">License class</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.licenseClassLabel")}</label>
                 <input
                   type="text"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -281,10 +281,10 @@ export function AddDriverPage() {
 
           {/* Employment */}
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Employment</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.driverForm.employmentTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Hire date</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.hireDateLabel")}</label>
                 <input
                   type="date"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -293,7 +293,7 @@ export function AddDriverPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink mb-1">Status</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("common.status")}</label>
                 <select
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.employmentStatus ?? "active"}
@@ -307,13 +307,13 @@ export function AddDriverPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink mb-1">Subcontractor (optional)</label>
+                <label className="block text-sm font-medium text-ink mb-1">{t("pages.driverForm.subcontractorOptionalLabel")}</label>
                 <select
                   className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   value={form.subcontractorId ?? ""}
                   onChange={(e) => update("subcontractorId", e.target.value)}
                 >
-                  <option value="">None (direct — fleet commission from rules below)</option>
+                  <option value="">{t("pages.driverForm.noneDirectOption")}</option>
                   {(subsQ.data ?? [])
                     .filter((s) => s.status === "active")
                     .map((s) => (
@@ -323,8 +323,7 @@ export function AddDriverPage() {
                     ))}
                 </select>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Sub-managed drivers: fleet and subcontractor % come from the subcontractor company. Vehicle rent is
-                  billed to the subcontractor, not deducted here.
+                  {t("pages.driverForm.subManagedHint")}
                 </p>
               </div>
             </div>
@@ -332,7 +331,7 @@ export function AddDriverPage() {
 
           {/* Commission */}
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Commission</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.driverForm.commissionTitle")}</h2>
             <CommissionInput
               commissionType={form.commissionType ?? "percentage"}
               commissionRate={form.commissionRate ?? 10}
@@ -350,11 +349,11 @@ export function AddDriverPage() {
 
           {/* Platform IDs */}
           <section>
-            <h2 className="text-sm font-semibold text-ink mb-3">Platform IDs</h2>
+            <h2 className="text-sm font-semibold text-ink mb-3">{t("pages.driverForm.platformIdsTitle")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID
+                  {t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.UBER] })}
                 </label>
                 <input
                   type="text"
@@ -365,7 +364,7 @@ export function AddDriverPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID
+                  {t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT] })}
                 </label>
                 <input
                   type="text"
@@ -376,7 +375,7 @@ export function AddDriverPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID
+                  {t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO] })}
                 </label>
                 <input
                   type="text"
@@ -387,7 +386,7 @@ export function AddDriverPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID
+                  {t("pages.driverForm.platformIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER] })}
                 </label>
                 <input
                   type="text"
@@ -398,7 +397,7 @@ export function AddDriverPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID
+                  {t("pages.driverForm.driverUuidSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI] })}
                 </label>
                 <input
                   type="text"
@@ -410,7 +409,7 @@ export function AddDriverPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">
-                  {PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID
+                  {t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT] })}
                 </label>
                 <input
                   type="text"
@@ -424,7 +423,7 @@ export function AddDriverPage() {
 
           {/* Notes */}
           <section>
-            <label className="block text-sm font-medium text-ink mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ink mb-1">{t("pages.invoiceDetail.notesLabel")}</label>
             <textarea
               rows={3}
               className="w-full rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
@@ -438,7 +437,7 @@ export function AddDriverPage() {
           )}
           {mutation.isError && !formError && (
             <p className="text-sm text-red-600">
-              {(mutation.error as Error).message || "Failed to create driver."}
+              {(mutation.error as Error).message || t("pages.driverForm.failedToCreateDriver")}
             </p>
           )}
 
@@ -451,17 +450,17 @@ export function AddDriverPage() {
               {mutation.isPending ? (
                 <>
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Creating...
+                  {t("pages.driverForm.creatingButton")}
                 </>
               ) : (
-                "Create driver"
+                t("pages.driverForm.createDriverButton")
               )}
             </button>
             <Link
               to="/drivers"
               className="inline-flex items-center justify-center rounded-md border border-border bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-slate-50"
             >
-              Cancel
+              {t("common.cancel")}
             </Link>
           </div>
         </form>

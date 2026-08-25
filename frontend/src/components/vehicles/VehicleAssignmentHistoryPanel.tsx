@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Papa from "papaparse";
 import {
@@ -47,6 +48,7 @@ export function VehicleAssignmentHistoryPanel({
   entityId: string;
   title: string;
 }) {
+  const { t } = useTranslation();
   const canView = useAnyPermission(
     mode === "driver" ? "drivers.view" : "vehicles.view",
   );
@@ -140,13 +142,13 @@ export function VehicleAssignmentHistoryPanel({
           disabled={csvBusy || items.length === 0}
           className="inline-flex h-9 items-center rounded-lg border border-border/80 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
-          {csvBusy ? "Exporting…" : "Export CSV"}
+          {csvBusy ? t("pages.assignmentHistory.exportingButton") : t("pages.assignmentHistory.exportCsvButton")}
         </button>
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-ink-muted">From</span>
+          <span className="text-xs text-ink-muted">{t("pages.vehicleDetail.fromLabel")}</span>
           <input
             type="date"
             value={from}
@@ -155,7 +157,7 @@ export function VehicleAssignmentHistoryPanel({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-ink-muted">To</span>
+          <span className="text-xs text-ink-muted">{t("pages.vehicleDetail.toLabel")}</span>
           <input
             type="date"
             value={to}
@@ -164,22 +166,22 @@ export function VehicleAssignmentHistoryPanel({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-ink-muted">Status</span>
+          <span className="text-xs text-ink-muted">{t("common.status")}</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as AssignmentHistoryStatus)}
             className="h-10 rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
           >
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="returned">Returned</option>
+            <option value="all">{t("pages.assignmentHistory.statusAllOption")}</option>
+            <option value="active">{t("pages.assignmentHistory.statusActiveOption")}</option>
+            <option value="returned">{t("pages.assignmentHistory.statusReturnedOption")}</option>
           </select>
         </label>
         <label className="flex min-w-[12rem] flex-col gap-1 sm:col-span-2 lg:col-span-1">
-          <span className="text-xs text-ink-muted">Search</span>
+          <span className="text-xs text-ink-muted">{t("common.search")}</span>
           <input
             type="search"
-            placeholder={mode === "driver" ? "Plate, make, model…" : "Driver name, phone…"}
+            placeholder={mode === "driver" ? t("pages.assignmentHistory.searchPlateMakeModelPlaceholder") : t("pages.assignmentHistory.searchDriverNamePhonePlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="h-10 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
@@ -187,12 +189,12 @@ export function VehicleAssignmentHistoryPanel({
         </label>
       </div>
 
-      {query.isLoading && <p className="text-sm text-ink-muted">Loading history…</p>}
+      {query.isLoading && <p className="text-sm text-ink-muted">{t("pages.assignmentHistory.loadingHistoryEllipsis")}</p>}
       {query.isError && (
-        <p className="text-sm text-red-600">Failed to load assignment history.</p>
+        <p className="text-sm text-red-600">{t("pages.assignmentHistory.failedToLoadAssignmentHistory")}</p>
       )}
       {!query.isLoading && !query.isError && items.length === 0 && (
-        <p className="text-sm text-ink-muted">No assignment history yet.</p>
+        <p className="text-sm text-ink-muted">{t("pages.assignmentHistory.noAssignmentHistoryYet")}</p>
       )}
 
       {items.length > 0 && (
@@ -202,25 +204,25 @@ export function VehicleAssignmentHistoryPanel({
               <tr className="border-b border-border text-left text-xs text-ink-muted">
                 {mode === "driver" ? (
                   <>
-                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Vehicle</th>
-                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Plate</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.assignmentHistory.vehicleColumnLabel")}</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.assignmentHistory.plateColumnLabel")}</th>
                   </>
                 ) : (
                   <>
-                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Driver</th>
-                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Phone</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.vehicleDetail.driverLabel")}</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.invoiceForm.phoneLabel")}</th>
                   </>
                 )}
-                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Assigned</th>
-                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Returned</th>
-                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">Days</th>
-                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">Weekly rent</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.assignmentHistory.assignedColumnLabel")}</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.assignmentHistory.returnedColumnLabel")}</th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">{t("pages.assignmentHistory.daysColumnLabel")}</th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">{t("pages.vehicleDetail.weeklyRentShortLabel")}</th>
                 <th className="px-3 py-2 text-right font-semibold uppercase tracking-wide">
-                  {mode === "driver" ? "Total rent paid" : "Total rent collected"}
+                  {mode === "driver" ? t("pages.assignmentHistory.totalRentPaidColumnLabel") : t("pages.assignmentHistory.totalRentCollectedColumnLabel")}
                 </th>
-                <th className="px-3 py-2 font-semibold uppercase tracking-wide">Notes</th>
+                <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("pages.invoiceDetail.notesLabel")}</th>
                 {mode === "driver" && canViewPayouts && (
-                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">Actions</th>
+                    <th className="px-3 py-2 font-semibold uppercase tracking-wide">{t("common.actions")}</th>
                   )}
               </tr>
             </thead>
@@ -236,7 +238,7 @@ export function VehicleAssignmentHistoryPanel({
                         >
                           {row.vehicle_name?.trim() ||
                             `${row.make ?? ""} ${row.model ?? ""}`.trim() ||
-                            "Vehicle"}
+                            t("pages.assignmentHistory.vehicleFallback")}
                         </Link>
                       </td>
                       <td className="px-3 py-2.5 font-mono text-xs">{row.license_plate ?? "—"}</td>
@@ -248,7 +250,7 @@ export function VehicleAssignmentHistoryPanel({
                           to={`/drivers/${row.driver_id}`}
                           className="text-brand hover:underline"
                         >
-                          {row.driver_name || "Driver"}
+                          {row.driver_name || t("pages.assignmentHistory.driverFallback")}
                         </Link>
                       </td>
                       <td className="px-3 py-2.5">{row.driver_phone ?? "—"}</td>
@@ -258,7 +260,7 @@ export function VehicleAssignmentHistoryPanel({
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {row.is_active || !row.unassigned_at ? (
                       <span className="inline-flex h-6 items-center rounded-full bg-emerald-100 px-2.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200/70">
-                        Active
+                        {t("pages.assignmentHistory.activeBadge")}
                       </span>
                     ) : (
                       formatDisplayDate(row.unassigned_at)
@@ -282,7 +284,7 @@ export function VehicleAssignmentHistoryPanel({
                         to={payoutPeriodLink(row)}
                         className="text-xs text-brand hover:underline"
                       >
-                        View payouts
+                        {t("pages.assignmentHistory.viewPayoutsLink")}
                       </Link>
                     </td>
                   )}

@@ -29,7 +29,7 @@ export function PlatformDashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className={`${card} p-5 shadow-card`}>
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              Organizations
+              {t("pages.organizations.title")}
             </p>
             <p className="mt-2 text-3xl font-bold text-ink">
               {orgsQuery.isLoading ? "—" : orgs.length}
@@ -40,9 +40,9 @@ export function PlatformDashboardPage() {
         <div className={`${card} p-5 shadow-card`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-ink">Organizations</h2>
+              <h2 className="text-sm font-semibold text-ink">{t("pages.organizations.title")}</h2>
               <p className="mt-1 text-xs text-ink-muted">
-                Select an organization to enter and manage its fleet.
+                {t("pages.platformDashboard.selectOrgDesc")}
               </p>
             </div>
             {canManageOrgs && (
@@ -53,9 +53,9 @@ export function PlatformDashboardPage() {
           </div>
 
           {orgsQuery.isLoading ? (
-            <p className="mt-4 text-sm text-ink-muted">Loading organizations…</p>
+            <p className="mt-4 text-sm text-ink-muted">{t("pages.organizations.loadingOrganizations")}</p>
           ) : recentOrgs.length === 0 ? (
-            <p className="mt-4 text-sm text-ink-muted">No organizations yet.</p>
+            <p className="mt-4 text-sm text-ink-muted">{t("pages.organizations.noOrganizationsYet")}</p>
           ) : (
             <ul className="mt-4 divide-y divide-border">
               {recentOrgs.map((org) => (
@@ -65,10 +65,10 @@ export function PlatformDashboardPage() {
                 >
                   <div>
                     <p className="font-medium text-ink">{org.name}</p>
-                    <p className="text-xs text-ink-muted">{org.email ?? "No email"}</p>
+                    <p className="text-xs text-ink-muted">{org.email ?? t("pages.platformDashboard.noEmailFallback")}</p>
                   </div>
                   <Link to="/settings/organizations" className={btnSecondary}>
-                    View
+                    {t("common.view")}
                   </Link>
                 </li>
               ))}

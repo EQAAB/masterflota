@@ -52,6 +52,7 @@ type LinkedDriver = {
 };
 
 function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState("");
 
   const filtered = drivers.filter((d) => {
@@ -64,8 +65,8 @@ function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
     <aside className="rounded-[16px] border border-border/70 bg-white p-4 shadow-soft sm:p-5 lg:sticky lg:top-4 lg:self-start">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Linked drivers</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Drivers assigned to this subcontractor</p>
+          <h2 className="text-sm font-semibold text-slate-900">{t("pages.subcontractorDetail.linkedDriversTitle")}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{t("pages.subcontractorForm.linkedDriversPanelDesc")}</p>
         </div>
         <span className="inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200/80">
           {drivers.length}
@@ -77,7 +78,7 @@ function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
           type="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Search drivers…"
+          placeholder={t("pages.subcontractorForm.searchDriversPlaceholder")}
           className={`${inputClass} mb-3`}
         />
       )}
@@ -96,14 +97,14 @@ function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
                 <span className="block truncate text-sm font-medium text-slate-900">
                   {d.first_name} {d.last_name}
                 </span>
-                <span className="block truncate text-xs text-slate-500">{d.phone || "No phone"}</span>
+                <span className="block truncate text-xs text-slate-500">{d.phone || t("pages.subcontractorForm.noPhoneFallback")}</span>
               </span>
             </Link>
           </li>
         ))}
         {filtered.length === 0 && (
           <li className="rounded-xl border border-dashed border-border/80 px-3 py-6 text-center text-sm text-slate-500">
-            No drivers match your search.
+            {t("pages.subcontractorForm.noDriversMatchSearch")}
           </li>
         )}
       </ul>
@@ -170,14 +171,14 @@ export function SubcontractorFormPage() {
       void queryClient.invalidateQueries({ queryKey: ["subcontractors"] });
       navigate("/subcontractors");
     },
-    onError: (e: unknown) => setErr(e instanceof Error ? e.message : "Save failed"),
+    onError: (e: unknown) => setErr(e instanceof Error ? e.message : t("pages.subcontractorForm.saveFailedError")),
   });
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setErr(null);
     if (!form.legalName.trim()) {
-      setErr("Legal name is required.");
+      setErr(t("pages.subcontractorForm.legalNameRequiredError"));
       return;
     }
     const body: SaveSubcontractorPayload = {
@@ -213,9 +214,9 @@ export function SubcontractorFormPage() {
                 : t("pages.subcontractorForm.editSubtitle")
             }
             breadcrumbs={[
-              { label: "Dashboard", to: "/dashboard" },
-              { label: "Subcontractors", to: "/subcontractors" },
-              { label: isNew ? "New" : "Edit" },
+              { label: t("nav.dashboard"), to: "/dashboard" },
+              { label: t("nav.subcontractors"), to: "/subcontractors" },
+              { label: isNew ? t("pages.subcontractorForm.newLabel") : t("pages.subcontractorForm.editLabel") },
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5 [&_nav]:mb-1.5 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:leading-tight [&_h1]:tracking-tight [&_h1]:text-slate-900"
           />
@@ -224,7 +225,7 @@ export function SubcontractorFormPage() {
 
       <main className="mx-auto w-full max-w-[1200px] flex-1 p-4 sm:p-6">
         {!isNew && detailQ.isLoading && (
-          <p className="text-sm text-slate-500">Loading subcontractor…</p>
+          <p className="text-sm text-slate-500">{t("pages.subcontractorDetail.loadingSubcontractor")}</p>
         )}
         {err && (
           <div className="mb-4 rounded-[14px] border border-red-200/80 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -232,7 +233,7 @@ export function SubcontractorFormPage() {
           </div>
         )}
         {!isNew && detailQ.isError && (
-          <p className="mb-4 text-sm text-red-700">Could not load subcontractor.</p>
+          <p className="mb-4 text-sm text-red-700">{t("pages.subcontractorDetail.couldNotLoadSubcontractor")}</p>
         )}
 
         {showForm && (
@@ -243,10 +244,10 @@ export function SubcontractorFormPage() {
               onSubmit={onSubmit}
               className="rounded-[16px] border border-border/70 bg-white p-5 shadow-soft sm:p-6"
             >
-              <FormSection title="Business information" description="Legal identity and registration details.">
+              <FormSection title={t("pages.subcontractorDetail.businessInfoTitle")} description={t("pages.subcontractorForm.businessInfoDesc")}>
                 <div className="space-y-3">
                   <div>
-                    <label className={labelClass}>Legal name</label>
+                    <label className={labelClass}>{t("pages.subcontractorDetail.legalNameLabel")}</label>
                     <input
                       required
                       className={inputClass}
@@ -256,7 +257,7 @@ export function SubcontractorFormPage() {
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className={labelClass}>Registration type</label>
+                      <label className={labelClass}>{t("pages.subcontractorDetail.registrationTypeLabel")}</label>
                       <select
                         className={inputClass}
                         value={form.registrationType}
@@ -267,26 +268,26 @@ export function SubcontractorFormPage() {
                           }))
                         }
                       >
-                        <option value="srl">SRL</option>
-                        <option value="sa">SA</option>
-                        <option value="other">Other</option>
+                        <option value="srl">{t("pages.subcontractorForm.srlOption")}</option>
+                        <option value="sa">{t("pages.subcontractorForm.saOption")}</option>
+                        <option value="other">{t("pages.subcontractorForm.otherOption")}</option>
                       </select>
                     </div>
                     <div>
-                      <label className={labelClass}>Status</label>
+                      <label className={labelClass}>{t("common.status")}</label>
                       <select
                         className={inputClass}
                         value={form.status}
                         onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
                       >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active">{t("status.active")}</option>
+                        <option value="inactive">{t("status.inactive")}</option>
                       </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label className={labelClass}>Registration number</label>
+                      <label className={labelClass}>{t("pages.subcontractorDetail.registrationNumberLabel")}</label>
                       <input
                         className={inputClass}
                         value={form.registrationNumber}
@@ -294,7 +295,7 @@ export function SubcontractorFormPage() {
                       />
                     </div>
                     <div>
-                      <label className={labelClass}>Tax ID</label>
+                      <label className={labelClass}>{t("pages.subcontractorDetail.taxIdLabel")}</label>
                       <input
                         className={inputClass}
                         value={form.taxId}
@@ -305,10 +306,10 @@ export function SubcontractorFormPage() {
                 </div>
               </FormSection>
 
-              <FormSection title="Contact information" description="Primary contact details for this subcontractor.">
+              <FormSection title={t("pages.subcontractorForm.contactInfoTitle")} description={t("pages.subcontractorForm.contactInfoDesc")}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Email</label>
+                    <label className={labelClass}>{t("pages.users.emailLabel")}</label>
                     <input
                       type="email"
                       className={inputClass}
@@ -317,7 +318,7 @@ export function SubcontractorFormPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Phone</label>
+                    <label className={labelClass}>{t("pages.invoiceForm.phoneLabel")}</label>
                     <input
                       className={inputClass}
                       value={form.phone}
@@ -326,7 +327,7 @@ export function SubcontractorFormPage() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <label className={labelClass}>Address</label>
+                  <label className={labelClass}>{t("pages.invoiceDetail.addressLabel")}</label>
                   <textarea
                     className={textareaClass}
                     rows={3}
@@ -336,10 +337,10 @@ export function SubcontractorFormPage() {
                 </div>
               </FormSection>
 
-              <FormSection title="Banking information" description="Payout and settlement account details.">
+              <FormSection title={t("pages.subcontractorForm.bankingInfoTitle")} description={t("pages.subcontractorForm.bankingInfoDesc")}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Bank name</label>
+                    <label className={labelClass}>{t("pages.invoiceForm.bankNameLabel")}</label>
                     <input
                       className={inputClass}
                       value={form.bankName}
@@ -347,7 +348,7 @@ export function SubcontractorFormPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>IBAN</label>
+                    <label className={labelClass}>{t("pages.invoiceForm.ibanLabel")}</label>
                     <input
                       className={inputClass}
                       value={form.bankAccountIban}
@@ -357,10 +358,10 @@ export function SubcontractorFormPage() {
                 </div>
               </FormSection>
 
-              <FormSection title="Contract details" description="Active contract period for this subcontractor.">
+              <FormSection title={t("pages.subcontractorForm.contractDetailsTitle")} description={t("pages.subcontractorForm.contractDetailsDesc")}>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className={labelClass}>Contract start</label>
+                    <label className={labelClass}>{t("pages.subcontractorForm.contractStartLabel")}</label>
                     <input
                       type="date"
                       className={inputClass}
@@ -369,7 +370,7 @@ export function SubcontractorFormPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Contract end</label>
+                    <label className={labelClass}>{t("pages.subcontractorForm.contractEndLabel")}</label>
                     <input
                       type="date"
                       className={inputClass}
@@ -380,11 +381,11 @@ export function SubcontractorFormPage() {
                 </div>
               </FormSection>
 
-              <FormSection title="Notes" description="Internal notes visible to your team.">
+              <FormSection title={t("pages.invoiceDetail.notesLabel")} description={t("pages.subcontractorForm.notesDesc")}>
                 <textarea
                   className={textareaClass}
                   rows={4}
-                  placeholder="Optional internal notes…"
+                  placeholder={t("pages.subcontractorForm.notesPlaceholder")}
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 />
@@ -397,16 +398,16 @@ export function SubcontractorFormPage() {
                   className="inline-flex h-11 items-center rounded-xl bg-brand-gradient px-5 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md disabled:opacity-50"
                 >
                   {saveMut.isPending
-                    ? "Saving…"
+                    ? t("common.saving")
                     : isNew
-                      ? "Create subcontractor"
-                      : "Save changes"}
+                      ? t("pages.subcontractorForm.createSubcontractorButton")
+                      : t("pages.users.saveChangesButton")}
                 </button>
                 <Link
                   to="/subcontractors"
                   className="inline-flex h-11 items-center rounded-xl border border-border/80 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
               </div>
             </form>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { EarningsOverviewResponse } from "../../../api/earnings";
 import { CHART_WARNING } from "../../dashboard/chartPalette";
 import { formatCurrency } from "../../../utils/currency";
@@ -11,6 +12,7 @@ type PendingPayoutsDonutCardProps = {
 };
 
 export function PendingPayoutsDonutCard({ kpis }: PendingPayoutsDonutCardProps) {
+  const { t } = useTranslation();
   const pending = kpis.pendingPaymentsTotal;
   const remainder = Math.max(0, kpis.totalEarningsLast30Days - pending);
   const pct = pendingSharePct(kpis);
@@ -18,13 +20,13 @@ export function PendingPayoutsDonutCard({ kpis }: PendingPayoutsDonutCardProps) 
 
   const segments = [
     {
-      name: `Pending payouts (${pct.toFixed(0)}%)`,
+      name: t("pages.earningsOverview.pendingPayoutsPctLabel", { pct: pct.toFixed(0) }),
       value: pending,
       color: CHART_WARNING,
       amountLabel: formatCurrency(pending),
     },
     {
-      name: `Remaining 30d gross (${remainderPct.toFixed(0)}%)`,
+      name: t("pages.earningsOverview.remaining30dGrossPctLabel", { pct: remainderPct.toFixed(0) }),
       value: remainder,
       color: GRAY,
       amountLabel: formatCurrency(remainder),
@@ -33,11 +35,11 @@ export function PendingPayoutsDonutCard({ kpis }: PendingPayoutsDonutCardProps) 
 
   return (
     <EarningsDonutCard
-      title="Pending payouts vs Pending + 30d gross"
+      title={t("pages.earningsOverview.pendingVsPendingGrossTitle")}
       centerPct={pct}
-      centerLabel="Pending"
+      centerLabel={t("status.pending")}
       segments={segments}
-      footerAction={{ label: "View payouts", to: "/earnings/payouts" }}
+      footerAction={{ label: t("pages.assignmentHistory.viewPayoutsLink"), to: "/earnings/payouts" }}
     />
   );
 }

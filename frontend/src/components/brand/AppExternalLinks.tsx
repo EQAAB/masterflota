@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { getAppBranding } from "../../lib/appBranding";
 
 function externalLinkLabel(url: string, fallback: string): string {
@@ -15,11 +16,12 @@ type AppExternalLinksProps = {
 
 /** Footer links to product marketing site and company site (when configured). */
 export function AppExternalLinks({ className = "", linkClassName = "" }: AppExternalLinksProps) {
+  const { t } = useTranslation();
   const { marketingUrl, companyName, companyUrl } = getAppBranding();
   const links: { href: string; label: string }[] = [];
 
   if (marketingUrl) {
-    links.push({ href: marketingUrl, label: externalLinkLabel(marketingUrl, "Website") });
+    links.push({ href: marketingUrl, label: externalLinkLabel(marketingUrl, t("common.website")) });
   }
   if (companyUrl && companyName) {
     links.push({ href: companyUrl, label: companyName });

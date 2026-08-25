@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { btnSecondary, input, transitionDefault } from "../../../theme/classNames";
 import { applyDatePreset, formatDateRangeLabel } from "./useEarningsOverviewDerived";
 
@@ -7,12 +8,6 @@ type EarningsOverviewDateRangeProps = {
   dateTo: string;
   onChange: (from: string, to: string) => void;
 };
-
-const PRESETS = [
-  { id: "30d" as const, label: "Last 30 days" },
-  { id: "90d" as const, label: "Last 90 days" },
-  { id: "6mo" as const, label: "Last 6 months" },
-];
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
@@ -28,6 +23,12 @@ function CalendarIcon({ className }: { className?: string }) {
 }
 
 export function EarningsOverviewDateRange({ dateFrom, dateTo, onChange }: EarningsOverviewDateRangeProps) {
+  const { t } = useTranslation();
+  const PRESETS = [
+    { id: "30d" as const, label: t("pages.earningsOverview.last30DaysPreset") },
+    { id: "90d" as const, label: t("pages.earningsOverview.last90DaysPreset") },
+    { id: "6mo" as const, label: t("pages.earningsOverview.last6MonthsPreset") },
+  ];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -57,7 +58,7 @@ export function EarningsOverviewDateRange({ dateFrom, dateTo, onChange }: Earnin
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-72 rounded-2xl border border-border bg-white p-4 shadow-card-hover">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Presets</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{t("pages.earningsOverview.presetsLabel")}</p>
           <div className="mt-2 flex flex-col gap-1">
             {PRESETS.map((p) => (
               <button
@@ -74,10 +75,10 @@ export function EarningsOverviewDateRange({ dateFrom, dateTo, onChange }: Earnin
               </button>
             ))}
           </div>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">Custom range</p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t("pages.earningsOverview.customRangeLabel")}</p>
           <div className="mt-2 space-y-2">
             <label className="block">
-              <span className="text-xs text-ink-muted">From</span>
+              <span className="text-xs text-ink-muted">{t("pages.vehicleDetail.fromLabel")}</span>
               <input
                 type="date"
                 value={dateFrom}
@@ -86,7 +87,7 @@ export function EarningsOverviewDateRange({ dateFrom, dateTo, onChange }: Earnin
               />
             </label>
             <label className="block">
-              <span className="text-xs text-ink-muted">To</span>
+              <span className="text-xs text-ink-muted">{t("pages.vehicleDetail.toLabel")}</span>
               <input
                 type="date"
                 value={dateTo}
@@ -100,7 +101,7 @@ export function EarningsOverviewDateRange({ dateFrom, dateTo, onChange }: Earnin
             className={`${btnSecondary} mt-3 w-full justify-center text-sm`}
             onClick={() => setOpen(false)}
           >
-            Apply
+            {t("pages.earningsOverview.applyButton")}
           </button>
         </div>
       )}

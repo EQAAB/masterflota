@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { PayoutListItem } from "../../api/earnings";
 import { postReleasePayoutHold } from "../../api/earnings";
 import { formatCurrency } from "../../utils/currency";
@@ -16,6 +17,7 @@ function toNum(value: string | null | undefined): number {
 }
 
 export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldModalProps) {
+  const { t } = useTranslation();
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -48,8 +50,8 @@ export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldM
     } catch (e: unknown) {
       const msg =
         e && typeof e === "object" && "response" in e
-          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Request failed")
-          : "Request failed";
+          ? String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? t("pages.payoutModals.requestFailedError"))
+          : t("pages.payoutModals.requestFailedError");
       setErr(msg);
     } finally {
       setBusy(false);
@@ -68,17 +70,17 @@ export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldM
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold text-ink">Release hold</h2>
+          <h2 className="text-lg font-semibold text-ink">{t("pages.payoutModals.releaseHoldTitle")}</h2>
           <p className="text-sm text-ink-muted mt-0.5">
             {row.first_name} {row.last_name} · {row.payment_period_start?.slice(0, 10)} –{" "}
             {row.payment_period_end?.slice(0, 10)}
           </p>
           <p className="text-xs text-ink-muted mt-1 tabular-nums">
-            Raw net: {formatCurrency(rawNet)} · Remaining debt: {formatCurrency(remaining)}
+            {t("pages.payoutModals.rawNetRemainingDebtLine", { rawNet: formatCurrency(rawNet), debt: formatCurrency(remaining) })}
           </p>
           {row.hold_reason && (
             <p className="text-xs text-amber-800 mt-2">
-              Hold reason: <span className="font-medium">{row.hold_reason}</span>
+              {t("pages.payoutModals.holdReasonLabel")} <span className="font-medium">{row.hold_reason}</span>
             </p>
           )}
         </div>
@@ -87,19 +89,19 @@ export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldM
           {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{err}</div>}
 
           <p className="text-sm text-ink-muted">
-            This clears the hold and sets the payout to{" "}
-            <span className="font-medium">{remaining > 0 ? "debt" : "pending"}</span> so it can continue in the
-            payment workflow.
+            {t("pages.payoutModals.clearsHoldPrefix")}{" "}
+            <span className="font-medium">{remaining > 0 ? t("status.debt") : t("status.pending")}</span>{" "}
+            {t("pages.payoutModals.clearsHoldSuffix")}
           </p>
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Release notes (optional)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">{t("pages.payoutModals.releaseNotesOptionalLabel")}</label>
             <textarea
               className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[72px]"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               disabled={busy}
-              placeholder="Why is this hold being released?"
+              placeholder={t("pages.payoutModals.whyHoldReleasedPlaceholder")}
             />
           </div>
         </div>
@@ -111,7 +113,7 @@ export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldM
             onClick={handleClose}
             className="rounded-lg border border-border px-4 py-2 text-sm text-ink hover:bg-slate-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -119,7 +121,7 @@ export function ReleaseHoldModal({ row, open, onClose, onSuccess }: ReleaseHoldM
             onClick={() => void submit()}
             className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-50"
           >
-            {busy ? "Releasing…" : "Release hold"}
+            {busy ? t("pages.payoutModals.releasingEllipsis") : t("pages.payoutModals.releaseHoldButton")}
           </button>
         </div>
       </div>

@@ -1,7 +1,8 @@
+import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
 import type { VehicleHistoryEventType } from "../../api/vehicles";
 import { sectionLabel, transitionDefault } from "../../theme/classNames";
-import { EVENT_TYPE_OPTIONS } from "./vehicleHistoryDisplayUtils";
+import { getEventTypeOptions } from "./vehicleHistoryDisplayUtils";
 
 const filterCardClass =
   `rounded-[16px] border border-border/70 bg-white/90 p-5 shadow-soft backdrop-blur-sm ${transitionDefault}`;
@@ -93,13 +94,15 @@ export function VehicleHistoryFilters({
   incidentPending,
   canReportIncident = false,
 }: VehicleHistoryFiltersProps) {
+  const { t } = useTranslation();
+  const eventTypeOptions = getEventTypeOptions();
   return (
     <div className="space-y-4">
       <div className={filterCardClass}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className={filterLabelClass} htmlFor="vh-event-type">
-              Event type
+              {t("pages.vehicleDetail.eventTypeLabel")}
             </label>
             <select
               id="vh-event-type"
@@ -107,7 +110,7 @@ export function VehicleHistoryFilters({
               value={eventType}
               onChange={(e) => onEventTypeChange(e.target.value as "" | VehicleHistoryEventType)}
             >
-              {EVENT_TYPE_OPTIONS.map((o) => (
+              {eventTypeOptions.map((o) => (
                 <option key={o.value || "all"} value={o.value}>
                   {o.label}
                 </option>
@@ -117,7 +120,7 @@ export function VehicleHistoryFilters({
 
           <div>
             <label className={filterLabelClass} htmlFor="vh-start-date">
-              From
+              {t("pages.vehicleDetail.fromLabel")}
             </label>
             <div className="relative">
               <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -133,7 +136,7 @@ export function VehicleHistoryFilters({
 
           <div>
             <label className={filterLabelClass} htmlFor="vh-end-date">
-              To
+              {t("pages.vehicleDetail.toLabel")}
             </label>
             <div className="relative">
               <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -149,7 +152,7 @@ export function VehicleHistoryFilters({
 
           <div>
             <label className={filterLabelClass} htmlFor="vh-driver">
-              Driver
+              {t("pages.vehicleDetail.driverLabel")}
             </label>
             <select
               id="vh-driver"
@@ -158,7 +161,7 @@ export function VehicleHistoryFilters({
               onChange={(e) => onDriverIdChange(e.target.value)}
               disabled={driversLoading}
             >
-              <option value="">All drivers</option>
+              <option value="">{t("pages.vehicleDetail.allDriversOption")}</option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.first_name} {d.last_name}
@@ -175,7 +178,7 @@ export function VehicleHistoryFilters({
               onClick={onClearFilters}
               className="text-sm font-medium text-ink-muted transition-colors hover:text-ink"
             >
-              Clear filters
+              {t("pages.vehicleDetail.clearFiltersButton")}
             </button>
           ) : (
             <span />
@@ -192,7 +195,7 @@ export function VehicleHistoryFilters({
             }`}
           >
             <AlertIcon className="h-4 w-4 shrink-0" />
-            {incidentOpen ? "Cancel incident" : "Report incident"}
+            {incidentOpen ? t("pages.vehicleDetail.cancelIncidentButton") : t("pages.vehicleDetail.reportIncidentButton")}
           </button>
           ) : (
             <span />
@@ -202,21 +205,21 @@ export function VehicleHistoryFilters({
 
       {canReportIncident && incidentOpen && (
         <div className="rounded-xl border border-red-100 bg-red-50/40 p-4">
-          <p className="text-sm font-medium text-red-900">Log a new incident</p>
+          <p className="text-sm font-medium text-red-900">{t("pages.vehicleDetail.logNewIncidentTitle")}</p>
           <p className="mt-0.5 text-xs text-red-700/80">
-            Record accidents, damage, or other notable events for this vehicle.
+            {t("pages.vehicleDetail.logNewIncidentDesc")}
           </p>
           <div className="mt-3 space-y-3">
             <input
               type="text"
-              placeholder="Incident title (required)"
+              placeholder={t("pages.vehicleDetail.incidentTitleRequiredPlaceholder")}
               className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               value={incidentTitle}
               onChange={(e) => onIncidentTitleChange(e.target.value)}
             />
             <textarea
               rows={2}
-              placeholder="Description (optional)"
+              placeholder={t("pages.vehicleDetail.descriptionOptionalPlaceholder")}
               className="w-full rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               value={incidentDesc}
               onChange={(e) => onIncidentDescChange(e.target.value)}
@@ -227,7 +230,7 @@ export function VehicleHistoryFilters({
               onClick={onSubmitIncident}
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:bg-red-700 disabled:opacity-50"
             >
-              {incidentPending ? "Saving…" : "Log incident"}
+              {incidentPending ? t("common.saving") : t("pages.vehicleDetail.logIncidentButton")}
             </button>
           </div>
         </div>

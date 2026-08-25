@@ -20,12 +20,6 @@ import { DocumentUpload } from "../../components/documents/DocumentUpload";
 import { DocumentList } from "../../components/documents/DocumentList";
 import { PageHeader } from "../../components/theme/PageHeader";
 
-const EMPLOYMENT_STATUSES = [
-  { value: "active", label: "Active" },
-  { value: "suspended", label: "Suspended" },
-  { value: "terminated", label: "Terminated" },
-] as const;
-
 const inputClass =
   "h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15";
 const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
@@ -109,6 +103,11 @@ export function EditDriverPage() {
   const [success, setSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [commissionErrors, setCommissionErrors] = useState<Partial<Record<string, string>>>({});
+  const EMPLOYMENT_STATUSES = [
+    { value: "active", label: t("driverStatus.active") },
+    { value: "suspended", label: t("driverStatus.suspended") },
+    { value: "terminated", label: t("driverStatus.terminated") },
+  ] as const;
   const [form, setForm] = useState<(CreateDriverPayload & {
     commissionType: CommissionType;
     fixedCommissionAmount: number;
@@ -150,28 +149,28 @@ export function EditDriverPage() {
 
   const validate = (): string | null => {
     if (!form) return null;
-    if (!form.firstName?.trim()) return "First name is required.";
-    if (!form.lastName?.trim()) return "Last name is required.";
-    if (!form.phone?.trim()) return "Phone number is required.";
-    if (form.phone && !validatePhone(form.phone)) return "Enter a valid phone number.";
-    if (form.email?.trim() && !validateEmail(form.email)) return "Enter a valid email address.";
+    if (!form.firstName?.trim()) return t("pages.driverForm.firstNameRequiredError");
+    if (!form.lastName?.trim()) return t("pages.driverForm.lastNameRequiredError");
+    if (!form.phone?.trim()) return t("pages.driverForm.phoneRequiredError");
+    if (form.phone && !validatePhone(form.phone)) return t("pages.driverForm.invalidPhoneError");
+    if (form.email?.trim() && !validateEmail(form.email)) return t("pages.driverForm.invalidEmailError");
     const errs: Partial<Record<string, string>> = {};
     const type = form.commissionType ?? "percentage";
     if (type === "percentage" || type === "hybrid") {
       const rate = Number(form.commissionRate);
       if (Number.isNaN(rate) || rate < 0 || rate > 100)
-        errs.commissionRate = "Commission rate must be between 0 and 100%.";
+        errs.commissionRate = t("pages.driverForm.commissionRateRangeError");
     }
     if (type === "fixed_amount" || type === "hybrid") {
       const fixed = Number(form.fixedCommissionAmount ?? 0);
       if (Number.isNaN(fixed) || fixed < 0)
-        errs.fixedCommissionAmount = "Fixed amount must be 0 or greater.";
+        errs.fixedCommissionAmount = t("pages.driverForm.fixedAmountMinError");
     }
     const min = Number(form.minimumCommission ?? 0);
     if (!Number.isNaN(min) && min < 0)
-      errs.minimumCommission = "Minimum commission cannot be negative.";
+      errs.minimumCommission = t("pages.driverForm.minimumCommissionNegativeError");
     setCommissionErrors(errs);
-    if (Object.keys(errs).length > 0) return "Please fix commission errors.";
+    if (Object.keys(errs).length > 0) return t("pages.driverForm.fixCommissionErrorsError");
     return null;
   };
 
@@ -231,9 +230,9 @@ export function EditDriverPage() {
   if (!id) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-ink-muted">Missing driver ID.</p>
+        <p className="text-ink-muted">{t("pages.driverForm.missingDriverIdError")}</p>
         <Link to="/drivers" className="ml-2 text-brand hover:underline">
-          Back to drivers
+          {t("pages.driverForm.backToDrivers")}
         </Link>
       </div>
     );
@@ -244,7 +243,7 @@ export function EditDriverPage() {
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="inline-block w-8 h-8 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-ink-muted">Loading driver...</p>
+          <p className="text-sm text-ink-muted">{t("pages.driverForm.loadingDriver")}</p>
         </div>
       </div>
     );
@@ -254,9 +253,9 @@ export function EditDriverPage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 text-center max-w-md">
-          <p className="text-red-600">Failed to load driver.</p>
+          <p className="text-red-600">{t("pages.driverForm.failedToLoadDriver")}</p>
           <Link to="/drivers" className="mt-3 inline-block text-sm text-brand hover:underline">
-            Back to drivers
+            {t("pages.driverForm.backToDrivers")}
           </Link>
         </div>
       </div>
@@ -267,8 +266,8 @@ export function EditDriverPage() {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
-          <p className="text-green-600 font-medium">Driver updated successfully.</p>
-          <p className="text-sm text-ink-muted mt-1">Redirecting to drivers list...</p>
+          <p className="text-green-600 font-medium">{t("pages.driverForm.driverUpdatedSuccess")}</p>
+          <p className="text-sm text-ink-muted mt-1">{t("pages.driverForm.redirectingToDriversList")}</p>
         </div>
       </div>
     );
@@ -282,8 +281,8 @@ export function EditDriverPage() {
             title={t("pages.driverEdit.title")}
             description={t("pages.driverEdit.subtitle")}
             breadcrumbs={[
-              { label: "Dashboard", to: "/dashboard" },
-              { label: "Drivers", to: "/drivers" },
+              { label: t("nav.dashboard"), to: "/dashboard" },
+              { label: t("nav.drivers"), to: "/drivers" },
               { label: t("pages.driverEdit.title") },
             ]}
             actions={
@@ -297,17 +296,17 @@ export function EditDriverPage() {
                   {mutation.isPending ? (
                     <>
                       <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Saving...
+                      {t("pages.driverForm.savingButton")}
                     </>
                   ) : (
-                    "Save changes"
+                    t("pages.users.saveChangesButton")
                   )}
                 </button>
                 <Link
                   to="/drivers"
                   className="inline-flex h-10 items-center rounded-xl border border-border/80 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Link>
               </div>
             }
@@ -318,10 +317,10 @@ export function EditDriverPage() {
 
       <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:px-8">
         <form id="edit-driver-form" onSubmit={onSubmit} className="space-y-4">
-          <SectionCard title="Personal information" description="Basic identity and contact details.">
+          <SectionCard title={t("pages.driverForm.personalInfoTitle")} description={t("pages.driverForm.personalInfoDesc")}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className={labelClass}>First name *</label>
+                <label className={labelClass}>{t("pages.driverForm.firstNameRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -331,7 +330,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Last name *</label>
+                <label className={labelClass}>{t("pages.driverForm.lastNameRequiredLabel")}</label>
                 <input
                   type="text"
                   required
@@ -341,7 +340,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Email</label>
+                <label className={labelClass}>{t("pages.users.emailLabel")}</label>
                 <input
                   type="email"
                   className={inputClass}
@@ -350,7 +349,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Phone *</label>
+                <label className={labelClass}>{t("pages.driverForm.phoneRequiredLabel")}</label>
                 <input
                   type="tel"
                   required
@@ -360,7 +359,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Date of birth</label>
+                <label className={labelClass}>{t("pages.driverForm.dateOfBirthLabel")}</label>
                 <input
                   type="date"
                   className={inputClass}
@@ -369,7 +368,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className={labelClass}>Address</label>
+                <label className={labelClass}>{t("pages.invoiceDetail.addressLabel")}</label>
                 <textarea
                   rows={3}
                   className="w-full resize-y rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
@@ -380,10 +379,10 @@ export function EditDriverPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="License information" description="Driver license data and validity.">
+          <SectionCard title={t("pages.driverForm.licenseInfoTitle")} description={t("pages.driverForm.licenseInfoDesc")}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className={labelClass}>License number</label>
+                <label className={labelClass}>{t("pages.driverForm.licenseNumberLabel")}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -392,7 +391,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>License expiry</label>
+                <label className={labelClass}>{t("pages.driverForm.licenseExpiryLabel")}</label>
                 <input
                   type="date"
                   className={inputClass}
@@ -401,7 +400,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>License class</label>
+                <label className={labelClass}>{t("pages.driverForm.licenseClassLabel")}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -412,11 +411,11 @@ export function EditDriverPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Employment & commission" description="Contract status and payout settings.">
+          <SectionCard title={t("pages.driverForm.employmentCommissionTitle")} description={t("pages.driverForm.employmentCommissionDesc")}>
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
-                  <label className={labelClass}>Hire date</label>
+                  <label className={labelClass}>{t("pages.driverForm.hireDateLabel")}</label>
                   <input
                     type="date"
                     className={inputClass}
@@ -425,7 +424,7 @@ export function EditDriverPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Status</label>
+                  <label className={labelClass}>{t("common.status")}</label>
                   <select
                     className={inputClass}
                     value={form.employmentStatus ?? "active"}
@@ -441,13 +440,13 @@ export function EditDriverPage() {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className={labelClass}>Subcontractor (optional)</label>
+                  <label className={labelClass}>{t("pages.driverForm.subcontractorOptionalLabel")}</label>
                   <select
                     className={inputClass}
                     value={form.subcontractorId ?? ""}
                     onChange={(e) => update("subcontractorId", e.target.value)}
                   >
-                    <option value="">None (direct)</option>
+                    <option value="">{t("pages.driverForm.noneDirectShortOption")}</option>
                     {(subsQ.data ?? [])
                       .filter((s) => s.status === "active")
                       .map((s) => (
@@ -457,7 +456,7 @@ export function EditDriverPage() {
                       ))}
                   </select>
                   <p className="mt-1.5 text-xs text-slate-500">
-                    Sub-managed: commission split from subcontractor record; vehicle rent billed to subcontractor.
+                    {t("pages.driverForm.subManagedHintShort")}
                   </p>
                 </div>
               </div>
@@ -480,10 +479,10 @@ export function EditDriverPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Platform IDs" description="Reference IDs used by connected partner platforms.">
+          <SectionCard title={t("pages.driverForm.platformIdsTitle")} description={t("pages.driverForm.platformIdsDesc")}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.UBER]} driver ID</label>
+                <label className={labelClass}>{t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.UBER] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -492,7 +491,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT]} driver ID</label>
+                <label className={labelClass}>{t("pages.driverForm.driverIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -501,7 +500,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO]} courier ID</label>
+                <label className={labelClass}>{t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.GLOVO] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -510,7 +509,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER]} ID</label>
+                <label className={labelClass}>{t("pages.driverForm.platformIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_COURIER] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -519,7 +518,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI]} driver UUID</label>
+                <label className={labelClass}>{t("pages.driverForm.driverUuidSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.BOLT_TAXI] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -529,7 +528,7 @@ export function EditDriverPage() {
                 />
               </div>
               <div>
-                <label className={labelClass}>{PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT]} courier ID</label>
+                <label className={labelClass}>{t("pages.driverForm.courierIdSuffix", { platform: PLATFORM_ID_LABELS[PLATFORM_IDS.WOLT] })}</label>
                 <input
                   type="text"
                   className={inputClass}
@@ -540,34 +539,34 @@ export function EditDriverPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Notes" description="Internal notes visible to your operations team.">
+          <SectionCard title={t("pages.invoiceDetail.notesLabel")} description={t("pages.driverForm.notesDesc")}>
             <textarea
               rows={4}
               className="w-full resize-y rounded-xl border border-border/80 bg-white px-3 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
               value={form.notes ?? ""}
               onChange={(e) => update("notes", e.target.value)}
-              placeholder="Add context or special handling notes..."
+              placeholder={t("pages.driverForm.notesPlaceholder")}
             />
           </SectionCard>
 
           {(formError || mutation.isError) && (
             <div className="rounded-[14px] border border-red-200/80 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {formError || (mutation.error as Error).message || "Failed to update driver."}
+              {formError || (mutation.error as Error).message || t("pages.driverForm.failedToUpdateDriver")}
             </div>
           )}
 
           {id && (
-            <SectionCard title="Documents" description="Upload and manage driver verification documents.">
+            <SectionCard title={t("pages.driverForm.documentsTitle")} description={t("pages.driverForm.documentsDesc")}>
               <div className="space-y-6">
                 <div className="rounded-[14px] border border-border/70 bg-slate-50/60 p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-800">Upload document</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-800">{t("pages.driverForm.uploadDocumentTitle")}</h3>
                   <p className="mb-3 text-xs text-slate-500">
-                    Attach licenses, contracts, IDs, and expiry-sensitive records.
+                    {t("pages.driverForm.uploadDocumentDesc")}
                   </p>
                   <DocumentUpload driverId={id} />
                 </div>
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold text-slate-800">Uploaded documents</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-800">{t("pages.driverForm.uploadedDocumentsTitle")}</h3>
                   <DocumentList driverId={id} />
                 </div>
               </div>
@@ -583,17 +582,17 @@ export function EditDriverPage() {
               {mutation.isPending ? (
                 <>
                   <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Saving...
+                  {t("pages.driverForm.savingButton")}
                 </>
               ) : (
-                "Save changes"
+                t("pages.users.saveChangesButton")
               )}
             </button>
             <Link
               to="/drivers"
               className="inline-flex h-11 items-center rounded-xl border border-border/80 bg-white px-5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
             >
-              Cancel
+              {t("common.cancel")}
             </Link>
           </div>
         </form>

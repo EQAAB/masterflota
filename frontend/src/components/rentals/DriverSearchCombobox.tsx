@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
 import { useDriverCombobox } from "../../hooks/useDriverCombobox";
 
@@ -24,6 +25,7 @@ export function DriverSearchCombobox({
   hideLabel = false,
   inputClassName,
 }: DriverSearchComboboxProps) {
+  const { t } = useTranslation();
   const baseId = useId();
   const inputId = `${baseId}-input`;
   const listboxId = `${baseId}-listbox`;
@@ -107,7 +109,7 @@ export function DriverSearchCombobox({
     <div ref={rootRef} className="relative">
       {!hideLabel && (
         <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink">
-          Driver *
+          {t("pages.searchCombobox.driverRequiredLabel")}
         </label>
       )}
       <input
@@ -122,7 +124,7 @@ export function DriverSearchCombobox({
         aria-autocomplete="list"
         aria-required={!hideLabel}
         aria-activedescendant={activeDescendantId}
-        placeholder="Search by name, phone, or ID…"
+        placeholder={t("pages.searchCombobox.searchByNamePhoneIdPlaceholder")}
         className={inputClassName ?? defaultInputClass}
         value={inputValue}
         onChange={(e) => handleInputChange(e.target.value)}
@@ -135,7 +137,7 @@ export function DriverSearchCombobox({
           <button
             type="button"
             className="fixed inset-0 z-[55] cursor-default bg-slate-900/35 backdrop-blur-[1px] md:hidden"
-            aria-label="Close driver list"
+            aria-label={t("pages.searchCombobox.closeDriverListAria")}
             onClick={() => setOpen(false)}
           />
           <ul
@@ -147,7 +149,7 @@ export function DriverSearchCombobox({
               role="presentation"
               className="sticky top-0 z-10 border-b border-border/80 bg-white/95 px-3 py-2 text-center text-xs font-medium text-ink-muted backdrop-blur-sm md:hidden"
             >
-              Select a driver
+              {t("pages.searchCombobox.selectADriverText")}
             </li>
             {isFetching && (
               <li role="presentation" className="px-3 py-4 flex items-center justify-center gap-2 text-sm text-ink-muted">
@@ -155,20 +157,20 @@ export function DriverSearchCombobox({
                   className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-border border-t-sky-600"
                   aria-hidden
                 />
-                Loading drivers…
+                {t("pages.searchCombobox.loadingDriversEllipsis")}
               </li>
             )}
             {!isFetching && isError && (
               <li role="presentation" className="px-3 py-3 text-center text-sm text-red-600">
-                Could not load drivers.{" "}
+                {t("pages.searchCombobox.couldNotLoadDrivers")}{" "}
                 <button type="button" className="font-medium text-brand underline" onClick={() => refetch()}>
-                  Retry
+                  {t("common.retry")}
                 </button>
               </li>
             )}
             {!isFetching && !isError && results.length === 0 && (
               <li role="presentation" className="px-3 py-4 text-center text-sm text-ink-muted">
-                No drivers match your search.
+                {t("pages.searchCombobox.noDriversMatchSearch")}
               </li>
             )}
             {!isFetching &&
@@ -199,7 +201,7 @@ export function DriverSearchCombobox({
                       </span>
                       {isReassign && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-                          reassign
+                          {t("pages.searchCombobox.reassignBadge")}
                         </span>
                       )}
                     </div>

@@ -1,9 +1,10 @@
 import type { DragEvent, FormEvent, ChangeEvent } from "react";
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 import { uploadVehicleDocument } from "../../api/vehicleDocuments";
 import {
-  VEHICLE_DOCUMENT_TYPES,
+  getVehicleDocumentTypes,
   type VehicleDocumentType,
 } from "../../constants/vehicleDocumentTypes";
 
@@ -24,11 +25,11 @@ function UploadCloudIcon({ className }: { className?: string }) {
   );
 }
 
-function validateFile(file: File): string | null {
-  if (file.size > MAX_SIZE) return "File must be 10MB or smaller.";
+function validateFile(file: File, t: (key: string) => string): string | null {
+  if (file.size > MAX_SIZE) return t("pages.vehicleDocuments.fileTooLargeError");
   const ext = "." + (file.name.split(".").pop() ?? "").toLowerCase();
   const ok = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXT.includes(ext);
-  if (!ok) return "Only PDF, JPG and PNG files are allowed.";
+  if (!ok) return t("pages.vehicleDocuments.onlyPdfJpgPngError");
   return null;
 }
 
@@ -38,6 +39,7 @@ interface VehicleDocumentUploadProps {
 }
 
 export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentUploadProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +71,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
       return uploadVehicleDocument(vehicleId, form, onProgress);
     },
     onSuccess: () => {
-      setToast({ type: "success", message: "Document uploaded successfully." });
+      setToast({ type: "success", message: t("pages.vehicleDocuments.documentUploadedSuccess") });
       setSelectedFile(null);
       setDocumentNumber("");
       setExpiryDate("");
@@ -82,7 +84,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
     onError: (err: Error) => {
       setToast({
         type: "error",
-        message: (err as Error).message || "Upload failed.",
+        message: (err as Error).message || t("pages.vehicleDocuments.uploadFailedError"),
       });
       setUploadProgress(0);
     },
@@ -93,7 +95,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
       setSelectedFile(null);
       return;
     }
-    const err = validateFile(file);
+    const err = validateFile(file, t);
     if (err) {
       setToast({ type: "error", message: err });
       setSelectedFile(null);
@@ -114,7 +116,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      setToast({ type: "error", message: "Please select a file first." });
+      setToast({ type: "error", message: t("pages.vehicleDocuments.pleaseSelectFileFirstError") });
       return;
     }
     mutation.mutate({
@@ -131,30 +133,30 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="rounded-[12px] border border-brand-mint/45 bg-brand-mint/15 px-3 py-2">
-        <p className="text-sm font-medium text-slate-800">Upload vehicle document</p>
+        <p className="text-sm font-medium text-slate-800">{t("pages.vehicleDocuments.uploadVehicleDocumentTitle")}</p>
         <p className="mt-0.5 text-xs text-slate-500">
-          Add insurance, registration, and permit files with expiry tracking.
+          {t("pages.vehicleDocuments.addInsuranceRegistrationDesc")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">Document type</label>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">{t("pages.vehicleDocuments.documentTypeLabel")}</label>
           <select
             className="h-11 w-full rounded-xl border border-border/80 bg-white px-3 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
             value={documentType}
             onChange={(e) => setDocumentType(e.target.value as VehicleDocumentType)}
           >
-            {VEHICLE_DOCUMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {getVehicleDocumentTypes().map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">
-            Document number <span className="text-slate-400">(optional)</span>
+            {t("pages.vehicleDocuments.documentNumberLabel")} <span className="text-slate-400">{t("pages.vehicleDocuments.optionalParenSuffix")}</span>
           </label>
           <input
             type="text"
@@ -165,7 +167,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">
-            Issue date <span className="text-slate-400">(optional)</span>
+            {t("pages.vehicleDocuments.issueDateLabel")} <span className="text-slate-400">{t("pages.vehicleDocuments.optionalParenSuffix")}</span>
           </label>
           <input
             type="date"
@@ -176,7 +178,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">
-            Expiry date <span className="text-slate-400">(optional)</span>
+            {t("pages.vehicleDocuments.expiryDateShortLabel")} <span className="text-slate-400">{t("pages.vehicleDocuments.optionalParenSuffix")}</span>
           </label>
           <input
             type="date"
@@ -189,7 +191,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700">
-          Notes <span className="text-slate-400">(optional)</span>
+          {t("pages.invoiceDetail.notesLabel")} <span className="text-slate-400">{t("pages.vehicleDocuments.optionalParenSuffix")}</span>
         </label>
         <textarea
           rows={2}
@@ -227,18 +229,22 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
         <span className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10 text-brand">
           <UploadCloudIcon className="h-5 w-5" />
         </span>
-        <p className="text-sm font-medium text-slate-800">Drag &amp; drop file here</p>
-        <p className="mt-0.5 text-xs text-slate-500">PDF, JPG, PNG up to 10MB</p>
+        <p className="text-sm font-medium text-slate-800">{t("pages.vehicleDocuments.dragDropFileHereText")}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{t("pages.vehicleDocuments.pdfJpgPngUpTo10MbText")}</p>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="mt-3 inline-flex h-10 items-center rounded-xl border border-brand/60 bg-white px-4 text-sm font-medium text-brand shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-mint/20"
         >
-          Browse files
+          {t("pages.vehicleDocuments.browseFilesButton")}
         </button>
         {selectedFile && (
           <p className="mt-3 text-xs text-slate-600">
-            Selected: <span className="font-medium text-slate-800">{selectedFile.name}</span>
+            <Trans
+              i18nKey="pages.vehicleDocuments.selectedPrefix"
+              values={{ name: selectedFile.name }}
+              components={{ b: <span className="font-medium text-slate-800" /> }}
+            />
           </p>
         )}
       </div>
@@ -248,7 +254,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
           <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
             <div className="h-full bg-brand-gradient transition-all" style={{ width: `${uploadProgress}%` }} />
           </div>
-          <p className="mt-1 text-xs text-ink-muted">Uploading... {uploadProgress}%</p>
+          <p className="mt-1 text-xs text-ink-muted">{t("pages.vehicleDocuments.uploadingPercentText", { percent: uploadProgress })}</p>
         </div>
       )}
 
@@ -268,7 +274,7 @@ export function VehicleDocumentUpload({ vehicleId, onSuccess }: VehicleDocumentU
           disabled={mutation.isPending}
           className="inline-flex h-11 items-center rounded-xl bg-brand-gradient px-5 text-sm font-medium text-white shadow-sm hover:opacity-95 hover:shadow-md disabled:opacity-60"
         >
-          {mutation.isPending ? "Uploading..." : "Upload document"}
+          {mutation.isPending ? t("pages.driverDetail.uploadingButton") : t("pages.vehicleDocuments.uploadDocumentButton")}
         </button>
       </div>
     </form>
