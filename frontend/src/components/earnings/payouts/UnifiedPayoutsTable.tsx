@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
 
+import { Trans, useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
+
 import type { ConsolidatedDriverPayout, PayoutListItem } from "../../../api/earnings";
 
 import { ConfirmDialog } from "../../UI/ConfirmDialog";
@@ -69,21 +72,9 @@ const PAGE_SIZE = 25;
 
 
 
-const STATUS_LABELS: Record<string, string> = {
-
-  payable: "Pending",
-
-  paid: "Paid",
-
-  debt: "Debt",
-
-  hold: "On hold",
-
-  partial: "Partial",
-
-  mixed: "Mixed",
-
-};
+function statusLabel(status: string): string {
+  return i18n.t(`pages.earningsPayouts.payoutStatusShort.${status}`, { defaultValue: status });
+}
 
 
 
@@ -177,6 +168,7 @@ function RowActionsMenu({
 
 }) {
 
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const detailsUrl = payoutDetailsUrl(row, weekStart, weekEnd);
@@ -191,7 +183,7 @@ function RowActionsMenu({
 
         className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink"
 
-        aria-label="Row actions"
+        aria-label={t("pages.earningsPayouts.rowActionsAriaLabel")}
 
         onClick={(e) => {
 
@@ -221,7 +213,7 @@ function RowActionsMenu({
 
             className="fixed inset-0 z-10 cursor-default"
 
-            aria-label="Close menu"
+            aria-label={t("pages.earningsPayouts.closeMenuAriaLabel")}
 
             onClick={(e) => {
 
@@ -245,7 +237,7 @@ function RowActionsMenu({
 
             >
 
-              View combined details
+              {t("pages.earningsPayouts.viewCombinedDetails")}
 
             </Link>
 
@@ -259,7 +251,7 @@ function RowActionsMenu({
 
             >
 
-              View driver
+              {t("pages.earningsPayouts.viewDriver")}
 
             </Link>
 
@@ -285,7 +277,7 @@ function RowActionsMenu({
 
               >
 
-                Pay now
+                {t("common.payNow")}
 
               </button>
 
@@ -311,7 +303,7 @@ function RowActionsMenu({
 
               >
 
-                Loan repayment
+                {t("pages.earningsPayouts.loanRepaymentMenu")}
 
               </button>
 
@@ -358,6 +350,8 @@ export function UnifiedPayoutsTable({
   onOpenLoanActions,
 
 }: UnifiedPayoutsTableProps) {
+
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
 
@@ -415,7 +409,7 @@ export function UnifiedPayoutsTable({
 
   if (isLoading) {
 
-    return <div className="fm-card p-12 text-center text-sm text-ink-muted">Loading payouts…</div>;
+    return <div className="fm-card p-12 text-center text-sm text-ink-muted">{t("pages.earningsPayouts.loadingPayouts")}</div>;
 
   }
 
@@ -427,7 +421,7 @@ export function UnifiedPayoutsTable({
 
       <div className="fm-card p-12 text-center text-sm text-ink-muted">
 
-        Select a payment week to view unified driver payouts.
+        {t("pages.earningsPayouts.selectWeekHint")}
 
       </div>
 
@@ -443,7 +437,7 @@ export function UnifiedPayoutsTable({
 
       <div className="fm-card p-12 text-center text-sm text-ink-muted">
 
-        No driver payouts for {weekStart} – {weekEnd}. Try adjusting filters or the date range.
+        {t("pages.earningsPayouts.noPayoutsForWeek", { from: weekStart, to: weekEnd })}
 
       </div>
 
@@ -471,25 +465,25 @@ export function UnifiedPayoutsTable({
 
                 <th className={`${tableCell} !py-3 w-8`}>
 
-                  <span className="sr-only">Select</span>
+                  <span className="sr-only">{t("pages.earningsPayouts.selectSr")}</span>
 
                 </th>
 
-                <th className={`${tableCell} !py-3`}>Driver</th>
+                <th className={`${tableCell} !py-3`}>{t("pages.driversList.colDriver")}</th>
 
-                <th className={`${tableCell} !py-3`}>Period</th>
+                <th className={`${tableCell} !py-3`}>{t("pages.bookings.colPeriod")}</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Gross (combined)</th>
+                <th className={`${tableCell} !py-3 text-right`}>{t("pages.earningsPayouts.colGrossCombined")}</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Fleet / sub</th>
+                <th className={`${tableCell} !py-3 text-right`}>{t("pages.earningsPayouts.colFleetSub")}</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Vehicle rent</th>
+                <th className={`${tableCell} !py-3 text-right`}>{t("pages.earningsPayouts.colVehicleRent")}</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Net payout</th>
+                <th className={`${tableCell} !py-3 text-right`}>{t("pages.earningsPayouts.colNetPayout")}</th>
 
-                <th className={`${tableCell} !py-3`}>Status</th>
+                <th className={`${tableCell} !py-3`}>{t("common.status")}</th>
 
-                <th className={`${tableCell} !py-3 text-right`}>Actions</th>
+                <th className={`${tableCell} !py-3 text-right`}>{t("common.actions")}</th>
 
               </tr>
 
@@ -570,7 +564,7 @@ export function UnifiedPayoutsTable({
 
                         checked={isSelected}
 
-                        aria-label={`Select ${row.first_name} ${row.last_name}`}
+                        aria-label={t("pages.driversList.selectRowAriaLabel", { name: `${row.first_name} ${row.last_name}` })}
 
                         onChange={() => toggleSelect(row.driver_id)}
 
@@ -610,7 +604,7 @@ export function UnifiedPayoutsTable({
 
                     <td className={`${tableCell} !py-3.5 text-right tabular-nums text-ink-muted`}>
 
-                      {vehicleRent > 0.02 ? formatCurrency(vehicleRent) : "—"}
+                      {vehicleRent > 0.02 ? formatCurrency(vehicleRent) : t("common.emDash")}
 
                     </td>
 
@@ -636,7 +630,7 @@ export function UnifiedPayoutsTable({
 
                       >
 
-                        {STATUS_LABELS[row.consolidated_status] ?? row.consolidated_status}
+                        {statusLabel(row.consolidated_status)}
 
                       </span>
 
@@ -720,13 +714,13 @@ export function UnifiedPayoutsTable({
 
                           >
 
-                            {payingDriverId === row.driver_id && isPaying ? "Paying…" : "Pay now"}
+                            {payingDriverId === row.driver_id && isPaying ? t("pages.earningsPayouts.payingRowButton") : t("common.payNow")}
 
                           </button>
 
                         ) : (
 
-                          <span className="text-xs text-ink-muted px-2">—</span>
+                          <span className="text-xs text-ink-muted px-2">{t("common.emDash")}</span>
 
                         )}
 
@@ -798,11 +792,15 @@ export function UnifiedPayoutsTable({
 
         <p className="min-w-0 text-sm text-ink-muted">
 
-          <span className="font-medium text-ink">{rows.length}</span> driver{rows.length === 1 ? "" : "s"}
+          <Trans
+            i18nKey="pages.earningsPayouts.driverCountFooter"
+            count={rows.length}
+            components={{ b: <span className="font-medium text-ink" /> }}
+          />
 
           <span className="mx-2 text-slate-300">·</span>
 
-          <span className="font-medium text-emerald-800">{payableCount}</span> ready to pay
+          <span className="font-medium text-emerald-800">{payableCount}</span> {t("pages.earningsPayouts.readyToPay")}
 
         </p>
 
@@ -818,7 +816,7 @@ export function UnifiedPayoutsTable({
 
         >
 
-          {isPaying && payingDriverId === null ? "Paying all…" : `Pay all (${payableCount})`}
+          {isPaying && payingDriverId === null ? t("pages.earningsPayouts.payingAllButton") : t("pages.earningsPayouts.payAllButton", { count: payableCount })}
 
         </button>
 
@@ -834,21 +832,21 @@ export function UnifiedPayoutsTable({
 
         onClose={() => !isPaying && setPayConfirm(null)}
 
-        title={payConfirm?.kind === "all" ? "Pay all drivers?" : "Pay this driver?"}
+        title={payConfirm?.kind === "all" ? t("pages.earningsPayouts.payAllDriversTitle") : t("pages.earningsPayouts.payThisDriverTitle")}
 
         description={
 
           payConfirm?.kind === "all"
 
-            ? `Mark all ${payableCount} payable driver(s) as paid for ${weekStart} – ${weekEnd}.`
+            ? t("pages.earningsPayouts.payAllDesc", { count: payableCount, from: weekStart, to: weekEnd })
 
-            : "Mark all platform payouts for this driver as paid in one payment."
+            : t("pages.earningsPayouts.payOneDesc")
 
         }
 
-        confirmLabel="Confirm payment"
+        confirmLabel={t("pages.earningsPayouts.confirmPayment")}
 
-        cancelLabel="Cancel"
+        cancelLabel={t("common.cancel")}
 
         isLoading={isPaying}
 

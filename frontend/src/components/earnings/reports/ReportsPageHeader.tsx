@@ -38,8 +38,8 @@ export function ReportsPageHeader({
           title={t("pages.earningsReports.title")}
           description={t("pages.earningsReports.subtitle")}
           breadcrumbs={[
-            { label: "Dashboard", to: "/dashboard" },
-            { label: "Earnings", to: "/earnings" },
+            { label: t("nav.dashboard"), to: "/dashboard" },
+            { label: t("nav.earnings"), to: "/earnings" },
             { label: t("pages.earningsReports.title") },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-[1.125rem]"
@@ -52,7 +52,7 @@ export function ReportsPageHeader({
                 className={`${btnPrimary} gap-2 whitespace-nowrap font-semibold`}
               >
                 <DownloadIcon className="h-4 w-4 shrink-0" />
-                {csvBusy ? "Preparing CSV…" : "Download CSV"}
+                {csvBusy ? t("pages.earningsReports.preparingCsv") : t("pages.earningsReports.downloadCsv")}
               </button>
               <button
                 type="button"
@@ -61,7 +61,7 @@ export function ReportsPageHeader({
                 className={`${btnNavy} gap-2 whitespace-nowrap`}
               >
                 <DownloadIcon className="h-4 w-4 shrink-0" />
-                {pdfBusy ? "Rendering PDF…" : "Download PDF"}
+                {pdfBusy ? t("pages.earningsReports.renderingPdf") : t("pages.earningsReports.downloadPdf")}
               </button>
             </div>
           }

@@ -54,7 +54,7 @@ export function parseStartAtParam(param: string): { date: string; time: string }
 }
 
 export type DisplayTotals = {
-  unitLabel: string;
+  unitLabelKey: "daily" | "weekly" | "monthly";
   unitRate: number;
   days: number;
   subtotal: number;
@@ -78,18 +78,18 @@ export function computeDisplayTotals(
   const discount = Math.max(0, discountAmount);
   const grandTotal = Math.max(0, quote.subtotal + extrasTotal - discount);
 
-  let unitLabel = "Daily price";
+  let unitLabelKey: DisplayTotals["unitLabelKey"] = "daily";
   let unitRate = quote.rates.daily;
   if (rentalType === "weekly") {
-    unitLabel = "Weekly price";
+    unitLabelKey = "weekly";
     unitRate = quote.rates.weekly;
   } else if (rentalType === "monthly") {
-    unitLabel = "Monthly price";
+    unitLabelKey = "monthly";
     unitRate = quote.rates.monthly;
   }
 
   return {
-    unitLabel,
+    unitLabelKey,
     unitRate,
     days: quote.days,
     subtotal: quote.subtotal,

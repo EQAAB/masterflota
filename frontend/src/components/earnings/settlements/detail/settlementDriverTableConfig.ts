@@ -1,4 +1,5 @@
 import type { SubcontractorSettlementDetailDriver } from "../../../../api/subcontractorPayouts";
+import i18n from "../../../../i18n";
 
 export type FooterTotals = {
   gross: number;
@@ -31,89 +32,93 @@ export type SettlementDriverColumn = {
   getFooterValue: (f: FooterTotals) => number;
 };
 
+function colT(key: SettlementDriverColumnKey, field: "label" | "short" | "title"): string {
+  return i18n.t(`pages.subSettlements.driverColumns.${key}.${field}`);
+}
+
 export const SETTLEMENT_DRIVER_COLUMNS: SettlementDriverColumn[] = [
   {
     key: "gross",
-    label: "Gross incl. tips",
-    shortLabel: "Gross",
-    title: "Income + tips for the period",
+    get label() { return colT("gross", "label"); },
+    get shortLabel() { return colT("gross", "short"); },
+    get title() { return colT("gross", "title"); },
     core: true,
     getDriverValue: (d) => Number(d.gross),
     getFooterValue: (f) => f.gross,
   },
   {
     key: "tips",
-    label: "Tips",
-    shortLabel: "Tips",
+    get label() { return colT("tips", "label"); },
+    get shortLabel() { return colT("tips", "short"); },
     getDriverValue: (d) => Number(d.tips),
     getFooterValue: (f) => f.tips,
   },
   {
     key: "commission",
-    label: "Commission",
-    shortLabel: "Comm.",
+    get label() { return colT("commission", "label"); },
+    get shortLabel() { return colT("commission", "short"); },
     core: true,
     getDriverValue: (d) => Number(d.commission),
     getFooterValue: (f) => f.commission,
   },
   {
     key: "vehicle_rent",
-    label: "Vehicle rent",
-    shortLabel: "Rent",
+    get label() { return colT("vehicle_rent", "label"); },
+    get shortLabel() { return colT("vehicle_rent", "short"); },
     getDriverValue: (d) => Number(d.vehicle_rent),
     getFooterValue: (f) => f.vehicle_rent,
   },
   {
     key: "account_opening_fee",
-    label: "Acct. fee",
-    shortLabel: "Acct.",
+    get label() { return colT("account_opening_fee", "label"); },
+    get shortLabel() { return colT("account_opening_fee", "short"); },
     getDriverValue: (d) => Number(d.account_opening_fee),
     getFooterValue: (f) => f.account_opening_fee,
   },
   {
     key: "platform_fees",
-    label: "Platform fee",
-    shortLabel: "Plat.",
+    get label() { return colT("platform_fees", "label"); },
+    get shortLabel() { return colT("platform_fees", "short"); },
     getDriverValue: (d) => Number(d.platform_fees),
     getFooterValue: (f) => f.platform_fees,
   },
   {
     key: "daily_cash",
-    label: "Daily cash",
-    shortLabel: "Cash",
+    get label() { return colT("daily_cash", "label"); },
+    get shortLabel() { return colT("daily_cash", "short"); },
     accentNegative: true,
     getDriverValue: (d) => Number(d.daily_cash),
     getFooterValue: (f) => f.daily_cash,
   },
   {
     key: "custom_deductions",
-    label: "Custom ded.",
-    shortLabel: "Cust. ded.",
+    get label() { return colT("custom_deductions", "label"); },
+    get shortLabel() { return colT("custom_deductions", "short"); },
     accentNegative: true,
     getDriverValue: (d) => Number(d.custom_deductions),
     getFooterValue: (f) => f.custom_deductions,
   },
   {
     key: "custom_additions",
-    label: "Custom add.",
-    shortLabel: "Cust. add.",
+    get label() { return colT("custom_additions", "label"); },
+    get shortLabel() { return colT("custom_additions", "short"); },
     getDriverValue: (d) => Number(d.custom_additions),
     getFooterValue: (f) => f.custom_additions,
   },
   {
     key: "raw_net",
-    label: "Raw net",
-    shortLabel: "Raw net",
-    title: "After fees and custom deductions — before debt carry-forward",
+    get label() { return colT("raw_net", "label"); },
+    get shortLabel() { return colT("raw_net", "short"); },
+    get title() { return colT("raw_net", "title"); },
     core: true,
     getDriverValue: (d) => Number(d.raw_net),
     getFooterValue: (f) => f.raw_net,
   },
   {
     key: "debt_applied",
-    label: "Debt applied",
-    shortLabel: "Debt",
-    title: "Applied from this period to older driver debt",
+    get label() { return colT("debt_applied", "label"); },
+    get shortLabel() { return colT("debt_applied", "short"); },
+    get title() { return colT("debt_applied", "title"); },
     accentNegative: true,
     getDriverValue: (d) => Number(d.debt_applied),
     getFooterValue: (f) => f.debt_applied,

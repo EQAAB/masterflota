@@ -1,5 +1,6 @@
 import type { OrgUser } from "../../../api/users";
 import type { RoleItem } from "../../../api/roles";
+import i18n from "../../../i18n";
 import { roleLabel } from "../../../lib/roleLabel";
 
 export const ADMIN_ROLES = new Set(["admin", "super_admin"]);
@@ -30,8 +31,8 @@ export function fullName(user: Pick<OrgUser, "firstName" | "lastName">): string 
 
 export function roleOptionLabel(role: RoleItem): string {
   const normalized = role.name.trim().toLowerCase().replace(/\s+/g, "_");
-  if (normalized === "admin" || normalized === "administrator") return "Admin";
-  if (normalized === "super_admin" || normalized === "superadmin") return "Super Admin";
+  if (normalized === "admin" || normalized === "administrator") return i18n.t("pages.users.adminLabel");
+  if (normalized === "super_admin" || normalized === "superadmin") return i18n.t("pages.users.superAdminLabel");
   const labeled = roleLabel(normalized);
   return labeled !== normalized.replace(/_/g, " ") ? labeled : role.name;
 }
@@ -44,8 +45,8 @@ export type RoleSummary = {
 };
 
 export function roleBadgeLabel(role: string): string {
-  if (role === "super_admin") return "Super Admin";
-  if (role === "admin") return "Admin";
+  if (role === "super_admin") return i18n.t("pages.users.superAdminLabel");
+  if (role === "admin") return i18n.t("pages.users.adminLabel");
   return roleLabel(role);
 }
 
@@ -77,12 +78,12 @@ export function formatRelativeTime(iso: string): string {
   try {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return i18n.t("pages.users.justNow");
+    if (mins < 60) return i18n.t("pages.users.minsAgo", { mins });
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return i18n.t("pages.users.hoursAgo", { hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
+    if (days < 7) return i18n.t("pages.users.daysAgo", { days });
     return new Date(iso).toLocaleDateString();
   } catch {
     return iso;

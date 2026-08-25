@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 type BookingDetailsSectionProps = {
   pickupLocation: string;
   returnLocation: string;
@@ -25,56 +27,57 @@ export function BookingDetailsSection({
   onDiscountAmount,
   disabled,
 }: BookingDetailsSectionProps) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2 sm:grid sm:grid-cols-2 sm:gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink">Pickup location</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.pickupLocation")}</label>
           <input
             type="text"
             disabled={disabled}
             className="fm-rental-booking-form__input mt-1.5"
-            placeholder="e.g. Airport terminal 1"
+            placeholder={t("pages.bookingForm.pickupLocationPlaceholder")}
             value={pickupLocation}
             onChange={(e) => onPickupLocation(e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink">Return location</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.returnLocation")}</label>
           <input
             type="text"
             disabled={disabled}
             className="fm-rental-booking-form__input mt-1.5"
-            placeholder="e.g. Office depot"
+            placeholder={t("pages.bookingForm.returnLocationPlaceholder")}
             value={returnLocation}
             onChange={(e) => onReturnLocation(e.target.value)}
           />
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-ink">Driver notes</label>
+        <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.driverNotesLabel")}</label>
         <textarea
           rows={3}
           disabled={disabled}
           className="fm-rental-booking-form__textarea mt-1.5"
-          placeholder="Visible to driver at pickup"
+          placeholder={t("pages.bookingForm.driverNotesPlaceholder")}
           value={driverNotes}
           onChange={(e) => onDriverNotes(e.target.value)}
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-ink">Internal notes</label>
+        <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.internalNotesLabel")}</label>
         <textarea
           rows={3}
           disabled={disabled}
           className="fm-rental-booking-form__textarea mt-1.5"
-          placeholder="Staff only"
+          placeholder={t("pages.bookingForm.internalNotesPlaceholder")}
           value={internalNotes}
           onChange={(e) => onInternalNotes(e.target.value)}
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-ink">Discount (RON)</label>
+        <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.discountLabel")}</label>
         <input
           type="number"
           min={0}

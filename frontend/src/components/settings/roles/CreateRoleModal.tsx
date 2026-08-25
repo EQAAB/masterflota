@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary, input, sectionLabel } from "../../../theme/classNames";
 
 export type CreateRoleForm = {
@@ -15,6 +16,7 @@ type CreateRoleModalProps = {
 };
 
 export function CreateRoleModal({ open, form, onChange, onClose, onSubmit, isPending }: CreateRoleModalProps) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -27,25 +29,25 @@ export function CreateRoleModal({ open, form, onChange, onClose, onSubmit, isPen
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="create-role-title" className="text-lg font-semibold text-ink">
-          Create custom role
+          {t("pages.roles.createCustomRoleTitle")}
         </h2>
-        <p className="mt-1 text-sm text-ink-muted">Custom roles can be edited and assigned permissions.</p>
+        <p className="mt-1 text-sm text-ink-muted">{t("pages.roles.createCustomRoleDesc")}</p>
 
         <div className="mt-4 space-y-4">
           <div>
-            <label className={sectionLabel}>Role name</label>
+            <label className={sectionLabel}>{t("pages.roles.roleNameLabel")}</label>
             <input
               className={input}
-              placeholder="e.g. Fleet coordinator"
+              placeholder={t("pages.roles.roleNamePlaceholder")}
               value={form.name}
               onChange={(e) => onChange({ name: e.target.value })}
             />
           </div>
           <div>
-            <label className={sectionLabel}>Description</label>
+            <label className={sectionLabel}>{t("pages.roles.descriptionLabel")}</label>
             <input
               className={input}
-              placeholder="Optional description"
+              placeholder={t("pages.roles.descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => onChange({ description: e.target.value })}
             />
@@ -54,10 +56,10 @@ export function CreateRoleModal({ open, form, onChange, onClose, onSubmit, isPen
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className={btnSecondary} onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button type="button" className={btnPrimary} disabled={isPending || !form.name.trim()} onClick={onSubmit}>
-            Create role
+            {t("pages.roles.add")}
           </button>
         </div>
       </div>

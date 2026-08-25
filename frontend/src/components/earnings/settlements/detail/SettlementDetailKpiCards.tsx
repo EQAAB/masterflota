@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementDetail } from "../../../../api/subcontractorPayouts";
 import { formatCurrency } from "../../../../utils/currency";
 import { transitionDefault } from "../../../../theme/classNames";
@@ -200,56 +201,57 @@ type SettlementDetailKpiCardsProps = {
 };
 
 export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsProps) {
+  const { t } = useTranslation();
   const dailyCash = Number(totals.daily_cash);
   const customDed = Number(totals.custom_deductions);
   const debtApplied = Number(totals.debt_applied);
 
   const cards = [
     {
-      title: "Drivers",
+      title: t("pages.subSettlements.driversLabel"),
       value: String(totals.drivers),
       icon: <UsersIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-brand-mint text-brand",
       emphasize: true,
     },
     {
-      title: "Gross incl. tips",
+      title: t("pages.subSettlements.grossInclTips"),
       value: formatCurrency(Number(totals.gross_incl_tips)),
       icon: <WalletIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-emerald-100 text-emerald-700",
     },
     {
-      title: "Tips",
+      title: t("pages.earningsPayouts.detail.tips"),
       value: formatCurrency(Number(totals.tips)),
       icon: <CoinIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-sky-100 text-sky-700",
     },
     {
-      title: "Commission",
+      title: t("pages.driversList.colCommission"),
       value: formatCurrency(Number(totals.commission)),
       icon: <PercentIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-indigo-100 text-indigo-700",
     },
     {
-      title: "Vehicle rent",
+      title: t("pages.earningsPayouts.detail.vehicleRent"),
       value: formatCurrency(Number(totals.vehicle_rent)),
       icon: <TruckIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-orange-100 text-orange-700",
     },
     {
-      title: "Acct. fee",
+      title: t("pages.subSettlements.acctFeeLabel"),
       value: formatCurrency(Number(totals.account_opening_fee)),
       icon: <DocumentIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-violet-100 text-violet-700",
     },
     {
-      title: "Platform fee",
+      title: t("pages.subSettlements.platformFeeLabel"),
       value: formatCurrency(Number(totals.platform_fees)),
       icon: <ReceiptIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-slate-100 text-slate-600",
     },
     {
-      title: "Daily cash",
+      title: t("pages.subSettlements.dailyCashLabel"),
       value: formatCurrency(dailyCash),
       numericAmount: dailyCash,
       icon: <BanknotesIcon className="h-[17px] w-[17px]" />,
@@ -257,7 +259,7 @@ export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsPro
       accentNegative: true,
     },
     {
-      title: "Custom deductions",
+      title: t("pages.subSettlements.customDeductionsLabel"),
       value: formatCurrency(customDed),
       numericAmount: customDed,
       icon: <MinusCircleIcon className="h-[17px] w-[17px]" />,
@@ -265,19 +267,19 @@ export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsPro
       accentNegative: true,
     },
     {
-      title: "Custom additions",
+      title: t("pages.subSettlements.customAdditionsLabel"),
       value: formatCurrency(Number(totals.custom_additions)),
       icon: <PlusCircleIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-teal-50 text-teal-700",
     },
     {
-      title: "Raw net",
+      title: t("pages.subSettlements.rawNetLabel"),
       value: formatCurrency(Number(totals.raw_net)),
       icon: <WalletIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-slate-100 text-slate-700",
     },
     {
-      title: "Debt applied",
+      title: t("pages.subSettlements.debtAppliedLabel"),
       value: formatCurrency(debtApplied),
       numericAmount: debtApplied,
       icon: <ArrowPathIcon className="h-[17px] w-[17px]" />,
@@ -285,13 +287,13 @@ export function SettlementDetailKpiCards({ totals }: SettlementDetailKpiCardsPro
       accentNegative: true,
     },
     {
-      title: "Payable",
+      title: t("pages.subSettlements.payableKpi"),
       value: formatCurrency(Number(totals.payable)),
       icon: <WalletIcon className="h-[17px] w-[17px]" />,
       iconClassName: "bg-success/10 text-success",
       emphasize: true,
     },
-  ] as const;
+  ];
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementRow } from "../../../api/earnings";
 import { transitionDefault } from "../../../theme/classNames";
 import { DotsVerticalIcon } from "../../theme/actionMenuIcons";
@@ -15,11 +16,12 @@ export function SettlementRowActions({
   disabled = false,
   onActionMenuToggle,
 }: SettlementRowActionsProps) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       disabled={disabled}
-      aria-label={`Actions for ${row.legal_name}`}
+      aria-label={t("pages.subSettlements.actionsForAriaLabel", { name: row.legal_name })}
       aria-expanded={isActionMenuOpen}
       aria-haspopup="menu"
       onMouseDown={(e) => e.stopPropagation()}

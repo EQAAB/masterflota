@@ -1,4 +1,5 @@
 import axios from "axios";
+import i18n from "../../../i18n";
 
 export function reportsErrMessage(e: unknown): string {
   if (axios.isAxiosError(e)) {
@@ -7,7 +8,7 @@ export function reportsErrMessage(e: unknown): string {
     if (m?.message) return m.message;
     return e.message;
   }
-  return e instanceof Error ? e.message : "Export failed";
+  return e instanceof Error ? e.message : i18n.t("pages.earningsReports.exportFailed");
 }
 
 export const REPORTS_UUID_RE =
@@ -20,13 +21,13 @@ export const DEBT_AGING_BUCKETS: DebtAgingBucketKey[] = ["0_30", "31_60", "61_90
 export function debtBucketLabel(key: DebtAgingBucketKey): string {
   switch (key) {
     case "0_30":
-      return "0–30 d";
+      return i18n.t("pages.earningsReports.debtBucket0_30");
     case "31_60":
-      return "31–60 d";
+      return i18n.t("pages.earningsReports.debtBucket31_60");
     case "61_90":
-      return "61–90 d";
+      return i18n.t("pages.earningsReports.debtBucket61_90");
     case "91_plus":
-      return "91+ d";
+      return i18n.t("pages.earningsReports.debtBucket91_plus");
   }
 }
 
@@ -63,6 +64,27 @@ export function reportStatusBadgeClass(status: string): string {
     case "pending":
     default:
       return "bg-amber-100 text-amber-800";
+  }
+}
+
+export function reportStatusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return i18n.t("pages.earningsReports.statusPending");
+    case "processing":
+      return i18n.t("pages.earningsReports.statusProcessing");
+    case "approved":
+      return i18n.t("pages.earningsReports.statusApproved");
+    case "paid":
+      return i18n.t("status.paid");
+    case "failed":
+      return i18n.t("pages.earningsReports.statusFailed");
+    case "hold":
+      return i18n.t("pages.earningsReports.statusHold");
+    case "debt":
+      return i18n.t("status.debt");
+    default:
+      return status;
   }
 }
 

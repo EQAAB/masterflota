@@ -1,15 +1,18 @@
-const PERMISSION_CHIPS = [
-  "Fleet Operations",
-  "Earnings Access",
-  "Settings Access",
-] as const;
+import { useTranslation } from "react-i18next";
 
 export function UsersTeamAccessOverview() {
+  const { t } = useTranslation();
+  const PERMISSION_CHIPS = [
+    t("pages.users.chipFleetOperations"),
+    t("pages.users.chipEarningsAccess"),
+    t("pages.users.chipSettingsAccess"),
+  ];
+
   return (
     <section className="fm-settings-users__access-card">
-      <h2 className="text-sm font-semibold text-ink">Team access overview</h2>
+      <h2 className="text-sm font-semibold text-ink">{t("pages.users.teamAccessOverviewTitle")}</h2>
       <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-        Manage who can access fleet operations, earnings, rentals, and settings.
+        {t("pages.users.teamAccessOverviewDesc")}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {PERMISSION_CHIPS.map((chip) => (

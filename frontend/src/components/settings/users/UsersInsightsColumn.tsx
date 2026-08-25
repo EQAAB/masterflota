@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { OrgUser } from "../../../api/users";
 import type { AuditLogItem } from "../../../api/audit";
 import { computeRoleSummary, formatAuditAction, formatRelativeTime } from "./usersListUtils";
@@ -8,10 +9,12 @@ type UsersInsightsColumnProps = {
   activityLoading?: boolean;
 };
 
-const SUMMARY_ITEMS = [
+function useSummaryItems() {
+  const { t } = useTranslation();
+  return [
   {
     key: "superAdmin",
-    label: "Super Admin",
+    label: t("pages.users.superAdminLabel"),
     iconClass: "fm-settings-users__summary-kpi-icon--super",
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -26,7 +29,7 @@ const SUMMARY_ITEMS = [
   },
   {
     key: "admin",
-    label: "Admin",
+    label: t("pages.users.adminLabel"),
     iconClass: "fm-settings-users__summary-kpi-icon--admin",
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -42,7 +45,7 @@ const SUMMARY_ITEMS = [
   },
   {
     key: "active",
-    label: "Active",
+    label: t("status.active"),
     iconClass: "fm-settings-users__summary-kpi-icon--active",
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -52,7 +55,7 @@ const SUMMARY_ITEMS = [
   },
   {
     key: "inactive",
-    label: "Inactive",
+    label: t("status.inactive"),
     iconClass: "fm-settings-users__summary-kpi-icon--inactive",
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -65,17 +68,20 @@ const SUMMARY_ITEMS = [
       </svg>
     ),
   },
-] as const;
+  ] as const;
+}
 
 export function UsersInsightsColumn({ users, activity, activityLoading }: UsersInsightsColumnProps) {
+  const { t } = useTranslation();
+  const SUMMARY_ITEMS = useSummaryItems();
   const summary = computeRoleSummary(users);
   const events = activity ?? [];
 
   return (
     <aside className="fm-settings-users__insights space-y-3">
       <section className="fm-settings-users__insight-card">
-        <h2 className="text-sm font-semibold text-ink">Role summary</h2>
-        <p className="mt-0.5 text-xs text-ink-muted">Breakdown by role and status</p>
+        <h2 className="text-sm font-semibold text-ink">{t("pages.users.roleSummaryTitle")}</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">{t("pages.users.roleSummarySubtitle")}</p>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
           {SUMMARY_ITEMS.map((item) => (
             <div key={item.key} className="fm-settings-users__summary-kpi">
@@ -92,8 +98,8 @@ export function UsersInsightsColumn({ users, activity, activityLoading }: UsersI
       </section>
 
       <section className="fm-settings-users__insight-card fm-settings-users__insight-card--activity">
-        <h2 className="text-sm font-semibold text-ink">Recent user activity</h2>
-        <p className="mt-0.5 text-xs text-ink-muted">Latest user management events</p>
+        <h2 className="text-sm font-semibold text-ink">{t("pages.users.recentActivityTitle")}</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">{t("pages.users.recentActivitySubtitle")}</p>
 
         {activityLoading ? (
           <div className="mt-4 space-y-2">
@@ -117,8 +123,8 @@ export function UsersInsightsColumn({ users, activity, activityLoading }: UsersI
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-sm font-medium text-ink">No recent activity</p>
-            <p className="mt-1 text-xs text-ink-muted">User actions will appear here.</p>
+            <p className="text-sm font-medium text-ink">{t("pages.users.noRecentActivityTitle")}</p>
+            <p className="mt-1 text-xs text-ink-muted">{t("pages.users.noRecentActivityDesc")}</p>
           </div>
         ) : (
           <ul className="mt-4 space-y-3">
@@ -126,7 +132,7 @@ export function UsersInsightsColumn({ users, activity, activityLoading }: UsersI
               <li key={event.id} className="fm-settings-users__activity-item">
                 <p className="text-sm font-medium capitalize text-ink">{formatAuditAction(event.action)}</p>
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  {event.actorName || event.actorEmail || "System"}
+                  {event.actorName || event.actorEmail || t("pages.users.systemFallback")}
                   <span className="mx-1.5 text-slate-300">·</span>
                   {formatRelativeTime(event.createdAt)}
                 </p>

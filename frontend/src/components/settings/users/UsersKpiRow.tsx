@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { UsersKpis } from "./usersListUtils";
 
 type UsersKpiRowProps = {
@@ -5,11 +6,13 @@ type UsersKpiRowProps = {
   loading?: boolean;
 };
 
-const KPI_CONFIG = [
+function useKpiConfig() {
+  const { t } = useTranslation();
+  return [
   {
     key: "total",
-    label: "Total Users",
-    helper: "Team members",
+    label: t("pages.users.kpiTotalUsers"),
+    helper: t("pages.users.kpiTotalUsersHelper"),
     field: "total" as const,
     iconClass: "fm-settings-users__kpi-icon--total",
     icon: (
@@ -25,8 +28,8 @@ const KPI_CONFIG = [
   },
   {
     key: "active",
-    label: "Active Users",
-    helper: "Can access system",
+    label: t("pages.users.kpiActiveUsers"),
+    helper: t("pages.users.kpiActiveUsersHelper"),
     field: "active" as const,
     iconClass: "fm-settings-users__kpi-icon--active",
     icon: (
@@ -37,8 +40,8 @@ const KPI_CONFIG = [
   },
   {
     key: "inactive",
-    label: "Inactive Users",
-    helper: "Access disabled",
+    label: t("pages.users.kpiInactiveUsers"),
+    helper: t("pages.users.kpiInactiveUsersHelper"),
     field: "inactive" as const,
     iconClass: "fm-settings-users__kpi-icon--inactive",
     icon: (
@@ -54,8 +57,8 @@ const KPI_CONFIG = [
   },
   {
     key: "admin",
-    label: "Admin Users",
-    helper: "Manage settings",
+    label: t("pages.users.kpiAdminUsers"),
+    helper: t("pages.users.kpiAdminUsersHelper"),
     field: "admin" as const,
     iconClass: "fm-settings-users__kpi-icon--admin",
     icon: (
@@ -69,9 +72,11 @@ const KPI_CONFIG = [
       </svg>
     ),
   },
-];
+  ];
+}
 
 export function UsersKpiRow({ kpis, loading }: UsersKpiRowProps) {
+  const KPI_CONFIG = useKpiConfig();
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

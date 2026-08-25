@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import i18n from "../../../i18n";
 import {
   BoltPlatformLogo,
   PlatformBadge,
@@ -8,16 +9,16 @@ import {
 
 export function platformAdjustmentLabel(platform: string): string {
   if (platform.toLowerCase().includes("bolt")) {
-    return "Platform net adjustment (Bolt reported net earnings)";
+    return i18n.t("pages.earningsPayouts.detail.platformNetAdjustmentBolt");
   }
-  return "Platform net adjustment";
+  return i18n.t("pages.earningsPayouts.detail.platformNetAdjustment");
 }
 
 export function platformAdjustmentHint(platform: string): string {
   if (platform.toLowerCase().includes("bolt")) {
-    return "Bolt net income comes from the platform export, not always gross − taxa.";
+    return i18n.t("pages.earningsPayouts.detail.boltNetIncomeHint");
   }
-  return "Difference between gross − taxa and stored net income.";
+  return i18n.t("pages.earningsPayouts.detail.grossMinusTaxaHint");
 }
 
 function platformBadgeKey(platform: string): PlatformBadgeKey | null {

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCanManageRentals } from "../../../lib/rentalsPermissions";
 import { btnPrimary } from "../../../theme/classNames";
 
 export function CustomersEmptyState() {
+  const { t } = useTranslation();
   const canManage = useCanManageRentals();
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
@@ -16,13 +18,13 @@ export function CustomersEmptyState() {
           />
         </svg>
       </div>
-      <h2 className="text-lg font-semibold text-ink">No customers yet</h2>
+      <h2 className="text-lg font-semibold text-ink">{t("pages.customers.emptyTitle")}</h2>
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
-        Add companies or individuals who rent from your fleet. Their bookings and revenue will show up here.
+        {t("pages.customers.emptyDescription")}
       </p>
       {canManage && (
         <Link to="/rentals/customers/new" className={`${btnPrimary} mt-6`}>
-          Add customer
+          {t("pages.customers.add")}
         </Link>
       )}
     </div>

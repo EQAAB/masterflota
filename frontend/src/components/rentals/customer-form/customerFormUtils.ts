@@ -1,3 +1,5 @@
+import i18n from "../../../i18n";
+
 export type CustomerType = "individual" | "company";
 
 export type CustomerFormValues = {
@@ -25,13 +27,13 @@ export function validatePhone(phone: string): boolean {
 export function validateCustomerForm(values: CustomerFormValues): CustomerFormErrors {
   const errors: CustomerFormErrors = {};
   if (!values.legalName.trim()) {
-    errors.legalName = "Legal name is required.";
+    errors.legalName = i18n.t("pages.bookingForm.legalNameRequired");
   }
   if (values.email.trim() && !validateEmail(values.email)) {
-    errors.email = "Enter a valid email address.";
+    errors.email = i18n.t("pages.bookingForm.invalidEmail");
   }
   if (values.phone.trim() && !validatePhone(values.phone)) {
-    errors.phone = "Enter a valid phone number (at least 8 digits).";
+    errors.phone = i18n.t("pages.bookingForm.invalidPhone");
   }
   return errors;
 }
@@ -60,14 +62,15 @@ export function getPreviewDisplay(values: CustomerFormValues): CustomerPreviewDi
     initials = `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
 
+  const emDash = i18n.t("common.emDash");
   return {
     initials,
-    legalName: legalName || "—",
-    email: values.email.trim() || "—",
-    phone: values.phone.trim() || "—",
-    contactName: values.contactName.trim() || "—",
-    taxId: values.taxId.trim() || "—",
-    typeLabel: values.customerType === "company" ? "Company" : "Individual",
+    legalName: legalName || emDash,
+    email: values.email.trim() || emDash,
+    phone: values.phone.trim() || emDash,
+    contactName: values.contactName.trim() || emDash,
+    taxId: values.taxId.trim() || emDash,
+    typeLabel: values.customerType === "company" ? i18n.t("pages.customers.typeCompany") : i18n.t("pages.customers.typeIndividual"),
     isEmpty: !legalName,
   };
 }

@@ -1,5 +1,6 @@
 import type { OrgUser } from "../../../api/users";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
+import i18n from "../../../i18n";
 
 function MenuIconWrap({ children, tone }: { children: React.ReactNode; tone: "muted" | "danger" | "brand" }) {
   const toneClass =
@@ -33,7 +34,7 @@ export function buildUserActionMenuItems({
   const items: ActionMenuItemConfig[] = [
     {
       id: "edit",
-      label: "Edit user",
+      label: i18n.t("pages.users.editUserAria"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -50,7 +51,7 @@ export function buildUserActionMenuItems({
     },
     {
       id: "reset-password",
-      label: "Reset password",
+      label: i18n.t("pages.users.resetPasswordMenu"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -70,7 +71,7 @@ export function buildUserActionMenuItems({
   if (user.isActive) {
     items.push({
       id: "deactivate",
-      label: "Deactivate",
+      label: i18n.t("pages.users.deactivateMenu"),
       icon: (
         <MenuIconWrap tone="danger">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -88,7 +89,7 @@ export function buildUserActionMenuItems({
   } else {
     items.push({
       id: "activate",
-      label: "Activate",
+      label: i18n.t("pages.users.activateMenu"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

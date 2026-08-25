@@ -1,9 +1,18 @@
+import { useTranslation } from "react-i18next";
 import type { RentalCustomer, RentalQuote } from "../../../api/rentals";
 import type { VehicleListItem } from "../../../api/vehicles";
 import { formatCurrency } from "../../../utils/currency";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
 import { EXTRA_SERVICES } from "./bookingFormConstants";
 import type { DisplayTotals } from "./bookingFormUtils";
+
+const EXTRA_LABEL_KEYS: Record<string, string> = {
+  insurance: "extraInsurance",
+  gps: "extraGps",
+  child_seat: "extraChildSeat",
+  additional_driver: "extraAdditionalDriver",
+  full_cleaning: "extraFullCleaning",
+};
 
 type BookingSummarySidebarProps = {
   customer: RentalCustomer | null;
@@ -24,30 +33,31 @@ export function BookingSummarySidebar({
   selectedExtras,
   isEdit,
 }: BookingSummarySidebarProps) {
+  const { t } = useTranslation();
   const customerVerified = !!customer && (!!customer.email || !!customer.phone);
 
   return (
     <aside className="space-y-4">
       <div className="fm-rental-booking-form__summary">
-        <h2 className="text-lg font-semibold text-ink">Booking summary</h2>
+        <h2 className="text-lg font-semibold text-ink">{t("pages.bookingForm.bookingSummaryTitle")}</h2>
 
         <dl className="mt-4 space-y-3 text-sm">
           <div>
-            <dt className="text-ink-muted">Customer</dt>
+            <dt className="text-ink-muted">{t("pages.rentalCalendar.customerLabel")}</dt>
             <dd className="mt-0.5 font-medium text-ink">
-              {customer ? customer.legal_name : "—"}
+              {customer ? customer.legal_name : t("common.emDash")}
             </dd>
           </div>
           <div>
-            <dt className="text-ink-muted">Vehicle</dt>
+            <dt className="text-ink-muted">{t("pages.rentalCalendar.vehicleLabel")}</dt>
             <dd className="mt-0.5 font-medium text-ink">
-              {vehicle ? `${vehicle.license_plate} · ${vehicle.make} ${vehicle.model}` : "—"}
+              {vehicle ? `${vehicle.license_plate} · ${vehicle.make} ${vehicle.model}` : t("common.emDash")}
             </dd>
           </div>
           <div>
-            <dt className="text-ink-muted">Rental duration</dt>
+            <dt className="text-ink-muted">{t("pages.bookingForm.rentalDurationLabel")}</dt>
             <dd className="mt-0.5 font-medium text-ink">
-              {totals ? `${totals.days} days` : quoteLoading ? "…" : "—"}
+              {totals ? t("pages.bookingForm.daysCount", { days: totals.days }) : quoteLoading ? "…" : t("common.emDash")}
             </dd>
           </div>
         </dl>
@@ -62,34 +72,34 @@ export function BookingSummarySidebar({
           <div className="mt-5 space-y-2 border-t border-slate-100 pt-4 text-sm">
             <div className="flex justify-between gap-2">
               <span className="text-ink-muted">
-                {totals.unitLabel}
-                {totals.unitLabel === "Daily price" ? ` × ${totals.days} days` : ""}
+                {t(`pages.bookingForm.unitLabel${totals.unitLabelKey.charAt(0).toUpperCase()}${totals.unitLabelKey.slice(1)}`)}
+                {totals.unitLabelKey === "daily" ? t("pages.bookingForm.xDays", { days: totals.days }) : ""}
               </span>
               <span className="tabular-nums font-medium">{formatCurrency(totals.unitRate)}</span>
             </div>
             <div className="flex justify-between gap-2">
-              <span className="text-ink-muted">Subtotal</span>
+              <span className="text-ink-muted">{t("pages.bookingForm.subtotalLabel")}</span>
               <span className="tabular-nums font-medium">{formatCurrency(totals.subtotal)}</span>
             </div>
             {selectedExtras.length > 0 &&
               EXTRA_SERVICES.filter((e) => selectedExtras.includes(e.id)).map((e) => (
                 <div key={e.id} className="flex justify-between gap-2">
-                  <span className="text-ink-muted">{e.label}</span>
+                  <span className="text-ink-muted">{t(`pages.bookingForm.${EXTRA_LABEL_KEYS[e.id]}`)}</span>
                   <span className="tabular-nums">{formatCurrency(e.amount)}</span>
                 </div>
               ))}
             {totals.discount > 0 && (
               <div className="flex justify-between gap-2 text-emerald-700">
-                <span>Discount</span>
+                <span>{t("pages.bookingForm.discountLabelShort")}</span>
                 <span className="tabular-nums">−{formatCurrency(totals.discount)}</span>
               </div>
             )}
             <div className="flex justify-between gap-2">
-              <span className="text-ink-muted">Deposit</span>
+              <span className="text-ink-muted">{t("pages.bookingDetail.depositLabel")}</span>
               <span className="tabular-nums font-medium">{formatCurrency(totals.deposit)}</span>
             </div>
             <div className="flex justify-between gap-2 border-t border-slate-100 pt-3">
-              <span className="font-semibold text-ink">Total rent</span>
+              <span className="font-semibold text-ink">{t("pages.bookingForm.totalRentLabel")}</span>
               <span className="fm-rental-booking-form__summary-total">
                 {formatCurrency(totals.grandTotal)}
               </span>
@@ -99,14 +109,14 @@ export function BookingSummarySidebar({
 
         {!totals && !quoteLoading && (
           <p className="mt-4 text-sm text-ink-muted">
-            Select vehicle and dates to see pricing.
+            {t("pages.bookingForm.selectVehicleDatesHint")}
           </p>
         )}
       </div>
 
       {vehicle && (
         <div className="fm-rental-booking-form__summary">
-          <h3 className="text-sm font-semibold text-ink">Vehicle preview</h3>
+          <h3 className="text-sm font-semibold text-ink">{t("pages.bookingForm.vehiclePreviewTitle")}</h3>
           <div className="mt-3 flex gap-3">
             <div className="fm-rental-booking-form__thumb h-14 w-16">
               <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -135,7 +145,7 @@ export function BookingSummarySidebar({
                     quote.available ? "text-emerald-700" : "text-rose-700"
                   }`}
                 >
-                  {quote.available ? "Available" : "Unavailable"}
+                  {quote.available ? t("vehicleStatus.available") : t("rentalStatus.vehicleAvailability.unavailable")}
                 </p>
               )}
             </div>
@@ -144,7 +154,7 @@ export function BookingSummarySidebar({
       )}
 
       <div className="fm-rental-booking-form__summary">
-        <h3 className="text-sm font-semibold text-ink">Status</h3>
+        <h3 className="text-sm font-semibold text-ink">{t("pages.bookingForm.statusTitle")}</h3>
         <ul className="mt-3 flex flex-wrap gap-2">
           <li>
             <span
@@ -156,7 +166,7 @@ export function BookingSummarySidebar({
                     : "fm-rental-booking-form__status-pill--neutral"
               }`}
             >
-              {quote?.available ? "Vehicle available" : quote ? "Vehicle conflict" : "Vehicle pending"}
+              {quote?.available ? t("pages.bookingForm.vehicleAvailableBadge") : quote ? t("pages.bookingForm.vehicleConflictBadge") : t("pages.bookingForm.vehiclePendingBadge")}
             </span>
           </li>
           <li>
@@ -167,12 +177,12 @@ export function BookingSummarySidebar({
                   : "fm-rental-booking-form__status-pill--neutral"
               }`}
             >
-              {customerVerified ? "Customer verified" : "Customer pending"}
+              {customerVerified ? t("pages.bookingForm.customerVerifiedBadge") : t("pages.bookingForm.customerPendingBadge")}
             </span>
           </li>
           <li>
             <span className="fm-rental-booking-form__status-pill fm-rental-booking-form__status-pill--warn">
-              {isEdit ? "Deposit pending" : "Deposit on create"}
+              {isEdit ? t("pages.bookingForm.depositPendingBadge") : t("pages.bookingForm.depositOnCreateBadge")}
             </span>
           </li>
         </ul>

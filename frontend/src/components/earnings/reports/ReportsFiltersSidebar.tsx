@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 
 export type ReportsFilterValues = {
@@ -238,6 +239,7 @@ export function ReportsFiltersSidebar({
   onPlatformChange,
   onReset,
 }: ReportsFiltersSidebarProps) {
+  const { t } = useTranslation();
   const active = hasActiveFilters(filters);
 
   return (
@@ -247,7 +249,7 @@ export function ReportsFiltersSidebar({
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-mint/80 text-brand shadow-sm ring-1 ring-brand/10">
             <FunnelIcon className="h-4 w-4" />
           </span>
-          <h2 className="text-sm font-semibold tracking-tight text-ink">Filters</h2>
+          <h2 className="text-sm font-semibold tracking-tight text-ink">{t("pages.earningsReports.filtersTitle")}</h2>
         </div>
         <button
           type="button"
@@ -255,43 +257,43 @@ export function ReportsFiltersSidebar({
           disabled={!active}
           className="shrink-0 text-xs font-medium text-brand transition-colors hover:text-brand/80 disabled:cursor-default disabled:text-ink-muted/60 disabled:no-underline enabled:hover:underline"
         >
-          Clear all
+          {t("pages.earningsReports.clearAll")}
         </button>
       </div>
 
       <div className="space-y-2.5">
         <div className="rounded-xl border border-brand-mint/60 bg-brand-mint/25 p-2.5">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-brand/90">Date range</p>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-brand/90">{t("pages.earningsReports.dateRange")}</p>
           <div className="grid grid-cols-1 gap-2">
-            <DateRangeField id="reports-from" label="From" value={filters.from} onChange={onFromChange} />
-            <DateRangeField id="reports-to" label="To" value={filters.to} onChange={onToChange} />
+            <DateRangeField id="reports-from" label={t("pages.earningsReports.fromLabel")} value={filters.from} onChange={onFromChange} />
+            <DateRangeField id="reports-to" label={t("pages.earningsReports.toLabel")} value={filters.to} onChange={onToChange} />
           </div>
         </div>
 
-        <FilterSelect id="reports-status" label="Status" value={filters.status} onChange={onStatusChange}>
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="approved">Approved</option>
-          <option value="paid">Paid</option>
-          <option value="failed">Failed</option>
-          <option value="hold">Hold</option>
-          <option value="debt">Debt</option>
+        <FilterSelect id="reports-status" label={t("common.status")} value={filters.status} onChange={onStatusChange}>
+          <option value="">{t("pages.earningsReports.allStatusesOption")}</option>
+          <option value="pending">{t("pages.earningsReports.statusPending")}</option>
+          <option value="processing">{t("pages.earningsReports.statusProcessing")}</option>
+          <option value="approved">{t("pages.earningsReports.statusApproved")}</option>
+          <option value="paid">{t("status.paid")}</option>
+          <option value="failed">{t("pages.earningsReports.statusFailed")}</option>
+          <option value="hold">{t("pages.earningsReports.statusHold")}</option>
+          <option value="debt">{t("status.debt")}</option>
         </FilterSelect>
 
         <FilterInput
           id="reports-driver-search"
-          label="Driver search"
+          label={t("pages.earningsReports.driverSearchLabel")}
           type="search"
           value={filters.q}
           onChange={onQChange}
-          placeholder="Name or phone"
+          placeholder={t("pages.earningsReports.driverSearchPlaceholder")}
           icon={<SearchIcon className="h-4 w-4" />}
         />
 
         <FilterInput
           id="reports-min-rental"
-          label="Vehicle rental > X"
+          label={t("pages.earningsReports.vehicleRentalOverX")}
           type="number"
           min={0}
           step="0.01"
@@ -303,11 +305,11 @@ export function ReportsFiltersSidebar({
 
         <FilterSelect
           id="reports-platform"
-          label="Earnings platform"
+          label={t("pages.earningsReports.earningsPlatformLabel")}
           value={filters.platform}
           onChange={onPlatformChange}
         >
-          <option value="">All platforms</option>
+          <option value="">{t("pages.earningsReports.allPlatformsOption")}</option>
           <option value="glovo">Glovo</option>
           <option value="bolt">Bolt</option>
           <option value="bolt_taxi">Bolt Taxi</option>
@@ -325,7 +327,7 @@ export function ReportsFiltersSidebar({
         }
       >
         <ResetIcon className="h-4 w-4 text-ink-muted" />
-        Reset filters
+        {t("pages.earningsReports.resetFilters")}
       </button>
     </aside>
   );

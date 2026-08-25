@@ -4,6 +4,7 @@ import type {
   PayoutListItem,
   PayoutRentEntry,
 } from "../../../api/earnings";
+import i18n from "../../../i18n";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import { rentEntryTypeLabel } from "./payoutRowUtils";
 
@@ -137,20 +138,24 @@ export function buildLegFeeDisplayItems(
 
   let anchorHint: string | undefined;
   if (hasRecurring && weekBreakdown.anchorPlatform) {
-    anchorHint = `Recurring fees deducted on ${earningsPlatformLabel(weekBreakdown.anchorPlatform)} this week.`;
+    anchorHint = i18n.t("pages.earningsPayouts.detail.recurringFeesDeductedOnThisWeek", {
+      platform: earningsPlatformLabel(weekBreakdown.anchorPlatform),
+    });
   }
 
   return { items: manualForLeg, anchorHint };
 }
 
 export function formatFeeStepLabel(item: FeeDisplayItem): string {
-  if (item.source === "recurring") return `${item.feeName} (recurring)`;
+  if (item.source === "recurring") {
+    return `${item.feeName} ${i18n.t("pages.earningsPayouts.detail.recurringSuffix")}`;
+  }
   return item.feeName;
 }
 
 export function formatFeeStepHint(item: FeeDisplayItem): string | undefined {
   if (item.notes?.trim()) return item.notes.trim();
-  if (item.source === "recurring") return "From driver profile";
+  if (item.source === "recurring") return i18n.t("pages.earningsPayouts.detail.fromDriverProfile");
   return undefined;
 }
 
@@ -188,9 +193,9 @@ export function buildWeekFeeLadderSteps(
         {
           kind: "deduction",
           prefix: "-",
-          label: "Fleet fees & adjustments",
+          label: i18n.t("pages.earningsPayouts.detail.fleetFeesAndAdjustments"),
           amount: delta,
-          hint: "Recurring/custom fees on this platform.",
+          hint: i18n.t("pages.earningsPayouts.detail.recurringCustomFeesLegHint"),
         },
       ];
     }
@@ -198,7 +203,7 @@ export function buildWeekFeeLadderSteps(
   }
 
   if (weekBreakdown.isLoading) {
-    return [{ kind: "loading", label: "Loading fee breakdown…", amount: 0 }];
+    return [{ kind: "loading", label: i18n.t("pages.earningsPayouts.detail.loadingFeeBreakdown"), amount: 0 }];
   }
 
   if (weekBreakdown.items.length > 0) {
@@ -263,7 +268,9 @@ export function findPayoutWithVehicleRent(payoutItems: PayoutListItem[]): Payout
 
 export function formatVehicleRentLabel(licensePlate?: string | null): string {
   const plate = licensePlate?.trim();
-  return plate ? `Vehicle rent (${plate})` : "Vehicle rent";
+  return plate
+    ? i18n.t("pages.earningsPayouts.detail.vehicleRentWithPlate", { plate })
+    : i18n.t("pages.earningsPayouts.detail.vehicleRent");
 }
 
 export type VehicleRentLadderInput = {
@@ -282,13 +289,13 @@ export function buildVehicleRentLadderSteps(input: VehicleRentLadderInput): FeeL
     return entries.map((e, index) => ({
       kind: "deduction" as const,
       prefix: "-" as const,
-      label: `Vehicle rent — ${rentEntryTypeLabel(e.entry_type)}`,
+      label: i18n.t("pages.earningsPayouts.detail.vehicleRentEntryLabel", { type: rentEntryTypeLabel(e.entry_type) }),
       amount: -round2(Math.abs(Number(e.amount) || 0)),
       hint:
         e.description?.trim() ||
         (index === 0 && licensePlate?.trim()
-          ? `Plate ${licensePlate.trim()}`
-          : "Weekly vehicle assignment rent"),
+          ? i18n.t("pages.earningsPayouts.detail.plateHint", { plate: licensePlate.trim() })
+          : i18n.t("pages.earningsPayouts.detail.vehicleAssignmentRent")),
     }));
   }
 
@@ -298,13 +305,13 @@ export function buildVehicleRentLadderSteps(input: VehicleRentLadderInput): FeeL
       {
         kind: "deduction",
         prefix: "-",
-        label: `Vehicle rent — ${rentEntryTypeLabel(entry.entry_type)}`,
+        label: i18n.t("pages.earningsPayouts.detail.vehicleRentEntryLabel", { type: rentEntryTypeLabel(entry.entry_type) }),
         amount: -round2(Math.abs(Number(entry.amount) || 0)),
         hint:
           entry.description?.trim() ||
           (licensePlate?.trim()
-            ? `Plate ${licensePlate.trim()}`
-            : "Weekly vehicle assignment rent"),
+            ? i18n.t("pages.earningsPayouts.detail.plateHint", { plate: licensePlate.trim() })
+            : i18n.t("pages.earningsPayouts.detail.vehicleAssignmentRent")),
       },
     ];
   }
@@ -315,7 +322,7 @@ export function buildVehicleRentLadderSteps(input: VehicleRentLadderInput): FeeL
       prefix: "-",
       label: formatVehicleRentLabel(licensePlate),
       amount: -round2(totalRent),
-      hint: "Weekly vehicle assignment rent",
+      hint: i18n.t("pages.earningsPayouts.detail.vehicleAssignmentRent"),
     },
   ];
 }

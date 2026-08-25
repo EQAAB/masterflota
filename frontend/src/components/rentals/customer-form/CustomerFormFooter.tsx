@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type CustomerFormFooterProps = {
@@ -7,17 +8,18 @@ type CustomerFormFooterProps = {
 };
 
 export function CustomerFormFooter({ isEdit, pending, onCancel }: CustomerFormFooterProps) {
+  const { t } = useTranslation();
   return (
     <div className="fm-rental-customer-form__footer">
       <button type="button" className={btnSecondary} onClick={onCancel} disabled={pending}>
-        Cancel
+        {t("common.cancel")}
       </button>
       <button
         type="submit"
         className={`${btnPrimary} fm-rental-customer-form__cta`}
         disabled={pending}
       >
-        {pending ? "Saving…" : isEdit ? "Save changes" : "Save customer"}
+        {pending ? t("common.saving") : isEdit ? t("pages.bookingForm.saveChangesButton") : t("pages.bookingForm.saveCustomer")}
       </button>
     </div>
   );

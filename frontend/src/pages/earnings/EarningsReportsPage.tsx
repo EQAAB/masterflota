@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { alertError } from "../../theme/classNames";
 import { ReportsPageHeader } from "../../components/earnings/reports/ReportsPageHeader";
 import { ReportsFiltersSidebar } from "../../components/earnings/reports/ReportsFiltersSidebar";
@@ -10,6 +11,7 @@ import { useReportsPageState } from "../../components/earnings/reports/useReport
 import { REPORTS_UUID_RE } from "../../components/earnings/reports/reportsDisplayUtils";
 
 export function EarningsReportsPage() {
+  const { t } = useTranslation();
   const {
     canAccess,
     driverIdFromUrl,
@@ -34,7 +36,7 @@ export function EarningsReportsPage() {
   } = useReportsPageState();
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">{t("common.noAccess")}</p>;
   }
 
   const showDebtHistory = Boolean(driverIdFromUrl && REPORTS_UUID_RE.test(driverIdFromUrl));
@@ -54,9 +56,9 @@ export function EarningsReportsPage() {
 
         {driverIdFromUrl && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-mint bg-brand-mint/80 px-3 py-2 text-sm text-ink">
-            <span>Showing reports for one driver from URL filter.</span>
+            <span>{t("pages.earningsReports.driverFilterBanner")}</span>
             <button type="button" className="text-brand font-medium hover:underline" onClick={clearDriverUrlFilter}>
-              Clear driver filter
+              {t("pages.earningsReports.clearDriverFilter")}
             </button>
           </div>
         )}
@@ -106,7 +108,7 @@ export function EarningsReportsPage() {
 
             {query.data?.truncated && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                Showing first {query.data.limit.toLocaleString()} rows in preview due to report limit.
+                {t("pages.earningsReports.truncatedNotice", { limit: query.data.limit.toLocaleString() })}
               </div>
             )}
 

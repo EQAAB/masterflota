@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 
 function ChevronIcon({ className, expanded }: { className?: string; expanded: boolean }) {
@@ -29,6 +30,7 @@ function InfoIcon({ className }: { className?: string }) {
 }
 
 export function SettlementsInfoCard() {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -45,7 +47,7 @@ export function SettlementsInfoCard() {
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 text-brand shadow-sm ring-1 ring-brand-mint/60">
             <InfoIcon className="h-4 w-4" />
           </span>
-          <span className="text-sm font-medium text-slate-800">How settlements are calculated</span>
+          <span className="text-sm font-medium text-slate-800">{t("pages.subSettlements.howCalculatedTitle")}</span>
         </span>
         <span className="flex h-8 w-8 shrink-0 items-center justify-center">
           <ChevronIcon className="h-4 w-4 text-slate-500" expanded={expanded} />
@@ -57,25 +59,34 @@ export function SettlementsInfoCard() {
         <div className="overflow-hidden">
           <div className="border-t border-brand-mint/40 px-4 pb-3 pt-2.5 sm:px-4">
             <ul className="space-y-1.5 text-sm leading-relaxed text-slate-600">
-              <li>Totals are summed from driver payouts for the selected period.</li>
+              <li>{t("pages.subSettlements.howCalculatedItem1")}</li>
               <li>
-                <span className="font-medium text-slate-800">Payable</span> is the sum of net driver payouts for each
-                subcontractor.
+                <Trans
+                  i18nKey="pages.subSettlements.howCalculatedItem2"
+                  components={{ b: <span className="font-medium text-slate-800" /> }}
+                />
               </li>
               <li>
-                <span className="font-medium text-slate-800">Gross incl. tips</span> already includes tips — do not add
-                those columns together.
+                <Trans
+                  i18nKey="pages.subSettlements.howCalculatedItem3"
+                  components={{ b: <span className="font-medium text-slate-800" /> }}
+                />
               </li>
               <li>
-                <span className="font-medium text-slate-800">Commission</span> is the sum of{" "}
-                <span className="font-mono text-xs">company_commission</span> on each linked driver payout.
+                <Trans
+                  i18nKey="pages.subSettlements.howCalculatedItem4"
+                  components={{
+                    b: <span className="font-medium text-slate-800" />,
+                    code: <span className="font-mono text-xs" />,
+                  }}
+                />
               </li>
-              <li>Fee columns mirror driver payout deductions — expand a row for details.</li>
+              <li>{t("pages.subSettlements.howCalculatedItem5")}</li>
               <li>
-                <span className="font-medium text-slate-800">Raw net</span> is after commission, cash, rent, and custom
-                fees. <span className="font-medium text-slate-800">Debt applied</span> is taken from this period to
-                pay older driver debt. <span className="font-medium text-slate-800">Net / Payable</span> = raw net −
-                debt applied.
+                <Trans
+                  i18nKey="pages.subSettlements.howCalculatedItem6"
+                  components={{ b: <span className="font-medium text-slate-800" /> }}
+                />
               </li>
             </ul>
           </div>

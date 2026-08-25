@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 import type { ConsolidatedDriverPayout, PayoutAssignmentDetail, PayoutDebtAdjustment, PayoutListItem } from "../../../api/earnings";
 import { btnSecondary } from "../../../theme/classNames";
 import { formatCurrency } from "../../../utils/currency";
@@ -54,14 +56,9 @@ export type CombinedPayoutDetailsContentProps = {
   downloadBusy?: boolean;
 };
 
-const STATUS_DISPLAY: Record<string, string> = {
-  payable: "Pending",
-  paid: "Paid",
-  debt: "Debt",
-  hold: "On hold",
-  partial: "Partial",
-  mixed: "Mixed",
-};
+function statusDisplay(status: string): string {
+  return i18n.t(`pages.earningsPayouts.payoutStatusShort.${status}`, { defaultValue: status.replace(/_/g, " ") });
+}
 
 function statusBadgeClass(status: string): string {
   switch (status) {
@@ -178,13 +175,14 @@ function ActionsMenu({
   onOpenReleaseHold?: (p: PayoutListItem) => void;
   actionPayout?: PayoutListItem;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
       <button
         type="button"
         className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-ink"
-        aria-label="More actions"
+        aria-label={t("pages.earningsPayouts.detail.moreActionsAriaLabel")}
         onClick={() => setOpen((v) => !v)}
       >
         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
@@ -193,14 +191,14 @@ function ActionsMenu({
       </button>
       {open && (
         <>
-          <button type="button" className="fixed inset-0 z-10" aria-label="Close" onClick={() => setOpen(false)} />
+          <button type="button" className="fixed inset-0 z-10" aria-label={t("common.close")} onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-20 mt-1 min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
             <Link
               to={`/drivers/${row.driver_id}`}
               className="block px-3 py-2 text-xs text-ink hover:bg-slate-50"
               onClick={() => setOpen(false)}
             >
-              View driver profile
+              {t("pages.earningsPayouts.detail.viewDriverProfile")}
             </Link>
             {canPay && onPay && (
               <button
@@ -212,7 +210,7 @@ function ActionsMenu({
                   onPay();
                 }}
               >
-                Pay now
+                {t("common.payNow")}
               </button>
             )}
             {actionPayout && onOpenCustomFees && (
@@ -224,7 +222,7 @@ function ActionsMenu({
                   onOpenCustomFees(actionPayout);
                 }}
               >
-                Custom fees
+                {t("pages.earningsPayouts.detail.customFeesMenu")}
               </button>
             )}
             {actionPayout && onOpenDebtActions && (
@@ -236,7 +234,7 @@ function ActionsMenu({
                   onOpenDebtActions(actionPayout);
                 }}
               >
-                Adjust debt
+                {t("pages.earningsPayouts.detail.adjustDebtMenu")}
               </button>
             )}
             {onOpenLoanActions && shouldShowListLoanContext(row) && (
@@ -248,7 +246,7 @@ function ActionsMenu({
                   onOpenLoanActions();
                 }}
               >
-                Loan repayment
+                {t("pages.earningsPayouts.loanRepaymentMenu")}
               </button>
             )}
             {actionPayout && onOpenReleaseHold && actionPayout.payment_status === "hold" && (
@@ -260,7 +258,7 @@ function ActionsMenu({
                   onOpenReleaseHold(actionPayout);
                 }}
               >
-                Release hold
+                {t("pages.earningsPayouts.detail.releaseHoldMenu")}
               </button>
             )}
             {onDownloadReport && (
@@ -272,7 +270,7 @@ function ActionsMenu({
                   onDownloadReport();
                 }}
               >
-                Download report
+                {t("pages.earningsPayouts.detail.downloadReportMenu")}
               </button>
             )}
             {onPrint && (
@@ -284,7 +282,7 @@ function ActionsMenu({
                   onPrint();
                 }}
               >
-                Print
+                {t("pages.earningsPayouts.detail.printMenu")}
               </button>
             )}
           </div>
@@ -325,10 +323,11 @@ export function CombinedPayoutDetailsContent({
   onPrint,
   downloadBusy,
 }: CombinedPayoutDetailsContentProps) {
+  const { t } = useTranslation();
   const breakdown = useMemo(() => computeUnifiedBreakdown(row, payoutItems), [row, payoutItems]);
   const vehicleDetail = aggregateVehicle(detailsById, payoutItems);
   const actionPayout = primaryPayoutForActions(payoutItems);
-  const statusLabel = STATUS_DISPLAY[row.consolidated_status] ?? row.consolidated_status.replace(/_/g, " ");
+  const statusLabel = statusDisplay(row.consolidated_status);
   const periodParts = formatPeriodParts(row.payment_period_start, row.payment_period_end);
   const initials = `${row.first_name.charAt(0)}${row.last_name.charAt(0)}`.toUpperCase();
 
@@ -354,12 +353,12 @@ export function CombinedPayoutDetailsContent({
   });
   const finalPayoutSubtext =
     breakdown.newPeriodDebt > 0.02
-      ? "Debt carried to next week — no cash payout"
+      ? t("pages.earningsPayouts.detail.debtCarriedNoCashPayout")
       : isDebtPayout
-        ? "Net balance owed by driver"
+        ? t("pages.earningsPayouts.detail.netBalanceOwedByDriver")
         : breakdown.totalDebtApplied > 0.02
-          ? "Payable after previous-week debt deduction"
-          : "Amount to be paid to driver";
+          ? t("pages.earningsPayouts.detail.payableAfterPreviousDebtDeduction")
+          : t("pages.earningsPayouts.detail.amountToBePaidToDriver");
 
   const cashBreakdownHint = breakdown.platforms
     .map((p) => `${earningsPlatformLabel(p.platform)}: ${formatCurrency(-p.cashBalance)}`)
@@ -370,7 +369,9 @@ export function CombinedPayoutDetailsContent({
 
   const recurringAnchorHint =
     weekFeeBreakdown?.anchorPlatform && weekFeeBreakdown.items.some((i) => i.source === "recurring")
-      ? `Recurring fees deducted on ${earningsPlatformLabel(weekFeeBreakdown.anchorPlatform)}.`
+      ? t("pages.earningsPayouts.detail.recurringFeesDeductedOn", {
+          platform: earningsPlatformLabel(weekFeeBreakdown.anchorPlatform),
+        })
       : undefined;
 
   const rentPayout = useMemo(() => findPayoutWithVehicleRent(payoutItems), [payoutItems]);
@@ -444,9 +445,9 @@ export function CombinedPayoutDetailsContent({
 
       steps.push({
         kind: "neutral",
-        label: "Net after platform deductions",
+        label: t("pages.earningsPayouts.detail.netAfterPlatformDeductions"),
         amount: p.netPayoutFromPlatform,
-        hint: "Net income after fleet/subscription and cash balance.",
+        hint: t("pages.earningsPayouts.detail.netAfterPlatformDeductionsHint"),
       });
 
       steps.push(
@@ -458,18 +459,20 @@ export function CombinedPayoutDetailsContent({
         ...mapLadderSteps(vehicleRentSteps),
       );
 
+      const thisWeekEarningsBeforeDebtLabel = t("pages.earningsPayouts.detail.thisWeekEarningsBeforeDebt");
+
       if (breakdown.totalDebtApplied > 0.02 || breakdown.newPeriodDebt > 0.02) {
         steps.push({
           kind: "total",
           prefix: "=",
-          label: "This week earnings (before previous debt)",
+          label: thisWeekEarningsBeforeDebtLabel,
           amount: round2(
             breakdown.finalNet + breakdown.totalDebtApplied + (breakdown.newPeriodDebt > 0.02 ? 0 : 0),
           ),
           hint:
             breakdown.newPeriodDebt > 0.02
-              ? "Net after fees/rent before debt status is applied"
-              : "Net after fees/rent before deducting older debt",
+              ? t("pages.earningsPayouts.detail.netBeforeDebtStatusHint")
+              : t("pages.earningsPayouts.detail.netBeforeOlderDebtHint"),
         });
       }
 
@@ -477,14 +480,14 @@ export function CombinedPayoutDetailsContent({
       if (breakdown.newPeriodDebt > 0.02) {
         // Replace misleading "before debt" amount with week result
         const last = steps[steps.length - 1];
-        if (last?.label === "This week earnings (before previous debt)") {
+        if (last?.label === thisWeekEarningsBeforeDebtLabel) {
           last.amount = breakdown.weekRawNet;
-          last.label = "This week result (before debt status)";
-          last.hint = "Combined platform result after fees — this week is negative";
+          last.label = t("pages.earningsPayouts.detail.thisWeekResultBeforeDebtStatus");
+          last.hint = t("pages.earningsPayouts.detail.combinedPlatformResultNegativeHint");
         }
       } else if (breakdown.totalDebtApplied > 0.02) {
         const last = steps[steps.length - 1];
-        if (last?.label === "This week earnings (before previous debt)") {
+        if (last?.label === thisWeekEarningsBeforeDebtLabel) {
           last.amount = round2(breakdown.finalNet + breakdown.totalDebtApplied);
         }
       }
@@ -525,7 +528,7 @@ export function CombinedPayoutDetailsContent({
         amount: breakdown.newPeriodDebt > 0.02 ? Math.min(0, breakdown.finalNet) : breakdown.finalNet,
         hint:
           formulaHint ??
-          (breakdown.isReconciled ? "Matches stored driver payout total" : undefined),
+          (breakdown.isReconciled ? t("pages.earningsPayouts.detail.matchesStoredPayoutHint") : undefined),
       });
 
       return steps;
@@ -535,11 +538,11 @@ export function CombinedPayoutDetailsContent({
       if (Math.abs(p.rawNet) <= 0.02) continue;
       steps.push({
         kind: p.rawNet > 0 ? "neutral" : "deduction",
-        label: `${earningsPlatformLabel(p.platform)} this week`,
+        label: t("pages.earningsPayouts.detail.platformThisWeek", { platform: earningsPlatformLabel(p.platform) }),
         amount: p.rawNet,
         hint:
           p.rawNet < -0.02
-            ? "Platform costs exceed earnings after fees & cash"
+            ? t("pages.earningsPayouts.detail.platformCostsExceedEarningsHint")
             : undefined,
       });
     }
@@ -556,9 +559,13 @@ export function CombinedPayoutDetailsContent({
 
     const combinedHint =
       breakdown.platforms.length > 1 && breakdown.crossPlatformDebtOffset > 0.02
-        ? `${formatCurrency(breakdown.totalPositiveRaw)} earnings offset ${formatCurrency(breakdown.crossPlatformDebtOffset)} of ${formatCurrency(Math.abs(breakdown.totalNegativeRaw))} platform debt`
+        ? t("pages.earningsPayouts.detail.earningsOffsetDebtHint", {
+            positive: formatCurrency(breakdown.totalPositiveRaw),
+            offset: formatCurrency(breakdown.crossPlatformDebtOffset),
+            debt: formatCurrency(Math.abs(breakdown.totalNegativeRaw)),
+          })
         : breakdown.platforms.length > 1
-          ? "Sum of all platform legs — driver is one entity"
+          ? t("pages.earningsPayouts.detail.sumOfPlatformLegsHint")
           : undefined;
 
     steps.push({
@@ -566,8 +573,8 @@ export function CombinedPayoutDetailsContent({
       prefix: "=",
       label:
         breakdown.newPeriodDebt > 0.02
-          ? "This week result (before debt status)"
-          : "Combined net this week (before previous debt)",
+          ? t("pages.earningsPayouts.detail.thisWeekResultBeforeDebtStatus")
+          : t("pages.earningsPayouts.detail.combinedNetThisWeekBeforeDebt"),
       amount:
         breakdown.totalDebtApplied > 0.02
           ? round2(breakdown.finalNet + breakdown.totalDebtApplied)
@@ -611,7 +618,7 @@ export function CombinedPayoutDetailsContent({
       amount: breakdown.newPeriodDebt > 0.02 ? Math.min(0, breakdown.finalNet) : breakdown.finalNet,
       hint:
         formulaHint ??
-        (breakdown.isReconciled ? "Matches stored driver payout total" : undefined),
+        (breakdown.isReconciled ? t("pages.earningsPayouts.detail.matchesStoredPayoutHint") : undefined),
     });
 
     return steps;
@@ -625,6 +632,7 @@ export function CombinedPayoutDetailsContent({
     loanAdjustmentSteps,
     row.prior_debt_origins,
     remainingDebt,
+    t,
   ]);
 
   /** Long operational ladder (gross → platform net) — for accountants; not used in final pay math. */
@@ -638,11 +646,11 @@ export function CombinedPayoutDetailsContent({
       hint?: string;
     };
     const steps: StepDef[] = [
-      { kind: "neutral", label: "Total gross income (all platforms)", amount: breakdown.totalGross },
+      { kind: "neutral", label: t("pages.earningsPayouts.detail.totalGrossIncomeAllPlatforms"), amount: breakdown.totalGross },
       {
         kind: "deduction",
         prefix: "-",
-        label: "Total platform fees (Taxa)",
+        label: t("pages.earningsPayouts.detail.totalPlatformFeesTaxa"),
         amount: -breakdown.totalPlatformFees,
       },
     ];
@@ -650,42 +658,42 @@ export function CombinedPayoutDetailsContent({
       steps.push({
         kind: "deduction",
         prefix: "-",
-        label: "Other platform net adjustments",
+        label: t("pages.earningsPayouts.detail.otherPlatformNetAdjustments"),
         amount: -breakdown.totalPlatformNetAdjustment,
-        hint: "Mainly Bolt: net income from export may differ from gross − taxa",
+        hint: t("pages.earningsPayouts.detail.mainlyBoltHint"),
       });
     }
     steps.push(
       {
         kind: "total",
         prefix: "=",
-        label: "Total net income (all platforms)",
+        label: t("pages.earningsPayouts.detail.totalNetIncomeAllPlatforms"),
         amount: breakdown.totalNetIncome,
       },
       {
         kind: "deduction",
         prefix: "-",
-        label: "Fleet / subscription (per platform)",
+        label: t("pages.earningsPayouts.detail.fleetSubscriptionPerPlatform"),
         amount: -breakdown.totalFleetSub,
-        hint: "Already shown on each platform card — not deducted twice",
+        hint: t("pages.earningsPayouts.detail.alreadyShownHint"),
       },
       {
         kind: "total",
         prefix: "=",
-        label: "Net after fleet / subscription (before cash)",
+        label: t("pages.earningsPayouts.detail.netAfterFleetBeforeCash"),
         amount: breakdown.netAfterFleetBeforeCash,
       },
       {
         kind: "deduction",
         prefix: "-",
-        label: "Cash balance (all platforms)",
+        label: t("pages.earningsPayouts.detail.cashBalanceAllPlatforms"),
         amount: -breakdown.totalCashBalance,
         hint: cashBreakdownHint,
       },
       {
         kind: "total",
         prefix: "=",
-        label: "Total net payout of all platforms",
+        label: t("pages.earningsPayouts.detail.totalNetPayoutAllPlatforms"),
         amount: breakdown.totalNetPayoutAllPlatforms,
         hint: platformNetHint,
       },
@@ -726,9 +734,9 @@ export function CombinedPayoutDetailsContent({
         steps.push({
           kind: "deduction",
           prefix: "-",
-          label: "Other adjustments",
+          label: t("pages.earningsPayouts.detail.otherAdjustments"),
           amount: residual,
-          hint: "Cross-platform pooling or rounding",
+          hint: t("pages.earningsPayouts.detail.crossPlatformPoolingOrRoundingHint"),
         });
       }
     } else if (
@@ -738,19 +746,19 @@ export function CombinedPayoutDetailsContent({
       steps.push({
         kind: "deduction",
         prefix: "-",
-        label: "Weekly fees & custom charges (→ raw net)",
+        label: t("pages.earningsPayouts.detail.weeklyFeesCustomCharges"),
         amount: breakdown.weeklyChargesDelta,
-        hint: "Recurring/custom fees that reduce operational net to the pooled raw net used for payout",
+        hint: t("pages.earningsPayouts.detail.weeklyFeesHint"),
       });
     }
     steps.push({
       kind: "total",
       prefix: "=",
-      label: "Pooled raw net (matches final calculation)",
+      label: t("pages.earningsPayouts.detail.pooledRawNet"),
       amount: breakdown.weekRawNet,
     });
     return steps;
-  }, [breakdown, cashBreakdownHint, platformNetHint, weekFeeBreakdown, recurringAnchorHint, vehicleRentSteps]);
+  }, [breakdown, cashBreakdownHint, platformNetHint, weekFeeBreakdown, recurringAnchorHint, vehicleRentSteps, t]);
 
   const sortedPlatforms = useMemo(
     () =>
@@ -777,9 +785,7 @@ export function CombinedPayoutDetailsContent({
   const statementUrl = `/earnings/reports?driverId=${encodeURIComponent(row.driver_id)}&from=${encodeURIComponent(row.payment_period_start.slice(0, 10))}&to=${encodeURIComponent(row.payment_period_end.slice(0, 10))}`;
 
   function platformCardTitle(platform: string): string {
-    if (platform.toLowerCase() === "uber") return "Uber Earnings";
-    if (platform.toLowerCase().includes("bolt")) return "Bolt Earnings";
-    return `${earningsPlatformLabel(platform)} Earnings`;
+    return t("pages.earningsPayouts.detail.platformEarningsTitle", { platform: earningsPlatformLabel(platform) });
   }
 
   return (
@@ -796,15 +802,17 @@ export function CombinedPayoutDetailsContent({
             <p className="font-semibold text-ink truncate">
               {row.first_name} {row.last_name}
             </p>
-            <p className="text-xs text-slate-500">{row.phone || "No phone on file"}</p>
+            <p className="text-xs text-slate-500">{row.phone || t("pages.earningsPayouts.detail.noPhoneOnFile")}</p>
             <p className="mt-1 font-mono text-[10px] text-slate-400 truncate" title={row.driver_id}>
-              Account ID: {row.driver_id.length > 10 ? `${row.driver_id.slice(0, 8)}…` : row.driver_id}
+              {t("pages.earningsPayouts.detail.accountIdLabel", {
+                id: row.driver_id.length > 10 ? `${row.driver_id.slice(0, 8)}…` : row.driver_id,
+              })}
             </p>
           </div>
         </div>
 
         <div className="fm-payout-detail-summary__block">
-          <p className="fm-payout-detail-summary__label">Platforms</p>
+          <p className="fm-payout-detail-summary__label">{t("pages.earningsPayouts.detail.platformsLabel")}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {row.platforms.map((p) => (
               <PlatformLogo key={p} platform={p} size="sm" />
@@ -813,13 +821,13 @@ export function CombinedPayoutDetailsContent({
         </div>
 
         <div className="fm-payout-detail-summary__block">
-          <p className="fm-payout-detail-summary__label">Period</p>
-          <p className="mt-1 text-sm font-semibold text-ink">{periodParts?.range ?? "—"}</p>
+          <p className="fm-payout-detail-summary__label">{t("pages.bookings.colPeriod")}</p>
+          <p className="mt-1 text-sm font-semibold text-ink">{periodParts?.range ?? t("common.emDash")}</p>
           {periodParts && <p className="text-xs text-slate-500">{periodParts.year}</p>}
         </div>
 
         <div className="fm-payout-detail-summary__block">
-          <p className="fm-payout-detail-summary__label">Status</p>
+          <p className="fm-payout-detail-summary__label">{t("common.status")}</p>
           <span
             className={`mt-1.5 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${statusBadgeClass(row.consolidated_status)}`}
           >
@@ -837,10 +845,10 @@ export function CombinedPayoutDetailsContent({
         <div className="fm-payout-detail-summary__block fm-payout-detail-summary__actions">
           {row.can_pay && onPay ? (
             <button type="button" disabled={isPaying} className="fm-payout-pay-btn !px-5 !py-2.5 !text-sm" onClick={onPay}>
-              {isPaying ? "Paying…" : "Pay now"}
+              {isPaying ? t("pages.earningsPayouts.payingRowButton") : t("common.payNow")}
             </button>
           ) : (
-            <span className="text-xs font-semibold text-rose-700">Not payable</span>
+            <span className="text-xs font-semibold text-rose-700">{t("pages.earningsPayouts.detail.notPayable")}</span>
           )}
           <ActionsMenu
             row={row}
@@ -869,11 +877,11 @@ export function CombinedPayoutDetailsContent({
         >
           {toNum(row.negative_earnings_debt) > 0.02 ? (
             <>
-              <p className="font-semibold">Negative earnings detected</p>
+              <p className="font-semibold">{t("pages.earningsPayouts.detail.negativeEarningsDetectedTitle")}</p>
               <p className="mt-0.5 text-[13px] leading-snug opacity-90">
-                This week’s net is negative (
-                {formatCurrency(-toNum(row.negative_earnings_debt))}). That amount is recorded as driver
-                debt and will be deducted from a future positive week.
+                {t("pages.earningsPayouts.detail.negativeEarningsDetectedBody", {
+                  amount: formatCurrency(-toNum(row.negative_earnings_debt)),
+                })}
               </p>
             </>
           ) : (
@@ -915,9 +923,9 @@ export function CombinedPayoutDetailsContent({
       </div>
 
       {showCrossPlatformOffset && (
-        <section className="fm-payout-detail-offset-band" aria-label="Cross-platform debt offset">
+        <section className="fm-payout-detail-offset-band" aria-label={t("pages.earningsPayouts.detail.crossPlatformDebtOffsetTitle")}>
           <div className="fm-payout-detail-offset-band__head">
-            <h2 className="text-base font-bold text-violet-950">Cross-platform debt offset</h2>
+            <h2 className="text-base font-bold text-violet-950">{t("pages.earningsPayouts.detail.crossPlatformDebtOffsetTitle")}</h2>
             <p className="fm-payout-detail-offset-formula mt-1 tabular-nums">
               {formatCurrency(breakdown.totalPositiveRaw)} + ({formatCurrency(breakdown.totalNegativeRaw)}) ={" "}
               <span className={breakdown.weekRawNet < -0.02 ? "text-rose-800 font-bold" : "text-emerald-900 font-bold"}>
@@ -925,16 +933,16 @@ export function CombinedPayoutDetailsContent({
               </span>
             </p>
             <p className="mt-1 text-xs text-slate-600">
-              Positive earnings from one platform reduce debt on another — the driver is one entity.
+              {t("pages.earningsPayouts.detail.crossPlatformOffsetHint")}
             </p>
           </div>
           <div className="fm-payout-detail-offset-band__grid">
             <div className="fm-payout-detail-offset-band__cell fm-payout-detail-offset-band__cell--positive">
-              <p className="fm-payout-detail-meta-label">Earnings (positive platforms)</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.earningsPositivePlatforms")}</p>
               <p className="text-xl font-bold tabular-nums text-emerald-900">{formatCurrency(breakdown.totalPositiveRaw)}</p>
             </div>
             <div className="fm-payout-detail-offset-band__cell fm-payout-detail-offset-band__cell--debt">
-              <p className="fm-payout-detail-meta-label">Platform debt</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.platformDebtLabel")}</p>
               <p className="text-xl font-bold tabular-nums text-rose-800">{formatCurrency(breakdown.totalNegativeRaw)}</p>
               {breakdown.debtPlatforms.length > 0 && (
                 <p className="mt-1 text-[11px] font-medium text-rose-700/90">
@@ -943,11 +951,11 @@ export function CombinedPayoutDetailsContent({
               )}
             </div>
             <div className="fm-payout-detail-offset-band__cell fm-payout-detail-offset-band__cell--offset">
-              <p className="fm-payout-detail-meta-label">Offset applied</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.offsetApplied")}</p>
               <p className="text-xl font-bold tabular-nums text-rose-800">{formatCurrency(-breakdown.crossPlatformDebtOffset)}</p>
             </div>
             <div className="fm-payout-detail-offset-band__cell fm-payout-detail-offset-band__cell--final">
-              <p className="fm-payout-detail-meta-label">Net after offset</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.netAfterOffset")}</p>
               <p className={`text-2xl font-bold tabular-nums ${breakdown.weekRawNet < -0.02 ? "text-rose-950" : "text-emerald-950"}`}>
                 {formatCurrency(breakdown.weekRawNet)}
               </p>
@@ -964,11 +972,11 @@ export function CombinedPayoutDetailsContent({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
             <div className="min-w-0">
-              <h2 className="fm-payout-detail-combined__title">Final payout calculation</h2>
+              <h2 className="fm-payout-detail-combined__title">{t("pages.earningsPayouts.detail.finalPayoutCalculationTitle")}</h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 {platformCount === 1
-                  ? "How this week's platform payout becomes the final payable amount."
-                  : "How this week's platforms combine into one payable amount."}
+                  ? t("pages.earningsPayouts.detail.finalPayoutCalcHintSingle")
+                  : t("pages.earningsPayouts.detail.finalPayoutCalcHintMulti")}
               </p>
             </div>
           </div>
@@ -992,22 +1000,23 @@ export function CombinedPayoutDetailsContent({
               </svg>
               <p>
                 {breakdown.newPeriodDebt > 0.02 ? (
-                  <>
-                    <strong>No payout — debt carried to next week.</strong> This week’s negative result
-                    becomes driver debt and will be deducted from a future positive week.
-                  </>
+                  <Trans
+                    i18nKey="pages.earningsPayouts.detail.noPayoutDebtCarried"
+                    components={{ b: <strong /> }}
+                  />
                 ) : (
-                  <>
-                    <strong>No payment will be made.</strong> Driver still owes{" "}
-                    {formatCurrency(Math.abs(breakdown.finalNet))}.
-                  </>
+                  <Trans
+                    i18nKey="pages.earningsPayouts.detail.noPaymentWillBeMade"
+                    values={{ amount: formatCurrency(Math.abs(breakdown.finalNet)) }}
+                    components={{ b: <strong /> }}
+                  />
                 )}
               </p>
             </div>
           )}
           <details className="fm-payout-detail-earnings-details mt-4 rounded-xl border border-slate-200/80 bg-slate-50/50">
             <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-slate-700 hover:text-ink">
-              Detailed earnings breakdown (gross → platform net)
+              {t("pages.earningsPayouts.detail.detailedEarningsBreakdown")}
             </summary>
             <div className="fm-payout-detail-combined__body border-t border-slate-200/60 px-1 pb-3">
               {detailedEarningsSteps.map((step, index) => (
@@ -1045,7 +1054,7 @@ export function CombinedPayoutDetailsContent({
                 />
               </svg>
               <h2 className={`text-base font-bold ${isDebtPayout ? "text-rose-950" : "text-emerald-950"}`}>
-                Final Payout
+                {t("pages.earningsPayouts.detail.finalPayoutHeading")}
               </h2>
             </div>
           </div>
@@ -1065,16 +1074,16 @@ export function CombinedPayoutDetailsContent({
 
           <div className="fm-payout-detail-final-panel__meta">
             <div>
-              <p className="fm-payout-detail-meta-label">Payout to</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.payoutTo")}</p>
               <p className="font-medium text-ink">{row.first_name} {row.last_name}</p>
-              <p className="text-xs text-slate-500">{row.phone || "—"}</p>
+              <p className="text-xs text-slate-500">{row.phone || t("common.emDash")}</p>
             </div>
             <div>
-              <p className="fm-payout-detail-meta-label">Payout ID</p>
+              <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.payoutIdLabel")}</p>
               <p className="font-mono text-[11px] text-ink break-all">{breakdown.payoutId}</p>
             </div>
             <div>
-              <p className="fm-payout-detail-meta-label">Status</p>
+              <p className="fm-payout-detail-meta-label">{t("common.status")}</p>
               <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${statusBadgeClass(row.consolidated_status)}`}>
                 {statusLabel}
               </span>
@@ -1084,10 +1093,10 @@ export function CombinedPayoutDetailsContent({
           <div className="fm-payout-detail-final-panel__actions">
             {row.can_pay && onPay ? (
               <button type="button" disabled={isPaying} className="fm-payout-pay-btn flex-1 !py-3 !text-sm" onClick={onPay}>
-                {isPaying ? "Paying…" : "Pay now"}
+                {isPaying ? t("pages.earningsPayouts.payingRowButton") : t("common.payNow")}
               </button>
             ) : (
-              <div className="fm-payout-detail-pay-disabled flex-1">Payment not available</div>
+              <div className="fm-payout-detail-pay-disabled flex-1">{t("pages.earningsPayouts.detail.paymentNotAvailable")}</div>
             )}
             <ActionsMenu
               row={row}
@@ -1105,11 +1114,11 @@ export function CombinedPayoutDetailsContent({
           </div>
 
           <div className="fm-payout-detail-info-note">
-            <p className="fm-payout-detail-info-note__title">Important note</p>
+            <p className="fm-payout-detail-info-note__title">{t("pages.earningsPayouts.detail.importantNoteTitle")}</p>
             <p className="fm-payout-detail-info-note__text">
               {platformCount === 1
-                ? "Fleet commission is deducted on platform net income. Cash balance and weekly fees are deducted before the final payout. Final payout is the stored payable amount for this period."
-                : "Fleet commission is deducted per platform on net income. Individual platform net payouts are combined, then custom fee / vehicle rent is applied once on the total. Final payout is the stored payable amount — there is no separate income tax on top of fleet commission."}
+                ? t("pages.earningsPayouts.detail.importantNoteSingle")
+                : t("pages.earningsPayouts.detail.importantNoteMulti")}
             </p>
           </div>
         </section>
@@ -1119,7 +1128,7 @@ export function CombinedPayoutDetailsContent({
       <div className="fm-payout-detail-bottom-grid">
         <article className="fm-payout-detail-mini-card">
           <MiniCardHeading
-            title="Debt"
+            title={t("pages.earningsPayouts.detail.debtCardTitle")}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v-2" />
@@ -1130,7 +1139,7 @@ export function CombinedPayoutDetailsContent({
             label={
               debtApplied > 0.02
                 ? formatPreviousWeekDebtDeductionLabel(debtApplied, row.prior_debt_origins)
-                : "Previous week debt deducted"
+                : t("pages.earningsPayouts.detail.previousWeekDebtDeductedFallback")
             }
             value={formatCurrency(debtApplied)}
           />
@@ -1141,19 +1150,19 @@ export function CombinedPayoutDetailsContent({
           )}
           {toNum(row.negative_earnings_debt) > 0.02 && (
             <LineRow
-              label="Negative earnings (debt created)"
+              label={t("pages.earningsPayouts.detail.negativeEarningsDebtCreated")}
               value={formatCurrency(toNum(row.negative_earnings_debt))}
               variant="deduction"
             />
           )}
-          <LineRow label="Remaining debt" value={formatCurrency(remainingDebt)} variant={remainingDebt > 0 ? "deduction" : "neutral"} />
+          <LineRow label={t("pages.earningsPayouts.detail.remainingDebtLabel")} value={formatCurrency(remainingDebt)} variant={remainingDebt > 0 ? "deduction" : "neutral"} />
           {weekDebtAdjustmentsLoading && (
-            <p className="mt-2 text-xs text-slate-500">Loading adjustments…</p>
+            <p className="mt-2 text-xs text-slate-500">{t("pages.earningsPayouts.detail.loadingAdjustments")}</p>
           )}
           {!weekDebtAdjustmentsLoading && debtAdjustmentCardLines.length > 0 && (
             <div className="mt-3 border-t border-slate-200/80 pt-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                Adjustments this week
+                {t("pages.earningsPayouts.detail.adjustmentsThisWeek")}
               </p>
               <ul className="space-y-2">
                 {debtAdjustmentCardLines.map((line) => (
@@ -1170,20 +1179,23 @@ export function CombinedPayoutDetailsContent({
               </ul>
               {onOpenDebtActions && actionPayout && (
                 <p className="mt-2 text-[11px] text-slate-500">
-                  Use <span className="font-medium text-ink">Adjust debt</span> in the actions menu to add more.
+                  <Trans
+                    i18nKey="pages.earningsPayouts.detail.useAdjustDebtHint"
+                    components={{ b: <span className="font-medium text-ink" /> }}
+                  />
                 </p>
               )}
             </div>
           )}
-          <LineRow label="Status" value={statusLabel} />
+          <LineRow label={t("common.status")} value={statusLabel} />
           {row.consolidated_status === "paid" && row.paid_at && (
-            <LineRow label="Paid on" value={row.paid_at.slice(0, 10)} />
+            <LineRow label={t("pages.earningsPayouts.detail.paidOnLabel")} value={row.paid_at.slice(0, 10)} />
           )}
         </article>
 
         <article className="fm-payout-detail-mini-card">
           <MiniCardHeading
-            title="Loan"
+            title={t("pages.earningsPayouts.detail.loanCardTitle")}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a5 5 0 00-10 0v2M5 9h14v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9z" />
@@ -1191,20 +1203,20 @@ export function CombinedPayoutDetailsContent({
             }
           />
           <LineRow
-            label="Outstanding"
-            value={outstandingLoan > 0.02 ? formatCurrency(outstandingLoan) : "—"}
+            label={t("pages.earningsPayouts.detail.outstandingLabel")}
+            value={outstandingLoan > 0.02 ? formatCurrency(outstandingLoan) : t("common.emDash")}
             variant={outstandingLoan > 0.02 ? "deduction" : "neutral"}
           />
           {plannedLoanHint && (
             <p className="mt-1 text-xs text-sky-800">{plannedLoanHint}</p>
           )}
           {weekLoanRepaymentsLoading && (
-            <p className="mt-2 text-xs text-slate-500">Loading repayments…</p>
+            <p className="mt-2 text-xs text-slate-500">{t("pages.earningsPayouts.detail.loadingRepayments")}</p>
           )}
           {!weekLoanRepaymentsLoading && loanRepaymentCardLines.length > 0 && (
             <div className="mt-3 border-t border-slate-200/80 pt-2">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
-                Repayments this week
+                {t("pages.earningsPayouts.detail.repaymentsThisWeek")}
               </p>
               <ul className="space-y-1">
                 {loanRepaymentCardLines.map((line, i) => (
@@ -1221,48 +1233,48 @@ export function CombinedPayoutDetailsContent({
               className="mt-3 text-xs font-medium text-sky-800 hover:underline"
               onClick={onOpenLoanActions}
             >
-              Take repayment from payout
+              {t("pages.earningsPayouts.detail.takeRepaymentFromPayout")}
             </button>
           )}
         </article>
 
         <article className="fm-payout-detail-mini-card">
           <MiniCardHeading
-            title="Vehicle"
+            title={t("pages.earningsPayouts.detail.vehicleCardTitle")}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
             }
           />
-          <LineRow label="Assigned" value={vehicleDetail?.has_vehicle_assigned && breakdown.customFeeVehicleRent > 0.02 ? "Yes" : "No"} />
-          <LineRow label="Plate" value={breakdown.customFeeVehicleRent > 0.02 ? (vehicleDetail?.license_plate ?? "—") : "—"} />
-          <LineRow label="Weekly rent" value={breakdown.customFeeVehicleRent > 0.02 && weeklyRent > 0 ? formatCurrency(weeklyRent) : "—"} />
+          <LineRow label={t("pages.earningsPayouts.detail.assignedLabel")} value={vehicleDetail?.has_vehicle_assigned && breakdown.customFeeVehicleRent > 0.02 ? t("common.yes") : t("common.no")} />
+          <LineRow label={t("pages.earningsPayouts.detail.plateLabel")} value={breakdown.customFeeVehicleRent > 0.02 ? (vehicleDetail?.license_plate ?? t("common.emDash")) : t("common.emDash")} />
+          <LineRow label={t("pages.earningsPayouts.detail.weeklyRentLabel")} value={breakdown.customFeeVehicleRent > 0.02 && weeklyRent > 0 ? formatCurrency(weeklyRent) : t("common.emDash")} />
           {breakdown.customFeeVehicleRent > 0.02 ? (
             <p className="mt-2 text-xs font-medium text-emerald-700">
-              Shown in payout calculation above
+              {t("pages.earningsPayouts.detail.shownInPayoutCalcAbove")}
             </p>
           ) : (
-            <p className="mt-2 text-xs text-slate-500">No vehicle rent applied this period</p>
+            <p className="mt-2 text-xs text-slate-500">{t("pages.earningsPayouts.detail.noVehicleRentApplied")}</p>
           )}
         </article>
 
         <article className="fm-payout-detail-mini-card">
           <MiniCardHeading
-            title="Reference"
+            title={t("pages.earningsPayouts.detail.referenceCardTitle")}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             }
           />
-          <p className="fm-payout-detail-meta-label">Payout ID</p>
+          <p className="fm-payout-detail-meta-label">{t("pages.earningsPayouts.detail.payoutIdLabel")}</p>
           <p className="font-mono text-[11px] text-ink break-all">{breakdown.payoutId}</p>
         </article>
 
         <article className="fm-payout-detail-mini-card">
           <MiniCardHeading
-            title="Quick actions"
+            title={t("pages.earningsPayouts.detail.quickActionsCardTitle")}
             icon={
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1279,26 +1291,26 @@ export function CombinedPayoutDetailsContent({
               <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              {downloadBusy ? "Downloading…" : "Download report"}
+              {downloadBusy ? t("pages.earningsPayouts.detail.downloading") : t("pages.earningsPayouts.detail.downloadReportMenu")}
             </button>
             <button type="button" className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`} onClick={onPrint}>
               <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
-              Print
+              {t("pages.earningsPayouts.detail.printMenu")}
             </button>
             <Link to={statementUrl} className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`}>
               <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              View statement
+              {t("pages.earningsPayouts.detail.viewStatement")}
             </Link>
           </div>
         </article>
       </div>
 
       <p className="fm-payout-detail-footnote">
-        All amounts are in RON · Values are calculated based on the selected period
+        {t("pages.earningsPayouts.detail.footnote")}
       </p>
     </div>
   );

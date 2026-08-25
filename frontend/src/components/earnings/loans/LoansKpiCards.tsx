@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { LoansSummaryResponse } from "../../../api/driverLoans";
 import { formatCurrency } from "../../../utils/currency";
 import { transitionDefault } from "../../../theme/classNames";
@@ -28,6 +29,7 @@ function KpiCard({
 }
 
 export function LoansKpiCards({ summary, loading }: LoansKpiCardsProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="grid gap-3 sm:grid-cols-3">
@@ -43,19 +45,19 @@ export function LoansKpiCards({ summary, loading }: LoansKpiCardsProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <KpiCard
-        label="Total disbursed"
+        label={t("pages.driverLoans.totalDisbursed")}
         value={formatCurrency(summary.totalDisbursed)}
-        sub="Cash ever given to drivers"
+        sub={t("pages.driverLoans.cashEverGiven")}
       />
       <KpiCard
-        label="Outstanding"
+        label={t("pages.driverLoans.outstandingKpi")}
         value={formatCurrency(summary.totalOutstanding)}
-        sub={`${summary.driversWithActiveLoans} driver${summary.driversWithActiveLoans === 1 ? "" : "s"} with balance`}
+        sub={t("pages.driverLoans.driversWithBalance", { count: summary.driversWithActiveLoans })}
       />
       <KpiCard
-        label="Repaid (approx.)"
+        label={t("pages.driverLoans.repaidApprox")}
         value={formatCurrency(Math.max(0, summary.totalDisbursed - summary.totalOutstanding))}
-        sub="Disbursed minus outstanding"
+        sub={t("pages.driverLoans.disbursedMinusOutstanding")}
       />
     </div>
   );

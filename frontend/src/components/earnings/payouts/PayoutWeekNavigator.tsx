@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { canAdvancePaymentWeek, shiftPaymentWeek } from "../../../utils/earningsImportWeek";
 import { filterInputClass } from "./PayoutFiltersCard";
 import { formatPeriodParts } from "./payoutBreakdownUtils";
@@ -37,6 +38,7 @@ export function PayoutWeekNavigator({
   disabled = false,
   showDateInputs = true,
 }: PayoutWeekNavigatorProps) {
+  const { t } = useTranslation();
   const periodParts = formatPeriodParts(weekStart, weekEnd);
   const periodLabel = periodParts
     ? `${periodParts.range}, ${periodParts.year}`
@@ -55,7 +57,7 @@ export function PayoutWeekNavigator({
       <button
         type="button"
         className={navBtnClass}
-        aria-label="Previous week"
+        aria-label={t("pages.earningsPayouts.previousWeek")}
         disabled={disabled || !canGoPrev}
         onClick={() => shiftWeek(-1)}
       >
@@ -68,7 +70,7 @@ export function PayoutWeekNavigator({
           <div className="mt-0.5 flex items-center gap-1">
             <input
               type="date"
-              aria-label="Week start"
+              aria-label={t("pages.earningsPayouts.weekStartLabel")}
               className={`${filterInputClass} !h-7 !min-h-0 !w-[7.5rem] !border-0 !bg-transparent !px-1 !text-[11px] !shadow-none`}
               value={weekStart}
               disabled={disabled}
@@ -77,7 +79,7 @@ export function PayoutWeekNavigator({
             <span className="text-[10px] text-ink-muted">–</span>
             <input
               type="date"
-              aria-label="Week end"
+              aria-label={t("pages.earningsPayouts.weekEndLabel")}
               className={`${filterInputClass} !h-7 !min-h-0 !w-[7.5rem] !border-0 !bg-transparent !px-1 !text-[11px] !shadow-none`}
               value={weekEnd}
               disabled={disabled}
@@ -90,7 +92,7 @@ export function PayoutWeekNavigator({
       <button
         type="button"
         className={navBtnClass}
-        aria-label="Next week"
+        aria-label={t("pages.earningsPayouts.nextWeek")}
         disabled={disabled || !canGoNext}
         onClick={() => shiftWeek(1)}
       >

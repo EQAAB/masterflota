@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary, transitionDefault } from "../../../theme/classNames";
 import type { PaymentWeekValidation } from "../../../utils/earningsImportWeek";
 import type { Subcontractor } from "../../../api/subcontractors";
@@ -55,6 +56,7 @@ export function SettlementsFiltersCard({
   markPaidPending,
   pendingCount,
 }: SettlementsFiltersCardProps) {
+  const { t } = useTranslation();
   const reportDisabled = generatePending || !periodValidation.valid;
   const weekNavDisabled = generatePending || refreshPending;
 
@@ -63,7 +65,7 @@ export function SettlementsFiltersCard({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="w-full min-w-0 sm:w-auto sm:min-w-[20rem]">
-            <span className={filterLabelClass}>Payment week</span>
+            <span className={filterLabelClass}>{t("pages.subSettlements.paymentWeekLabel")}</span>
             <PayoutWeekNavigator
               weekStart={periodStart}
               weekEnd={periodEnd}
@@ -74,7 +76,7 @@ export function SettlementsFiltersCard({
           </div>
           <div className="w-full sm:w-[220px]">
             <label className={filterLabelClass} htmlFor="settlements-subcontractor">
-              Subcontractor
+              {t("pages.subSettlements.subcontractorLabel")}
             </label>
             <select
               id="settlements-subcontractor"
@@ -83,7 +85,7 @@ export function SettlementsFiltersCard({
               disabled={subcontractorsLoading}
               onChange={(e) => onSubcontractorIdChange(e.target.value)}
             >
-              <option value="all">All subcontractors</option>
+              <option value="all">{t("pages.subSettlements.allSubcontractorsOption")}</option>
               {subcontractors.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.legal_name}
@@ -115,10 +117,10 @@ export function SettlementsFiltersCard({
             onClick={onGenerateReport}
             className={primaryBtnClass}
           >
-            {generatePending ? "Loading report…" : "Generate Report"}
+            {generatePending ? t("pages.subSettlements.loadingReport") : t("pages.subSettlements.generateReportButton")}
           </button>
           <button type="button" disabled={refreshPending} onClick={onRefresh} className={secondaryBtnClass}>
-            {refreshPending ? "Refreshing…" : "Refresh settlement data"}
+            {refreshPending ? t("pages.subSettlements.refreshingButton") : t("pages.subSettlements.refreshSettlementDataButton")}
           </button>
           <button
             type="button"
@@ -126,7 +128,11 @@ export function SettlementsFiltersCard({
             onClick={onMarkPaid}
             className={secondaryBtnClass}
           >
-            {markPaidPending ? "Paying…" : pendingCount > 0 ? `Mark paid (${pendingCount})` : "Mark paid"}
+            {markPaidPending
+              ? t("pages.earningsPayouts.payingRowButton")
+              : pendingCount > 0
+                ? t("pages.subSettlements.markPaidWithCount", { count: pendingCount })
+                : t("pages.subSettlements.markPaidButton")}
           </button>
         </div>
       </div>

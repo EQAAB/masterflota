@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   loanStatusLabel,
   patchDriverLoanPlan,
@@ -16,6 +17,7 @@ type LoanManageCardProps = {
 };
 
 export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManageCardProps) {
+  const { t } = useTranslation();
   const [repayOpen, setRepayOpen] = useState(false);
   const [repayType, setRepayType] = useState<"cash" | "forgive">("cash");
   const [repayAmount, setRepayAmount] = useState("");
@@ -34,7 +36,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
       };
       if (!opts.settle_full) {
         const n = parseFloat(repayAmount);
-        if (!Number.isFinite(n) || n <= 0) throw new Error("Enter a positive amount.");
+        if (!Number.isFinite(n) || n <= 0) throw new Error(t("pages.driverLoans.enterPositiveAmountError"));
         body.amount = n;
       }
       return postLoanRepayment(driverId, loan.id, body);
@@ -70,24 +72,26 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-ink text-lg">
-              {loan.reference?.trim() || "Cash loan"}
+              {loan.reference?.trim() || t("pages.driverLoans.cashLoanFallback")}
             </span>
             <span className="text-xs font-medium text-ink-muted">{loanStatusLabel(loan.status)}</span>
           </div>
-          <p className="text-xs text-ink-muted mt-0.5">Disbursed {loan.disbursed_at.slice(0, 10)}</p>
+          <p className="text-xs text-ink-muted mt-0.5">{t("pages.driverLoans.disbursedLabel", { date: loan.disbursed_at.slice(0, 10) })}</p>
           <div className="mt-2 tabular-nums text-sm">
-            <span className="text-ink-muted">Principal </span>
+            <span className="text-ink-muted">{t("pages.driverLoans.principalLabel")} </span>
             <span className="font-medium">{formatCurrency(Number(loan.principal))}</span>
             <span className="mx-2 text-slate-300">·</span>
-            <span className="text-ink-muted">Remaining </span>
+            <span className="text-ink-muted">{t("pages.driverLoans.remainingLabel")} </span>
             <span className={`font-semibold ${isActive ? "text-sky-800" : "text-emerald-800"}`}>
               {formatCurrency(Number(loan.remaining_balance))}
             </span>
           </div>
           {loan.planned_repayment_week && (
             <p className="text-xs text-sky-800 mt-1">
-              Planned week: {loan.planned_repayment_week.slice(0, 10)}
-              {loan.planned_repayment_note?.trim() ? ` — ${loan.planned_repayment_note.trim()}` : ""}
+              {t("pages.driverLoans.plannedWeekLabel", {
+                date: loan.planned_repayment_week.slice(0, 10),
+                note: loan.planned_repayment_note?.trim() ? ` — ${loan.planned_repayment_note.trim()}` : "",
+              })}
             </p>
           )}
           {loan.notes && <p className="text-xs text-ink-muted mt-1">{loan.notes}</p>}
@@ -103,7 +107,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               }}
               className="inline-flex h-8 items-center rounded-lg border border-border px-2.5 text-xs font-medium text-ink hover:bg-white"
             >
-              Record cash
+              {t("pages.driverLoans.recordCash")}
             </button>
             <button
               type="button"
@@ -114,7 +118,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               }}
               className="inline-flex h-8 items-center rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-xs font-medium text-amber-900 hover:bg-amber-100"
             >
-              Forgive
+              {t("pages.driverLoans.forgiveButton")}
             </button>
             <button
               type="button"
@@ -126,7 +130,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               }}
               className="inline-flex h-8 items-center rounded-lg border border-border px-2.5 text-xs font-medium text-ink hover:bg-white"
             >
-              Plan week
+              {t("pages.driverLoans.planWeekButton")}
             </button>
           </div>
         )}
@@ -135,20 +139,20 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
       {repayOpen && (
         <div className="border-t border-border/60 bg-white px-4 py-3 space-y-2">
           <p className="text-sm font-medium text-ink">
-            {repayType === "cash" ? "Record cash / bank repayment" : "Forgive / write-off"}
+            {repayType === "cash" ? t("pages.driverLoans.recordCashBankTitle") : t("pages.driverLoans.forgiveWriteOffTitle")}
           </p>
           {err && <p className="text-xs text-red-700">{err}</p>}
           <input
             type="number"
             step="0.01"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm tabular-nums"
-            placeholder="Amount (RON)"
+            placeholder={t("pages.driverLoans.amountPlaceholder")}
             value={repayAmount}
             onChange={(e) => setRepayAmount(e.target.value)}
           />
           <textarea
             className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[60px]"
-            placeholder="Note (optional)"
+            placeholder={t("pages.driverLoans.notePlaceholderOptional")}
             value={repayNotes}
             onChange={(e) => setRepayNotes(e.target.value)}
           />
@@ -159,7 +163,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               onClick={() => repayMut.mutate({})}
               className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-medium text-white"
             >
-              Apply amount
+              {t("pages.driverLoans.applyAmount")}
             </button>
             <button
               type="button"
@@ -167,10 +171,10 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               onClick={() => repayMut.mutate({ settle_full: true })}
               className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink"
             >
-              {repayType === "forgive" ? "Write off full balance" : "Full cash settlement"}
+              {repayType === "forgive" ? t("pages.driverLoans.writeOffFullBalance") : t("pages.driverLoans.fullCashSettlement")}
             </button>
             <button type="button" onClick={() => setRepayOpen(false)} className="text-xs text-ink-muted px-2">
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -178,9 +182,9 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
 
       {planOpen && (
         <div className="border-t border-border/60 bg-white px-4 py-3 space-y-2">
-          <p className="text-sm font-medium text-ink">Planned repayment (reminder only)</p>
+          <p className="text-sm font-medium text-ink">{t("pages.driverLoans.plannedRepaymentReminderTitle")}</p>
           {err && <p className="text-xs text-red-700">{err}</p>}
-          <label className="block text-xs text-ink-muted">Week start (Monday)</label>
+          <label className="block text-xs text-ink-muted">{t("pages.driverLoans.weekStartMondayLabel")}</label>
           <input
             type="date"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
@@ -189,7 +193,7 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
           />
           <textarea
             className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[60px]"
-            placeholder="Reminder note"
+            placeholder={t("pages.driverLoans.reminderNotePlaceholder")}
             value={plannedNote}
             onChange={(e) => setPlannedNote(e.target.value)}
           />
@@ -200,10 +204,10 @@ export function LoanManageCard({ loan, driverId, canEdit, onChanged }: LoanManag
               onClick={() => planMut.mutate()}
               className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-medium text-white"
             >
-              Save plan
+              {t("pages.driverLoans.savePlan")}
             </button>
             <button type="button" onClick={() => setPlanOpen(false)} className="text-xs text-ink-muted px-2">
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </div>

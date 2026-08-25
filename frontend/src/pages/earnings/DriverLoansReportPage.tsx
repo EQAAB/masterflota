@@ -12,15 +12,15 @@ import { invalidateLoanQueries } from "../../components/earnings/loans/invalidat
 import { DriversPagination } from "../../components/drivers/DriversPagination";
 import { filterInputClass, filterSelectClass } from "../../components/earnings/payouts/PayoutFiltersCard";
 
-const STATUS_OPTIONS = [
-  { value: "", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "paid", label: "Paid off" },
-  { value: "written_off", label: "Written off" },
-];
-
 export function DriverLoansReportPage() {
   const { t } = useTranslation();
+
+  const STATUS_OPTIONS = [
+    { value: "", label: t("pages.driverLoans.allStatusesOption") },
+    { value: "active", label: t("pages.driverLoans.statusActive") },
+    { value: "paid", label: t("pages.driverLoans.statusPaidOff") },
+    { value: "written_off", label: t("pages.driverLoans.statusWrittenOff") },
+  ];
   const canAccess = usePermission("drivers.view");
   const canEdit = usePermission("drivers.edit");
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ export function DriverLoansReportPage() {
   const rows = query.data?.items ?? [];
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access to driver loans.</p>;
+    return <p className="p-6 text-ink-muted">{t("pages.driverLoans.noAccessLoans")}</p>;
   }
 
   return (
@@ -78,8 +78,8 @@ export function DriverLoansReportPage() {
             title={t("pages.driverLoans.title")}
             description={t("pages.driverLoans.subtitle")}
             breadcrumbs={[
-              { label: "Dashboard", to: "/dashboard" },
-              { label: "Earnings", to: "/earnings" },
+              { label: t("nav.dashboard"), to: "/dashboard" },
+              { label: t("nav.earnings"), to: "/earnings" },
               { label: t("pages.driverLoans.title") },
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5"
@@ -98,7 +98,7 @@ export function DriverLoansReportPage() {
                   to="/earnings/payouts"
                   className="inline-flex h-10 items-center rounded-full border border-border/80 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
                 >
-                  Go to payouts
+                  {t("pages.driverLoans.goToPayouts")}
                 </Link>
               </div>
             }
@@ -113,19 +113,19 @@ export function DriverLoansReportPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Search
+                {t("pages.driverLoans.searchLabel")}
               </label>
               <input
                 type="search"
                 className={filterInputClass}
-                placeholder="Driver name, phone, reference…"
+                placeholder={t("pages.driverLoans.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div>
               <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Status
+                {t("common.status")}
               </label>
               <select
                 className={filterSelectClass}
@@ -147,7 +147,7 @@ export function DriverLoansReportPage() {
                   onChange={(e) => setHasBalanceOnly(e.target.checked)}
                   className="rounded border-slate-300"
                 />
-                Outstanding balance only
+                {t("pages.driverLoans.outstandingBalanceOnly")}
               </label>
             </div>
           </div>

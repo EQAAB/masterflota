@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { quickWeeklyRental, quoteRental, type RentalQuote } from "../../api/rentals";
 import { CustomerSelectField } from "./booking-form/CustomerSelectField";
 import { VehicleSelectField } from "./booking-form/VehicleSelectField";
@@ -36,6 +37,7 @@ export function QuickWeeklyRentalModal({
   initialStartAt,
   onSuccess,
 }: QuickWeeklyRentalModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
   const [vehicleId, setVehicleId] = useState("");
@@ -85,7 +87,7 @@ export function QuickWeeklyRentalModal({
       return;
     }
     setQuoteLoading(true);
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       quoteRental({ vehicleId, rentalType: "weekly", startAt: startIso, endAt: endIso })
         .then((r) => {
           setQuote(r.data);
@@ -94,7 +96,7 @@ export function QuickWeeklyRentalModal({
         .catch(() => setQuote(null))
         .finally(() => setQuoteLoading(false));
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [open, vehicleId, startIso, endIso]);
 
   const mutation = useMutation({
@@ -121,7 +123,7 @@ export function QuickWeeklyRentalModal({
         err && typeof err === "object" && "response" in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : null;
-      setError(msg ?? "Failed to start weekly rental");
+      setError(msg ?? t("pages.bookingForm.failedToStartWeekly"));
     },
   });
 
@@ -135,7 +137,7 @@ export function QuickWeeklyRentalModal({
       <button
         type="button"
         className="fixed inset-0 z-[200] bg-black/20 backdrop-blur-[1px]"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
       />
       <div
@@ -145,10 +147,10 @@ export function QuickWeeklyRentalModal({
         aria-labelledby="quick-weekly-title"
       >
         <h2 id="quick-weekly-title" className="text-lg font-semibold text-ink">
-          Quick weekly rental
+          {t("pages.availability.quickWeekly")}
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Create, confirm, record payment, and hand over the vehicle in one step.
+          {t("pages.bookingForm.quickWeeklyDesc")}
         </p>
 
         <div className="mt-5 space-y-4">
@@ -168,7 +170,7 @@ export function QuickWeeklyRentalModal({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
-              <span className="font-medium text-ink">Start</span>
+              <span className="font-medium text-ink">{t("pages.bookingForm.startLabel")}</span>
               <input
                 type="date"
                 className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
@@ -177,7 +179,7 @@ export function QuickWeeklyRentalModal({
               />
             </label>
             <label className="block text-sm">
-              <span className="font-medium text-ink">End</span>
+              <span className="font-medium text-ink">{t("pages.bookingForm.endLabel")}</span>
               <input
                 type="date"
                 readOnly
@@ -188,7 +190,7 @@ export function QuickWeeklyRentalModal({
           </div>
 
           <label className="block text-sm">
-            <span className="font-medium text-ink">Weekly rent</span>
+            <span className="font-medium text-ink">{t("pages.bookingForm.weeklyRentLabel")}</span>
             <input
               type="number"
               min={0}
@@ -200,7 +202,7 @@ export function QuickWeeklyRentalModal({
             />
             {quote && (
               <span className="mt-1 block text-xs text-slate-500">
-                Quoted: {formatCurrency(quote.subtotal)}
+                {t("pages.bookingForm.quotedLabel", { amount: formatCurrency(quote.subtotal) })}
                 {quote.conflict ? ` — ${quote.conflict.message}` : ""}
               </span>
             )}
@@ -212,12 +214,12 @@ export function QuickWeeklyRentalModal({
               checked={recordPayment}
               onChange={(e) => setRecordPayment(e.target.checked)}
             />
-            Record payment now
+            {t("pages.bookingForm.recordPaymentNow")}
           </label>
 
           {recordPayment && (
             <label className="block text-sm">
-              <span className="font-medium text-ink">Payment method</span>
+              <span className="font-medium text-ink">{t("pages.payments.paymentMethodLabel")}</span>
               <select
                 className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
                 value={paymentMethod}
@@ -234,11 +236,11 @@ export function QuickWeeklyRentalModal({
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={skipPickup} onChange={(e) => setSkipPickup(e.target.checked)} />
-            Skip pickup (stay confirmed)
+            {t("pages.bookingForm.skipPickupLabel")}
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium text-ink">Mileage out (optional)</span>
+            <span className="font-medium text-ink">{t("pages.bookingForm.mileageOutOptional")}</span>
             <input
               type="number"
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
@@ -254,11 +256,11 @@ export function QuickWeeklyRentalModal({
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
           <Link to="/rentals/bookings/new" className="text-sm font-medium text-brand hover:underline">
-            Advanced booking
+            {t("pages.availability.advancedBooking")}
           </Link>
           <div className="flex gap-2">
             <button type="button" className={btnSecondary} onClick={onClose} disabled={mutation.isPending}>
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -266,7 +268,7 @@ export function QuickWeeklyRentalModal({
               disabled={!canSubmit || mutation.isPending}
               onClick={() => mutation.mutate()}
             >
-              {mutation.isPending ? "Starting…" : "Start weekly rental"}
+              {mutation.isPending ? t("pages.bookingForm.startingButton") : t("pages.bookingForm.startWeeklyRental")}
             </button>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { CommissionByBaseTypeRow } from "../../../api/earnings";
 import { formatCurrency } from "../../../utils/currency";
 import { commissionBaseTypeLabel } from "../../../utils/commissionBaseLabels";
@@ -10,6 +11,7 @@ type ReportsCommissionCardProps = {
 };
 
 export function ReportsCommissionCard({ items, loading }: ReportsCommissionCardProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className={`${card} !p-4 animate-pulse`}>
@@ -24,9 +26,9 @@ export function ReportsCommissionCard({ items, loading }: ReportsCommissionCardP
 
   return (
     <div className={`${card} !p-4`}>
-      <h3 className="text-sm font-semibold text-ink">Commission by base type</h3>
+      <h3 className="text-sm font-semibold text-ink">{t("pages.earningsReports.commissionByBaseType")}</h3>
       <p className="mt-0.5 text-xs text-ink-muted leading-relaxed">
-        Same filters as the table. Avg rate is the mean of stored driver nominal rates (fraction) where rate ≠ 0.
+        {t("pages.earningsReports.commissionByBaseTypeHint")}
       </p>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((row) => (
@@ -39,19 +41,19 @@ export function ReportsCommissionCard({ items, loading }: ReportsCommissionCardP
             </p>
             <div className="mt-2 space-y-1.5 border-t border-violet-100/80 pt-2 text-[11px] text-ink">
               <div className="flex justify-between gap-3">
-                <span className="text-ink-muted">Payout rows</span>
+                <span className="text-ink-muted">{t("pages.earningsReports.payoutRows")}</span>
                 <span className="font-medium tabular-nums">{row.payoutCount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-ink-muted">Total commission</span>
+                <span className="text-ink-muted">{t("pages.earningsReports.totalCommission")}</span>
                 <span className="font-medium tabular-nums">{formatCurrency(row.totalCompanyCommission)}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-ink-muted">Commission base</span>
+                <span className="text-ink-muted">{t("pages.earningsReports.commissionBase")}</span>
                 <span className="font-medium tabular-nums">{formatCurrency(row.totalCommissionBase)}</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-ink-muted">Avg nominal rate</span>
+                <span className="text-ink-muted">{t("pages.earningsReports.avgNominalRate")}</span>
                 <span className="font-semibold tabular-nums text-violet-800">
                   {formatAvgCommissionRate(row.avgCommissionRate)}
                 </span>

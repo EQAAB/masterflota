@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RentalCustomersSummary } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -7,6 +8,7 @@ type CustomersKpiRowProps = {
 };
 
 export function CustomersKpiRow({ summary, loading }: CustomersKpiRowProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -22,36 +24,36 @@ export function CustomersKpiRow({ summary, loading }: CustomersKpiRowProps) {
   const cards = [
     {
       key: "total",
-      label: "Total customers",
+      label: t("pages.customers.kpiTotalCustomers"),
       value: summary?.total_customers ?? 0,
-      trend: added === 0 ? "No new this month" : `+${added} added this month`,
+      trend: added === 0 ? t("pages.customers.noNewThisMonth") : t("pages.customers.addedThisMonth", { count: added }),
       trendPositive: added > 0,
       variant: "fm-rental-customers__kpi--total",
       iconBg: "bg-sky-100 text-sky-800",
     },
     {
       key: "active",
-      label: "Active rentals",
+      label: t("pages.customers.kpiActiveRentals"),
       value: summary?.active_rentals ?? 0,
-      trend: "Org-wide active bookings",
+      trend: t("pages.customers.kpiActiveRentalsTrend"),
       trendPositive: undefined,
       variant: "fm-rental-customers__kpi--active",
       iconBg: "bg-emerald-100 text-emerald-700",
     },
     {
       key: "returning",
-      label: "Returning customers",
+      label: t("pages.customers.kpiReturningCustomers"),
       value: summary?.returning_customers ?? 0,
-      trend: "2+ completed rentals",
+      trend: t("pages.customers.kpiReturningCustomersTrend"),
       trendPositive: undefined,
       variant: "fm-rental-customers__kpi--returning",
       iconBg: "bg-violet-100 text-violet-800",
     },
     {
       key: "revenue",
-      label: "Lifetime revenue",
+      label: t("pages.customers.kpiLifetimeRevenue"),
       value: formatCurrency(Number(summary?.lifetime_revenue ?? 0)),
-      trend: "Paid rent (all time)",
+      trend: t("pages.customers.kpiLifetimeRevenueTrend"),
       trendPositive: undefined,
       variant: "fm-rental-customers__kpi--revenue",
       iconBg: "bg-brand-mint text-brand-dark",

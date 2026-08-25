@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { btnSecondary } from "../../../theme/classNames";
 
 export type CustomersFilters = {
@@ -16,6 +17,7 @@ type CustomersToolbarProps = {
 };
 
 export function CustomersToolbar({ filters, onChange, onExport, resultCount }: CustomersToolbarProps) {
+  const { t } = useTranslation();
   return (
     <div className="fm-rental-customers__toolbar mb-5 space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -33,13 +35,13 @@ export function CustomersToolbar({ filters, onChange, onExport, resultCount }: C
           <input
             type="search"
             className="fm-rental-customers__search"
-            placeholder="Search name, email, phone…"
+            placeholder={t("pages.customers.searchPlaceholder")}
             value={filters.q}
             onChange={(e) => onChange({ q: e.target.value })}
           />
         </div>
         <p className="text-xs text-ink-muted lg:shrink-0">
-          {resultCount} customer{resultCount === 1 ? "" : "s"}
+          <Trans i18nKey="pages.customers.resultCount" count={resultCount} />
         </p>
       </div>
 
@@ -50,11 +52,11 @@ export function CustomersToolbar({ filters, onChange, onExport, resultCount }: C
           onChange={(e) =>
             onChange({ customerType: e.target.value as CustomersFilters["customerType"] })
           }
-          aria-label="Customer type"
+          aria-label={t("pages.customers.customerTypeAriaLabel")}
         >
-          <option value="">All types</option>
-          <option value="company">Company</option>
-          <option value="individual">Individual</option>
+          <option value="">{t("pages.customers.allTypes")}</option>
+          <option value="company">{t("pages.customers.typeCompany")}</option>
+          <option value="individual">{t("pages.customers.typeIndividual")}</option>
         </select>
 
         <select
@@ -63,24 +65,24 @@ export function CustomersToolbar({ filters, onChange, onExport, resultCount }: C
           onChange={(e) =>
             onChange({ rentalStatus: e.target.value as CustomersFilters["rentalStatus"] })
           }
-          aria-label="Rental status"
+          aria-label={t("pages.customers.rentalStatusAriaLabel")}
         >
-          <option value="">Any rental status</option>
-          <option value="active">Has active rental</option>
-          <option value="none">No active rental</option>
-          <option value="inactive">Inactive accounts</option>
+          <option value="">{t("pages.customers.anyRentalStatus")}</option>
+          <option value="active">{t("pages.customers.hasActiveRental")}</option>
+          <option value="none">{t("pages.customers.noActiveRental")}</option>
+          <option value="inactive">{t("pages.customers.inactiveAccounts")}</option>
         </select>
 
         <select
           className="fm-rental-customers__filter-select"
           value={filters.sort}
           onChange={(e) => onChange({ sort: e.target.value as CustomersFilters["sort"] })}
-          aria-label="Sort"
+          aria-label={t("pages.availability.sortAriaLabel")}
         >
-          <option value="name">Sort: Name</option>
-          <option value="revenue">Sort: Revenue</option>
-          <option value="bookings">Sort: Bookings</option>
-          <option value="created">Sort: Newest</option>
+          <option value="name">{t("pages.customers.sortName")}</option>
+          <option value="revenue">{t("pages.customers.sortRevenue")}</option>
+          <option value="bookings">{t("pages.customers.sortBookings")}</option>
+          <option value="created">{t("pages.customers.sortNewest")}</option>
         </select>
 
         <label className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-white px-3 py-2 text-sm shadow-sm">
@@ -90,11 +92,11 @@ export function CustomersToolbar({ filters, onChange, onExport, resultCount }: C
             onChange={(e) => onChange({ activeOnly: e.target.checked })}
             className="rounded border-slate-300 text-brand focus:ring-brand/30"
           />
-          Active only
+          {t("pages.customers.activeOnly")}
         </label>
 
         <button type="button" className={btnSecondary} onClick={onExport}>
-          Export CSV
+          {t("pages.customers.exportCsv")}
         </button>
       </div>
     </div>

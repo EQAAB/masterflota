@@ -1,10 +1,12 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 import type { EarningsReportRow, PayoutRentEntry } from "../../../api/earnings";
 import { formatCurrency } from "../../../utils/currency";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import { commissionBaseTypeLabel } from "../../../utils/commissionBaseLabels";
 import { btnGhost, card, input, tableRow, tableRowExpandedAccent } from "../../../theme/classNames";
-import { reportStatusBadgeClass } from "./reportsDisplayUtils";
+import { reportStatusBadgeClass, reportStatusLabel } from "./reportsDisplayUtils";
 import { DriversPagination } from "../../drivers/DriversPagination";
 
 type SortKey =
@@ -64,16 +66,16 @@ function normalizeReportRentEntries(raw: EarningsReportRow["rent_entries"]): Pay
   );
 }
 
-function rentEntryTypeLabel(t: string): string {
-  switch (t) {
+function rentEntryTypeLabel(type: string): string {
+  switch (type) {
     case "current_week":
-      return "This week";
+      return i18n.t("pages.earningsReports.rentEntryThisWeek");
     case "overdue":
-      return "Overdue (prior week)";
+      return i18n.t("pages.earningsReports.rentEntryOverdue");
     case "adjustment":
-      return "Adjustment";
+      return i18n.t("pages.earningsReports.rentEntryAdjustment");
     default:
-      return t;
+      return type;
   }
 }
 
@@ -81,9 +83,9 @@ function vehicleRentBreakdown(row: EarningsReportRow): string | undefined {
   const entries = normalizeReportRentEntries(row.rent_entries);
   const total = asNumber(row.vehicle_rental_fee);
   if (!entries.length && total === 0) return undefined;
-  if (!entries.length) return `Vehicle rent: ${formatCurrency(total)}`;
+  if (!entries.length) return i18n.t("pages.earningsReports.vehicleRentLine", { amount: formatCurrency(total) });
   return [
-    `Vehicle rent total: ${formatCurrency(total)}`,
+    i18n.t("pages.earningsReports.vehicleRentTotalLine", { amount: formatCurrency(total) }),
     ...entries.map((e) => {
       const desc = e.description ? ` — ${e.description}` : "";
       return `• ${rentEntryTypeLabel(e.entry_type)}: ${formatCurrency(Number(e.amount) || 0)}${desc}`;
@@ -96,7 +98,7 @@ function driverSubline(row: EarningsReportRow): string {
   const phone = row.phone?.trim();
   if (platform !== "—" && phone) return `${platform} · ${phone}`;
   if (platform !== "—") return platform;
-  return phone || "No phone";
+  return phone || i18n.t("pages.earningsReports.noPhoneShort");
 }
 
 function ChevronIcon({ className, expanded }: { className?: string; expanded: boolean }) {
@@ -123,24 +125,25 @@ function DetailField({ label, value, valueClassName = "" }: { label: string; val
 }
 
 function ReportsRowDetailsPanel({ row }: { row: EarningsReportRow }) {
+  const { t } = useTranslation();
   return (
     <div className="border-t border-border/60 bg-surface/30 px-3 py-3 sm:px-4">
-      <p className="mb-3 text-xs font-semibold text-ink-muted">Payout breakdown</p>
+      <p className="mb-3 text-xs font-semibold text-ink-muted">{t("pages.earningsReports.payoutBreakdownTitle")}</p>
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-        <DetailField label="Platform" value={earningsPlatformLabel(row.earnings_platform)} />
-        <DetailField label="Income" value={formatCurrency(asNumber(row.income))} />
-        <DetailField label="Tips" value={formatCurrency(asNumber(row.tips))} />
-        <DetailField label="Platform fees" value={formatCurrency(asNumber(row.total_platform_fees))} />
-        <DetailField label="Daily cash" value={formatCurrency(Math.abs(asNumber(row.total_daily_cash)))} />
-        <DetailField label="Comm. base" value={formatCurrency(asNumber(row.commission_base))} />
-        <DetailField label="Rate" value={formatCommissionRate(row)} />
+        <DetailField label={t("pages.earningsReports.platformLabelDetail")} value={earningsPlatformLabel(row.earnings_platform)} />
+        <DetailField label={t("pages.earningsReports.incomeLabel")} value={formatCurrency(asNumber(row.income))} />
+        <DetailField label={t("pages.earningsReports.tipsLabel")} value={formatCurrency(asNumber(row.tips))} />
+        <DetailField label={t("pages.earningsReports.platformFeesLabel")} value={formatCurrency(asNumber(row.total_platform_fees))} />
+        <DetailField label={t("pages.earningsReports.dailyCashLabel")} value={formatCurrency(Math.abs(asNumber(row.total_daily_cash)))} />
+        <DetailField label={t("pages.earningsReports.commBaseLabel")} value={formatCurrency(asNumber(row.commission_base))} />
+        <DetailField label={t("pages.earningsReports.rateLabel")} value={formatCommissionRate(row)} />
         <DetailField
-          label="Acct opening fee"
+          label={t("pages.earningsReports.acctOpeningFeeLabel")}
           value={formatCurrency(asNumber(row.account_opening_fee))}
           valueClassName="text-rose-700"
         />
-        <DetailField label="Base type" value={commissionBaseTypeLabel(row.commission_base_type)} />
-        {row.platform_id?.trim() && <DetailField label="Platform ID" value={row.platform_id.trim()} />}
+        <DetailField label={t("pages.earningsReports.baseTypeLabel")} value={commissionBaseTypeLabel(row.commission_base_type)} />
+        {row.platform_id?.trim() && <DetailField label={t("pages.earningsReports.platformIdLabel")} value={row.platform_id.trim()} />}
       </div>
       {vehicleRentBreakdown(row) && (
         <p className="mt-3 border-t border-border/60 pt-2 text-[11px] leading-relaxed text-ink-muted whitespace-pre-line">
@@ -154,9 +157,9 @@ function ReportsRowDetailsPanel({ row }: { row: EarningsReportRow }) {
 function StatusBadge({ status }: { status: string }) {
   return (
     <span
-      className={`inline-flex max-w-full rounded-full px-1.5 py-0.5 text-[9px] font-medium capitalize leading-tight xl:text-[10px] ${reportStatusBadgeClass(status)}`}
+      className={`inline-flex max-w-full rounded-full px-1.5 py-0.5 text-[9px] font-medium leading-tight xl:text-[10px] ${reportStatusBadgeClass(status)}`}
     >
-      {status}
+      {reportStatusLabel(status)}
     </span>
   );
 }
@@ -205,6 +208,7 @@ function MobileReportCard({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const remainingDebt = asNumber(row.remaining_debt_amount);
 
   return (
@@ -221,12 +225,12 @@ function MobileReportCard({
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-        <SummaryMetric label="Total gross" value={formatCurrency(asNumber(row.total_gross_earnings))} bold />
-        <SummaryMetric label="Commission" value={formatCurrency(asNumber(row.company_commission))} />
-        <SummaryMetric label="Vehicle rental" value={formatCurrency(asNumber(row.vehicle_rental_fee))} />
-        <SummaryMetric label="Net payout" value={formatCurrency(asNumber(row.net_driver_payout))} bold />
+        <SummaryMetric label={t("pages.earningsReports.totalGrossLabel")} value={formatCurrency(asNumber(row.total_gross_earnings))} bold />
+        <SummaryMetric label={t("pages.driversList.colCommission")} value={formatCurrency(asNumber(row.company_commission))} />
+        <SummaryMetric label={t("pages.earningsReports.vehicleRentalLabel")} value={formatCurrency(asNumber(row.vehicle_rental_fee))} />
+        <SummaryMetric label={t("pages.earningsPayouts.colNetPayout")} value={formatCurrency(asNumber(row.net_driver_payout))} bold />
         <SummaryMetric
-          label="Remaining debt"
+          label={t("pages.earningsReports.remainingDebtLabel")}
           value={formatCurrency(remainingDebt)}
           bold
           danger={remainingDebt > 0}
@@ -239,7 +243,7 @@ function MobileReportCard({
         onClick={onToggle}
         aria-expanded={isExpanded}
       >
-        {isExpanded ? "Hide details" : "View details"}
+        {isExpanded ? t("pages.earningsReports.hideDetails") : t("pages.earningsReports.viewDetails")}
         <ChevronIcon className="h-4 w-4" expanded={isExpanded} />
       </button>
 
@@ -276,37 +280,38 @@ function SortHeaderButton({
 }
 
 function ReportsGridHeader({ sort, onSort }: { sort: SortState; onSort: (key: SortKey) => void }) {
+  const { t } = useTranslation();
   return (
     <div
       className="sticky top-0 z-10 grid border-b border-border backdrop-blur"
       style={{ gridTemplateColumns: REPORTS_GRID_COLS }}
     >
       <div className={headerCellClass}>
-        <SortHeaderButton label="Driver" sortKey="driver" sort={sort} onSort={onSort} />
+        <SortHeaderButton label={t("pages.earningsReports.colDriver")} sortKey="driver" sort={sort} onSort={onSort} />
       </div>
       <div className={headerCellClass}>
-        <SortHeaderButton label="Period" sortKey="period" sort={sort} onSort={onSort} />
+        <SortHeaderButton label={t("pages.bookings.colPeriod")} sortKey="period" sort={sort} onSort={onSort} />
       </div>
       <div className={`${headerCellClass} text-right`}>
-        <SortHeaderButton label="Gross" sortKey="revenue" sort={sort} onSort={onSort} align="right" />
+        <SortHeaderButton label={t("pages.earningsReports.colGross")} sortKey="revenue" sort={sort} onSort={onSort} align="right" />
       </div>
       <div className={`${headerCellClass} text-right`}>
-        <SortHeaderButton label="Comm." sortKey="commission" sort={sort} onSort={onSort} align="right" />
+        <SortHeaderButton label={t("pages.earningsReports.colComm")} sortKey="commission" sort={sort} onSort={onSort} align="right" />
       </div>
       <div className={`${headerCellClass} text-right`}>
-        <SortHeaderButton label="Rental" sortKey="rental" sort={sort} onSort={onSort} align="right" />
+        <SortHeaderButton label={t("pages.earningsReports.colRental")} sortKey="rental" sort={sort} onSort={onSort} align="right" />
       </div>
       <div className={`${headerCellClass} text-right`}>
-        <SortHeaderButton label="Net" sortKey="payout" sort={sort} onSort={onSort} align="right" />
+        <SortHeaderButton label={t("pages.earningsReports.colNet")} sortKey="payout" sort={sort} onSort={onSort} align="right" />
       </div>
       <div className={`${headerCellClass} text-right`}>
-        <SortHeaderButton label="Debt" sortKey="debt" sort={sort} onSort={onSort} align="right" />
+        <SortHeaderButton label={t("pages.earningsReports.colDebt")} sortKey="debt" sort={sort} onSort={onSort} align="right" />
       </div>
       <div className={headerCellClass}>
-        <SortHeaderButton label="Status" sortKey="status" sort={sort} onSort={onSort} />
+        <SortHeaderButton label={t("common.status")} sortKey="status" sort={sort} onSort={onSort} />
       </div>
       <div className={`${headerCellClass} flex items-center justify-center px-0`} aria-hidden>
-        <span className="sr-only">Actions</span>
+        <span className="sr-only">{t("common.actions")}</span>
       </div>
     </div>
   );
@@ -323,6 +328,7 @@ function ReportsGridRow({
   stripeClass: string;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const remainingDebt = asNumber(row.remaining_debt_amount);
 
   return (
@@ -363,8 +369,8 @@ function ReportsGridRow({
             className={`${btnGhost} !min-h-0 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg p-0`}
             onClick={onToggle}
             aria-expanded={isExpanded}
-            title={isExpanded ? "Hide details" : "View details"}
-            aria-label={isExpanded ? "Hide payout details" : "View payout details"}
+            title={isExpanded ? t("pages.earningsReports.hideDetails") : t("pages.earningsReports.viewDetails")}
+            aria-label={isExpanded ? t("pages.earningsReports.hidePayoutDetails") : t("pages.earningsReports.viewPayoutDetails")}
           >
             <ChevronIcon className="h-4 w-4" expanded={isExpanded} />
           </button>
@@ -380,6 +386,7 @@ export function ReportsPreviewTable({
   loading = false,
   onVisibleRowsChange,
 }: ReportsPreviewTableProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortState>({ key: "period", dir: "desc" });
   const [page, setPage] = useState(1);
@@ -467,31 +474,34 @@ export function ReportsPreviewTable({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
           <label htmlFor="reports-table-search" className="sr-only">
-            Search preview rows
+            {t("pages.earningsReports.searchPreviewRows")}
           </label>
           <input
             id="reports-table-search"
             type="search"
             className={input}
-            placeholder="Driver, phone, platform ID, debt, period…"
+            placeholder={t("pages.earningsReports.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             disabled={loading}
           />
         </div>
         <p className="shrink-0 text-xs text-ink-muted whitespace-nowrap">
-          Showing <span className="font-semibold text-ink">{filteredSortedRows.length.toLocaleString()}</span> of{" "}
-          {rows.length.toLocaleString()} rows
+          <Trans
+            i18nKey="pages.earningsReports.showingRowsOf"
+            values={{ shown: filteredSortedRows.length.toLocaleString(), total: rows.length.toLocaleString() }}
+            components={{ b: <span className="font-semibold text-ink" /> }}
+          />
         </p>
       </div>
 
       {loading ? (
         <div className="rounded-xl border border-border py-10 text-center text-sm text-ink-muted">
-          Loading live preview…
+          {t("pages.earningsReports.loadingLivePreview")}
         </div>
       ) : paginatedRows.length === 0 ? (
         <div className="rounded-xl border border-border py-10 text-center text-sm text-ink-muted">
-          No rows match the current filters.
+          {t("pages.earningsReports.noRowsMatchFilters")}
         </div>
       ) : (
         <>

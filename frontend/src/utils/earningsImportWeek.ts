@@ -1,4 +1,5 @@
 import type { EarningsImportListItem } from "../api/earnings";
+import i18n from "../i18n";
 
 export function localIsoDate(d: Date): string {
   const y = d.getFullYear();
@@ -104,35 +105,35 @@ export function validatePaymentWeek(
   const thisMonday = startOfWeekMonday(today);
 
   if (!start.trim() || !end.trim()) {
-    errors.push("Period start and end are required.");
+    errors.push(i18n.t("common.paymentWeekValidation.periodRequired"));
     return { valid: false, errors, warnings };
   }
 
   const startD = parseLocalIsoDate(start);
   const endD = parseLocalIsoDate(end);
   if (!startD || !endD) {
-    errors.push("Use valid dates (YYYY-MM-DD).");
+    errors.push(i18n.t("common.paymentWeekValidation.invalidDates"));
     return { valid: false, errors, warnings };
   }
 
   if (startD > endD) {
-    errors.push("Period start must be on or before period end.");
+    errors.push(i18n.t("common.paymentWeekValidation.startBeforeEnd"));
   }
 
   if (startD.getDay() !== 1) {
-    errors.push("Period start must be a Monday.");
+    errors.push(i18n.t("common.paymentWeekValidation.startMustBeMonday"));
   }
   if (endD.getDay() !== 0) {
-    errors.push("Period end must be a Sunday.");
+    errors.push(i18n.t("common.paymentWeekValidation.endMustBeSunday"));
   }
 
   const daySpan = Math.round((endD.getTime() - startD.getTime()) / 86_400_000);
   if (daySpan !== 6) {
-    errors.push("Pay period must be exactly one week (Monday through Sunday, 6 days apart).");
+    errors.push(i18n.t("common.paymentWeekValidation.mustBeOneWeek"));
   }
 
   if (endD >= thisMonday) {
-    warnings.push("Selected week includes the current or a future calendar week.");
+    warnings.push(i18n.t("common.paymentWeekValidation.includesCurrentOrFutureWeek"));
   }
 
   const existing = opts?.existingImports ?? [];
@@ -143,9 +144,13 @@ export function validatePaymentWeek(
         .slice(0, 3)
         .map((h) => h.file_name ?? h.platform)
         .join(", ");
-      const more = hits.length > 3 ? ` (+${hits.length - 3} more)` : "";
+      const more =
+        hits.length > 3 ? i18n.t("common.paymentWeekValidation.existingImportsMoreSuffix", { count: hits.length - 3 }) : "";
       warnings.push(
-        `This week already has ${hits.length} import(s) for this provider${names ? `: ${names}${more}` : ""}.`,
+        i18n.t("common.paymentWeekValidation.existingImportsWarning", {
+          count: hits.length,
+          details: names ? `: ${names}${more}` : "",
+        }),
       );
     }
   }

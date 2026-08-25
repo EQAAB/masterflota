@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { fetchAuditLogs } from "../../api/audit";
 import { createOrgUser, deactivateOrgUser, fetchOrgUsers, resetOrgUserPassword, updateOrgUser } from "../../api/users";
 import { fetchRoles } from "../../api/roles";
@@ -43,6 +44,7 @@ const emptyForm: AddUserForm = {
 };
 
 export function UsersPage() {
+  const { t } = useTranslation();
   const canManage = useAnyPermission("users.manage");
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
@@ -166,7 +168,7 @@ export function UsersPage() {
     return (
       <div className="fm-settings-users flex min-h-full flex-1 flex-col">
         <div className={dashboardPage}>
-          <p className="text-ink-muted">You do not have access to manage users.</p>
+          <p className="text-ink-muted">{t("pages.users.noAccessUsers")}</p>
         </div>
       </div>
     );
@@ -216,7 +218,7 @@ export function UsersPage() {
 
         {usersQuery.isError && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load users. Check your connection and try again.
+            {t("pages.users.failedToLoadUsers")}
           </p>
         )}
 

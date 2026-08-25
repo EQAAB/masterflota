@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { formatCurrency } from "../../../../utils/currency";
 import type { SubcontractorSettlementDetail } from "../../../../api/subcontractorPayouts";
 
@@ -36,6 +37,7 @@ export function SettlementDetailIntegrityBanner({
   integrityOk,
   validation,
 }: SettlementDetailIntegrityBannerProps) {
+  const { t } = useTranslation();
   if (integrityOk) {
     return (
       <div
@@ -46,7 +48,7 @@ export function SettlementDetailIntegrityBanner({
           <CheckCircleIcon className="h-[18px] w-[18px]" />
         </span>
         <p className="pt-0.5 font-medium leading-snug text-slate-800">
-          Data integrity: driver breakdown matches settlement totals.
+          {t("pages.subSettlements.integrityOkMessage")}
         </p>
       </div>
     );
@@ -61,15 +63,15 @@ export function SettlementDetailIntegrityBanner({
         <ExclamationIcon className="h-[18px] w-[18px]" />
       </span>
       <div className="min-w-0 pt-0.5 font-medium leading-snug">
-        <p>Data integrity error: driver totals do not match the settlement.</p>
+        <p>{t("pages.subSettlements.integrityErrorTitle")}</p>
         {validation.matched === false && (
           <p className="mt-1 text-xs font-normal text-red-800/90">
-            Net sum difference: {formatCurrency(validation.difference)} (expected 0).
+            {t("pages.subSettlements.netSumDifference", { amount: formatCurrency(validation.difference) })}
           </p>
         )}
         {validation.totals_matched === false && (
           <p className="mt-1 text-xs font-normal text-red-800/90">
-            Column totals difference (max): {formatCurrency(validation.totals_difference)}.
+            {t("pages.subSettlements.columnTotalsDifference", { amount: formatCurrency(validation.totals_difference) })}
           </p>
         )}
       </div>

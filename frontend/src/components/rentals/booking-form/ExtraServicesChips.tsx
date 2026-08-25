@@ -1,4 +1,13 @@
+import { useTranslation } from "react-i18next";
 import { EXTRA_SERVICES } from "./bookingFormConstants";
+
+const EXTRA_LABEL_KEYS: Record<string, string> = {
+  insurance: "extraInsurance",
+  gps: "extraGps",
+  child_seat: "extraChildSeat",
+  additional_driver: "extraAdditionalDriver",
+  full_cleaning: "extraFullCleaning",
+};
 
 type ExtraServicesChipsProps = {
   selected: string[];
@@ -7,6 +16,7 @@ type ExtraServicesChipsProps = {
 };
 
 export function ExtraServicesChips({ selected, onChange, disabled }: ExtraServicesChipsProps) {
+  const { t } = useTranslation();
   const toggle = (id: string) => {
     if (disabled) return;
     if (selected.includes(id)) {
@@ -38,7 +48,7 @@ export function ExtraServicesChips({ selected, onChange, disabled }: ExtraServic
             >
               {isOn ? "✓" : ""}
             </span>
-            {svc.label}
+            {t(`pages.bookingForm.${EXTRA_LABEL_KEYS[svc.id]}`)}
             <span className="text-xs text-ink-muted">+{svc.amount}</span>
           </button>
         );

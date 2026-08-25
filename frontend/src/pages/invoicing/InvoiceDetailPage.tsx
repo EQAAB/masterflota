@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   getInvoice,
   issueInvoice,
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function InvoiceDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const canManage = useAnyPermission("invoicing.manage");
@@ -69,10 +71,10 @@ export function InvoiceDetailPage() {
   const inv = invoiceQuery.data;
 
   if (invoiceQuery.isLoading) {
-    return <div className={dashboardPage}><p className="text-ink-muted">Loading...</p></div>;
+    return <div className={dashboardPage}><p className="text-ink-muted">{t("common.loading")}</p></div>;
   }
   if (!inv) {
-    return <div className={dashboardPage}><p className="text-ink-muted">Invoice not found</p></div>;
+    return <div className={dashboardPage}><p className="text-ink-muted">{t("pages.invoiceDetail.invoiceNotFound")}</p></div>;
   }
 
   const isDraft = inv.status === "draft";
@@ -90,7 +92,7 @@ export function InvoiceDetailPage() {
             to="/invoicing"
             className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
           >
-            ← Invoices
+            ← {t("pages.invoiceDetail.backToInvoices")}
           </Link>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -98,8 +100,8 @@ export function InvoiceDetailPage() {
                 {inv.series_prefix}{inv.invoice_number}
               </h1>
               <p className="mt-1 text-sm text-ink-muted">
-                Issued {new Date(inv.issue_date).toLocaleDateString("ro-RO")}
-                {inv.due_date && ` — Due ${new Date(inv.due_date).toLocaleDateString("ro-RO")}`}
+                {t("pages.invoiceDetail.issuedLabel", { date: new Date(inv.issue_date).toLocaleDateString("ro-RO") })}
+                {inv.due_date && t("pages.invoiceDetail.dueLabel", { date: new Date(inv.due_date).toLocaleDateString("ro-RO") })}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -110,14 +112,14 @@ export function InvoiceDetailPage() {
                     onClick={() => issueMutation.mutate()}
                     disabled={issueMutation.isPending}
                   >
-                    {issueMutation.isPending ? "Issuing..." : "Issue invoice"}
+                    {issueMutation.isPending ? t("pages.invoiceDetail.issuingButton") : t("pages.invoiceDetail.issueInvoiceButton")}
                   </button>
                   <button
                     className={btnSecondary}
                     onClick={() => cancelMutation.mutate()}
                     disabled={cancelMutation.isPending}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </>
               )}
@@ -127,7 +129,7 @@ export function InvoiceDetailPage() {
                   onClick={() => submitAnafMutation.mutate()}
                   disabled={submitAnafMutation.isPending}
                 >
-                  {submitAnafMutation.isPending ? "Submitting..." : "Submit to ANAF"}
+                  {submitAnafMutation.isPending ? t("pages.invoiceDetail.submittingButton") : t("pages.invoiceDetail.submitToAnafButton")}
                 </button>
               )}
               {canCheckStatus && (
@@ -136,12 +138,12 @@ export function InvoiceDetailPage() {
                   onClick={() => checkStatusMutation.mutate()}
                   disabled={checkStatusMutation.isPending}
                 >
-                  Check ANAF status
+                  {t("pages.invoiceDetail.checkAnafStatusButton")}
                 </button>
               )}
               {inv.status !== "draft" && (
                 <button className={btnSecondary} onClick={handleDownloadXml}>
-                  Download XML
+                  {t("pages.invoiceDetail.downloadXmlButton")}
                 </button>
               )}
             </div>
@@ -161,31 +163,31 @@ export function InvoiceDetailPage() {
           {/* Invoice details */}
           <div className="space-y-6">
             <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">Invoice details</h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceDetail.invoiceDetailsTitle")}</h2>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <dt className="text-ink-muted">Status</dt>
+                <dt className="text-ink-muted">{t("common.status")}</dt>
                 <dd>
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[inv.status] ?? ""}`}>
-                    {inv.status}
+                    {t(`pages.invoiceDetail.status.${inv.status}`, { defaultValue: inv.status })}
                   </span>
                 </dd>
-                <dt className="text-ink-muted">Currency</dt>
+                <dt className="text-ink-muted">{t("pages.invoiceDetail.currencyLabel")}</dt>
                 <dd className="text-ink">{inv.currency}</dd>
-                <dt className="text-ink-muted">Net amount</dt>
+                <dt className="text-ink-muted">{t("pages.invoiceDetail.netAmountLabel")}</dt>
                 <dd className="font-medium text-ink">{parseFloat(inv.net_amount).toFixed(2)}</dd>
-                <dt className="text-ink-muted">VAT</dt>
+                <dt className="text-ink-muted">{t("pages.invoiceDetail.vatLabel")}</dt>
                 <dd className="font-medium text-ink">{parseFloat(inv.vat_amount).toFixed(2)}</dd>
-                <dt className="text-ink-muted">Total</dt>
+                <dt className="text-ink-muted">{t("pages.invoiceDetail.totalLabel")}</dt>
                 <dd className="text-lg font-bold text-ink">{parseFloat(inv.total_amount).toFixed(2)} {inv.currency}</dd>
                 {inv.notes && (
                   <>
-                    <dt className="text-ink-muted">Notes</dt>
+                    <dt className="text-ink-muted">{t("pages.invoiceDetail.notesLabel")}</dt>
                     <dd className="text-ink">{inv.notes}</dd>
                   </>
                 )}
                 {inv.source_type && (
                   <>
-                    <dt className="text-ink-muted">Source</dt>
+                    <dt className="text-ink-muted">{t("pages.invoiceDetail.sourceLabel")}</dt>
                     <dd className="text-ink">{inv.source_type}</dd>
                   </>
                 )}
@@ -195,25 +197,25 @@ export function InvoiceDetailPage() {
             {/* ANAF status */}
             {inv.anaf_status && (
               <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">ANAF e-Factura</h2>
+                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceDetail.anafEFacturaTitle")}</h2>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                  <dt className="text-ink-muted">ANAF status</dt>
+                  <dt className="text-ink-muted">{t("pages.invoiceDetail.anafStatusLabel")}</dt>
                   <dd className="font-medium text-ink">{inv.anaf_status}</dd>
                   {inv.anaf_upload_index && (
                     <>
-                      <dt className="text-ink-muted">Upload index</dt>
+                      <dt className="text-ink-muted">{t("pages.invoiceDetail.uploadIndexLabel")}</dt>
                       <dd className="text-ink">{inv.anaf_upload_index}</dd>
                     </>
                   )}
                   {inv.anaf_submitted_at && (
                     <>
-                      <dt className="text-ink-muted">Submitted at</dt>
+                      <dt className="text-ink-muted">{t("pages.invoiceDetail.submittedAtLabel")}</dt>
                       <dd className="text-ink">{new Date(inv.anaf_submitted_at).toLocaleString("ro-RO")}</dd>
                     </>
                   )}
                   {inv.anaf_error_message && (
                     <>
-                      <dt className="text-ink-muted">Error</dt>
+                      <dt className="text-ink-muted">{t("pages.invoiceDetail.errorLabel")}</dt>
                       <dd className="text-red-600">{inv.anaf_error_message}</dd>
                     </>
                   )}
@@ -224,27 +226,27 @@ export function InvoiceDetailPage() {
 
           {/* Buyer details */}
           <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">Buyer</h2>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceDetail.buyerTitle")}</h2>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              <dt className="text-ink-muted">Name</dt>
+              <dt className="text-ink-muted">{t("pages.invoiceDetail.nameLabel")}</dt>
               <dd className="font-medium text-ink">{inv.buyer_name}</dd>
               {inv.buyer_cui && (
                 <>
-                  <dt className="text-ink-muted">CUI</dt>
+                  <dt className="text-ink-muted">{t("pages.invoiceDetail.cuiLabel")}</dt>
                   <dd className="text-ink">{inv.buyer_cui}</dd>
                 </>
               )}
               {inv.buyer_reg_com && (
                 <>
-                  <dt className="text-ink-muted">Reg. Com.</dt>
+                  <dt className="text-ink-muted">{t("pages.invoiceDetail.regComLabel")}</dt>
                   <dd className="text-ink">{inv.buyer_reg_com}</dd>
                 </>
               )}
-              <dt className="text-ink-muted">VAT payer</dt>
-              <dd className="text-ink">{inv.buyer_is_vat_payer ? "Yes" : "No"}</dd>
+              <dt className="text-ink-muted">{t("pages.invoiceDetail.vatPayerLabel")}</dt>
+              <dd className="text-ink">{inv.buyer_is_vat_payer ? t("common.yes") : t("common.no")}</dd>
               {(inv.buyer_address_street || inv.buyer_address_city) && (
                 <>
-                  <dt className="text-ink-muted">Address</dt>
+                  <dt className="text-ink-muted">{t("pages.invoiceDetail.addressLabel")}</dt>
                   <dd className="text-ink">
                     {[inv.buyer_address_street, inv.buyer_address_number].filter(Boolean).join(" ")}
                     {inv.buyer_address_city && `, ${inv.buyer_address_city}`}
@@ -254,7 +256,7 @@ export function InvoiceDetailPage() {
               )}
               {inv.buyer_email && (
                 <>
-                  <dt className="text-ink-muted">Email</dt>
+                  <dt className="text-ink-muted">{t("pages.invoiceDetail.emailLabel")}</dt>
                   <dd className="text-ink">{inv.buyer_email}</dd>
                 </>
               )}
@@ -269,14 +271,14 @@ export function InvoiceDetailPage() {
               <thead>
                 <tr className="border-b border-border bg-surface text-left text-xs font-semibold uppercase tracking-wider text-ink-muted">
                   <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3 text-right">Qty</th>
-                  <th className="px-4 py-3">Unit</th>
-                  <th className="px-4 py-3 text-right">Unit price</th>
-                  <th className="px-4 py-3 text-right">VAT %</th>
-                  <th className="px-4 py-3 text-right">Net</th>
-                  <th className="px-4 py-3 text-right">VAT</th>
-                  <th className="px-4 py-3 text-right">Total</th>
+                  <th className="px-4 py-3">{t("pages.invoiceDetail.colDescription")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.colQty")}</th>
+                  <th className="px-4 py-3">{t("pages.invoiceDetail.colUnit")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.colUnitPrice")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.colVatPercent")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.colNet")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.vatLabel")}</th>
+                  <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.totalLabel")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

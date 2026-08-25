@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { SettlementKpiSummary } from "./settlementsDisplayUtils";
 import { formatCurrency } from "../../../utils/currency";
 import { transitionDefault } from "../../../theme/classNames";
@@ -117,43 +118,44 @@ type SettlementsKpiCardsProps = {
 };
 
 export function SettlementsKpiCards({ summary, loading }: SettlementsKpiCardsProps) {
+  const { t } = useTranslation();
   const dash = loading ? "…" : "—";
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <CompactKpiCard
-        title="Subcontractors"
+        title={t("pages.subSettlements.subcontractorsKpi")}
         value={summary ? summary.subcontractorCount.toLocaleString() : dash}
         icon={<BuildingIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-brand-mint text-brand"
         emphasizeValue
       />
       <CompactKpiCard
-        title="Gross incl. tips"
+        title={t("pages.subSettlements.grossInclTips")}
         value={summary ? formatCurrency(summary.grossInclTips) : dash}
         icon={<WalletIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-emerald-100 text-emerald-700"
       />
       <CompactKpiCard
-        title="Net driver payouts"
+        title={t("pages.subSettlements.netDriverPayouts")}
         value={summary ? formatCurrency(summary.netDriverPayouts) : dash}
         icon={<BanknotesIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-blue-100 text-blue-700"
       />
       <CompactKpiCard
-        title="Total fees"
+        title={t("pages.subSettlements.totalFees")}
         value={summary ? formatCurrency(summary.totalFees) : dash}
         icon={<ReceiptIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-orange-100 text-orange-700"
       />
       <CompactKpiCard
-        title="Total commission"
+        title={t("pages.earningsReports.totalCommission")}
         value={summary ? formatCurrency(summary.totalCommission) : dash}
         icon={<PercentIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-indigo-100 text-indigo-700"
       />
       <CompactKpiCard
-        title="Payable"
+        title={t("pages.subSettlements.payableKpi")}
         value={summary ? formatCurrency(summary.payable) : dash}
         icon={<WalletIcon className="h-[18px] w-[18px]" />}
         iconClassName="bg-success/10 text-success"

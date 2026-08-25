@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RoleItem } from "../../../api/roles";
 import type { UsersFilters } from "./usersListUtils";
 
@@ -9,6 +10,7 @@ type UsersFilterPanelProps = {
 };
 
 export function UsersFilterPanel({ filters, roles, onChange, onClear }: UsersFilterPanelProps) {
+  const { t } = useTranslation();
   const hasFilters = filters.roleId !== "" || filters.status !== "";
 
   return (
@@ -18,9 +20,9 @@ export function UsersFilterPanel({ filters, roles, onChange, onClear }: UsersFil
           className="fm-settings-users__filter-select"
           value={filters.roleId}
           onChange={(e) => onChange({ roleId: e.target.value })}
-          aria-label="Filter by role"
+          aria-label={t("pages.users.filterByRoleAria")}
         >
-          <option value="">All roles</option>
+          <option value="">{t("pages.users.allRolesOption")}</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
@@ -32,16 +34,16 @@ export function UsersFilterPanel({ filters, roles, onChange, onClear }: UsersFil
           className="fm-settings-users__filter-select"
           value={filters.status}
           onChange={(e) => onChange({ status: e.target.value as UsersFilters["status"] })}
-          aria-label="Filter by status"
+          aria-label={t("pages.users.filterByStatusAria")}
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{t("pages.users.allStatusesOption")}</option>
+          <option value="active">{t("status.active")}</option>
+          <option value="inactive">{t("status.inactive")}</option>
         </select>
 
         {hasFilters && (
           <button type="button" className="text-sm font-medium text-brand hover:underline" onClick={onClear}>
-            Clear filters
+            {t("pages.users.clearFiltersButton")}
           </button>
         )}
       </div>
