@@ -1,4 +1,5 @@
 import type { SubcontractorSettlementRow } from "../../../api/earnings";
+import i18n from "../../../i18n";
 
 export function asSettlementNumber(v: string | null | undefined): number {
   if (v == null || v === "") return 0;
@@ -27,20 +28,20 @@ export function settlementStatusDisplay(row: SubcontractorSettlementRow): {
 
   if (status === "paid") {
     return {
-      label: "Paid",
+      label: i18n.t("status.paid"),
       className: "bg-emerald-100 text-emerald-800",
       dotClassName: "bg-emerald-500",
     };
   }
   if (status === "pending" || !row.id) {
     return {
-      label: "Pending",
+      label: i18n.t("status.pending"),
       className: "bg-amber-100 text-amber-900",
       dotClassName: "bg-amber-500",
     };
   }
   return {
-    label: "Debt",
+    label: i18n.t("status.debt"),
     className: "bg-red-100 text-red-800",
     dotClassName: "bg-red-500",
   };

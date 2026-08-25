@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RentalCustomer } from "../../../api/rentals";
 import {
   customerHasActiveVehicle,
@@ -9,8 +10,9 @@ import {
 } from "../../../utils/customerVehicleDisplay";
 
 export function CustomerVehicleCell({ customer }: { customer: RentalCustomer }) {
+  const { t } = useTranslation();
   if (!customerHasActiveVehicle(customer)) {
-    return <span className="text-sm text-ink-muted">—</span>;
+    return <span className="text-sm text-ink-muted">{t("common.emDash")}</span>;
   }
 
   const vehicleId = getCustomerVehicleLinkId(customer);
@@ -19,7 +21,7 @@ export function CustomerVehicleCell({ customer }: { customer: RentalCustomer }) 
   const extra = formatCustomerVehicleExtra(customer);
 
   if (!label) {
-    return <span className="text-sm text-ink-muted">—</span>;
+    return <span className="text-sm text-ink-muted">{t("common.emDash")}</span>;
   }
 
   const content = (

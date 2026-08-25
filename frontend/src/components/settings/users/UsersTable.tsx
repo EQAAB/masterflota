@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { OrgUser } from "../../../api/users";
 import type { RoleItem } from "../../../api/roles";
 import { ActionMenuDropdown } from "../../theme/ActionMenuDropdown";
@@ -26,14 +27,15 @@ function UsersTableColGroup() {
 }
 
 function UsersTableHead() {
+  const { t } = useTranslation();
   return (
     <thead>
       <tr className={TABLE_HEAD_CLASS}>
-        <th className={TH_CLASS}>Name</th>
-        <th className={TH_CLASS}>Email</th>
-        <th className={TH_CLASS}>Role</th>
-        <th className={TH_CLASS}>Status</th>
-        <th className={`${TH_CLASS} fm-settings-users__col-actions text-right`}>Actions</th>
+        <th className={TH_CLASS}>{t("pages.users.colName")}</th>
+        <th className={TH_CLASS}>{t("pages.users.emailLabel")}</th>
+        <th className={TH_CLASS}>{t("pages.users.roleFieldLabel")}</th>
+        <th className={TH_CLASS}>{t("common.status")}</th>
+        <th className={`${TH_CLASS} fm-settings-users__col-actions text-right`}>{t("common.actions")}</th>
       </tr>
     </thead>
   );
@@ -58,6 +60,7 @@ type UsersTableProps = {
 };
 
 function EmptyState({ allUsersCount, hasActiveFilters }: { allUsersCount: number; hasActiveFilters: boolean }) {
+  const { t } = useTranslation();
   const isFiltered = allUsersCount > 0 && hasActiveFilters;
   return (
     <div className="fm-settings-users__empty">
@@ -76,14 +79,14 @@ function EmptyState({ allUsersCount, hasActiveFilters }: { allUsersCount: number
         />
       </svg>
       <p className="text-sm font-medium text-ink">
-        {allUsersCount === 0 ? "No users yet" : isFiltered ? "No users found" : "No users to display"}
+        {allUsersCount === 0 ? t("pages.users.noUsersYetTitle") : isFiltered ? t("pages.users.noUsersFoundTitle") : t("pages.users.noUsersToDisplayTitle")}
       </p>
       <p className="mt-1 text-sm text-ink-muted">
         {allUsersCount === 0
-          ? "Add your first team member to get started."
+          ? t("pages.users.addFirstTeamMemberDesc")
           : isFiltered
-            ? "Try adjusting your search or filters."
-            : "There are no users matching the current view."}
+            ? t("pages.users.adjustSearchFiltersDesc")
+            : t("pages.users.noUsersMatchViewDesc")}
       </p>
     </div>
   );
@@ -106,6 +109,7 @@ export function UsersTable({
   isUpdating,
   hasActiveFilters,
 }: UsersTableProps) {
+  const { t } = useTranslation();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [roleEditUserId, setRoleEditUserId] = useState<string | null>(null);
@@ -133,7 +137,7 @@ export function UsersTable({
     (user: OrgUser) => {
       if (
         !window.confirm(
-          `Reset password for ${user.firstName} ${user.lastName}? They will be signed out and must use the new temporary password.`,
+          t("pages.users.resetPasswordConfirm", { name: `${user.firstName} ${user.lastName}` }),
         )
       ) {
         return;
@@ -141,18 +145,18 @@ export function UsersTable({
       closeMenu();
       onResetPassword(user);
     },
-    [closeMenu, onResetPassword],
+    [closeMenu, onResetPassword, t],
   );
 
   const confirmDeactivate = useCallback(
     (user: OrgUser) => {
-      if (!window.confirm(`Deactivate ${user.firstName} ${user.lastName}? They will no longer be able to sign in.`)) {
+      if (!window.confirm(t("pages.users.deactivateConfirm", { name: `${user.firstName} ${user.lastName}` }))) {
         return;
       }
       closeMenu();
       onDeactivate(user.id);
     },
-    [closeMenu, onDeactivate],
+    [closeMenu, onDeactivate, t],
   );
 
   const confirmActivate = useCallback(

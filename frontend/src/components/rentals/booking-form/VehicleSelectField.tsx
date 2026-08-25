@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getVehicleById, getVehicles, type VehicleListItem } from "../../../api/vehicles";
 import type { RentalQuote } from "../../../api/rentals";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -24,6 +25,7 @@ export function VehicleSelectField({
   disabled,
   serverSearch = false,
 }: VehicleSelectFieldProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -76,13 +78,13 @@ export function VehicleSelectField({
   const unavailable = quote && !quote.available;
   const availableNow = quote?.available && !quoteLoading;
   const searchPlaceholder = serverSearch
-    ? "Type plate, make, or model to search…"
-    : "Search plate, make, or model…";
+    ? t("pages.bookingForm.searchVehicleTypePlaceholder")
+    : t("pages.bookingForm.searchVehiclePlaceholder");
   const showSearchLoading = serverSearch && query.trim().length >= 1 && serverSearchQuery.isFetching;
 
   return (
     <div ref={rootRef} className="relative">
-      <label className="block text-sm font-medium text-ink">Vehicle</label>
+      <label className="block text-sm font-medium text-ink">{t("pages.rentalCalendar.vehicleLabel")}</label>
       {selected ? (
         <div
           className={`fm-rental-booking-form__preview-card ${
@@ -105,19 +107,19 @@ export function VehicleSelectField({
               {selected.make} {selected.model}
             </p>
             {quoteLoading ? (
-              <p className="mt-1 text-xs text-slate-500">Checking availability…</p>
+              <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.checkingAvailability")}</p>
             ) : availableNow ? (
-              <p className="mt-1 text-xs font-medium text-emerald-700">Available now</p>
+              <p className="mt-1 text-xs font-medium text-emerald-700">{t("pages.bookingForm.availableNow")}</p>
             ) : unavailable ? (
               <p className="mt-1 text-xs font-medium text-rose-700">
-                {quote.conflict?.message ?? "Not available for selected dates"}
+                {quote.conflict?.message ?? t("pages.bookingForm.notAvailableSelectedDates")}
               </p>
             ) : (
-              <p className="mt-1 text-xs text-slate-500">Select dates for availability</p>
+              <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.selectDatesForAvailability")}</p>
             )}
             {dailyHint != null && dailyHint > 0 && (
               <p className="mt-1 text-sm font-semibold text-ink">
-                Daily: {formatCurrency(dailyHint)}
+                {t("pages.bookingForm.dailyPricePrefix", { amount: formatCurrency(dailyHint) })}
               </p>
             )}
           </div>
@@ -130,7 +132,7 @@ export function VehicleSelectField({
                 setQuery("");
               }}
             >
-              Change
+              {t("pages.bookingForm.changeButton")}
             </button>
           )}
         </div>
@@ -163,7 +165,7 @@ export function VehicleSelectField({
             }}
           />
           {open && showSearchLoading && (
-            <p className="mt-1 text-xs text-slate-500">Searching…</p>
+            <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.searchingLabel")}</p>
           )}
           {open && !showSearchLoading && filtered.length > 0 && (
             <ul className="fm-rental-booking-form__combobox-list" role="listbox">
@@ -192,7 +194,7 @@ export function VehicleSelectField({
             serverSearch &&
             debouncedQuery.length >= 1 &&
             filtered.length === 0 && (
-              <p className="mt-1 text-xs text-slate-500">No vehicles found.</p>
+              <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.noVehiclesFound")}</p>
             )}
         </>
       )}

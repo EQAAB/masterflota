@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RoleItem } from "../../../api/roles";
 import type { PermissionItem } from "../../../api/roles";
 import { roleLabel } from "../../../lib/roleLabel";
@@ -20,6 +21,7 @@ export function RoleCard({
   onTogglePermission,
   onDelete,
 }: RoleCardProps) {
+  const { t } = useTranslation();
   const granted = new Set(role.permissions);
   const readOnly = role.isSystemRole || !canManage;
 
@@ -28,12 +30,12 @@ export function RoleCard({
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-ink">{roleLabel(role.name)}</h2>
-          <p className="text-sm text-ink-muted">{role.description || "No description"}</p>
+          <p className="text-sm text-ink-muted">{role.description || t("pages.roles.noDescription")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="fm-settings-roles__badge">
-            {role.isSystemRole ? "System role" : "Custom role"}
-            {role.isDefault ? " · Default" : ""}
+            {role.isSystemRole ? t("pages.roles.systemRoleBadge") : t("pages.roles.customRoleBadge")}
+            {role.isDefault ? t("pages.roles.defaultSuffix") : ""}
           </span>
           {!role.isSystemRole && canManage && (
             <button
@@ -42,7 +44,7 @@ export function RoleCard({
               disabled={isSaving}
               onClick={() => onDelete(role)}
             >
-              Delete
+              {t("common.delete")}
             </button>
           )}
         </div>

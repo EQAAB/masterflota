@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 type BookingFormFooterProps = {
@@ -21,11 +22,12 @@ export function BookingFormFooter({
   startNowPending,
   disabled,
 }: BookingFormFooterProps) {
+  const { t } = useTranslation();
   return (
     <div className="fm-rental-booking-form__footer">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <button type="button" className={btnSecondary} onClick={onCancel} disabled={createPending || startNowPending}>
-          Cancel
+          {t("common.cancel")}
         </button>
         {!isEdit && onStartNow && (
           <button
@@ -34,7 +36,7 @@ export function BookingFormFooter({
             onClick={onStartNow}
             disabled={disabled || startNowPending || createPending || saveDraftPending}
           >
-            {startNowPending ? "Starting…" : "Start now"}
+            {startNowPending ? t("pages.bookingForm.startingButton") : t("pages.bookingForm.startNowButton")}
           </button>
         )}
         <button
@@ -43,14 +45,14 @@ export function BookingFormFooter({
           onClick={onSaveDraft}
           disabled={disabled || saveDraftPending || createPending}
         >
-          {saveDraftPending ? "Saving…" : "Save draft"}
+          {saveDraftPending ? t("common.saving") : t("pages.bookingForm.saveDraft")}
         </button>
         <button
           type="submit"
           className={`${btnPrimary} fm-rental-booking-form__cta`}
           disabled={disabled || createPending || saveDraftPending}
         >
-          {createPending ? "Creating…" : isEdit ? "Save changes" : "Create booking"}
+          {createPending ? t("pages.bookingForm.creatingButton") : isEdit ? t("pages.bookingForm.saveChangesButton") : t("pages.bookingForm.createBookingButton")}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { EarningsReportSummary } from "../../../api/earnings";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -101,36 +102,37 @@ type ReportsKpiCardsProps = {
 };
 
 export function ReportsKpiCards({ summary, loading }: ReportsKpiCardsProps) {
+  const { t } = useTranslation();
   const dash = loading ? "…" : "—";
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       <ReportsCompactKpiCard
-        title="Total payout"
+        title={t("pages.earningsReports.kpiTotalPayout")}
         value={summary ? formatCurrency(summary.totalNetPayout) : dash}
         icon={<WalletIcon className="h-3.5 w-3.5" />}
         iconClassName="bg-success/10 text-success"
       />
       <ReportsCompactKpiCard
-        title="Rows"
+        title={t("pages.earningsReports.kpiRows")}
         value={summary ? summary.rowCount.toLocaleString() : dash}
         icon={<GridIcon className="h-3.5 w-3.5" />}
         iconClassName="bg-purple-100 text-purple-700"
       />
       <ReportsCompactKpiCard
-        title="Vehicle rental total"
+        title={t("pages.earningsReports.kpiVehicleRentalTotal")}
         value={summary ? formatCurrency(summary.totalVehicleRental) : dash}
         icon={<CarIcon className="h-3.5 w-3.5" />}
         iconClassName="bg-blue-100 text-blue-700"
       />
       <ReportsCompactKpiCard
-        title="Fleet commission (period)"
+        title={t("pages.earningsReports.kpiFleetCommissionPeriod")}
         value={summary ? formatCurrency(summary.totalCompanyCommission ?? 0) : dash}
         icon={<PercentIcon className="h-3.5 w-3.5" />}
         iconClassName="bg-indigo-100 text-indigo-700"
       />
       <ReportsCompactKpiCard
-        title="Outstanding debt"
+        title={t("pages.earningsReports.kpiOutstandingDebt")}
         value={summary ? formatCurrency(summary.totalDebt) : dash}
         icon={<WarningIcon className="h-3.5 w-3.5" />}
         iconClassName="bg-red-100 text-red-700"

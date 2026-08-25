@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getRentalCustomer, getRentalCustomers, type RentalCustomer } from "../../../api/rentals";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { initialsFromName } from "../dashboard/rentalDashboardUtils";
@@ -20,6 +21,7 @@ export function CustomerSelectField({
   disabled,
   serverSearch = false,
 }: CustomerSelectFieldProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
@@ -66,13 +68,13 @@ export function CustomerSelectField({
   };
 
   const searchPlaceholder = serverSearch
-    ? "Type name, email, or phone to search…"
-    : "Search by name, email, or phone…";
+    ? t("pages.bookingForm.searchCustomerTypePlaceholder")
+    : t("pages.bookingForm.searchCustomerPlaceholder");
   const showSearchLoading = serverSearch && query.trim().length >= 1 && serverSearchQuery.isFetching;
 
   return (
     <div ref={rootRef} className="relative">
-      <label className="block text-sm font-medium text-ink">Customer</label>
+      <label className="block text-sm font-medium text-ink">{t("pages.rentalCalendar.customerLabel")}</label>
       {selected ? (
         <div className="fm-rental-booking-form__preview-card">
           <div className="fm-rental-booking-form__avatar">{initialsFromName(selected.legal_name)}</div>
@@ -90,7 +92,7 @@ export function CustomerSelectField({
                 setQuery("");
               }}
             >
-              Change
+              {t("pages.bookingForm.changeButton")}
             </button>
           )}
         </div>
@@ -123,7 +125,7 @@ export function CustomerSelectField({
             }}
           />
           {open && showSearchLoading && (
-            <p className="mt-1 text-xs text-slate-500">Searching…</p>
+            <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.searchingLabel")}</p>
           )}
           {open && !showSearchLoading && filtered.length > 0 && (
             <ul className="fm-rental-booking-form__combobox-list" role="listbox">
@@ -155,7 +157,7 @@ export function CustomerSelectField({
             serverSearch &&
             debouncedQuery.length >= 1 &&
             filtered.length === 0 && (
-              <p className="mt-1 text-xs text-slate-500">No customers found.</p>
+              <p className="mt-1 text-xs text-slate-500">{t("pages.bookingForm.noCustomersFound")}</p>
             )}
         </>
       )}
@@ -163,7 +165,7 @@ export function CustomerSelectField({
         to="/rentals/customers/new"
         className="mt-2 inline-block text-sm font-medium text-brand hover:underline"
       >
-        + Add new customer
+        {t("pages.bookingForm.addNewCustomer")}
       </Link>
     </div>
   );

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 import type { DriverListItem } from "../../../api/drivers";
 import { postDriverLoan } from "../../../api/driverLoans";
 import { DriverSearchCombobox } from "../../rentals/DriverSearchCombobox";
@@ -12,12 +14,16 @@ type CreateLoanModalProps = {
 
 function parseApiError(e: unknown): string {
   if (e && typeof e === "object" && "response" in e) {
-    return String((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Failed");
+    return String(
+      (e as { response?: { data?: { message?: string } } }).response?.data?.message ??
+        i18n.t("pages.driverLoans.failedGeneric"),
+    );
   }
-  return e instanceof Error ? e.message : "Failed";
+  return e instanceof Error ? e.message : i18n.t("pages.driverLoans.failedGeneric");
 }
 
 export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalProps) {
+  const { t } = useTranslation();
   const [driver, setDriver] = useState<DriverListItem | null>(null);
   const [principal, setPrincipal] = useState("");
   const [disbursedAt, setDisbursedAt] = useState("");
@@ -41,9 +47,9 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
 
   const createMut = useMutation({
     mutationFn: async () => {
-      if (!driver) throw new Error("Select a driver.");
+      if (!driver) throw new Error(t("pages.driverLoans.selectDriverError"));
       const n = parseFloat(principal);
-      if (!Number.isFinite(n) || n <= 0) throw new Error("Principal must be a positive number.");
+      if (!Number.isFinite(n) || n <= 0) throw new Error(t("pages.driverLoans.principalPositiveError"));
       const { data } = await postDriverLoan(driver.id, {
         principal: n,
         disbursed_at: disbursedAt.trim() || undefined,
@@ -68,16 +74,16 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
       <button
         type="button"
         className="absolute inset-0 bg-slate-900/40"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={() => !createMut.isPending && onClose()}
       />
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-border/80 bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg font-semibold text-ink">Create loan</h2>
-        <p className="mt-1 text-sm text-ink-muted">Give a cash loan to a driver. One active loan per driver.</p>
+        <h2 className="text-lg font-semibold text-ink">{t("pages.driverLoans.add")}</h2>
+        <p className="mt-1 text-sm text-ink-muted">{t("pages.driverLoans.createLoanDesc")}</p>
 
         <div className="mt-4 space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Driver *</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.driverLoans.driverRequiredLabel")}</label>
             <DriverSearchCombobox value={driver} onChange={setDriver} disabled={createMut.isPending} />
           </div>
           {err && <p className="text-xs text-red-700">{err}</p>}
@@ -85,7 +91,7 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
             type="number"
             step="0.01"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm tabular-nums"
-            placeholder="Principal (RON) *"
+            placeholder={t("pages.driverLoans.principalPlaceholder")}
             value={principal}
             onChange={(e) => setPrincipal(e.target.value)}
             disabled={createMut.isPending}
@@ -100,19 +106,19 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
           <input
             type="text"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            placeholder="Reference (optional)"
+            placeholder={t("pages.driverLoans.referencePlaceholder")}
             value={reference}
             onChange={(e) => setReference(e.target.value)}
             disabled={createMut.isPending}
           />
           <textarea
             className="w-full rounded-lg border border-border px-3 py-2 text-sm min-h-[60px]"
-            placeholder="Notes"
+            placeholder={t("pages.driverLoans.notesPlaceholder")}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={createMut.isPending}
           />
-          <p className="text-xs font-medium text-ink-muted">Optional planned repayment</p>
+          <p className="text-xs font-medium text-ink-muted">{t("pages.driverLoans.optionalPlannedRepayment")}</p>
           <input
             type="date"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
@@ -123,7 +129,7 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
           <input
             type="text"
             className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-            placeholder="Plan reminder note"
+            placeholder={t("pages.driverLoans.planReminderNotePlaceholder")}
             value={plannedNote}
             onChange={(e) => setPlannedNote(e.target.value)}
             disabled={createMut.isPending}
@@ -137,7 +143,7 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
             disabled={createMut.isPending}
             className="rounded-lg border border-border px-4 py-2 text-sm text-ink-muted"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -145,7 +151,7 @@ export function CreateLoanModal({ open, onClose, onSuccess }: CreateLoanModalPro
             onClick={() => createMut.mutate()}
             className="rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
           >
-            {createMut.isPending ? "Creating…" : "Create loan"}
+            {createMut.isPending ? t("pages.driverLoans.creatingButton") : t("pages.driverLoans.add")}
           </button>
         </div>
       </div>

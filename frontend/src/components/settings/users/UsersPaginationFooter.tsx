@@ -1,3 +1,4 @@
+import { Trans, useTranslation } from "react-i18next";
 import { transitionDefault } from "../../../theme/classNames";
 
 type UsersPaginationFooterProps = {
@@ -20,6 +21,7 @@ function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
 }
 
 export function UsersPaginationFooter({ page, pageSize, total, onPageChange }: UsersPaginationFooterProps) {
+  const { t } = useTranslation();
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages);
   const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
@@ -30,20 +32,23 @@ export function UsersPaginationFooter({ page, pageSize, total, onPageChange }: U
   return (
     <footer className={`fm-settings-users__pagination ${transitionDefault}`}>
       <p className="text-sm text-ink-muted">
-        Showing <span className="font-medium tabular-nums text-ink">{from}</span> to{" "}
-        <span className="font-medium tabular-nums text-ink">{to}</span> of{" "}
-        <span className="font-medium tabular-nums text-ink">{total}</span> user{total === 1 ? "" : "s"}
+        <Trans
+          i18nKey="pages.users.showingRange"
+          count={total}
+          values={{ from, to, total }}
+          components={{ b: <span className="font-medium tabular-nums text-ink" /> }}
+        />
       </p>
 
       {totalPages > 1 && (
-        <nav className="flex items-center gap-1" aria-label="Pagination">
+        <nav className="flex items-center gap-1" aria-label={t("pagination.ariaLabel")}>
           <button
             type="button"
             disabled={safePage <= 1}
             className="fm-settings-users__page-btn"
             onClick={() => onPageChange(safePage - 1)}
           >
-            Prev
+            {t("pagination.prev")}
           </button>
           {pageNumbers(safePage, totalPages).map((p, i) =>
             p === "ellipsis" ? (
@@ -68,7 +73,7 @@ export function UsersPaginationFooter({ page, pageSize, total, onPageChange }: U
             className="fm-settings-users__page-btn"
             onClick={() => onPageChange(safePage + 1)}
           >
-            Next
+            {t("pagination.next")}
           </button>
         </nav>
       )}

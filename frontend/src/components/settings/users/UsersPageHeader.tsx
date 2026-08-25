@@ -56,7 +56,7 @@ export function UsersPageHeader({
             <input
               type="search"
               className="fm-settings-users__header-search"
-              placeholder="Search users..."
+              placeholder={t("pages.users.searchPlaceholder")}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
             />
@@ -74,7 +74,7 @@ export function UsersPageHeader({
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 6h16M6 12h12M8 18h8" />
               </svg>
-              Filter
+              {t("pages.users.filterButton")}
             </button>
 
             <button

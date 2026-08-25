@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementDetailDriver } from "../../../../api/subcontractorPayouts";
 import { formatCurrency } from "../../../../utils/currency";
 import { transitionDefault } from "../../../../theme/classNames";
@@ -129,6 +130,7 @@ function ColumnPicker({
   prefs: ColumnVisibilityPrefs;
   onChange: (next: ColumnVisibilityPrefs) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -174,13 +176,13 @@ function ColumnPicker({
         aria-haspopup="true"
       >
         <ColumnsIcon className="h-3.5 w-3.5" />
-        Columns
+        {t("pages.subSettlements.columnsButton")}
       </button>
       {open && (
         <div className="absolute right-0 z-30 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-lg ring-1 ring-black/5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Table columns</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("pages.subSettlements.tableColumnsTitle")}</p>
           <p className="mt-1 text-xs leading-snug text-slate-500">
-            Zero totals are hidden automatically. Pin columns on or off below.
+            {t("pages.subSettlements.zeroTotalsHint")}
           </p>
           <ul className="mt-2.5 max-h-56 space-y-1 overflow-y-auto">
             {SETTLEMENT_DRIVER_COLUMNS.map((col) => {
@@ -195,31 +197,31 @@ function ColumnPicker({
                 >
                   <span className="min-w-0 truncate text-sm text-slate-800" title={col.label}>
                     {col.shortLabel}
-                    {col.core && <span className="ml-1 text-[10px] text-slate-400">core</span>}
+                    {col.core && <span className="ml-1 text-[10px] text-slate-400">{t("pages.subSettlements.coreLabel")}</span>}
                     {!auto && !col.core && (
-                      <span className="ml-1 text-[10px] text-slate-400">zero</span>
+                      <span className="ml-1 text-[10px] text-slate-400">{t("pages.subSettlements.zeroLabel")}</span>
                     )}
                   </span>
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"
-                      title="Show column"
+                      title={t("pages.subSettlements.showColumnTitle")}
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         visible ? "bg-brand-mint text-brand" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                       }`}
                       onClick={() => toggleForcedVisible(col.key)}
                     >
-                      On
+                      {t("pages.subSettlements.onLabel")}
                     </button>
                     <button
                       type="button"
-                      title="Hide column"
+                      title={t("pages.subSettlements.hideColumnTitle")}
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         !visible ? "bg-slate-200 text-slate-800" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                       }`}
                       onClick={() => toggleForcedHidden(col.key)}
                     >
-                      Off
+                      {t("pages.subSettlements.offLabel")}
                     </button>
                   </div>
                 </li>
@@ -231,7 +233,7 @@ function ColumnPicker({
             className="mt-2.5 w-full rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
             onClick={() => onChange(resetColumnVisibilityPrefs())}
           >
-            Reset to auto
+            {t("pages.subSettlements.resetToAuto")}
           </button>
         </div>
       )}
@@ -246,9 +248,10 @@ function DriverRowDetailPanel({
   driver: SubcontractorSettlementDetailDriver;
   visibleInTable: Set<SettlementDriverColumnKey>;
 }) {
+  const { t } = useTranslation();
   const fields = detailFieldsForDriver(driver, visibleInTable);
   if (fields.length === 0) {
-    return <p className="text-xs text-slate-500">No additional line items for this driver.</p>;
+    return <p className="text-xs text-slate-500">{t("pages.subSettlements.noAdditionalLineItems")}</p>;
   }
 
   return (
@@ -296,6 +299,7 @@ type SettlementDetailDriversTableProps = {
 };
 
 export function SettlementDetailDriversTable({ drivers, footer }: SettlementDetailDriversTableProps) {
+  const { t } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [columnPrefs, setColumnPrefs] = useState<ColumnVisibilityPrefs>(() => loadColumnVisibilityPrefs());
 
@@ -330,9 +334,9 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
     >
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-2.5">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-800">Driver breakdown</h2>
+          <h2 className="text-sm font-semibold text-slate-800">{t("pages.subSettlements.driverBreakdownTitle")}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Compact view with expandable rows. Zero-fee columns are hidden; use Columns to override.
+            {t("pages.subSettlements.compactViewHint")}
           </p>
         </div>
         <ColumnPicker footer={footer} prefs={columnPrefs} onChange={updateColumnPrefs} />
@@ -343,10 +347,10 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
         <table className="min-w-full text-sm">
           <thead className="sticky top-0 z-30 border-b border-slate-200 bg-[#F8FAFC] text-left">
             <tr>
-              <th className={stickyExpandTh} aria-label="Expand row">
-                <span className="sr-only">Expand</span>
+              <th className={stickyExpandTh} aria-label={t("pages.subSettlements.expandRowAria")}>
+                <span className="sr-only">{t("pages.subSettlements.expandSr")}</span>
               </th>
-              <th className={stickyDriverTh}>Driver</th>
+              <th className={stickyDriverTh}>{t("pages.driversList.colDriver")}</th>
               {visibleColumns.map((col) => (
                 <th key={col.key} className={`${thClass} text-right`} title={col.title ?? col.label}>
                   {col.shortLabel}
@@ -367,13 +371,13 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
                         className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100"
                         onClick={() => toggleExpanded(d.id)}
                         aria-expanded={expanded}
-                        aria-label={expanded ? "Collapse driver details" : "Expand driver details"}
+                        aria-label={expanded ? t("pages.subSettlements.collapseDriverDetailsAria") : t("pages.subSettlements.expandDriverDetailsAria")}
                       >
                         <ChevronIcon expanded={expanded} />
                       </button>
                     </td>
                     <td className={`${stickyDriverTd} ${stickyDriverTdHover}`} title={d.name}>
-                      {d.name || "—"}
+                      {d.name || t("common.emDash")}
                     </td>
                     {visibleColumns.map((col) => (
                       <MetricCells key={col.key} col={col} driver={d} rowKind="body" />
@@ -386,7 +390,7 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
                     <tr className="bg-slate-50/70">
                       <td colSpan={colSpan} className="border-t border-slate-100/80 px-4 py-3 sm:px-5">
                         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                          {d.name || "Driver"} — detail
+                          {t("pages.subSettlements.driverDetailSuffix", { name: d.name || t("pages.subSettlements.driverFallback") })}
                         </p>
                         <DriverRowDetailPanel driver={d} visibleInTable={visibleKeySet} />
                       </td>
@@ -401,7 +405,7 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
               <tr>
                 <td className={`${tdClass} bg-slate-50/90`} />
                 <td className={`${tdClass} sticky left-10 z-10 min-w-[120px] bg-slate-50/90 text-slate-800 shadow-[4px_0_8px_-4px_rgba(15,23,42,0.06)]`}>
-                  Total
+                  {t("pages.subSettlements.totalRow")}
                 </td>
                 {visibleColumns.map((col) => (
                   <MetricCells key={col.key} col={col} footer={footer} rowKind="foot" />
@@ -422,7 +426,7 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
 
       {drivers.length === 0 && (
         <p className="border-t border-slate-100 p-4 text-sm text-slate-500">
-          No driver payouts linked to this settlement. Run Refresh settlements on the list page.
+          {t("pages.subSettlements.noDriverPayoutsLinked")}
         </p>
       )}
     </div>

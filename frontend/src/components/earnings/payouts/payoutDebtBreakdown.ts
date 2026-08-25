@@ -4,6 +4,7 @@ import type {
   PayoutDebtAdjustment,
   PriorDebtOrigin,
 } from "../../../api/earnings";
+import i18n from "../../../i18n";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
 import type { FeeLadderStepDef } from "./payoutFeeBreakdown";
 
@@ -16,15 +17,16 @@ function toNum(value: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-const DEBT_ADJUSTMENT_LABELS: Record<DebtAdjustType, string> = {
-  forgive: "Debt forgiven",
-  cash_received: "Cash received",
-  adjust: "Manual debt adjustment",
-  carry_forward: "Debt carry forward",
+const DEBT_ADJUSTMENT_LABEL_KEYS: Record<DebtAdjustType, string> = {
+  forgive: "debtForgiven",
+  cash_received: "cashReceived",
+  adjust: "manualDebtAdjustment",
+  carry_forward: "debtCarryForward",
 };
 
 export function formatDebtAdjustmentLabel(type: DebtAdjustType): string {
-  return DEBT_ADJUSTMENT_LABELS[type] ?? type;
+  const key = DEBT_ADJUSTMENT_LABEL_KEYS[type];
+  return key ? i18n.t(`pages.earningsPayouts.detail.${key}`) : type;
 }
 
 /** Positive = debt reduced (good for driver). */
@@ -49,7 +51,12 @@ export function formatDebtRemainingHint(adj: PayoutDebtAdjustment): string | und
   const prev = adj.previous_remaining_debt;
   const next = adj.new_remaining_debt;
   if (prev != null && next != null) {
-    parts.push(`Remaining ${round2(toNum(prev)).toFixed(2)} → ${round2(toNum(next)).toFixed(2)} RON`);
+    parts.push(
+      i18n.t("pages.earningsPayouts.detail.remainingRonArrow", {
+        prev: round2(toNum(prev)).toFixed(2),
+        next: round2(toNum(next)).toFixed(2),
+      }),
+    );
   }
   if (adj.reason?.trim()) parts.push(adj.reason.trim());
   return parts.length > 0 ? parts.join(" · ") : undefined;
@@ -72,7 +79,7 @@ export function buildDebtAdjustmentLadderSteps(
   options: { isLoading?: boolean } = {},
 ): FeeLadderStepDef[] {
   if (options.isLoading) {
-    return [{ kind: "loading", label: "Loading debt adjustments…", amount: 0 }];
+    return [{ kind: "loading", label: i18n.t("pages.earningsPayouts.detail.loadingDebtAdjustments"), amount: 0 }];
   }
 
   const steps: FeeLadderStepDef[] = [];
@@ -83,7 +90,7 @@ export function buildDebtAdjustmentLadderSteps(
         kind: "neutral",
         label: buildDebtAdjustmentStepLabel(adj, multiPlatform),
         amount: 0,
-        hint: formatDebtRemainingHint(adj) ?? "Debt allocation recalculated for this driver",
+        hint: formatDebtRemainingHint(adj) ?? i18n.t("pages.earningsPayouts.detail.debtAllocationRecalculated"),
       });
       continue;
     }
@@ -139,7 +146,7 @@ export function buildDebtAdjustmentCardLines(
     const increase = round2(toNum(adj.new_remaining_debt) - toNum(adj.previous_remaining_debt));
     let amountLabel = "—";
     if (adj.adjustment_type === "carry_forward") {
-      amountLabel = "Recalculated";
+      amountLabel = i18n.t("pages.earningsPayouts.detail.recalculatedLabel");
     } else if (reduction > 0.02) {
       amountLabel = `−${reduction.toFixed(2)} RON`;
     } else if (increase > 0.02) {
@@ -186,12 +193,12 @@ export function shouldShowListDebtContext(
 }
 
 export function formatListRemainingDebtLine(remaining: number): string {
-  return `Remaining: ${round2(remaining).toFixed(2)} RON`;
+  return i18n.t("pages.earningsPayouts.detail.remainingRonLine", { amount: round2(remaining).toFixed(2) });
 }
 
 export function formatListDebtAdjustmentSummary(adjustedTotal: number): string | null {
   if (adjustedTotal <= 0.02) return null;
-  return `Adjusted −${round2(adjustedTotal).toFixed(2)} RON this week`;
+  return i18n.t("pages.earningsPayouts.detail.adjustedThisWeekLine", { amount: round2(adjustedTotal).toFixed(2) });
 }
 
 function formatShortPeriod(startIso: string, endIso: string): string {
@@ -207,7 +214,7 @@ function formatShortPeriod(startIso: string, endIso: string): string {
 /** Week 1: negative earnings became debt. */
 export function formatNegativeEarningsDebtDetected(amount: number): string | null {
   if (amount <= 0.02) return null;
-  return `Negative earnings detected — debt ${round2(amount).toFixed(2)} RON`;
+  return i18n.t("pages.earningsPayouts.detail.negativeEarningsDetectedShort", { amount: round2(amount).toFixed(2) });
 }
 
 /**
@@ -218,14 +225,17 @@ export function formatPreviousWeekDebtDeductionLabel(
   amount: number,
   origins: PriorDebtOrigin[] | null | undefined,
 ): string {
-  if (amount <= 0.02) return "Previous week debt deducted";
+  if (amount <= 0.02) return i18n.t("pages.earningsPayouts.detail.previousWeekDebtDeductedFallback");
   const primary = origins?.[0];
   if (primary) {
     const period = formatShortPeriod(primary.period_start, primary.period_end);
-    const extra = (origins?.length ?? 0) > 1 ? ` (+${(origins!.length - 1)} more)` : "";
-    return `Previous week debt deducted (${period}${extra})`;
+    const extra =
+      (origins?.length ?? 0) > 1
+        ? i18n.t("pages.earningsPayouts.detail.moreOriginsSuffix", { count: origins!.length - 1 })
+        : "";
+    return i18n.t("pages.earningsPayouts.detail.previousWeekDebtDeductedWithPeriod", { period, extra });
   }
-  return "Previous week debt deducted";
+  return i18n.t("pages.earningsPayouts.detail.previousWeekDebtDeductedFallback");
 }
 
 export function formatPreviousWeekDebtDeductionHint(
@@ -237,9 +247,9 @@ export function formatPreviousWeekDebtDeductionHint(
   if (primary) {
     const period = formatShortPeriod(primary.period_start, primary.period_end);
     const originAmt = round2(toNum(primary.original_debt)).toFixed(2);
-    return `−${amt} RON from this week's earnings paid debt from ${period} (origin ${originAmt} RON negative earnings)`;
+    return i18n.t("pages.earningsPayouts.detail.previousWeekDebtHintWithPeriod", { amount: amt, period, originAmt });
   }
-  return `−${amt} RON from this week's earnings paid toward older negative-earnings debt`;
+  return i18n.t("pages.earningsPayouts.detail.previousWeekDebtHintNoPeriod", { amount: amt });
 }
 
 export function formatListPreviousDebtDeductionLine(
@@ -247,21 +257,24 @@ export function formatListPreviousDebtDeductionLine(
   origins: PriorDebtOrigin[] | null | undefined,
 ): string | null {
   if (debtApplied <= 0.02) return null;
-  return `${formatPreviousWeekDebtDeductionLabel(debtApplied, origins)} −${round2(debtApplied).toFixed(2)} RON`;
+  return i18n.t("pages.earningsPayouts.detail.previousDebtDeductionLine", {
+    label: formatPreviousWeekDebtDeductionLabel(debtApplied, origins),
+    amount: round2(debtApplied).toFixed(2),
+  });
 }
 
 /** Clearer Week-1 wording for the ladder. */
 export function formatNegativeEarningsBecameDebtLabel(amount: number): string {
-  return `This week's negative earnings became debt (−${round2(amount).toFixed(2)} RON)`;
+  return i18n.t("pages.earningsPayouts.detail.negativeEarningsBecameDebtLabel", { amount: round2(amount).toFixed(2) });
 }
 
 export function formatNegativeEarningsBecameDebtHint(amount: number): string {
-  return `Week result ${round2(-amount).toFixed(2)} RON is recorded as driver debt and will be deducted from a future positive week.`;
+  return i18n.t("pages.earningsPayouts.detail.negativeEarningsBecameDebtHint", { amount: round2(-amount).toFixed(2) });
 }
 
 export function formatRemainingDebtAfterDeductionLabel(remaining: number): string {
-  if (remaining <= 0.02) return "Previous debt fully cleared this week";
-  return `Remaining previous debt after this week`;
+  if (remaining <= 0.02) return i18n.t("pages.earningsPayouts.detail.previousDebtFullyCleared");
+  return i18n.t("pages.earningsPayouts.detail.remainingPreviousDebtAfterWeek");
 }
 
 export function formatRemainingDebtAfterDeductionHint(
@@ -269,14 +282,17 @@ export function formatRemainingDebtAfterDeductionHint(
   origins: PriorDebtOrigin[] | null | undefined,
 ): string {
   if (remaining <= 0.02) {
-    return "No older negative-earnings debt left to collect.";
+    return i18n.t("pages.earningsPayouts.detail.noOlderDebtLeft");
   }
   const primary = origins?.[0];
   if (primary) {
     const period = formatShortPeriod(primary.period_start, primary.period_end);
-    return `${round2(remaining).toFixed(2)} RON still owed from prior weeks (e.g. ${period}).`;
+    return i18n.t("pages.earningsPayouts.detail.remainingOwedFromPriorWeeksWithPeriod", {
+      amount: round2(remaining).toFixed(2),
+      period,
+    });
   }
-  return `${round2(remaining).toFixed(2)} RON still owed from prior weeks.`;
+  return i18n.t("pages.earningsPayouts.detail.remainingOwedFromPriorWeeks", { amount: round2(remaining).toFixed(2) });
 }
 
 export function formatFinalPayoutDebtLabel(params: {
@@ -285,12 +301,12 @@ export function formatFinalPayoutDebtLabel(params: {
   finalNet: number;
 }): string {
   if (params.newPeriodDebt > 0.02 || (params.isDebtPayout && params.finalNet < -0.02)) {
-    return "No payout — debt carried to next week";
+    return i18n.t("pages.earningsPayouts.detail.noPayoutDebtCarriedShort");
   }
   if (params.isDebtPayout && params.finalNet <= 0.02) {
-    return "No payout — debt outstanding";
+    return i18n.t("pages.earningsPayouts.detail.noPayoutDebtOutstanding");
   }
-  return "Final net payout (payable)";
+  return i18n.t("pages.earningsPayouts.detail.finalNetPayoutPayable");
 }
 
 /** Short formula under the final line so the math is obvious. */
@@ -308,19 +324,29 @@ export function formatPayoutDebtFormulaHint(params: {
   const finalNet = round2(params.finalNet);
 
   if (created > 0.02) {
-    return `${(-created).toFixed(2)} RON negative earnings → debt created · payable this week 0.00 RON`;
+    return i18n.t("pages.earningsPayouts.detail.negativeEarningsDebtCreatedFormula", {
+      amount: (-created).toFixed(2),
+    });
   }
   if (applied > 0.02) {
     const before = round2(finalNet + applied);
     const primary = params.origins?.[0];
     const period = primary
-      ? ` from ${formatShortPeriod(primary.period_start, primary.period_end)}`
+      ? i18n.t("pages.earningsPayouts.detail.formulaFromPeriod", {
+          period: formatShortPeriod(primary.period_start, primary.period_end),
+        })
       : "";
     const rem =
       params.remainingDebt > 0.02
-        ? ` · remaining debt ${round2(params.remainingDebt).toFixed(2)} RON`
-        : " · previous debt cleared";
-    return `${before.toFixed(2)} − ${applied.toFixed(2)} previous debt${period} = ${finalNet.toFixed(2)} RON${rem}`;
+        ? i18n.t("pages.earningsPayouts.detail.formulaRemainingDebt", { amount: round2(params.remainingDebt).toFixed(2) })
+        : i18n.t("pages.earningsPayouts.detail.formulaPreviousDebtCleared");
+    return i18n.t("pages.earningsPayouts.detail.payoutFormulaWithDebt", {
+      before: before.toFixed(2),
+      applied: applied.toFixed(2),
+      period,
+      final: finalNet.toFixed(2),
+      remaining: rem,
+    });
   }
   if (Math.abs(earnings) > 0.02 && Math.abs(earnings - finalNet) <= 0.05) {
     return undefined;
@@ -360,9 +386,9 @@ export function buildDebtStoryLadderSteps(params: {
     });
     steps.push({
       kind: "neutral",
-      label: "Payable this week (before next-week carry)",
+      label: i18n.t("pages.earningsPayouts.detail.payableThisWeekBeforeCarry"),
       amount: 0,
-      hint: "No cash payout while this week's result is negative debt.",
+      hint: i18n.t("pages.earningsPayouts.detail.noCashPayoutNegativeHint"),
     });
     return steps;
   }

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementDetail } from "../../../../api/subcontractorPayouts";
 import { formatCurrency } from "../../../../utils/currency";
 import { transitionDefault } from "../../../../theme/classNames";
@@ -38,6 +39,7 @@ export function SettlementDetailHeader({
   onExportPdf,
   onMarkPaid,
 }: SettlementDetailHeaderProps) {
+  const { t } = useTranslation();
   const status = settlementDetailStatusDisplay(settlement.status);
 
   return (
@@ -58,16 +60,16 @@ export function SettlementDetailHeader({
             </div>
           }
           breadcrumbs={[
-            { label: "Dashboard", to: "/dashboard" },
-            { label: "Earnings", to: "/earnings" },
-            { label: "Subcontractor settlements", to: "/earnings/subcontractors/settlements" },
+            { label: t("nav.dashboard"), to: "/dashboard" },
+            { label: t("nav.earnings"), to: "/earnings" },
+            { label: t("pages.subSettlements.title"), to: "/earnings/subcontractors/settlements" },
             { label: settlement.subcontractor_name },
           ]}
           className="border-0 bg-transparent px-0 py-4 sm:py-4 [&_nav]:mb-1.5 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:leading-tight [&_h1]:tracking-tight [&_h1]:text-slate-900"
           actions={
             <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-end">
               <div className="text-left sm:text-right">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Payable</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{t("pages.subSettlements.payableKpi")}</p>
                 <p
                   className="mt-0.5 text-xl font-semibold tabular-nums text-slate-900"
                   style={{ fontFeatureSettings: '"tnum"' }}
@@ -76,7 +78,7 @@ export function SettlementDetailHeader({
                 </p>
                 {settlement.paid_amount != null && settlement.status === "paid" && (
                   <p className="mt-1 text-xs text-slate-500">
-                    Paid {formatCurrency(Number(settlement.paid_amount))}
+                    {t("pages.subSettlements.paidAmountLine", { amount: formatCurrency(Number(settlement.paid_amount)) })}
                   </p>
                 )}
               </div>
@@ -87,7 +89,7 @@ export function SettlementDetailHeader({
                   onClick={onExportCsv}
                   className={outlineBtnClass}
                 >
-                  {csvBusy ? "Exporting…" : "Export CSV"}
+                  {csvBusy ? t("pages.subSettlements.exportingMenu") : t("pages.subSettlements.exportCsvButton")}
                 </button>
                 <button
                   type="button"
@@ -95,11 +97,11 @@ export function SettlementDetailHeader({
                   onClick={onExportPdf}
                   className={outlineBtnClass}
                 >
-                  {pdfBusy ? "Exporting…" : "Export PDF"}
+                  {pdfBusy ? t("pages.subSettlements.exportingMenu") : t("pages.subSettlements.exportPdfButton")}
                 </button>
                 {canPay && (
                   <button type="button" disabled={payPending} onClick={onMarkPaid} className={primaryBtnClass}>
-                    {payPending ? "Paying…" : "Mark as paid"}
+                    {payPending ? t("pages.earningsPayouts.payingRowButton") : t("pages.subSettlements.markAsPaidButton")}
                   </button>
                 )}
               </div>
@@ -118,12 +120,13 @@ export function SettlementDetailHeader({
 
 /** Shown on error state only */
 export function SettlementDetailBackLink() {
+  const { t } = useTranslation();
   return (
     <Link
       to="/earnings/subcontractors/settlements"
       className="text-sm font-medium text-brand hover:underline"
     >
-      Back to settlements
+      {t("pages.subSettlements.backToSettlements")}
     </Link>
   );
 }

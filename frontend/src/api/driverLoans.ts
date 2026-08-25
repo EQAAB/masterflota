@@ -1,4 +1,5 @@
 import { api } from "../lib/api";
+import i18n from "../i18n";
 
 export type DriverLoanStatus = "active" | "paid" | "written_off";
 export type LoanRepaymentType = "from_payout" | "cash" | "forgive";
@@ -188,11 +189,11 @@ export function getDriverWeekLoanRepayments(driverId: string, from: string, to: 
 export function loanRepaymentTypeLabel(type: LoanRepaymentType): string {
   switch (type) {
     case "from_payout":
-      return "From payout";
+      return i18n.t("pages.driverLoans.repaymentTypeFromPayout");
     case "cash":
-      return "Cash / bank";
+      return i18n.t("pages.driverLoans.repaymentTypeCash");
     case "forgive":
-      return "Forgive / write-off";
+      return i18n.t("pages.driverLoans.repaymentTypeForgive");
     default:
       return type;
   }
@@ -201,11 +202,11 @@ export function loanRepaymentTypeLabel(type: LoanRepaymentType): string {
 export function loanStatusLabel(status: DriverLoanStatus): string {
   switch (status) {
     case "active":
-      return "Active";
+      return i18n.t("pages.driverLoans.statusActive");
     case "paid":
-      return "Paid off";
+      return i18n.t("pages.driverLoans.statusPaidOff");
     case "written_off":
-      return "Written off";
+      return i18n.t("pages.driverLoans.statusWrittenOff");
     default:
       return status;
   }

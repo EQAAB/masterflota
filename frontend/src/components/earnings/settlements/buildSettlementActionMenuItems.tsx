@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 import type { SubcontractorSettlementRow } from "../../../api/earnings";
+import i18n from "../../../i18n";
 import { canMarkSettlementPaid } from "./settlementsDisplayUtils";
 
 function MenuIconWrap({ children, tone }: { children: ReactNode; tone: "brand" | "muted" | "success" }) {
@@ -64,7 +65,7 @@ export function buildSettlementActionMenuItems({
   return [
     {
       id: "view-details",
-      label: "View details",
+      label: i18n.t("pages.subSettlements.viewDetailsMenu"),
       icon: (
         <MenuIconWrap tone="brand">
           <ViewIcon />
@@ -75,7 +76,7 @@ export function buildSettlementActionMenuItems({
     },
     {
       id: "mark-paid",
-      label: "Mark paid",
+      label: i18n.t("pages.subSettlements.markPaidButton"),
       icon: (
         <MenuIconWrap tone="success">
           <CheckIcon />
@@ -87,7 +88,7 @@ export function buildSettlementActionMenuItems({
     },
     {
       id: "export-settlement",
-      label: exportBusy ? "Exporting…" : "Export settlement",
+      label: exportBusy ? i18n.t("pages.subSettlements.exportingMenu") : i18n.t("pages.subSettlements.exportSettlementMenu"),
       icon: (
         <MenuIconWrap tone="muted">
           <ExportIcon />

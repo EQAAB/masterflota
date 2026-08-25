@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Papa from "papaparse";
 import { usePermission } from "../../lib/permissions";
 import { exportPdfFromElement } from "../../lib/exportPdfFromElement";
@@ -22,6 +23,7 @@ function sumDrivers(rows: SubcontractorSettlementDetailDriver[], key: keyof Subc
 }
 
 export function SubcontractorSettlementDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const canAccess = usePermission("subcontractors.settle");
   const qc = useQueryClient();
@@ -39,11 +41,11 @@ export function SubcontractorSettlementDetailPage() {
   const payMut = useMutation({
     mutationFn: () => bulkUpdateSubcontractorPayouts({ ids: [id!], paymentStatus: "paid" }),
     onSuccess: () => {
-      setMsg("Marked as paid.");
+      setMsg(t("pages.subSettlements.markedAsPaidMsg"));
       void qc.invalidateQueries({ queryKey: ["subcontractor-settlement-detail", id] });
       void qc.invalidateQueries({ queryKey: ["earnings", "subcontractor-settlements"] });
     },
-    onError: () => setMsg("Mark paid failed."),
+    onError: () => setMsg(t("pages.subSettlements.markPaidFailedMsg")),
   });
 
   async function exportCsv() {
@@ -93,13 +95,13 @@ export function SubcontractorSettlementDetailPage() {
   }
 
   if (!canAccess) {
-    return <p className="p-6 text-slate-500">You do not have access.</p>;
+    return <p className="p-6 text-slate-500">{t("common.noAccess")}</p>;
   }
 
   if (q.isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
-        <p className="text-sm text-slate-500">Loading settlement…</p>
+        <p className="text-sm text-slate-500">{t("pages.subSettlements.loadingSettlement")}</p>
       </div>
     );
   }
@@ -107,7 +109,7 @@ export function SubcontractorSettlementDetailPage() {
   if (q.isError || !q.data) {
     return (
       <div className="mx-auto max-w-[1600px] p-6 sm:p-8">
-        <p className="text-sm text-red-700">Failed to load settlement detail.</p>
+        <p className="text-sm text-red-700">{t("pages.subSettlements.failedToLoadDetail")}</p>
         <div className="mt-2">
           <SettlementDetailBackLink />
         </div>

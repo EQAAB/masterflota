@@ -121,24 +121,24 @@ export function InvoiceFormPage() {
             to="/invoicing"
             className={`${btnSecondary} !mb-3 !inline-flex !min-h-0 !px-3 !py-1.5 !text-xs`}
           >
-            ← Invoices
+            ← {t("pages.invoiceDetail.backToInvoices")}
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-ink">{t("pages.invoiceForm.title")}</h1>
         </header>
 
         {createMutation.error && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {(createMutation.error as Error)?.message ?? "Failed to create invoice"}
+            {(createMutation.error as Error)?.message ?? t("pages.invoiceForm.failedToCreate")}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Series & dates */}
           <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">Invoice details</h2>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceDetail.invoiceDetailsTitle")}</h2>
             <div className="grid gap-4 sm:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Series</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.seriesLabel")}</label>
                 <select
                   value={form.seriesId}
                   onChange={(e) => patch("seriesId", e.target.value)}
@@ -147,21 +147,21 @@ export function InvoiceFormPage() {
                 >
                   {series.filter((s) => s.is_active).map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.prefix} (next: {s.next_number})
+                      {t("pages.invoiceForm.seriesNextNumber", { prefix: s.prefix, number: s.next_number })}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Issue date</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.issueDateLabel")}</label>
                 <input type="date" value={form.issueDate} onChange={(e) => patch("issueDate", e.target.value)} className={INPUT_CLS} required />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Due date</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.dueDateLabel")}</label>
                 <input type="date" value={form.dueDate} onChange={(e) => patch("dueDate", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Delivery date</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.deliveryDateLabel")}</label>
                 <input type="date" value={form.deliveryDate} onChange={(e) => patch("deliveryDate", e.target.value)} className={INPUT_CLS} />
               </div>
             </div>
@@ -169,60 +169,60 @@ export function InvoiceFormPage() {
 
           {/* Buyer */}
           <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">Buyer</h2>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceDetail.buyerTitle")}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Company / Name *</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.companyNameLabel")}</label>
                 <input value={form.buyerName} onChange={(e) => patch("buyerName", e.target.value)} className={INPUT_CLS} required />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">CUI</label>
-                <input value={form.buyerCui} onChange={(e) => patch("buyerCui", e.target.value)} className={INPUT_CLS} placeholder="e.g. RO12345678" />
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.cuiLabel")}</label>
+                <input value={form.buyerCui} onChange={(e) => patch("buyerCui", e.target.value)} className={INPUT_CLS} placeholder={t("pages.invoiceForm.cuiPlaceholder")} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Reg. Com.</label>
-                <input value={form.buyerRegCom} onChange={(e) => patch("buyerRegCom", e.target.value)} className={INPUT_CLS} placeholder="J40/1234/2020" />
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.regComLabel")}</label>
+                <input value={form.buyerRegCom} onChange={(e) => patch("buyerRegCom", e.target.value)} className={INPUT_CLS} placeholder={t("pages.invoiceForm.regComPlaceholder")} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">County</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.countyLabel")}</label>
                 <input value={form.buyerAddressCounty} onChange={(e) => patch("buyerAddressCounty", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">City</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.cityLabel")}</label>
                 <input value={form.buyerAddressCity} onChange={(e) => patch("buyerAddressCity", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Street</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.streetLabel")}</label>
                 <input value={form.buyerAddressStreet} onChange={(e) => patch("buyerAddressStreet", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Number</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoices.colNumber")}</label>
                 <input value={form.buyerAddressNumber} onChange={(e) => patch("buyerAddressNumber", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">ZIP</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.zipLabel")}</label>
                 <input value={form.buyerAddressZip} onChange={(e) => patch("buyerAddressZip", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Email</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.emailLabel")}</label>
                 <input type="email" value={form.buyerEmail} onChange={(e) => patch("buyerEmail", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Phone</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.phoneLabel")}</label>
                 <input value={form.buyerPhone} onChange={(e) => patch("buyerPhone", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Bank name</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.bankNameLabel")}</label>
                 <input value={form.buyerBankName} onChange={(e) => patch("buyerBankName", e.target.value)} className={INPUT_CLS} />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">IBAN</label>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceForm.ibanLabel")}</label>
                 <input value={form.buyerBankIban} onChange={(e) => patch("buyerBankIban", e.target.value)} className={INPUT_CLS} />
               </div>
               <div className="flex items-end gap-2">
                 <label className="flex items-center gap-2 text-sm text-ink">
                   <input type="checkbox" checked={form.buyerIsVatPayer} onChange={(e) => patch("buyerIsVatPayer", e.target.checked)} className="rounded" />
-                  VAT payer
+                  {t("pages.invoiceDetail.vatPayerLabel")}
                 </label>
               </div>
             </div>
@@ -231,32 +231,32 @@ export function InvoiceFormPage() {
           {/* Lines */}
           <div className="rounded-xl border border-border bg-white p-5 shadow-card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">Line items</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">{t("pages.invoiceForm.lineItemsTitle")}</h2>
               <button type="button" onClick={addLine} className={`${btnSecondary} !text-xs`}>
-                + Add line
+                {t("pages.invoiceForm.addLineButton")}
               </button>
             </div>
             <div className="space-y-3">
               {lines.map((line, idx) => (
                 <div key={idx} className="grid items-end gap-3 rounded-lg border border-border/50 bg-surface p-3 sm:grid-cols-[2fr_80px_80px_100px_80px_40px]">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Description</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.colDescription")}</label>
                     <input value={line.description} onChange={(e) => updateLine(idx, { description: e.target.value })} className={INPUT_CLS} required />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Qty</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.colQty")}</label>
                     <input type="number" step="0.01" min="0" value={line.quantity} onChange={(e) => updateLine(idx, { quantity: parseFloat(e.target.value) || 0 })} className={INPUT_CLS} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Unit</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.colUnit")}</label>
                     <input value={line.unit ?? "buc"} onChange={(e) => updateLine(idx, { unit: e.target.value })} className={INPUT_CLS} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Unit price</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.colUnitPrice")}</label>
                     <input type="number" step="0.01" min="0" value={line.unitPrice} onChange={(e) => updateLine(idx, { unitPrice: parseFloat(e.target.value) || 0 })} className={INPUT_CLS} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">VAT %</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.colVatPercent")}</label>
                     <select value={line.vatRate} onChange={(e) => updateLine(idx, { vatRate: parseFloat(e.target.value) })} className={INPUT_CLS}>
                       <option value={19}>19%</option>
                       <option value={9}>9%</option>
@@ -269,7 +269,7 @@ export function InvoiceFormPage() {
                       type="button"
                       onClick={() => removeLine(idx)}
                       className="rounded p-2 text-ink-muted hover:bg-red-50 hover:text-red-600"
-                      title="Remove line"
+                      title={t("pages.invoiceForm.removeLineTitle")}
                       disabled={lines.length <= 1}
                     >
                       ×
@@ -281,21 +281,21 @@ export function InvoiceFormPage() {
 
             <div className="mt-4 flex justify-end">
               <div className="space-y-1 text-right text-sm">
-                <p className="text-ink-muted">Net: <span className="font-medium text-ink">{totalNet.toFixed(2)} {form.currency}</span></p>
-                <p className="text-ink-muted">VAT: <span className="font-medium text-ink">{totalVat.toFixed(2)} {form.currency}</span></p>
-                <p className="text-lg font-bold text-ink">Total: {totalAmount.toFixed(2)} {form.currency}</p>
+                <p className="text-ink-muted">{t("pages.invoiceForm.netLinePrefix")} <span className="font-medium text-ink">{totalNet.toFixed(2)} {form.currency}</span></p>
+                <p className="text-ink-muted">{t("pages.invoiceForm.vatLinePrefix")} <span className="font-medium text-ink">{totalVat.toFixed(2)} {form.currency}</span></p>
+                <p className="text-lg font-bold text-ink">{t("pages.invoiceForm.totalLinePrefix")} {totalAmount.toFixed(2)} {form.currency}</p>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           <div className="rounded-xl border border-border bg-white p-5 shadow-card">
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Notes</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">{t("pages.invoiceDetail.notesLabel")}</label>
             <textarea value={form.notes} onChange={(e) => patch("notes", e.target.value)} rows={3} className={INPUT_CLS} />
           </div>
 
           <div className="flex justify-end gap-3">
-            <Link to="/invoicing" className={btnSecondary}>Cancel</Link>
+            <Link to="/invoicing" className={btnSecondary}>{t("common.cancel")}</Link>
             <button type="submit" className={btnPrimary} disabled={createMutation.isPending}>
               {createMutation.isPending ? t("common.saving") : t("pages.invoiceForm.create")}
             </button>

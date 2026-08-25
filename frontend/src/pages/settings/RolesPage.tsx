@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   createRole,
   deleteRole,
@@ -19,6 +20,7 @@ import { dashboardPage } from "../../theme/classNames";
 const emptyCreateForm: CreateRoleForm = { name: "", description: "" };
 
 export function RolesPage() {
+  const { t } = useTranslation();
   const canView = useAnyPermission("roles.manage", "users.manage");
   const canManage = usePermission("roles.manage");
   const queryClient = useQueryClient();
@@ -80,7 +82,7 @@ export function RolesPage() {
   };
 
   const handleDelete = (role: { id: string; name: string }) => {
-    if (!window.confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(t("pages.roles.deleteRoleConfirm", { name: role.name }))) return;
     deleteMut.mutate(role.id);
   };
 
@@ -88,7 +90,7 @@ export function RolesPage() {
     return (
       <div className="fm-settings-roles flex min-h-full flex-1 flex-col">
         <div className={dashboardPage}>
-          <p className="text-ink-muted">You do not have access to view roles.</p>
+          <p className="text-ink-muted">{t("pages.roles.noAccessRoles")}</p>
         </div>
       </div>
     );
@@ -104,7 +106,7 @@ export function RolesPage() {
 
         {(rolesQuery.isError || permsQuery.isError) && (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            Failed to load roles. Check your connection and try again.
+            {t("pages.roles.failedToLoadRoles")}
           </p>
         )}
 

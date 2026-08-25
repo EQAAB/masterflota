@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementRow } from "../../../api/earnings";
 import { formatCurrency } from "../../../utils/currency";
 import { transitionDefault } from "../../../theme/classNames";
@@ -115,27 +116,29 @@ function DetailField({ label, value, tint = "slate" }: { label: string; value: s
 }
 
 function SettlementRowDetailsPanel({ row }: { row: SubcontractorSettlementRow }) {
+  const { t } = useTranslation();
   return (
     <div className="border-b border-slate-200/60 bg-slate-50/80 px-4 py-3.5 sm:px-5">
       <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-        Additional breakdown
+        {t("pages.subSettlements.additionalBreakdownTitle")}
       </p>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-        <DetailField label="Tips" tint="emerald" value={formatCurrency(asSettlementNumber(row.total_tips))} />
-        <DetailField label="Vehicle rent" tint="slate" value={formatCurrency(asSettlementNumber(row.total_vehicle_rent))} />
-        <DetailField label="Acct. fee" tint="teal" value={formatCurrency(asSettlementNumber(row.total_account_opening_fee))} />
-        <DetailField label="Platform fee" tint="orange" value={formatCurrency(asSettlementNumber(row.total_platform_fees))} />
-        <DetailField label="Daily cash" tint="blue" value={formatCurrency(asSettlementNumber(row.total_daily_cash))} />
-        <DetailField label="Custom ded." tint="purple" value={formatCurrency(asSettlementNumber(row.total_custom_deductions))} />
-        <DetailField label="Custom add." tint="indigo" value={formatCurrency(asSettlementNumber(row.total_custom_additions))} />
-        <DetailField label="Raw net" tint="slate" value={formatCurrency(asSettlementNumber(row.total_raw_net))} />
-        <DetailField label="Debt applied" tint="orange" value={formatCurrency(asSettlementNumber(row.total_debt_applied))} />
+        <DetailField label={t("pages.earningsPayouts.detail.tips")} tint="emerald" value={formatCurrency(asSettlementNumber(row.total_tips))} />
+        <DetailField label={t("pages.earningsPayouts.detail.vehicleRent")} tint="slate" value={formatCurrency(asSettlementNumber(row.total_vehicle_rent))} />
+        <DetailField label={t("pages.subSettlements.acctFeeLabel")} tint="teal" value={formatCurrency(asSettlementNumber(row.total_account_opening_fee))} />
+        <DetailField label={t("pages.subSettlements.platformFeeLabel")} tint="orange" value={formatCurrency(asSettlementNumber(row.total_platform_fees))} />
+        <DetailField label={t("pages.subSettlements.dailyCashLabel")} tint="blue" value={formatCurrency(asSettlementNumber(row.total_daily_cash))} />
+        <DetailField label={t("pages.subSettlements.customDedLabel")} tint="purple" value={formatCurrency(asSettlementNumber(row.total_custom_deductions))} />
+        <DetailField label={t("pages.subSettlements.customAddLabel")} tint="indigo" value={formatCurrency(asSettlementNumber(row.total_custom_additions))} />
+        <DetailField label={t("pages.subSettlements.rawNetLabel")} tint="slate" value={formatCurrency(asSettlementNumber(row.total_raw_net))} />
+        <DetailField label={t("pages.subSettlements.debtAppliedLabel")} tint="orange" value={formatCurrency(asSettlementNumber(row.total_debt_applied))} />
       </div>
     </div>
   );
 }
 
 function PayableCell({ row }: { row: SubcontractorSettlementRow }) {
+  const { t } = useTranslation();
   const payable = settlementPayable(row);
   const paidMismatch =
     row.payment_status === "paid" &&
@@ -150,7 +153,7 @@ function PayableCell({ row }: { row: SubcontractorSettlementRow }) {
           className="mt-1 block text-[10px] font-normal tabular-nums whitespace-nowrap text-amber-700"
           style={tnumStyle}
         >
-          Paid {formatCurrency(asSettlementNumber(row.paid_amount))}
+          {t("pages.subSettlements.paidAmountLine", { amount: formatCurrency(asSettlementNumber(row.paid_amount)) })}
         </span>
       )}
     </span>
@@ -158,6 +161,7 @@ function PayableCell({ row }: { row: SubcontractorSettlementRow }) {
 }
 
 function SubcontractorCell({ row }: { row: SubcontractorSettlementRow }) {
+  const { t } = useTranslation();
   if (row.id) {
     return (
       <Link
@@ -170,7 +174,7 @@ function SubcontractorCell({ row }: { row: SubcontractorSettlementRow }) {
     );
   }
   return (
-    <span className="block truncate text-sm font-semibold text-slate-800" title="Refresh settlements to open detail">
+    <span className="block truncate text-sm font-semibold text-slate-800" title={t("pages.subSettlements.refreshToOpenDetailTitle")}>
       {row.legal_name}
     </span>
   );
@@ -188,14 +192,15 @@ type SettlementsTableProps = {
 };
 
 function GridHeader() {
+  const { t } = useTranslation();
   const headers: { label: string; align: "left" | "right" | "center"; srOnly?: boolean }[] = [
-    { label: "Expand", align: "center", srOnly: true },
-    { label: "Subcontractor", align: "left" },
-    { label: "Drivers", align: "right" },
-    { label: "Gross incl. tips", align: "right" },
-    { label: "Commission", align: "right" },
-    { label: "Payable", align: "right" },
-    { label: "Status", align: "right" },
+    { label: t("pages.subSettlements.expandSr"), align: "center", srOnly: true },
+    { label: t("pages.subSettlements.subcontractorLabel"), align: "left" },
+    { label: t("pages.subSettlements.driversColHeader"), align: "right" },
+    { label: t("pages.subSettlements.grossInclTips"), align: "right" },
+    { label: t("pages.driversList.colCommission"), align: "right" },
+    { label: t("pages.subSettlements.payableKpi"), align: "right" },
+    { label: t("common.status"), align: "right" },
   ];
 
   return (
@@ -229,6 +234,7 @@ function SettlementGridRow({
   expanded: boolean;
   onToggleExpand: () => void;
 }) {
+  const { t } = useTranslation();
   const dimmed = !row.id;
 
   return (
@@ -243,7 +249,7 @@ function SettlementGridRow({
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all duration-150 hover:bg-slate-100 hover:text-brand"
             onClick={onToggleExpand}
             aria-expanded={expanded}
-            aria-label={expanded ? "Hide details" : "Show details"}
+            aria-label={expanded ? t("pages.subSettlements.hideDetailsAria") : t("pages.subSettlements.showDetailsAria")}
           >
             <ChevronIcon className="h-4 w-4" expanded={expanded} />
           </button>
@@ -294,6 +300,7 @@ export function SettlementsTable({
   onActionMenuToggle,
   onRefresh,
 }: SettlementsTableProps) {
+  const { t } = useTranslation();
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
   function toggleExpand(key: string) {
@@ -308,8 +315,8 @@ export function SettlementsTable({
   return (
     <div className={tableCardClass}>
       <div className="border-b border-slate-100 px-4 py-2.5 sm:px-4">
-        <h2 className="text-sm font-semibold text-slate-800">Settlements</h2>
-        <p className="mt-0.5 text-xs text-slate-500">Expand a row for tips, fees, and adjustments.</p>
+        <h2 className="text-sm font-semibold text-slate-800">{t("pages.subSettlements.settlementsSectionTitle")}</h2>
+        <p className="mt-0.5 text-xs text-slate-500">{t("pages.subSettlements.expandRowHint")}</p>
       </div>
 
       {loading && (
@@ -317,27 +324,27 @@ export function SettlementsTable({
           <span
             className="inline-block h-9 w-9 animate-spin rounded-full border-2 border-brand border-t-transparent"
             role="status"
-            aria-label="Loading settlements"
+            aria-label={t("pages.subSettlements.loadingSettlementsAriaLabel")}
           />
-          <p className="text-sm text-ink-muted">Loading settlements…</p>
+          <p className="text-sm text-ink-muted">{t("pages.subSettlements.loadingSettlementsText")}</p>
         </div>
       )}
 
       {!loading && isError && (
         <EmptyState
-          title="Failed to load settlements"
-          description="Check your connection and try refreshing."
-          action={{ label: "Refresh settlements", onClick: onRefresh }}
+          title={t("pages.subSettlements.failedToLoadSettlementsTitle")}
+          description={t("pages.subSettlements.checkConnectionRetry")}
+          action={{ label: t("pages.subSettlements.refreshSettlementsAction"), onClick: onRefresh }}
           className="border-0 shadow-none"
         />
       )}
 
       {!loading && !isError && showEmpty && (
         <EmptyState
-          title="No settlements for this period yet"
-          description="Import earnings or click Refresh settlements to load data."
+          title={t("pages.subSettlements.noSettlementsTitle")}
+          description={t("pages.subSettlements.noSettlementsDesc")}
           illustration={<DocumentIcon className="mx-auto h-12 w-12 text-brand/40" />}
-          action={{ label: "Refresh settlements", onClick: onRefresh }}
+          action={{ label: t("pages.subSettlements.refreshSettlementsAction"), onClick: onRefresh }}
           className="border-0 shadow-none"
         />
       )}

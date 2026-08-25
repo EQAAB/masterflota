@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { btnSecondary, transitionDefault } from "../../../theme/classNames";
 import { FilterChip } from "../../theme/FilterBar";
 
@@ -21,17 +22,18 @@ type PayoutFiltersCardProps = {
 };
 
 export function PayoutFiltersCard({
-  title = "Filters",
+  title,
   hint,
   children,
   footer,
   activeChips,
 }: PayoutFiltersCardProps) {
+  const { t } = useTranslation();
   return (
     <section className={filterCardClass}>
       <div className="mb-3.5 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
+          <h2 className="text-sm font-semibold text-ink">{title ?? t("pages.earningsPayouts.filtersDefaultTitle")}</h2>
           {hint && <p className="mt-0.5 max-w-xl text-xs text-ink-muted">{hint}</p>}
         </div>
       </div>
@@ -39,7 +41,7 @@ export function PayoutFiltersCard({
       {footer && <div className="mt-3.5 border-t border-border/60 pt-3">{footer}</div>}
       {activeChips && activeChips.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t("status.active")}</span>
           {activeChips.map((chip) => (
             <FilterChip key={chip.key} label={chip.label} onRemove={chip.onRemove} />
           ))}

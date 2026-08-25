@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { getOrgLoan } from "../../api/driverLoans";
 import { usePermission } from "../../lib/permissions";
 import { PageHeader } from "../../components/theme/PageHeader";
@@ -10,6 +11,7 @@ import { driverLoanDisplayName, loanStatusBadgeClass } from "../../components/ea
 import { loanStatusLabel } from "../../api/driverLoans";
 
 export function DriverLoanDetailPage() {
+  const { t } = useTranslation();
   const { loanId } = useParams<{ loanId: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -30,26 +32,26 @@ export function DriverLoanDetailPage() {
   };
 
   if (!canView) {
-    return <p className="p-6 text-ink-muted">You do not have access to driver loans.</p>;
+    return <p className="p-6 text-ink-muted">{t("pages.driverLoans.noAccessLoans")}</p>;
   }
 
   if (query.isLoading) {
-    return <p className="p-6 text-ink-muted">Loading loan…</p>;
+    return <p className="p-6 text-ink-muted">{t("pages.driverLoans.loadingLoan")}</p>;
   }
 
   if (query.isError || !loan) {
     return (
       <div className="p-6">
-        <p className="text-danger">Loan not found.</p>
+        <p className="text-danger">{t("pages.driverLoans.loanNotFound")}</p>
         <Link to="/earnings/loans" className="mt-2 inline-block text-sm text-brand hover:underline">
-          Back to driver loans
+          {t("pages.driverLoans.backToDriverLoans")}
         </Link>
       </div>
     );
   }
 
   const driverName = driverLoanDisplayName(loan.driver_first_name, loan.driver_last_name);
-  const title = loan.reference?.trim() || "Cash loan";
+  const title = loan.reference?.trim() || t("pages.driverLoans.cashLoanFallback");
 
   return (
     <div className="flex flex-col flex-1 overflow-auto bg-surface-elevated">
@@ -57,11 +59,14 @@ export function DriverLoanDetailPage() {
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <PageHeader
             title={title}
-            description={`Loan for ${driverName}${loan.driver_phone ? ` · ${loan.driver_phone}` : ""}`}
+            description={t("pages.driverLoans.loanForDriverDescription", {
+              name: driverName,
+              phone: loan.driver_phone ? ` · ${loan.driver_phone}` : "",
+            })}
             breadcrumbs={[
-              { label: "Dashboard", to: "/dashboard" },
-              { label: "Earnings", to: "/earnings" },
-              { label: "Driver loans", to: "/earnings/loans" },
+              { label: t("nav.dashboard"), to: "/dashboard" },
+              { label: t("nav.earnings"), to: "/earnings" },
+              { label: t("pages.driverLoans.driverLoansBreadcrumb"), to: "/earnings/loans" },
               { label: title },
             ]}
             className="border-0 bg-transparent px-0 py-4 sm:py-5"
@@ -71,13 +76,13 @@ export function DriverLoanDetailPage() {
                   to={`/drivers/${loan.driver_id}`}
                   className="inline-flex h-10 items-center rounded-full border border-border/80 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
                 >
-                  Driver profile
+                  {t("pages.driverLoans.driverProfileLink")}
                 </Link>
                 <Link
                   to={`/earnings/payouts?driverId=${encodeURIComponent(loan.driver_id)}`}
                   className="inline-flex h-10 items-center rounded-full border border-border/80 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
                 >
-                  Repay from payout
+                  {t("pages.driverLoans.repayFromPayout")}
                 </Link>
               </div>
             }
@@ -92,7 +97,7 @@ export function DriverLoanDetailPage() {
           >
             {loanStatusLabel(loan.status)}
           </span>
-          <span className="text-sm text-ink-muted">Disbursed {loan.disbursed_at}</span>
+          <span className="text-sm text-ink-muted">{t("pages.driverLoans.disbursedLabel", { date: loan.disbursed_at })}</span>
         </div>
 
         <LoanManageCard
@@ -103,7 +108,7 @@ export function DriverLoanDetailPage() {
         />
 
         <section>
-          <h2 className="text-sm font-semibold text-ink mb-2">Repayment history</h2>
+          <h2 className="text-sm font-semibold text-ink mb-2">{t("pages.driverLoans.repaymentHistoryTitle")}</h2>
           <LoanRepaymentList repayments={loan.repayments ?? []} />
         </section>
 
@@ -112,7 +117,7 @@ export function DriverLoanDetailPage() {
           onClick={() => navigate("/earnings/loans")}
           className="text-sm text-brand hover:underline"
         >
-          Back to all loans
+          {t("pages.driverLoans.backToAllLoans")}
         </button>
       </div>
     </div>

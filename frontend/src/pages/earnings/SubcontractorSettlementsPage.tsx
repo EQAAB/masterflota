@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ActionMenuDropdown } from "../../components/theme/ActionMenuDropdown";
 import { SettlementsPageHeader } from "../../components/earnings/settlements/SettlementsPageHeader";
 import { SettlementsInfoCard } from "../../components/earnings/settlements/SettlementsInfoCard";
@@ -10,6 +11,7 @@ import { settlementRowKey } from "../../components/earnings/settlements/settleme
 import { useSettlementsPageState } from "../../components/earnings/settlements/useSettlementsPageState";
 
 export function SubcontractorSettlementsPage() {
+  const { t } = useTranslation();
   const {
     canAccess,
     periodStart,
@@ -60,7 +62,7 @@ export function SubcontractorSettlementsPage() {
   }, [openMenuRow, exportBusyKey, payMut.isPending, handleViewDetails, handleMarkOnePaid, handleExport]);
 
   if (!canAccess) {
-    return <p className="p-6 text-ink-muted">You do not have access.</p>;
+    return <p className="p-6 text-ink-muted">{t("common.noAccess")}</p>;
   }
 
   return (
@@ -94,11 +96,11 @@ export function SubcontractorSettlementsPage() {
           </div>
         )}
 
-        <section aria-label="Settlement summary">
+        <section aria-label={t("pages.subSettlements.settlementsSectionTitle")}>
           <SettlementsKpiCards summary={query.data ? kpis : undefined} loading={query.isLoading} />
         </section>
 
-        <section aria-label="Settlement list" className="pt-0">
+        <section aria-label={t("pages.subSettlements.settlementsSectionTitle")} className="pt-0">
           <SettlementsTable
           rows={rows}
           loading={query.isLoading}

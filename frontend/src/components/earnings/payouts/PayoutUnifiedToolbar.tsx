@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FilterChip } from "../../theme/FilterBar";
 import { filterInputClass, filterSelectClass } from "./PayoutFiltersCard";
 
@@ -16,23 +17,6 @@ export type PayoutUnifiedToolbarProps = {
   activeChips: { key: string; label: string; onRemove: () => void }[];
 };
 
-const PLATFORM_OPTIONS = [
-  { value: "", label: "All platforms" },
-  { value: "glovo", label: "Glovo" },
-  { value: "bolt", label: "Bolt" },
-  { value: "bolt_taxi", label: "Bolt Taxi" },
-  { value: "uber", label: "Uber" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "", label: "All statuses" },
-  { value: "payable", label: "Ready to pay" },
-  { value: "paid", label: "Paid" },
-  { value: "debt", label: "Debt" },
-  { value: "hold", label: "Hold" },
-  { value: "partial", label: "Partial" },
-];
-
 const fieldWrap = "min-w-0";
 
 export function PayoutUnifiedToolbar({
@@ -48,16 +32,35 @@ export function PayoutUnifiedToolbar({
   onWeekEndChange,
   activeChips,
 }: PayoutUnifiedToolbarProps) {
+  const { t } = useTranslation();
+
+  const PLATFORM_OPTIONS = [
+    { value: "", label: t("pages.earningsPayouts.allPlatformsOption") },
+    { value: "glovo", label: "Glovo" },
+    { value: "bolt", label: "Bolt" },
+    { value: "bolt_taxi", label: "Bolt Taxi" },
+    { value: "uber", label: "Uber" },
+  ];
+
+  const STATUS_OPTIONS = [
+    { value: "", label: t("pages.earningsPayouts.allStatusesOption") },
+    { value: "payable", label: t("pages.earningsPayouts.payoutStatus.payable") },
+    { value: "paid", label: t("pages.earningsPayouts.payoutStatus.paid") },
+    { value: "debt", label: t("pages.earningsPayouts.payoutStatus.debt") },
+    { value: "hold", label: t("pages.earningsPayouts.payoutStatus.hold") },
+    { value: "partial", label: t("pages.earningsPayouts.payoutStatus.partial") },
+  ];
+
   return (
     <div className="fm-payout-filters">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
         <div className={`${fieldWrap} lg:col-span-2`}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Quick search
+            {t("pages.earningsPayouts.quickSearch")}
           </label>
           <input
             type="search"
-            placeholder="Name, phone, platform ID…"
+            placeholder={t("pages.earningsPayouts.quickSearchPlaceholder")}
             className={filterInputClass}
             value={q}
             onChange={(e) => onQChange(e.target.value)}
@@ -65,7 +68,7 @@ export function PayoutUnifiedToolbar({
         </div>
         <div className={fieldWrap}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Status
+            {t("common.status")}
           </label>
           <select className={filterSelectClass} value={status} onChange={(e) => onStatusChange(e.target.value)}>
             {STATUS_OPTIONS.map((o) => (
@@ -77,7 +80,7 @@ export function PayoutUnifiedToolbar({
         </div>
         <div className={fieldWrap}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Platform
+            {t("nav.platform")}
           </label>
           <select
             className={filterSelectClass}
@@ -93,7 +96,7 @@ export function PayoutUnifiedToolbar({
         </div>
         <div className={fieldWrap}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Week start
+            {t("pages.earningsPayouts.weekStartLabel")}
           </label>
           <input
             type="date"
@@ -104,7 +107,7 @@ export function PayoutUnifiedToolbar({
         </div>
         <div className={fieldWrap}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Week end
+            {t("pages.earningsPayouts.weekEndLabel")}
           </label>
           <input
             type="date"
@@ -115,13 +118,13 @@ export function PayoutUnifiedToolbar({
         </div>
         <div className={`${fieldWrap} flex flex-col justify-end`}>
           <label className="mb-1 block truncate text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Subcontractor
+            {t("pages.earningsPayouts.subcontractorLabel")}
           </label>
           <Link
             to="/earnings/subcontractors/settlements"
             className={`${filterSelectClass} flex h-10 min-h-[40px] items-center justify-center text-xs font-medium text-brand hover:bg-white`}
           >
-            Settlements
+            {t("pages.earningsPayouts.settlementsLink")}
           </Link>
         </div>
       </div>

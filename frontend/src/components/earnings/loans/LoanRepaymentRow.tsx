@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import type { DriverLoanRepayment } from "../../../api/driverLoans";
 import { loanRepaymentTypeLabel } from "../../../api/driverLoans";
 import { formatCurrency } from "../../../utils/currency";
 
 export function LoanRepaymentRow({ r }: { r: DriverLoanRepayment }) {
+  const { t } = useTranslation();
   return (
     <li className="flex flex-wrap justify-between gap-2 border-b border-border/60 px-3 py-2.5 last:border-0 bg-white text-sm">
       <div>
@@ -14,7 +16,10 @@ export function LoanRepaymentRow({ r }: { r: DriverLoanRepayment }) {
         )}
         <div className="text-ink tabular-nums mt-0.5">−{formatCurrency(Number(r.amount))}</div>
         <p className="text-xs text-ink-muted mt-0.5">
-          Balance {formatCurrency(Number(r.balance_before))} → {formatCurrency(Number(r.balance_after))}
+          {t("pages.driverLoans.balanceArrow", {
+            before: formatCurrency(Number(r.balance_before)),
+            after: formatCurrency(Number(r.balance_after)),
+          })}
         </p>
         {r.notes && <p className="text-xs text-ink-muted">{r.notes}</p>}
       </div>
@@ -24,8 +29,9 @@ export function LoanRepaymentRow({ r }: { r: DriverLoanRepayment }) {
 }
 
 export function LoanRepaymentList({ repayments }: { repayments: DriverLoanRepayment[] }) {
+  const { t } = useTranslation();
   if (repayments.length === 0) {
-    return <p className="text-sm text-ink-muted px-3 py-4">No repayments recorded yet.</p>;
+    return <p className="text-sm text-ink-muted px-3 py-4">{t("pages.driverLoans.noRepaymentsYet")}</p>;
   }
   return (
     <ul className="rounded-xl border border-border/70 overflow-hidden">

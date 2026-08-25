@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { OrgLoanListItem } from "../../../api/driverLoans";
 import { loanStatusLabel } from "../../../api/driverLoans";
 import { formatCurrency } from "../../../utils/currency";
@@ -16,6 +17,7 @@ type LoansReportTableProps = {
 };
 
 export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansReportTableProps) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="space-y-2 rounded-[16px] border border-border/70 bg-white p-4 shadow-soft">
@@ -29,7 +31,7 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
   if (isError) {
     return (
       <div className="rounded-[16px] border border-danger/20 bg-danger/5 px-4 py-6 text-sm text-danger">
-        Failed to load loans.
+        {t("pages.driverLoans.failedToLoadLoans")}
       </div>
     );
   }
@@ -37,8 +39,8 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
   if (showEmpty) {
     return (
       <EmptyState
-        title="No loans found"
-        description="Try changing filters or create a loan using the button above."
+        title={t("pages.driverLoans.noLoansFoundTitle")}
+        description={t("pages.driverLoans.noLoansFoundDesc")}
       />
     );
   }
@@ -51,7 +53,14 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
             className="sticky top-0 z-10 grid min-h-[40px] items-center border-b border-slate-200 bg-[#F8FAFC] px-3"
             style={{ gridTemplateColumns: GRID_COLS }}
           >
-            {["Driver", "Principal", "Remaining", "Status", "Disbursed", "Reference"].map((h) => (
+            {[
+              t("pages.driversList.colDriver"),
+              t("pages.driverLoans.colPrincipal"),
+              t("pages.driverLoans.colRemaining"),
+              t("common.status"),
+              t("pages.driverLoans.colDisbursed"),
+              t("pages.driverLoans.colReference"),
+            ].map((h) => (
               <div
                 key={h}
                 className="px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-600"
@@ -99,7 +108,7 @@ export function LoansReportTable({ rows, loading, isError, showEmpty }: LoansRep
                     className="font-medium text-brand hover:underline"
                     title={row.reference ?? undefined}
                   >
-                    {row.reference?.trim() || "View loan"}
+                    {row.reference?.trim() || t("pages.driverLoans.viewLoan")}
                   </Link>
                 </div>
               </div>

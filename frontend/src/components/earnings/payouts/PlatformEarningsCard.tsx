@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PlatformBreakdownLine } from "./payoutBreakdownUtils";
 import {
   feeItemsTotalAbs,
@@ -30,12 +31,13 @@ export type PlatformEarningsCardProps = {
 };
 
 function CommissionBox({ line }: { line: PlatformBreakdownLine }) {
+  const { t } = useTranslation();
   return (
     <div className="fm-payout-detail-commission-box">
-      <p className="fm-payout-detail-commission-box__title">Commission after platform fee</p>
-      <LineRow label="Base" value={formatCurrency(line.commissionBase)} />
-      <LineRow label="Rate" value={formatRatePctFromFraction(line.commissionRate)} />
-      <LineRow label="Commission charged" value={formatCurrency(line.commissionCharged)} bold />
+      <p className="fm-payout-detail-commission-box__title">{t("pages.earningsPayouts.detail.commissionAfterFee")}</p>
+      <LineRow label={t("pages.earningsPayouts.detail.base")} value={formatCurrency(line.commissionBase)} />
+      <LineRow label={t("pages.earningsPayouts.detail.rate")} value={formatRatePctFromFraction(line.commissionRate)} />
+      <LineRow label={t("pages.earningsPayouts.detail.commissionCharged")} value={formatCurrency(line.commissionCharged)} bold />
     </div>
   );
 }
@@ -70,12 +72,13 @@ function FeeLineRows({
   feesLoading?: boolean;
   vehicleRentSteps?: FeeLadderStepDef[];
 }) {
+  const { t } = useTranslation();
   const weeklyFeesDelta = line.rawNet - line.netPayoutFromPlatform;
 
   if (feesLoading) {
     return (
       <>
-        <LineRow label="Fleet fees" value="…" hint="Loading fee breakdown…" />
+        <LineRow label={t("pages.earningsPayouts.detail.fleetFees")} value="…" hint={t("pages.earningsPayouts.detail.loadingFeeBreakdown")} />
         <VehicleRentLineRows steps={vehicleRentSteps} />
       </>
     );
@@ -104,7 +107,7 @@ function FeeLineRows({
   if (feeAnchorHint) {
     return (
       <>
-        <LineRow label="Recurring fees" value="—" hint={feeAnchorHint} />
+        <LineRow label={t("pages.earningsPayouts.detail.recurringFees")} value="—" hint={feeAnchorHint} />
         <VehicleRentLineRows steps={vehicleRentSteps} />
       </>
     );
@@ -114,10 +117,10 @@ function FeeLineRows({
     return (
       <>
         <LineRow
-          label="Fleet fees & adjustments"
+          label={t("pages.earningsPayouts.detail.fleetFeesAndAdjustments")}
           value={formatCurrency(weeklyFeesDelta)}
           variant="deduction"
-          hint="Recurring/custom fees on this platform leg"
+          hint={t("pages.earningsPayouts.detail.recurringCustomFeesLegHint")}
         />
         <VehicleRentLineRows steps={vehicleRentSteps} />
       </>
@@ -138,6 +141,7 @@ function PlatformCalculationStrip({
   feesLoading?: boolean;
   vehicleRentSteps?: FeeLadderStepDef[];
 }) {
+  const { t } = useTranslation();
   const weeklyFees = Math.abs(line.rawNet - line.netPayoutFromPlatform);
   const fleetFeesTotal = feeItems && feeItems.length > 0 ? feeItemsTotalAbs(feeItems) : weeklyFees;
   const rentTotal = vehicleRentSteps?.reduce((s, step) => s + Math.abs(step.amount), 0) ?? 0;
@@ -146,35 +150,35 @@ function PlatformCalculationStrip({
   const hasDeductionsAfterPlatform = hasFleetFees || hasRent;
   const fleetFeesLabel =
     feeItems && feeItems.length > 1
-      ? `Fleet fees (${feeItems.length})`
+      ? t("pages.earningsPayouts.detail.fleetFeesCount", { count: feeItems.length })
       : feeItems?.length === 1
         ? formatFeeStepLabel(feeItems[0]!)
-        : "Fleet fees";
+        : t("pages.earningsPayouts.detail.fleetFees");
 
   return (
-    <div className="fm-payout-detail-calc-strip" aria-label="Platform payout calculation summary">
+    <div className="fm-payout-detail-calc-strip" aria-label={t("pages.earningsPayouts.detail.platformCalcSummaryAriaLabel")}>
       <div className="fm-payout-detail-calc-strip__flow">
         <span className="fm-payout-detail-calc-strip__item">
-          <span className="fm-payout-detail-calc-strip__label">Net income</span>
+          <span className="fm-payout-detail-calc-strip__label">{t("pages.earningsPayouts.detail.netIncome")}</span>
           <span className="fm-payout-detail-calc-strip__value tabular-nums">{formatCurrency(line.netIncome)}</span>
         </span>
         <span className="fm-payout-detail-calc-strip__op">−</span>
         <span className="fm-payout-detail-calc-strip__item">
-          <span className="fm-payout-detail-calc-strip__label">Fleet / Subscription</span>
+          <span className="fm-payout-detail-calc-strip__label">{t("pages.earningsPayouts.detail.fleetSubscription")}</span>
           <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
             {formatCurrency(line.fleetSub)}
           </span>
         </span>
         <span className="fm-payout-detail-calc-strip__op">−</span>
         <span className="fm-payout-detail-calc-strip__item">
-          <span className="fm-payout-detail-calc-strip__label">Cash balance</span>
+          <span className="fm-payout-detail-calc-strip__label">{t("pages.earningsPayouts.detail.cashBalance")}</span>
           <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
             {formatCurrency(line.cashBalance)}
           </span>
         </span>
         <span className="fm-payout-detail-calc-strip__op">=</span>
         <span className="fm-payout-detail-calc-strip__item fm-payout-detail-calc-strip__item--highlight">
-          <span className="fm-payout-detail-calc-strip__label">Net after platform deductions</span>
+          <span className="fm-payout-detail-calc-strip__label">{t("pages.earningsPayouts.detail.netAfterPlatformDeductions")}</span>
           <span className="fm-payout-detail-calc-strip__value tabular-nums">
             {formatCurrency(line.netPayoutFromPlatform)}
           </span>
@@ -198,8 +202,8 @@ function PlatformCalculationStrip({
                 <span className="fm-payout-detail-calc-strip__item">
                   <span className="fm-payout-detail-calc-strip__label">
                     {vehicleRentSteps!.length > 1
-                      ? `Vehicle rent (${vehicleRentSteps!.length})`
-                      : (vehicleRentSteps![0]?.label ?? "Vehicle rent")}
+                      ? t("pages.earningsPayouts.detail.vehicleRentCount", { count: vehicleRentSteps!.length })
+                      : (vehicleRentSteps![0]?.label ?? t("pages.earningsPayouts.detail.vehicleRent"))}
                   </span>
                   <span className="fm-payout-detail-calc-strip__value tabular-nums text-rose-700">
                     {formatCurrency(rentTotal)}
@@ -211,7 +215,7 @@ function PlatformCalculationStrip({
         )}
         <span className="fm-payout-detail-calc-strip__op">=</span>
         <span className="fm-payout-detail-calc-strip__item fm-payout-detail-calc-strip__item--final">
-          <span className="fm-payout-detail-calc-strip__label">Final platform payout</span>
+          <span className="fm-payout-detail-calc-strip__label">{t("pages.earningsPayouts.detail.finalPlatformPayout")}</span>
           <span className="fm-payout-detail-calc-strip__value tabular-nums">
             {formatCurrency(line.storedNetDriverPayout)}
           </span>
@@ -222,12 +226,13 @@ function PlatformCalculationStrip({
 }
 
 function EarningsLeftColumn({ line }: { line: PlatformBreakdownLine }) {
+  const { t } = useTranslation();
   return (
     <>
-      <LineRow label="Base income" value={formatCurrency(line.baseIncome)} />
-      <LineRow label="Tips" value={formatCurrency(line.tips)} />
-      <LineRow label="Gross (Income + Tips)" value={formatCurrency(line.gross)} bold />
-      <LineRow label="Platform fees (Taxa)" value={formatCurrency(-line.platformFees)} variant="deduction" />
+      <LineRow label={t("pages.earningsPayouts.detail.baseIncome")} value={formatCurrency(line.baseIncome)} />
+      <LineRow label={t("pages.earningsPayouts.detail.tips")} value={formatCurrency(line.tips)} />
+      <LineRow label={t("pages.earningsPayouts.detail.grossIncomeTips")} value={formatCurrency(line.gross)} bold />
+      <LineRow label={t("pages.earningsPayouts.detail.platformFeesTaxa")} value={formatCurrency(-line.platformFees)} variant="deduction" />
       {Math.abs(line.platformNetAdjustment) > 0.02 && (
         <LineRow
           label={platformAdjustmentLabel(line.platform)}
@@ -236,8 +241,8 @@ function EarningsLeftColumn({ line }: { line: PlatformBreakdownLine }) {
           hint={platformAdjustmentHint(line.platform)}
         />
       )}
-      <LineRow label="Net income" value={formatCurrency(line.netIncome)} bold />
-      <LineRow label="Fleet / Subscription" value={formatCurrency(-line.fleetSub)} variant="deduction" />
+      <LineRow label={t("pages.earningsPayouts.detail.netIncome")} value={formatCurrency(line.netIncome)} bold />
+      <LineRow label={t("pages.earningsPayouts.detail.fleetSubscription")} value={formatCurrency(-line.fleetSub)} variant="deduction" />
     </>
   );
 }
@@ -257,18 +262,19 @@ function WideRightColumn({
   feesLoading?: boolean;
   vehicleRentSteps?: FeeLadderStepDef[];
 }) {
+  const { t } = useTranslation();
   return (
     <>
-      <LineRow label="Cash balance deducted" value={formatCurrency(-line.cashBalance)} variant="deduction" />
+      <LineRow label={t("pages.earningsPayouts.detail.cashBalanceDeducted")} value={formatCurrency(-line.cashBalance)} variant="deduction" />
       {line.accountOpeningFee > 0 && (
-        <LineRow label="Account opening fee" value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
+        <LineRow label={t("pages.earningsPayouts.detail.accountOpeningFee")} value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
       )}
       <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
-        <span>Net after platform deductions</span>
+        <span>{t("pages.earningsPayouts.detail.netAfterPlatformDeductions")}</span>
         <span className="tabular-nums">{formatCurrency(line.netPayoutFromPlatform)}</span>
       </div>
       <LineRow
-        label="Platform balance before final fees"
+        label={t("pages.earningsPayouts.detail.platformBalanceBeforeFinalFees")}
         value={formatCurrency(line.netPayoutFromPlatform)}
         bold
       />
@@ -281,7 +287,7 @@ function WideRightColumn({
       />
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
-          <span>Final platform payout</span>
+          <span>{t("pages.earningsPayouts.detail.finalPlatformPayout")}</span>
           <span className="tabular-nums">{formatCurrency(line.storedNetDriverPayout)}</span>
         </div>
       )}
@@ -306,17 +312,18 @@ function CompactBody({
   feesLoading?: boolean;
   vehicleRentSteps?: FeeLadderStepDef[];
 }) {
+  const { t } = useTranslation();
   const platformLabel = earningsPlatformLabel(line.platform);
 
   return (
     <>
       <EarningsLeftColumn line={line} />
-      <LineRow label="Cash balance (deducted)" value={formatCurrency(-line.cashBalance)} variant="deduction" />
+      <LineRow label={t("pages.earningsPayouts.detail.cashBalanceParenDeducted")} value={formatCurrency(-line.cashBalance)} variant="deduction" />
       {line.accountOpeningFee > 0 && (
-        <LineRow label="Account opening fee" value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
+        <LineRow label={t("pages.earningsPayouts.detail.accountOpeningFee")} value={formatCurrency(-line.accountOpeningFee)} variant="deduction" />
       )}
       <div className={`fm-payout-detail-platform-net${line.isDebtPlatform ? " fm-payout-detail-platform-net--debt" : ""}`}>
-        <span>Operational net ({platformLabel})</span>
+        <span>{t("pages.earningsPayouts.detail.operationalNet", { platform: platformLabel })}</span>
         <span className="tabular-nums">{formatCurrency(line.netPayoutFromPlatform)}</span>
       </div>
       <FeeLineRows
@@ -327,20 +334,20 @@ function CompactBody({
         vehicleRentSteps={vehicleRentSteps}
       />
       <LineRow
-        label="Raw net (this platform)"
+        label={t("pages.earningsPayouts.detail.rawNetThisPlatform")}
         value={formatCurrency(line.rawNet)}
         variant={line.isDebtPlatform ? "deduction" : "neutral"}
         bold
       />
       {showNetPayoutRow && (
         <div className="fm-payout-detail-platform-net fm-payout-detail-platform-net--highlight">
-          <span>Net payout from {platformLabel}</span>
+          <span>{t("pages.earningsPayouts.detail.netPayoutFrom", { platform: platformLabel })}</span>
           <span className="tabular-nums">{formatCurrency(line.storedNetDriverPayout)}</span>
         </div>
       )}
       {showLegShare && (
         <LineRow
-          label="This leg's share of final payout"
+          label={t("pages.earningsPayouts.detail.legShareOfFinalPayout")}
           value={formatCurrency(line.storedNetDriverPayout)}
           variant={
             line.storedNetDriverPayout < -0.02
@@ -350,7 +357,7 @@ function CompactBody({
                 : "neutral"
           }
           bold
-          hint="After cross-platform pooling for the driver week"
+          hint={t("pages.earningsPayouts.detail.crossPlatformPoolingHint")}
         />
       )}
     </>
@@ -368,6 +375,7 @@ export function PlatformEarningsCard({
   feesLoading,
   vehicleRentSteps,
 }: PlatformEarningsCardProps) {
+  const { t } = useTranslation();
   const isWide = layout === "wide";
 
   return (
@@ -378,9 +386,9 @@ export function PlatformEarningsCard({
         <div className="flex min-w-0 items-center gap-2.5">
           <PlatformLogo platform={line.platform} />
           <h2 className="text-base font-semibold text-ink">{title}</h2>
-          {line.isDebtPlatform && <span className="fm-payout-detail-debt-badge">Platform debt</span>}
+          {line.isDebtPlatform && <span className="fm-payout-detail-debt-badge">{t("pages.earningsPayouts.detail.platformDebtLabel")}</span>}
         </div>
-        <span className="fm-payout-detail-id-badge">ID: {platformShortId(line.platform, line.payoutId)}</span>
+        <span className="fm-payout-detail-id-badge">{t("pages.earningsPayouts.detail.idBadge", { id: platformShortId(line.platform, line.payoutId) })}</span>
       </div>
 
       {isWide ? (

@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from "react-i18next";
+
 type BookingDateTimeFieldsProps = {
   pickupDate: string;
   pickupTime: string;
@@ -23,11 +25,12 @@ export function BookingDateTimeFields({
   rentalDays,
   disabled,
 }: BookingDateTimeFieldsProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-ink">Pickup date</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.pickupDate")}</label>
           <input
             type="date"
             required
@@ -38,7 +41,7 @@ export function BookingDateTimeFields({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink">Pickup time</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.pickupTime")}</label>
           <input
             type="time"
             required
@@ -49,7 +52,7 @@ export function BookingDateTimeFields({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink">Return date</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.returnDate")}</label>
           <input
             type="date"
             required
@@ -61,7 +64,7 @@ export function BookingDateTimeFields({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink">Return time</label>
+          <label className="block text-sm font-medium text-ink">{t("pages.bookingForm.returnTime")}</label>
           <input
             type="time"
             required
@@ -74,7 +77,7 @@ export function BookingDateTimeFields({
       </div>
       {rentalDays != null && rentalDays > 0 && (
         <p className="text-sm font-medium text-brand">
-          {rentalDays} rental {rentalDays === 1 ? "day" : "days"}
+          <Trans i18nKey="pages.bookingForm.rentalDaysCount" count={rentalDays} />
         </p>
       )}
     </div>

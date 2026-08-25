@@ -1,11 +1,10 @@
-const TIPS = [
-  "Use legal name for invoices",
-  "Add email for receipts",
-  "Add phone for pickup coordination",
-  "Tax ID is optional unless required for billing",
-];
+import { useTranslation } from "react-i18next";
+
+const TIP_KEYS = ["tip1", "tip2", "tip3", "tip4"] as const;
 
 export function CustomerTipsCard() {
+  const { t } = useTranslation();
+  const tips = TIP_KEYS.map((key) => t(`pages.bookingForm.${key}`));
   return (
     <aside className="fm-rental-customer-form__tips">
       <div className="flex gap-3">
@@ -23,9 +22,9 @@ export function CustomerTipsCard() {
           </svg>
         </span>
         <div>
-          <h3 className="text-sm font-semibold text-ink">Customer profile tips</h3>
+          <h3 className="text-sm font-semibold text-ink">{t("pages.bookingForm.tipsTitle")}</h3>
           <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-ink-muted">
-            {TIPS.map((tip) => (
+            {tips.map((tip) => (
               <li key={tip} className="flex gap-2">
                 <span className="text-brand" aria-hidden>
                   •

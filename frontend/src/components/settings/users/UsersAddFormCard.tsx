@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RoleItem } from "../../../api/roles";
 import { PasswordInput } from "../../../components/theme/PasswordInput";
 import { btnPrimary, input, sectionLabel } from "../../../theme/classNames";
@@ -19,14 +20,15 @@ type UsersAddFormCardProps = {
 };
 
 export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }: UsersAddFormCardProps) {
+  const { t } = useTranslation();
   const defaultRoleId = form.roleId || roles[0]?.id || "";
 
   return (
     <div className="fm-settings-users__add-card mb-5 space-y-4">
-      <h2 className="text-sm font-semibold text-[#0F172A]">New user</h2>
+      <h2 className="text-sm font-semibold text-[#0F172A]">{t("pages.users.newUserTitle")}</h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={sectionLabel}>Email</label>
+          <label className={sectionLabel}>{t("pages.users.emailLabel")}</label>
           <input
             className={input}
             value={form.email}
@@ -34,13 +36,13 @@ export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }:
           />
         </div>
         <PasswordInput
-          label="Password"
+          label={t("pages.users.passwordLabel")}
           value={form.password}
           onChange={(password) => onChange({ password })}
-          helperText="Generate a strong password or leave blank to auto-generate on create."
+          helperText={t("pages.users.passwordHelperText")}
         />
         <div>
-          <label className={sectionLabel}>First name</label>
+          <label className={sectionLabel}>{t("pages.users.firstNameLabel")}</label>
           <input
             className={input}
             value={form.firstName}
@@ -48,7 +50,7 @@ export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }:
           />
         </div>
         <div>
-          <label className={sectionLabel}>Last name</label>
+          <label className={sectionLabel}>{t("pages.users.lastNameLabel")}</label>
           <input
             className={input}
             value={form.lastName}
@@ -56,7 +58,7 @@ export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }:
           />
         </div>
         <div>
-          <label className={sectionLabel}>Role</label>
+          <label className={sectionLabel}>{t("pages.users.roleFieldLabel")}</label>
           <select
             className={input}
             value={defaultRoleId}
@@ -71,7 +73,7 @@ export function UsersAddFormCard({ form, onChange, roles, onSubmit, isPending }:
         </div>
       </div>
       <button type="button" className={btnPrimary} disabled={isPending} onClick={onSubmit}>
-        Create user
+        {t("pages.users.createUserButton")}
       </button>
     </div>
   );

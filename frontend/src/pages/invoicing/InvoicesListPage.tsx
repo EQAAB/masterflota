@@ -77,10 +77,10 @@ export function InvoicesListPage() {
         {/* KPI cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { label: "Total invoices", value: totals.count },
-            { label: "Net amount", value: `${totals.net.toFixed(2)} RON` },
-            { label: "VAT", value: `${totals.vat.toFixed(2)} RON` },
-            { label: "Total", value: `${totals.total.toFixed(2)} RON` },
+            { label: t("pages.invoices.kpiTotalInvoices"), value: totals.count },
+            { label: t("pages.invoiceDetail.netAmountLabel"), value: `${totals.net.toFixed(2)} RON` },
+            { label: t("pages.invoiceDetail.vatLabel"), value: `${totals.vat.toFixed(2)} RON` },
+            { label: t("pages.invoiceDetail.totalLabel"), value: `${totals.total.toFixed(2)} RON` },
           ].map((kpi) => (
             <div key={kpi.label} className="rounded-xl border border-border bg-white p-4 shadow-card">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{kpi.label}</p>
@@ -93,7 +93,7 @@ export function InvoicesListPage() {
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
-            placeholder="Search by buyer, CUI, number..."
+            placeholder={t("pages.invoices.searchPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="min-w-[240px] rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
@@ -103,13 +103,13 @@ export function InvoicesListPage() {
             onChange={(e) => setStatus(e.target.value)}
             className="rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm"
           >
-            <option value="">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="issued">Issued</option>
-            <option value="submitted">Submitted</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">{t("pages.invoices.allStatusesOption")}</option>
+            <option value="draft">{t("pages.invoiceDetail.status.draft")}</option>
+            <option value="issued">{t("pages.invoiceDetail.status.issued")}</option>
+            <option value="submitted">{t("pages.invoiceDetail.status.submitted")}</option>
+            <option value="accepted">{t("pages.invoiceDetail.status.accepted")}</option>
+            <option value="rejected">{t("pages.invoiceDetail.status.rejected")}</option>
+            <option value="cancelled">{t("pages.invoiceDetail.status.cancelled")}</option>
           </select>
         </div>
 
@@ -118,21 +118,21 @@ export function InvoicesListPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface text-left text-xs font-semibold uppercase tracking-wider text-ink-muted">
-                <th className="px-4 py-3">Number</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Buyer</th>
-                <th className="px-4 py-3">CUI</th>
-                <th className="px-4 py-3 text-right">Total</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">ANAF</th>
+                <th className="px-4 py-3">{t("pages.invoices.colNumber")}</th>
+                <th className="px-4 py-3">{t("pages.invoices.colDate")}</th>
+                <th className="px-4 py-3">{t("pages.invoiceDetail.buyerTitle")}</th>
+                <th className="px-4 py-3">{t("pages.invoiceDetail.cuiLabel")}</th>
+                <th className="px-4 py-3 text-right">{t("pages.invoiceDetail.totalLabel")}</th>
+                <th className="px-4 py-3">{t("common.status")}</th>
+                <th className="px-4 py-3">{t("pages.invoices.colAnaf")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {invoicesQuery.isLoading && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-muted">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-muted">{t("common.loading")}</td></tr>
               )}
               {!invoicesQuery.isLoading && invoices.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-muted">No invoices found</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-muted">{t("pages.invoices.noInvoicesFound")}</td></tr>
               )}
               {invoices.map((inv) => (
                 <tr
@@ -153,7 +153,7 @@ export function InvoicesListPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[inv.status] ?? ""}`}>
-                      {inv.status}
+                      {t(`pages.invoiceDetail.status.${inv.status}`, { defaultValue: inv.status })}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-muted">

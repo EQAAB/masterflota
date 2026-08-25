@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { OrgUser } from "../../../api/users";
 import type { RoleItem } from "../../../api/roles";
 import { roleOptionLabel, roleBadgeLabel, roleBadgeVariant, fullName, initialsFromUser } from "./usersListUtils";
@@ -66,6 +67,7 @@ export function UserTableRow({
   isMenuOpen,
   isUpdating,
 }: UserTableRowProps) {
+  const { t } = useTranslation();
   const badgeVariant = roleBadgeVariant(user.role);
 
   const roleIcon =
@@ -98,7 +100,7 @@ export function UserTableRow({
           <div className="min-w-0">
             <p className="font-semibold text-ink">{fullName(user)}</p>
             {user.role === "super_admin" && (
-              <span className="fm-settings-users__admin-badge">Primary Admin</span>
+              <span className="fm-settings-users__admin-badge">{t("pages.users.primaryAdminBadge")}</span>
             )}
           </div>
         </div>
@@ -148,7 +150,7 @@ export function UserTableRow({
           <button
             type="button"
             className={`fm-settings-users__role-badge fm-settings-users__role-badge--${badgeVariant}`}
-            title="Click to change role"
+            title={t("pages.users.clickToChangeRoleTitle")}
             disabled={isUpdating}
             onClick={() => onRoleEditStart(user.id)}
           >
@@ -166,12 +168,12 @@ export function UserTableRow({
               : "fm-settings-users__status-pill--inactive"
           }`}
         >
-          {user.isActive ? "Active" : "Inactive"}
+          {user.isActive ? t("status.active") : t("status.inactive")}
         </span>
       </td>
       <td className="fm-settings-users__col-actions text-right">
         <div className="fm-settings-users__action-group">
-          <ActionButton label="Edit user" variant="edit" onClick={() => { onEdit(user); }}>
+          <ActionButton label={t("pages.users.editUserAria")} variant="edit" onClick={() => { onEdit(user); }}>
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path
                 strokeLinecap="round"
@@ -183,7 +185,7 @@ export function UserTableRow({
           </ActionButton>
 
           {user.isActive ? (
-            <ActionButton label="Deactivate user" variant="danger" onClick={() => { onDeactivate(user); }}>
+            <ActionButton label={t("pages.users.deactivateUserAria")} variant="danger" onClick={() => { onDeactivate(user); }}>
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path
                   strokeLinecap="round"
@@ -194,7 +196,7 @@ export function UserTableRow({
               </svg>
             </ActionButton>
           ) : (
-            <ActionButton label="Activate user" variant="success" onClick={() => { onActivate(user); }}>
+            <ActionButton label={t("pages.users.activateUserAria")} variant="success" onClick={() => { onActivate(user); }}>
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 13l4 4L19 7" />
               </svg>
@@ -202,7 +204,7 @@ export function UserTableRow({
           )}
 
           <ActionButton
-            label="More actions"
+            label={t("pages.users.moreActionsAria")}
             variant="more"
             ariaExpanded={isMenuOpen}
             onClick={(e) => onActionMenuToggle(user.id, e.currentTarget)}

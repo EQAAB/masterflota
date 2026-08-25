@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { OrgUser } from "../../../api/users";
 import { btnPrimary, btnSecondary, input, sectionLabel } from "../../../theme/classNames";
 import { fullName } from "./usersListUtils";
@@ -17,6 +18,7 @@ type UsersEditModalProps = {
 };
 
 export function UsersEditModal({ user, form, onChange, onClose, onSave, isPending }: UsersEditModalProps) {
+  const { t } = useTranslation();
   if (!user) return null;
 
   return (
@@ -31,14 +33,14 @@ export function UsersEditModal({ user, form, onChange, onClose, onSave, isPendin
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 id="edit-user-title" className="text-lg font-semibold text-ink">
-              Edit user
+              {t("pages.users.editUserTitle")}
             </h2>
             <p className="mt-0.5 text-sm text-ink-muted">{fullName(user)} · {user.email}</p>
           </div>
           <button
             type="button"
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink"
-            aria-label="Close"
+            aria-label={t("common.close")}
             onClick={onClose}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -49,7 +51,7 @@ export function UsersEditModal({ user, form, onChange, onClose, onSave, isPendin
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={sectionLabel}>First name</label>
+            <label className={sectionLabel}>{t("pages.users.firstNameLabel")}</label>
             <input
               className={input}
               value={form.firstName}
@@ -57,7 +59,7 @@ export function UsersEditModal({ user, form, onChange, onClose, onSave, isPendin
             />
           </div>
           <div>
-            <label className={sectionLabel}>Last name</label>
+            <label className={sectionLabel}>{t("pages.users.lastNameLabel")}</label>
             <input
               className={input}
               value={form.lastName}
@@ -68,10 +70,10 @@ export function UsersEditModal({ user, form, onChange, onClose, onSave, isPendin
 
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className={btnSecondary} onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </button>
           <button type="button" className={btnPrimary} disabled={isPending} onClick={onSave}>
-            Save changes
+            {t("pages.users.saveChangesButton")}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RolesKpis } from "./rolesListUtils";
 
 type RolesKpiRowProps = {
@@ -5,14 +6,15 @@ type RolesKpiRowProps = {
   loading?: boolean;
 };
 
-const CARDS = [
-  { key: "total", label: "Total roles", field: "total" as const },
-  { key: "system", label: "System roles", field: "system" as const },
-  { key: "custom", label: "Custom roles", field: "custom" as const },
-  { key: "permissions", label: "Permissions", field: "permissionCount" as const },
-];
-
 export function RolesKpiRow({ kpis, loading }: RolesKpiRowProps) {
+  const { t } = useTranslation();
+  const CARDS = [
+    { key: "total", label: t("pages.roles.kpiTotalRoles"), field: "total" as const },
+    { key: "system", label: t("pages.roles.kpiSystemRoles"), field: "system" as const },
+    { key: "custom", label: t("pages.roles.kpiCustomRoles"), field: "custom" as const },
+    { key: "permissions", label: t("pages.roles.kpiPermissions"), field: "permissionCount" as const },
+  ];
+
   if (loading) {
     return (
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

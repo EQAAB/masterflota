@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { RentalCustomer } from "../../../api/rentals";
 import type { ActionMenuItemConfig } from "../../theme/ActionMenuDropdown";
 
@@ -33,7 +34,7 @@ export function buildCustomerActionMenuItems({
   return [
     {
       id: "view",
-      label: "View profile",
+      label: i18n.t("pages.customers.viewProfileAction"),
       icon: (
         <MenuIconWrap tone="brand">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -46,7 +47,7 @@ export function buildCustomerActionMenuItems({
     },
     {
       id: "edit",
-      label: "Edit",
+      label: i18n.t("pages.customers.editAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -58,7 +59,7 @@ export function buildCustomerActionMenuItems({
     },
     {
       id: "bookings",
-      label: "View bookings",
+      label: i18n.t("pages.customers.viewBookingsAction"),
       icon: (
         <MenuIconWrap tone="muted">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -70,7 +71,7 @@ export function buildCustomerActionMenuItems({
     },
     {
       id: "archive",
-      label: "Archive customer",
+      label: i18n.t("pages.customers.archiveAction"),
       icon: (
         <MenuIconWrap tone="danger">
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

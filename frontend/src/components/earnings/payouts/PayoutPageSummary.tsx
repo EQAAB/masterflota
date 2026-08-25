@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { formatCurrency } from "../../../utils/currency";
 import { transitionDefault } from "../../../theme/classNames";
 
@@ -87,12 +88,13 @@ export function PayoutPageSummary({
   totalAmount,
   loading,
 }: PayoutPageSummaryProps) {
+  const { t } = useTranslation();
   const dash = loading ? "…" : "—";
 
   return (
     <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
       <SummaryCard
-        title="Total drivers"
+        title={t("pages.earningsPayouts.totalDrivers")}
         value={loading ? dash : driverCount.toLocaleString()}
         tone="neutral"
         icon={
@@ -107,7 +109,7 @@ export function PayoutPageSummary({
         }
       />
       <SummaryCard
-        title="Pending payouts"
+        title={t("pages.earningsPayouts.pendingPayoutsKpi")}
         value={loading ? dash : pendingCount.toLocaleString()}
         tone="pending"
         icon={
@@ -122,7 +124,7 @@ export function PayoutPageSummary({
         }
       />
       <SummaryCard
-        title="Paid payouts"
+        title={t("pages.earningsPayouts.paidPayoutsKpi")}
         value={loading ? dash : paidCount.toLocaleString()}
         tone="paid"
         icon={
@@ -137,7 +139,7 @@ export function PayoutPageSummary({
         }
       />
       <SummaryCard
-        title="Total payout amount"
+        title={t("pages.earningsPayouts.totalPayoutAmount")}
         value={loading ? dash : formatCurrency(totalAmount)}
         tone="amount"
         icon={

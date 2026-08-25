@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { formatCurrency } from "../../../utils/currency";
 import { card } from "../../../theme/classNames";
 
@@ -21,26 +22,29 @@ export function ReportsCollectionSummary({
   collection,
   collectionLoading,
 }: ReportsCollectionSummaryProps) {
+  const { t } = useTranslation();
   return (
     <div className={`${card} !p-4`}>
-      <h3 className="text-sm font-semibold text-ink">Collection summary (uses period filters)</h3>
+      <h3 className="text-sm font-semibold text-ink">{t("pages.earningsReports.collectionSummaryTitle")}</h3>
       {!collectionFrom || !collectionTo ? (
         <p className="mt-1.5 text-xs text-ink-muted">
-          Set valid period from / to above to load collection summary.
+          {t("pages.earningsReports.collectionSummaryHint")}
         </p>
       ) : collectionLoading ? (
-        <p className="mt-1.5 text-xs text-ink-muted">Loading collection…</p>
+        <p className="mt-1.5 text-xs text-ink-muted">{t("pages.earningsReports.loadingCollection")}</p>
       ) : collection ? (
         <div className="mt-2 space-y-2 text-xs">
           <p className="text-ink-muted">
-            Adjustments in range:{" "}
-            {Object.entries(collection.adjustmentsByType || {})
-              .map(([t, v]) => `${t}: ${formatCurrency(v)}`)
-              .join(" · ") || "—"}
+            {t("pages.earningsReports.adjustmentsInRange", {
+              items:
+                Object.entries(collection.adjustmentsByType || {})
+                  .map(([type, v]) => `${type}: ${formatCurrency(v)}`)
+                  .join(" · ") || "—",
+            })}
           </p>
           <ul className="max-h-28 overflow-auto rounded-xl border border-border bg-white divide-y divide-border">
             {collection.appliedFromPayouts.length === 0 ? (
-              <li className="px-3 py-2 text-ink-muted">No debt_applied amounts in this window.</li>
+              <li className="px-3 py-2 text-ink-muted">{t("pages.earningsReports.noDebtAppliedInWindow")}</li>
             ) : (
               collection.appliedFromPayouts.map((r) => (
                 <li key={r.periodEnd} className="flex justify-between px-3 py-1.5 tabular-nums">
