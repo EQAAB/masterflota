@@ -787,7 +787,8 @@ CREATE TABLE IF NOT EXISTS vehicle_history (
             'rental_booked',
             'rental_pickup',
             'rental_return',
-            'rental_cancelled'
+            'rental_cancelled',
+            'rental_renewed'
         )
     ),
     event_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
