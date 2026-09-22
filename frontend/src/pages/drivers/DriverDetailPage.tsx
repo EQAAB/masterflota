@@ -6,6 +6,7 @@ import {
   getDriverDetail,
   updateDriverNotes,
   deleteDriver,
+  releaseDriverPlatformIds,
   getDriverActivity,
   uploadDriverPhoto,
   type Driver,
@@ -65,10 +66,21 @@ function relativeDateLabel(value: string | null | undefined): string {
 
 function activityTone(type: string): ActivityTone {
   if (type.includes("create") || type.includes("upload")) return "add";
-  if (type.includes("delete") || type.includes("remove")) return "remove";
+  if (type.includes("delete") || type.includes("remove") || type.includes("released")) return "remove";
   if (type.includes("status")) return "status";
   if (type.includes("update") || type.includes("verify")) return "update";
   return "default";
+}
+
+function driverHasPlatformIds(d: Driver): boolean {
+  return Boolean(
+    d.uber_driver_id?.trim() ||
+      d.bolt_driver_id?.trim() ||
+      d.glovo_courier_id?.trim() ||
+      d.bolt_courier_id?.trim() ||
+      d.bolt_taxi_driver_uuid?.trim() ||
+      d.wolt_courier_id?.trim(),
+  );
 }
 
 function ActivityIcon({ type }: { type: string }) {
@@ -159,6 +171,14 @@ export function DriverDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
       setDeleteModalOpen(false);
       navigate("/drivers");
+    },
+  });
+
+  const releasePlatformIdsMutation = useMutation({
+    mutationFn: () => releaseDriverPlatformIds(id!),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["driver", id] });
+      void queryClient.invalidateQueries({ queryKey: ["driverActivity", id] });
     },
   });
 
@@ -380,7 +400,24 @@ export function DriverDetailPage() {
             </section>
 
             <section className={cardClass}>
-              <h2 className={sectionTitleClass}>{t("pages.driverForm.platformIdsTitle")}</h2>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold text-ink">{t("pages.driverForm.platformIdsTitle")}</h2>
+                {canEdit && driverHasPlatformIds(d) && (
+                  <button
+                    type="button"
+                    disabled={releasePlatformIdsMutation.isPending}
+                    onClick={() => {
+                      if (!window.confirm(t("pages.driverDetail.releasePlatformIdsConfirm"))) return;
+                      releasePlatformIdsMutation.mutate();
+                    }}
+                    className="inline-flex h-8 items-center rounded-lg border border-border/80 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {releasePlatformIdsMutation.isPending
+                      ? "…"
+                      : t("pages.driverDetail.releasePlatformIdsButton")}
+                  </button>
+                )}
+              </div>
               <dl className="grid grid-cols-1 gap-x-5 gap-y-3 text-sm md:grid-cols-2">
                 <div>
                   <dt className="text-xs font-medium text-slate-500">

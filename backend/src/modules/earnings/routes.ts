@@ -35,6 +35,7 @@ import { totalLinesInFile } from "../../lib/filterParsedRows";
 import { getPreviousWeek } from "../../lib/paymentWeek";
 import { parseEarningsFile } from "./parseFile";
 import { DriverMatchIndex, type DriverMatchRow } from "./matchDriver";
+import { DRIVER_MATCHABLE_SQL } from "../drivers/platformIds";
 import { runEarningsCommitFromStaging } from "./earningsCommit";
 import { deleteEarningsImportIfEmpty, DeleteEarningsImportError } from "./deleteEarningsImport";
 import { revertEarningsImport, RevertEarningsImportError } from "./revertEarningsImport";
@@ -212,7 +213,9 @@ async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
     `SELECT id, phone, first_name, last_name, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id,
             bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, wolt_courier_id,
             commission_type, commission_rate::text, fixed_commission_amount::text, minimum_commission::text
-     FROM drivers WHERE organization_id = $1`,
+     FROM drivers
+     WHERE organization_id = $1
+       AND ${DRIVER_MATCHABLE_SQL}`,
     [orgId],
   );
   const { rows: plates } = await query<{ license_plate: string; current_driver_id: string }>(

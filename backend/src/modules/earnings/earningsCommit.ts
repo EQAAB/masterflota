@@ -3,6 +3,7 @@ import type { EarningsPlatform } from "./detectPlatform";
 import type { DriverMatchRow } from "./matchDriver";
 import { DriverMatchIndex } from "./matchDriver";
 import { query } from "../../db/pool";
+import { DRIVER_MATCHABLE_SQL, DRIVER_MATCHABLE_SQL_D } from "../drivers/platformIds";
 import type { EarningsStagingPayload } from "./normalizeRow";
 import { roundMoney } from "./debtAllocation";
 import { calculatePayout, parseCommissionBaseType } from "./calculatePayout";
@@ -53,7 +54,9 @@ async function loadMatchIndex(orgId: string): Promise<DriverMatchIndex> {
     `SELECT id, phone, first_name, last_name, uber_driver_id, bolt_driver_id, glovo_courier_id, bolt_courier_id,
             bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, wolt_courier_id,
             commission_type, commission_rate::text, fixed_commission_amount::text, minimum_commission::text
-     FROM drivers WHERE organization_id = $1`,
+     FROM drivers
+     WHERE organization_id = $1
+       AND ${DRIVER_MATCHABLE_SQL}`,
     [orgId],
   );
   const { rows: plates } = await query<{ license_plate: string; current_driver_id: string }>(
@@ -124,7 +127,8 @@ export async function runEarningsCommitFromStaging(
             d.commission_type, d.commission_rate::text, d.fixed_commission_amount::text, d.minimum_commission::text,
             d.subcontractor_id::text
      FROM drivers d
-     WHERE d.organization_id = $1`,
+     WHERE d.organization_id = $1
+       AND ${DRIVER_MATCHABLE_SQL_D}`,
     [orgId],
   );
   const driverById = new Map(driversRes.rows.map((d) => [d.id, d]));
