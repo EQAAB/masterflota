@@ -458,6 +458,7 @@
       "suspendModalBody": "{{name}} va fi marcat ca suspendat și eliminat din operațiunile active ale flotei până la reactivare.",
       "suspending": "Se suspendă…",
       "suspend": "Suspendă",
+      "suspendFailedDefault": "Suspendarea șoferului a eșuat",
       "viewLoanReport": "Vezi raportul de împrumuturi",
       "importFailedDefault": "Importul CSV al șoferilor a eșuat"
     },

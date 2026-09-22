@@ -142,6 +142,13 @@ export function updateDriver(id: string, data: Partial<CreateDriverPayload>) {
   return api.put<Driver>(`/drivers/${id}`, data);
 }
 
+export function updateDriverStatus(
+  id: string,
+  status: "active" | "suspended" | "terminated",
+) {
+  return api.patch<Driver>(`/drivers/${id}/status`, { status });
+}
+
 export function deleteDriver(id: string) {
   return api.delete<Driver>(`/drivers/${id}`);
 }

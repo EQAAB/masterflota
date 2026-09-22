@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { DriverListItem } from "../../api/drivers";
-import { updateDriver } from "../../api/drivers";
+import { updateDriverStatus } from "../../api/drivers";
 import { getLoansSummary } from "../../api/driverLoans";
 import {
   formatCsvImportSummaryMessage,
@@ -59,6 +59,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
   const [openMenuRowId, setOpenMenuRowId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<DriverListItem | null>(null);
+  const [suspendError, setSuspendError] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
@@ -134,6 +135,7 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
       },
       onSuspend: () => {
         closeActionMenu();
+        setSuspendError(null);
         setSuspendTarget(openMenuDriver);
       },
     });
@@ -161,10 +163,18 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
   };
 
   const suspendMutation = useMutation({
-    mutationFn: (id: string) => updateDriver(id, { employmentStatus: "suspended" }),
+    mutationFn: (id: string) => updateDriverStatus(id, "suspended"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      setSuspendError(null);
       setSuspendTarget(null);
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : null;
+      setSuspendError(msg ?? t("pages.driversList.suspendFailedDefault"));
     },
   });
 
@@ -323,10 +333,18 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
                 name: `${suspendTarget.first_name} ${suspendTarget.last_name}`,
               })}
             </p>
+            {suspendError && (
+              <p className="mt-2 text-sm text-danger" role="alert">
+                {suspendError}
+              </p>
+            )}
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
-                onClick={() => suspendMutation.mutate(suspendTarget.id)}
+                onClick={() => {
+                  setSuspendError(null);
+                  suspendMutation.mutate(suspendTarget.id);
+                }}
                 disabled={suspendMutation.isPending}
                 className={`${btnDangerOutline} flex-1 justify-center`}
               >
@@ -334,7 +352,10 @@ export function DriversList({ drivers, isLoading, isError, getHeaderProps }: Dri
               </button>
               <button
                 type="button"
-                onClick={() => setSuspendTarget(null)}
+                onClick={() => {
+                  setSuspendError(null);
+                  setSuspendTarget(null);
+                }}
                 disabled={suspendMutation.isPending}
                 className={`${btnSecondary} flex-1 justify-center`}
               >
