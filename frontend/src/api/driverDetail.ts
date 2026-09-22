@@ -1,6 +1,6 @@
 import { api } from "../lib/api";
 import type { Driver } from "./drivers";
-import { getDriverWithVehicle, deleteDriver } from "./drivers";
+import { getDriverWithVehicle, deleteDriver, releaseDriverPlatformIds } from "./drivers";
 
 export interface DriverActivity {
   id: string;
@@ -23,7 +23,7 @@ export function updateDriverNotes(id: string, notes: string | null) {
   return api.patch<Driver>(`/drivers/${id}/notes`, { notes });
 }
 
-export { deleteDriver };
+export { deleteDriver, releaseDriverPlatformIds };
 
 export function getDriverActivity(id: string) {
   return api.get<DriverActivity[]>(`/drivers/${id}/activity`);

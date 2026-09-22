@@ -8,6 +8,7 @@ export type ActivityType =
   | "document_verify"
   | "document_delete"
   | "driver_delete"
+  | "platform_ids_released"
   | "notes_update"
   | "deposit_due"
   | "deposit_reused"

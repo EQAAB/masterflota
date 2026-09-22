@@ -146,6 +146,11 @@ export function deleteDriver(id: string) {
   return api.delete<Driver>(`/drivers/${id}`);
 }
 
+/** Clear Uber/Glovo/Bolt/Wolt IDs so another fleet (or driver) can use them. */
+export function releaseDriverPlatformIds(id: string) {
+  return api.post<Driver>(`/drivers/${id}/release-platform-ids`);
+}
+
 export function uploadDriverPhoto(driverId: string, file: File) {
   const formData = new FormData();
   formData.append("photo", file);

@@ -24,6 +24,12 @@ import {
   updateLoanPlan,
 } from "./driverLoans";
 import { logDriverActivity } from "./activity";
+import {
+  CLEAR_PLATFORM_IDS_SQL,
+  findPlatformIdConflict,
+  platformIdConflictMessage,
+  platformIdsForTerminatedWrite,
+} from "./platformIds";
 import { driverProfilePhotoUpload } from "../../config/multer";
 import { resolveDriverPhotoAbsolutePath, photoContentType } from "../../lib/driverPhotoFile";
 import { handleDriverVehicleHistory } from "../vehicles/vehicleAssignmentHistoryHandlers";
@@ -629,6 +635,19 @@ router.post("/", requirePermission("drivers.create"), async (req, res) => {
     }
   }
 
+  const platformIds = platformIdsForTerminatedWrite(employmentStatus, {
+    uber_driver_id: uberDriverId as string | null | undefined,
+    bolt_driver_id: boltDriverId as string | null | undefined,
+    glovo_courier_id: glovoCourierId as string | null | undefined,
+    bolt_courier_id: boltCourierId as string | null | undefined,
+    bolt_taxi_driver_uuid: boltTaxiDriverUuid as string | null | undefined,
+    wolt_courier_id: woltCourierId as string | null | undefined,
+  });
+  const platformConflict = await findPlatformIdConflict(orgId, platformIds);
+  if (platformConflict) {
+    return res.status(409).json({ message: platformIdConflictMessage(platformConflict) });
+  }
+
   let subcontractorUuid: string | null = null;
   if (subcontractorId != null && String(subcontractorId).trim() !== "") {
     const sid = String(subcontractorId);
@@ -702,14 +721,12 @@ router.post("/", requirePermission("drivers.create"), async (req, res) => {
         commissionType,
         fixedCommissionAmount,
         minimumCommission,
-        uberDriverId,
-        boltDriverId,
-        glovoCourierId,
-        boltCourierId,
-        boltTaxiDriverUuid && UUID_RE.test(String(boltTaxiDriverUuid))
-          ? String(boltTaxiDriverUuid)
-          : null,
-        woltCourierId,
+        platformIds.uber_driver_id ?? null,
+        platformIds.bolt_driver_id ?? null,
+        platformIds.glovo_courier_id ?? null,
+        platformIds.bolt_courier_id ?? null,
+        platformIds.bolt_taxi_driver_uuid ?? null,
+        platformIds.wolt_courier_id ?? null,
         subcontractorUuid,
         notes,
       ],
@@ -766,6 +783,19 @@ router.put("/:id", requirePermission("drivers.edit"), async (req, res) => {
     if (existing[0]) {
       return res.status(409).json({ message: "A driver with this license number already exists" });
     }
+  }
+
+  const platformIds = platformIdsForTerminatedWrite(employmentStatus, {
+    uber_driver_id: uberDriverId as string | null | undefined,
+    bolt_driver_id: boltDriverId as string | null | undefined,
+    glovo_courier_id: glovoCourierId as string | null | undefined,
+    bolt_courier_id: boltCourierId as string | null | undefined,
+    bolt_taxi_driver_uuid: boltTaxiDriverUuid as string | null | undefined,
+    wolt_courier_id: woltCourierId as string | null | undefined,
+  });
+  const platformConflict = await findPlatformIdConflict(orgId, platformIds, String(id));
+  if (platformConflict) {
+    return res.status(409).json({ message: platformIdConflictMessage(platformConflict) });
   }
 
   let subcontractorUuid: string | null = null;
@@ -834,14 +864,12 @@ router.put("/:id", requirePermission("drivers.edit"), async (req, res) => {
         commissionType,
         fixedCommissionAmount,
         minimumCommission,
-        uberDriverId,
-        boltDriverId,
-        woltCourierId,
-        glovoCourierId,
-        boltCourierId,
-        boltTaxiDriverUuid && UUID_RE.test(String(boltTaxiDriverUuid))
-          ? String(boltTaxiDriverUuid)
-          : null,
+        platformIds.uber_driver_id ?? null,
+        platformIds.bolt_driver_id ?? null,
+        platformIds.wolt_courier_id ?? null,
+        platformIds.glovo_courier_id ?? null,
+        platformIds.bolt_courier_id ?? null,
+        platformIds.bolt_taxi_driver_uuid ?? null,
         subcontractorUuid,
         notes,
         id,
@@ -880,11 +908,15 @@ router.patch("/:id/status", requirePermission("drivers.edit"), async (req, res) 
   }
 
   try {
+    const releasingIds = String(status).toLowerCase() === "terminated";
     const { rows } = await query(
       `
       UPDATE drivers
-      SET employment_status = $1, updated_at = NOW()
+      SET employment_status = $1,
+          updated_at = NOW()
+          ${releasingIds ? `, ${CLEAR_PLATFORM_IDS_SQL}` : ""}
       WHERE id = $2 AND organization_id = $3
+        AND (is_deleted = false OR is_deleted IS NULL)
       RETURNING *
       `,
       [status, id, orgId],
@@ -896,15 +928,75 @@ router.patch("/:id/status", requirePermission("drivers.edit"), async (req, res) 
     }
 
     await logDriverActivity(String(id), "status_change", {
-      description: `Employment status set to ${status}`,
+      description: releasingIds
+        ? `Employment status set to ${status}; platform IDs released`
+        : `Employment status set to ${status}`,
       performedBy: req.user?.sub,
-      newValues: { employment_status: status },
+      newValues: releasingIds
+        ? {
+            employment_status: status,
+            uber_driver_id: null,
+            bolt_driver_id: null,
+            glovo_courier_id: null,
+            bolt_courier_id: null,
+            bolt_taxi_driver_uuid: null,
+            wolt_courier_id: null,
+          }
+        : { employment_status: status },
     });
 
     return res.json(driver);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Update driver status error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/** Clear platform courier IDs so another fleet (or a new local driver) can use them. */
+router.post("/:id/release-platform-ids", requirePermission("drivers.edit"), async (req, res) => {
+  const orgId = req.effectiveOrgId;
+  const { id } = req.params;
+
+  if (!orgId) {
+    return res.status(400).json({ message: "User is not associated with an organization" });
+  }
+
+  try {
+    const { rows } = await query(
+      `
+      UPDATE drivers
+      SET ${CLEAR_PLATFORM_IDS_SQL},
+          updated_at = NOW()
+      WHERE id = $1 AND organization_id = $2
+        AND (is_deleted = false OR is_deleted IS NULL)
+      RETURNING *
+      `,
+      [id, orgId],
+    );
+
+    const driver = rows[0];
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    await logDriverActivity(String(id), "platform_ids_released", {
+      description: "Platform courier IDs released for transfer",
+      performedBy: req.user?.sub,
+      newValues: {
+        uber_driver_id: null,
+        bolt_driver_id: null,
+        glovo_courier_id: null,
+        bolt_courier_id: null,
+        bolt_taxi_driver_uuid: null,
+        wolt_courier_id: null,
+      },
+    });
+
+    return res.json(driver);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Release platform IDs error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -1367,7 +1459,12 @@ router.delete("/:id", requirePermission("drivers.delete"), async (req, res) => {
     const { rows } = await query(
       `
       UPDATE drivers
-      SET is_deleted = true, deleted_at = NOW(), deleted_by = $3, employment_status = 'terminated', updated_at = NOW()
+      SET is_deleted = true,
+          deleted_at = NOW(),
+          deleted_by = $3,
+          employment_status = 'terminated',
+          ${CLEAR_PLATFORM_IDS_SQL},
+          updated_at = NOW()
       WHERE id = $1 AND organization_id = $2 AND (is_deleted = false OR is_deleted IS NULL)
       RETURNING *
       `,
@@ -1380,9 +1477,18 @@ router.delete("/:id", requirePermission("drivers.delete"), async (req, res) => {
     }
 
     await logDriverActivity(String(id), "driver_delete", {
-      description: "Driver soft deleted",
+      description: "Driver soft deleted; platform IDs released",
       performedBy: userId ?? undefined,
-      newValues: { is_deleted: true, employment_status: "terminated" },
+      newValues: {
+        is_deleted: true,
+        employment_status: "terminated",
+        uber_driver_id: null,
+        bolt_driver_id: null,
+        glovo_courier_id: null,
+        bolt_courier_id: null,
+        bolt_taxi_driver_uuid: null,
+        wolt_courier_id: null,
+      },
     });
 
     return res.json(driver);
