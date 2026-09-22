@@ -457,6 +457,7 @@
       "suspendModalBody": "{{name}} will be marked as suspended and removed from active fleet operations until reactivated.",
       "suspending": "Suspending…",
       "suspend": "Suspend",
+      "suspendFailedDefault": "Failed to suspend driver",
       "viewLoanReport": "View loan report",
       "importFailedDefault": "Driver CSV import failed"
     },
