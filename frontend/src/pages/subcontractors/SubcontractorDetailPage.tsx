@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import { getSubcontractor } from "../../api/subcontractors";
+import { LinkedDriverPlatformIds } from "../../components/subcontractors/LinkedDriverPlatformIds";
 import { usePermission } from "../../lib/permissions";
 import { PageHeader } from "../../components/theme/PageHeader";
 import { btnPrimary } from "../../theme/classNames";
@@ -129,9 +130,15 @@ export function SubcontractorDetailPage() {
                     <li key={driver.id}>
                       <Link
                         to={`/drivers/${driver.id}`}
-                        className="block rounded-xl border border-border/70 bg-slate-50/60 px-3 py-2.5 text-sm font-medium text-brand hover:bg-brand-mint/15"
+                        className="block rounded-xl border border-border/70 bg-slate-50/60 px-3 py-2.5 hover:bg-brand-mint/15"
                       >
-                        {driver.first_name} {driver.last_name}
+                        <span className="block text-sm font-medium text-brand">
+                          {driver.first_name} {driver.last_name}
+                        </span>
+                        {driver.phone ? (
+                          <span className="mt-0.5 block text-xs text-slate-500">{driver.phone}</span>
+                        ) : null}
+                        <LinkedDriverPlatformIds driver={driver} />
                       </Link>
                     </li>
                   ))}
