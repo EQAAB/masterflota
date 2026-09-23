@@ -26,11 +26,14 @@ export function formatRelativeCreated(createdAt?: string): string {
   }
 }
 
+/** Inclusive calendar days for a booking period (e.g. 18 Sept–24 Sept = 7 days). */
 export function rentalDayCount(start: string, end: string): number {
   const s = new Date(start);
   const e = new Date(end);
-  const ms = e.getTime() - s.getTime();
-  return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 1;
+  const startDay = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+  const endDay = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+  return Math.max(1, Math.floor((endDay - startDay) / 86_400_000) + 1);
 }
 
 /** Latest renewed week for weekly bookings (end − 7 days → end). Null if not weekly/renewed. */
