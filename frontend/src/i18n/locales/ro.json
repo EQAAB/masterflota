@@ -1929,6 +1929,7 @@
       "colActions": "Acțiuni",
       "dayCount_one": "Închiriere de {{count}} zi",
       "dayCount_other": "Închiriere de {{count}} zile",
+      "thisWeekPeriod": "Săptămâna aceasta: {{range}}",
       "rowActionsAriaLabel": "Acțiuni rezervare",
       "emptyTitle": "Nicio rezervare încă",
       "emptyDescription": "Creați prima rezervare de închiriere pentru a gestiona ridicările, returnările și plățile.",
