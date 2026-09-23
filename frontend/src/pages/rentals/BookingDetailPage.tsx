@@ -13,7 +13,7 @@ import {
   returnRentalBooking,
   type RentalPayment,
 } from "../../api/rentals";
-import { addDaysToDate } from "../../components/rentals/booking-form/bookingFormUtils";
+import { formatBookingDateTime } from "../../components/rentals/booking-form/bookingFormUtils";
 import { WEEKLY_RENTAL_RENEWAL_DAYS } from "../../components/rentals/booking-form/bookingFormConstants";
 import { RentalPageHeader } from "../../components/rentals/RentalPageHeader";
 import { useCanManageRentals } from "../../lib/rentalsPermissions";
@@ -64,9 +64,14 @@ export function BookingDetailPage() {
     return Number(snap?.weekly_rate ?? 0);
   }, [b?.pricing_snapshot]);
 
-  const nextEndDate = useMemo(() => {
-    if (!b?.end_at) return "";
-    return addDaysToDate(b.end_at.slice(0, 10), WEEKLY_RENTAL_RENEWAL_DAYS);
+  const renewExtension = useMemo(() => {
+    if (!b?.end_at) return null;
+    const to = new Date(b.end_at);
+    to.setDate(to.getDate() + WEEKLY_RENTAL_RENEWAL_DAYS);
+    return {
+      fromDate: formatBookingDateTime(b.end_at),
+      toDate: formatBookingDateTime(to.toISOString()),
+    };
   }, [b?.end_at]);
 
   const paymentSummary = useMemo(() => {
@@ -189,7 +194,7 @@ export function BookingDetailPage() {
             <div className="flex justify-between">
               <dt className="text-slate-500">{t("pages.bookingDetail.periodLabel")}</dt>
               <dd>
-                {b.start_at.slice(0, 16)} – {b.end_at.slice(0, 16)}
+                {formatBookingDateTime(b.start_at)} – {formatBookingDateTime(b.end_at)}
               </dd>
             </div>
             <div className="flex justify-between">
@@ -282,7 +287,13 @@ export function BookingDetailPage() {
             <article className="rounded-2xl border border-brand/20 bg-brand-mint/10 p-5 shadow-sm">
               <h2 className="font-semibold text-ink">{t("pages.bookings.renew1WeekAction")}</h2>
               <p className="mt-1 text-sm text-slate-600">
-                <Trans i18nKey="pages.bookingDetail.extendsRentalTo" values={{ date: nextEndDate }} components={{ b: <strong /> }} />
+                {renewExtension && (
+                  <Trans
+                    i18nKey="pages.bookingDetail.extendsRentalTo"
+                    values={{ fromDate: renewExtension.fromDate, toDate: renewExtension.toDate }}
+                    components={{ b: <strong /> }}
+                  />
+                )}
               </p>
               <label className="mt-4 block text-sm">
                 <span className="font-medium text-ink">{t("pages.bookingDetail.paymentAmount")}</span>

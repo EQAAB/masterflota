@@ -2098,7 +2098,7 @@
       "mileageIn": "Mileage in",
       "damageNotesPlaceholder": "Damage notes (optional)",
       "returnVehicle": "Return vehicle",
-      "extendsRentalTo": "Extends rental to <b>{{date}}</b> and records weekly payment.",
+      "extendsRentalTo": "Extends rental from <b>{{fromDate}}</b> to <b>{{toDate}}</b> and records weekly payment.",
       "paymentAmount": "Payment amount",
       "paymentMethod": "Payment method",
       "pickupRequiredTitle": "Pickup required before renew",
