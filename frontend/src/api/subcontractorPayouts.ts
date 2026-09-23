@@ -62,6 +62,10 @@ export interface SubcontractorSettlementDetailDriver {
   id: string;
   driver_id: string;
   name: string;
+  /** Payout platform leg (glovo / bolt / uber / bolt_taxi). */
+  platform?: string | null;
+  /** Courier / driver ID used on that platform for this payout. */
+  platform_id?: string | null;
   gross: string;
   tips: string;
   commission: string;
