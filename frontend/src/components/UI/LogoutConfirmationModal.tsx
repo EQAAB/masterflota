@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 export interface LogoutConfirmationModalProps {
@@ -17,10 +18,17 @@ export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
     await onConfirm();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
-        <h3 className="text-lg font-semibold text-ink">{t("auth.logOutConfirmTitle")}</h3>
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50">
+      <div
+        className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="logout-confirm-title"
+      >
+        <h3 id="logout-confirm-title" className="text-lg font-semibold text-ink">
+          {t("auth.logOutConfirmTitle")}
+        </h3>
         <p className="text-sm text-ink-muted mt-2">{t("auth.logOutConfirmBody")}</p>
         {successMessage && (
           <p className="text-sm text-green-600 mt-2">{successMessage}</p>
@@ -51,6 +59,7 @@ export function LogoutConfirmationModal(props: LogoutConfirmationModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
