@@ -1,6 +1,7 @@
 import type { RentalBooking } from "../../../api/rentals";
 import { formatCurrency } from "../../../utils/currency";
 import { bookingStatusDisplayLabel, rentPaymentStateLabel } from "../rentalStatus";
+import { WEEKLY_RENTAL_RENEWAL_DAYS } from "../booking-form/bookingFormConstants";
 import i18n from "../../../i18n";
 
 export function formatRelativeCreated(createdAt?: string): string {
@@ -30,6 +31,26 @@ export function rentalDayCount(start: string, end: string): number {
   const e = new Date(end);
   const ms = e.getTime() - s.getTime();
   return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+/** Latest renewed week for weekly bookings (end − 7 days → end). Null if not weekly/renewed. */
+export function getCurrentWeeklyPeriod(booking: RentalBooking): { startIso: string; endIso: string } | null {
+  if (booking.rental_type !== "weekly") return null;
+  const weeksRenewed = Number(booking.pricing_snapshot?.weeks_renewed ?? 0);
+  const days = rentalDayCount(booking.start_at, booking.end_at);
+  const hasRenewed =
+    (Number.isFinite(weeksRenewed) && weeksRenewed > 0) || days > WEEKLY_RENTAL_RENEWAL_DAYS;
+  if (!hasRenewed) return null;
+
+  const end = new Date(booking.end_at);
+  if (Number.isNaN(end.getTime())) return null;
+  const start = new Date(booking.end_at);
+  start.setDate(start.getDate() - WEEKLY_RENTAL_RENEWAL_DAYS);
+  const overallStart = new Date(booking.start_at);
+  if (!Number.isNaN(overallStart.getTime()) && start.getTime() < overallStart.getTime()) {
+    start.setTime(overallStart.getTime());
+  }
+  return { startIso: start.toISOString(), endIso: booking.end_at };
 }
 
 export function countUpcomingPickups(bookings: RentalBooking[]): number {

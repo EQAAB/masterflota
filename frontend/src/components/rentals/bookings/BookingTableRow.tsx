@@ -10,7 +10,7 @@ import {
   rentPaymentStateLabel,
 } from "../rentalStatus";
 import { formatShortDateRange } from "../dashboard/rentalDashboardUtils";
-import { formatRelativeCreated, rentalDayCount } from "./bookingsListUtils";
+import { formatRelativeCreated, getCurrentWeeklyPeriod, rentalDayCount } from "./bookingsListUtils";
 import type { BookingsDensity } from "./bookingsListUtils";
 
 type BookingTableRowProps = {
@@ -29,6 +29,7 @@ export function BookingTableRow({
   const { t } = useTranslation();
   const days = rentalDayCount(b.start_at, b.end_at);
   const contact = b.customer_phone || b.customer_email || t("common.emDash");
+  const currentWeek = getCurrentWeeklyPeriod(b);
 
   return (
     <tr
@@ -79,6 +80,13 @@ export function BookingTableRow({
             <p className="text-xs text-slate-500">
               {t("pages.bookings.dayCount", { count: days })}
             </p>
+            {currentWeek && (
+              <p className="mt-0.5 text-xs font-medium text-brand-dark">
+                {t("pages.bookings.thisWeekPeriod", {
+                  range: formatShortDateRange(currentWeek.startIso, currentWeek.endIso),
+                })}
+              </p>
+            )}
           </div>
         </div>
       </td>

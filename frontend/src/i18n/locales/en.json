@@ -1921,6 +1921,7 @@
       "colActions": "Actions",
       "dayCount_one": "{{count}} day rental",
       "dayCount_other": "{{count}} days rental",
+      "thisWeekPeriod": "This week: {{range}}",
       "rowActionsAriaLabel": "Booking actions",
       "emptyTitle": "No bookings yet",
       "emptyDescription": "Create your first rental booking to start managing pickups, returns, and payments.",
