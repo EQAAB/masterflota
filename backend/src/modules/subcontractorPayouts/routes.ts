@@ -274,6 +274,8 @@ router.get("/:id/detail", async (req, res) => {
       id: string;
       driver_id: string;
       name: string;
+      platform: string | null;
+      platform_id: string | null;
       gross: string;
       tips: string;
       commission: string;
@@ -290,6 +292,8 @@ router.get("/:id/detail", async (req, res) => {
       `SELECT dp.id::text,
               dp.driver_id::text,
               TRIM(COALESCE(d.first_name, '') || ' ' || COALESCE(d.last_name, '')) AS name,
+              dp.platform::text AS platform,
+              dp.platform_id,
               COALESCE(dp.total_gross_earnings, 0)::text AS gross,
               COALESCE(dp.tips, 0)::text AS tips,
               COALESCE(dp.company_commission, 0)::text AS commission,

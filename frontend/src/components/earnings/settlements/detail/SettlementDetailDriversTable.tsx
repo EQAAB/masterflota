@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SubcontractorSettlementDetailDriver } from "../../../../api/subcontractorPayouts";
 import { formatCurrency } from "../../../../utils/currency";
+import { earningsPlatformLabel } from "../../../../utils/earningsPlatformLabel";
 import { transitionDefault } from "../../../../theme/classNames";
 import { moneyAccentClass } from "./settlementDetailDisplayUtils";
 import {
@@ -92,6 +93,16 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   );
+}
+
+function settlementDriverPlatformLine(d: SubcontractorSettlementDetailDriver): string | null {
+  const platform = d.platform?.trim();
+  const platformId = d.platform_id?.trim();
+  if (!platform && !platformId) return null;
+  const label = platform ? earningsPlatformLabel(platform) : null;
+  if (label && platformId) return `${label} · ${platformId}`;
+  if (platformId) return platformId;
+  return label;
 }
 
 function ColumnsIcon({ className }: { className?: string }) {
@@ -362,6 +373,7 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
           <tbody className="divide-y divide-slate-100/90">
             {drivers.map((d) => {
               const expanded = expandedIds.has(d.id);
+              const platformLine = settlementDriverPlatformLine(d);
               return (
                 <Fragment key={d.id}>
                   <tr className="group bg-white transition-colors duration-150 hover:bg-slate-50/80">
@@ -376,8 +388,16 @@ export function SettlementDetailDriversTable({ drivers, footer }: SettlementDeta
                         <ChevronIcon expanded={expanded} />
                       </button>
                     </td>
-                    <td className={`${stickyDriverTd} ${stickyDriverTdHover}`} title={d.name}>
-                      {d.name || t("common.emDash")}
+                    <td
+                      className={`${stickyDriverTd} ${stickyDriverTdHover}`}
+                      title={[d.name, platformLine].filter(Boolean).join(" · ")}
+                    >
+                      <span className="block truncate">{d.name || t("common.emDash")}</span>
+                      {platformLine && (
+                        <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500">
+                          {platformLine}
+                        </span>
+                      )}
                     </td>
                     {visibleColumns.map((col) => (
                       <MetricCells key={col.key} col={col} driver={d} rowKind="body" />

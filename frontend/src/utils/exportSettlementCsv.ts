@@ -21,6 +21,8 @@ function exportDetailCsv(detail: SubcontractorSettlementDetail): void {
   const csv = Papa.unparse(
     drivers.map((d) => ({
       driver: d.name,
+      platform: d.platform ?? "",
+      platform_id: d.platform_id ?? "",
       gross_incl_tips: d.gross,
       tips: d.tips,
       commission: d.commission,
