@@ -51,7 +51,9 @@ router.get("/:id", async (req, res) => {
     const row = rows[0];
     if (!row) return res.status(404).json({ message: "Subcontractor not found" });
     const { rows: drivers } = await query(
-      `SELECT d.id, d.first_name, d.last_name, d.phone, d.employment_status
+      `SELECT d.id, d.first_name, d.last_name, d.phone, d.employment_status,
+              d.uber_driver_id, d.bolt_driver_id, d.glovo_courier_id, d.bolt_courier_id,
+              d.bolt_taxi_driver_uuid::text AS bolt_taxi_driver_uuid, d.wolt_courier_id
        FROM drivers d
        WHERE d.subcontractor_id = $1::uuid AND d.organization_id = $2::uuid
          AND (d.is_deleted = false OR d.is_deleted IS NULL)

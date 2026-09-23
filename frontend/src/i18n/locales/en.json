@@ -1045,7 +1045,7 @@
       "saveFailedError": "Save failed",
       "legalNameRequiredError": "Legal name is required.",
       "linkedDriversPanelDesc": "Drivers assigned to this subcontractor",
-      "searchDriversPlaceholder": "Search drivers…",
+      "searchDriversPlaceholder": "Search name, phone, or platform ID…",
       "noPhoneFallback": "No phone",
       "noDriversMatchSearch": "No drivers match your search."
     },
@@ -1067,7 +1067,8 @@
       "startDateLabel": "Start date",
       "endDateLabel": "End date",
       "linkedDriversTitle": "Linked drivers",
-      "assignedSuffix": "{{count}} assigned"
+      "assignedSuffix": "{{count}} assigned",
+      "noPlatformIds": "No platform IDs"
     },
     "combinedPayoutDetailsPage": {
       "somethingWentWrong": "Something went wrong",

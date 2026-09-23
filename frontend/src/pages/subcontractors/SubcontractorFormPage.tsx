@@ -8,8 +8,11 @@ import {
   getSubcontractor,
   updateSubcontractor,
   type SaveSubcontractorPayload,
+  type SubcontractorLinkedDriver,
   type SubcontractorRegistrationType,
 } from "../../api/subcontractors";
+import { LinkedDriverPlatformIds } from "../../components/subcontractors/LinkedDriverPlatformIds";
+import { platformIdsSearchText } from "../../components/subcontractors/linkedDriverPlatformIdUtils";
 import { PageHeader } from "../../components/theme/PageHeader";
 
 const inputClass =
@@ -44,21 +47,16 @@ function driverInitials(firstName: string, lastName: string): string {
   return `${f}${l}`.toUpperCase() || "?";
 }
 
-type LinkedDriver = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-};
-
-function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
+function LinkedDriversPanel({ drivers }: { drivers: SubcontractorLinkedDriver[] }) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState("");
 
   const filtered = drivers.filter((d) => {
     const q = filter.trim().toLowerCase();
     if (!q) return true;
-    return `${d.first_name} ${d.last_name} ${d.phone}`.toLowerCase().includes(q);
+    return `${d.first_name} ${d.last_name} ${d.phone} ${platformIdsSearchText(d)}`
+      .toLowerCase()
+      .includes(q);
   });
 
   return (
@@ -88,16 +86,19 @@ function LinkedDriversPanel({ drivers }: { drivers: LinkedDriver[] }) {
           <li key={d.id}>
             <Link
               to={`/drivers/${d.id}`}
-              className="flex items-center gap-2.5 rounded-xl border border-border/70 bg-slate-50/60 px-3 py-2.5 transition-all duration-200 hover:border-brand/30 hover:bg-brand-mint/15"
+              className="flex items-start gap-2.5 rounded-xl border border-border/70 bg-slate-50/60 px-3 py-2.5 transition-all duration-200 hover:border-brand/30 hover:bg-brand-mint/15"
             >
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-mint text-xs font-semibold text-brand">
+              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-mint text-xs font-semibold text-brand">
                 {driverInitials(d.first_name, d.last_name)}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-slate-900">
                   {d.first_name} {d.last_name}
                 </span>
-                <span className="block truncate text-xs text-slate-500">{d.phone || t("pages.subcontractorForm.noPhoneFallback")}</span>
+                <span className="block truncate text-xs text-slate-500">
+                  {d.phone || t("pages.subcontractorForm.noPhoneFallback")}
+                </span>
+                <LinkedDriverPlatformIds driver={d} />
               </span>
             </Link>
           </li>

@@ -1048,7 +1048,7 @@
       "saveFailedError": "Salvarea a eșuat",
       "legalNameRequiredError": "Denumirea legală este obligatorie.",
       "linkedDriversPanelDesc": "Șoferi asignați acestui subcontractant",
-      "searchDriversPlaceholder": "Caută șoferi…",
+      "searchDriversPlaceholder": "Caută nume, telefon sau ID platformă…",
       "noPhoneFallback": "Fără telefon",
       "noDriversMatchSearch": "Niciun șofer nu corespunde căutării."
     },
@@ -1070,7 +1070,8 @@
       "startDateLabel": "Data început",
       "endDateLabel": "Data sfârșit",
       "linkedDriversTitle": "Șoferi asociați",
-      "assignedSuffix": "{{count}} asignați"
+      "assignedSuffix": "{{count}} asignați",
+      "noPlatformIds": "Fără ID-uri platformă"
     },
     "combinedPayoutDetailsPage": {
       "somethingWentWrong": "Ceva a mers greșit",

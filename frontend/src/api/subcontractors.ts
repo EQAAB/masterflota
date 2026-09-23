@@ -23,8 +23,22 @@ export interface Subcontractor {
   driver_count?: number;
 }
 
+export type SubcontractorLinkedDriver = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  employment_status: string;
+  uber_driver_id?: string | null;
+  bolt_driver_id?: string | null;
+  glovo_courier_id?: string | null;
+  bolt_courier_id?: string | null;
+  bolt_taxi_driver_uuid?: string | null;
+  wolt_courier_id?: string | null;
+};
+
 export interface SubcontractorDetail extends Subcontractor {
-  drivers: { id: string; first_name: string; last_name: string; phone: string; employment_status: string }[];
+  drivers: SubcontractorLinkedDriver[];
 }
 
 export interface SaveSubcontractorPayload {
