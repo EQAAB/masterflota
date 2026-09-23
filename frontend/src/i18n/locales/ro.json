@@ -2106,7 +2106,7 @@
       "mileageIn": "Kilometraj la intrare",
       "damageNotesPlaceholder": "Note daune (opțional)",
       "returnVehicle": "Returnează vehiculul",
-      "extendsRentalTo": "Extinde închirierea până la <b>{{date}}</b> și înregistrează plata săptămânală.",
+      "extendsRentalTo": "Extinde închirierea de la <b>{{fromDate}}</b> până la <b>{{toDate}}</b> și înregistrează plata săptămânală.",
       "paymentAmount": "Sumă plată",
       "paymentMethod": "Metodă de plată",
       "pickupRequiredTitle": "Este necesară ridicarea înainte de reînnoire",
