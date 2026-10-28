@@ -17,6 +17,7 @@ import {
 } from "../../api/earnings";
 import { CombinedPayoutDetailsContent } from "../../components/earnings/payouts/CombinedPayoutDetailsContent";
 import { PayoutDetailsPageHeader } from "../../components/earnings/payouts/PayoutDetailsPageHeader";
+import { PayoutExplainModal } from "../../components/earnings/payouts/PayoutExplainModal";
 import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWeekNavigator";
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
 import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
@@ -61,6 +62,7 @@ export function CombinedPayoutDetailsPage() {
   const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
   const [loanModalOpen, setLoanModalOpen] = useState(false);
+  const [explainOpen, setExplainOpen] = useState(false);
 
   const backUrl = `/earnings/payouts?from=${encodeURIComponent(weekStart)}&to=${encodeURIComponent(weekEnd)}`;
 
@@ -277,6 +279,9 @@ export function CombinedPayoutDetailsPage() {
         downloadBusy={downloadBusy}
         downloadDisabled={!payoutItems.length}
         onDownloadReport={handleDownloadReport}
+        showExplain
+        explainDisabled={!payoutItems.length}
+        onExplainPayout={() => setExplainOpen(true)}
       />
 
       {weekNavigator}
@@ -358,6 +363,14 @@ export function CombinedPayoutDetailsPage() {
         onSuccess={() => void queryClient.invalidateQueries({ queryKey: ["earnings"] })}
       />
       )}
+      <PayoutExplainModal
+        open={explainOpen && !!driverId}
+        onClose={() => setExplainOpen(false)}
+        driverId={driverId!}
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        driverName={driverName}
+      />
     </div>
   );
 }

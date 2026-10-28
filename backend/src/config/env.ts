@@ -68,6 +68,11 @@ export const env = {
   anafClientSecret: process.env.ANAF_CLIENT_SECRET ?? "",
   anafCallbackUrl: process.env.ANAF_CALLBACK_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
+  openaiApiKey: process.env.OPENAI_API_KEY?.trim() ?? "",
+  openaiModel: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
+  aiFeaturesEnabled:
+    process.env.AI_FEATURES_ENABLED === "true" &&
+    Boolean(process.env.OPENAI_API_KEY?.trim()),
 };
 
 function parsePositiveInt(raw: string | undefined, fallback: number): number {

@@ -5,6 +5,8 @@ import { requireEarningsOverview } from "../auth/earningsPermissions";
 import { attachOrgContext, requireOrgId } from "../../middleware/orgContext";
 import { query } from "../../db/pool";
 import { handleRecentAssignments } from "../vehicles/vehicleAssignmentHistoryHandlers";
+import { buildOpsDigestItems, narrateOpsDigest } from "../../lib/ai/opsDigest";
+import { isAiEnabled } from "../../lib/ai/openaiClient";
 
 const router = Router();
 
@@ -55,6 +57,216 @@ function canViewCommissionFinance(permissions: string[] | undefined): boolean {
   return hasAnyPermission(permissions ?? [], ["payouts.view", "payouts.view_all", "reports.view"]);
 }
 
+type DashboardStatsPayload = {
+  totalDrivers: number;
+  activeDrivers: number;
+  pendingDocuments: number;
+  expiredDocuments: number;
+  totalVehicles: number;
+  assignedVehicles: number;
+  totalCommissionEarned: number | null;
+  pendingPayments: number | null;
+  totalVehicleRentalFees: number | null;
+  pendingPayoutRows: number | null;
+  outstandingDebt: number | null;
+  driversWithDebt: number | null;
+  outstandingLoans: number | null;
+  driversWithLoans: number | null;
+  overdueRentals: number | null;
+  alertCount: number;
+  periodFrom: string;
+  periodTo: string;
+};
+
+async function loadDashboardStats(
+  orgId: string,
+  from: string,
+  to: string,
+  permissions: string[] | undefined,
+): Promise<DashboardStatsPayload> {
+  const showPayoutFinance = canViewPayoutFinance(permissions);
+  const showLoanFinance = canViewLoanFinance(permissions);
+  const showRentalAlerts = canViewRentalAlerts(permissions);
+  const showCommissionFinance = canViewCommissionFinance(permissions);
+
+  const [
+    driversRes,
+    activeRes,
+    pendingDocsRes,
+    expiredDocsRes,
+    vehiclesRes,
+    assignedVehiclesRes,
+    totalCommissionRes,
+    pendingPaymentsRes,
+    vehicleRentalFeesRes,
+    pendingPayoutsCountRes,
+    debtRes,
+    loansRes,
+    overdueRentalsRes,
+  ] = await Promise.all([
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM drivers WHERE organization_id = $1 AND ${NOT_DELETED}`,
+      [orgId],
+    ),
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM drivers
+       WHERE organization_id = $1 AND employment_status = 'active' AND ${NOT_DELETED}`,
+      [orgId],
+    ),
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM driver_documents d
+       JOIN drivers dr ON d.driver_id = dr.id
+       WHERE dr.organization_id = $1 AND ${DRIVER_NOT_DELETED}
+         AND d.is_verified = false`,
+      [orgId],
+    ),
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM driver_documents d
+       JOIN drivers dr ON d.driver_id = dr.id
+       WHERE dr.organization_id = $1 AND ${DRIVER_NOT_DELETED}
+         AND d.expiry_date IS NOT NULL AND d.expiry_date < CURRENT_DATE`,
+      [orgId],
+    ),
+    query<{ count: string }>("SELECT COUNT(*) as count FROM vehicles WHERE organization_id = $1", [orgId]),
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count
+       FROM drivers
+       WHERE organization_id = $1 AND current_vehicle_id IS NOT NULL
+         AND ${NOT_DELETED}`,
+      [orgId],
+    ),
+    showCommissionFinance
+      ? query<{ total: string | null }>(
+          `SELECT COALESCE(SUM(company_commission), 0)::text as total
+       FROM driver_payouts
+       WHERE organization_id = $1
+         AND payment_status IN ('paid', 'approved')
+         AND payment_period_start <= $3::date
+         AND payment_period_end >= $2::date`,
+          [orgId, from, to],
+        )
+      : Promise.resolve({ rows: [{ total: null }] }),
+    showPayoutFinance
+      ? query<{ total: string | null }>(
+          `SELECT COALESCE(SUM(net_driver_payout), 0)::text as total
+       FROM driver_payouts
+       WHERE organization_id = $1
+         AND payment_status = 'pending'
+         AND payment_period_start <= $3::date
+         AND payment_period_end >= $2::date`,
+          [orgId, from, to],
+        )
+      : Promise.resolve({ rows: [{ total: null }] }),
+    showPayoutFinance
+      ? query<{ total: string | null }>(
+          `SELECT COALESCE(SUM(vehicle_rental_fee), 0)::text as total
+       FROM driver_payouts
+       WHERE organization_id = $1
+         AND payment_period_start <= $3::date
+         AND payment_period_end >= $2::date`,
+          [orgId, from, to],
+        )
+      : Promise.resolve({ rows: [{ total: null }] }),
+    showPayoutFinance
+      ? query<{ count: string }>(
+          `SELECT COUNT(*)::text AS count
+       FROM driver_payouts
+       WHERE organization_id = $1
+         AND payment_status = 'pending'
+         AND payment_period_start <= $3::date
+         AND payment_period_end >= $2::date`,
+          [orgId, from, to],
+        )
+      : Promise.resolve({ rows: [{ count: null }] }),
+    showPayoutFinance
+      ? query<{ total: string; drivers: string }>(
+          `SELECT COALESCE(SUM(remaining_debt_amount), 0)::text AS total,
+              COUNT(DISTINCT driver_id)::text AS drivers
+       FROM driver_payouts
+       WHERE organization_id = $1 AND COALESCE(remaining_debt_amount, 0) > 0`,
+          [orgId],
+        )
+      : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
+    showLoanFinance
+      ? query<{ total: string; drivers: string }>(
+          `SELECT COALESCE(SUM(remaining_balance), 0)::text AS total,
+              COUNT(DISTINCT driver_id)::text AS drivers
+       FROM driver_loans
+       WHERE organization_id = $1
+         AND status = 'active'
+         AND COALESCE(remaining_balance, 0) > 0`,
+          [orgId],
+        )
+      : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
+    showRentalAlerts
+      ? query<{ count: string }>(
+          `SELECT COUNT(*)::text AS count
+       FROM rental_bookings
+       WHERE organization_id = $1
+         AND status = 'active'
+         AND end_at < NOW()`,
+          [orgId],
+        )
+      : Promise.resolve({ rows: [{ count: null }] }),
+  ]);
+
+  const outstandingDebt = showPayoutFinance
+    ? parseFloat(debtRes.rows[0]?.total ?? "0")
+    : null;
+  const driversWithDebt = showPayoutFinance
+    ? parseInt(debtRes.rows[0]?.drivers ?? "0", 10)
+    : null;
+  const outstandingLoans = showLoanFinance
+    ? parseFloat(loansRes.rows[0]?.total ?? "0")
+    : null;
+  const driversWithLoans = showLoanFinance
+    ? parseInt(loansRes.rows[0]?.drivers ?? "0", 10)
+    : null;
+  const overdueRentals = showRentalAlerts
+    ? parseInt(overdueRentalsRes.rows[0]?.count ?? "0", 10)
+    : null;
+  const pendingDocuments = parseInt(pendingDocsRes.rows[0]?.count ?? "0", 10);
+  const expiredDocuments = parseInt(expiredDocsRes.rows[0]?.count ?? "0", 10);
+  const pendingPayoutRows = showPayoutFinance
+    ? parseInt(pendingPayoutsCountRes.rows[0]?.count ?? "0", 10)
+    : null;
+
+  const alertCount =
+    (showPayoutFinance && (outstandingDebt ?? 0) > 0 ? 1 : 0) +
+    (showLoanFinance && (outstandingLoans ?? 0) > 0 ? 1 : 0) +
+    (showRentalAlerts && (overdueRentals ?? 0) > 0 ? 1 : 0) +
+    (expiredDocuments > 0 ? 1 : 0) +
+    (pendingDocuments > 0 ? 1 : 0) +
+    (showPayoutFinance && (pendingPayoutRows ?? 0) > 0 ? 1 : 0);
+
+  return {
+    totalDrivers: parseInt(driversRes.rows[0]?.count ?? "0", 10),
+    activeDrivers: parseInt(activeRes.rows[0]?.count ?? "0", 10),
+    pendingDocuments,
+    expiredDocuments,
+    totalVehicles: parseInt(vehiclesRes.rows[0]?.count ?? "0", 10),
+    assignedVehicles: parseInt(assignedVehiclesRes.rows[0]?.count ?? "0", 10),
+    totalCommissionEarned: showCommissionFinance
+      ? parseFloat(totalCommissionRes.rows[0]?.total ?? "0")
+      : null,
+    pendingPayments: showPayoutFinance
+      ? parseFloat(pendingPaymentsRes.rows[0]?.total ?? "0")
+      : null,
+    totalVehicleRentalFees: showPayoutFinance
+      ? parseFloat(vehicleRentalFeesRes.rows[0]?.total ?? "0")
+      : null,
+    pendingPayoutRows,
+    outstandingDebt,
+    driversWithDebt,
+    outstandingLoans,
+    driversWithLoans,
+    overdueRentals,
+    alertCount,
+    periodFrom: from,
+    periodTo: to,
+  };
+}
+
 router.use(authenticateJWT);
 router.use(attachOrgContext);
 router.use(requirePermission("dashboard.view"));
@@ -68,192 +280,65 @@ router.get("/stats", async (req, res) => {
     return res.status(400).json({ message: period.error });
   }
   const { from, to } = period;
-  const permissions = req.user?.permissions;
-  const showPayoutFinance = canViewPayoutFinance(permissions);
-  const showLoanFinance = canViewLoanFinance(permissions);
-  const showRentalAlerts = canViewRentalAlerts(permissions);
-  const showCommissionFinance = canViewCommissionFinance(permissions);
 
   try {
-    const [
-      driversRes,
-      activeRes,
-      pendingDocsRes,
-      expiredDocsRes,
-      vehiclesRes,
-      assignedVehiclesRes,
-      totalCommissionRes,
-      pendingPaymentsRes,
-      vehicleRentalFeesRes,
-      pendingPayoutsCountRes,
-      debtRes,
-      loansRes,
-      overdueRentalsRes,
-    ] = await Promise.all([
-      query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM drivers WHERE organization_id = $1 AND ${NOT_DELETED}`,
-        [orgId],
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM drivers
-         WHERE organization_id = $1 AND employment_status = 'active' AND ${NOT_DELETED}`,
-        [orgId],
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM driver_documents d
-         JOIN drivers dr ON d.driver_id = dr.id
-         WHERE dr.organization_id = $1 AND ${DRIVER_NOT_DELETED}
-           AND d.is_verified = false`,
-        [orgId],
-      ),
-      query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM driver_documents d
-         JOIN drivers dr ON d.driver_id = dr.id
-         WHERE dr.organization_id = $1 AND ${DRIVER_NOT_DELETED}
-           AND d.expiry_date IS NOT NULL AND d.expiry_date < CURRENT_DATE`,
-        [orgId],
-      ),
-      query<{ count: string }>("SELECT COUNT(*) as count FROM vehicles WHERE organization_id = $1", [orgId]),
-      query<{ count: string }>(
-        `SELECT COUNT(*) as count
-         FROM drivers
-         WHERE organization_id = $1 AND current_vehicle_id IS NOT NULL
-           AND ${NOT_DELETED}`,
-        [orgId],
-      ),
-      showCommissionFinance
-        ? query<{ total: string | null }>(
-            `SELECT COALESCE(SUM(company_commission), 0)::text as total
-         FROM driver_payouts
-         WHERE organization_id = $1
-           AND payment_status IN ('paid', 'approved')
-           AND payment_period_start <= $3::date
-           AND payment_period_end >= $2::date`,
-            [orgId, from, to],
-          )
-        : Promise.resolve({ rows: [{ total: null }] }),
-      showPayoutFinance
-        ? query<{ total: string | null }>(
-            `SELECT COALESCE(SUM(net_driver_payout), 0)::text as total
-         FROM driver_payouts
-         WHERE organization_id = $1
-           AND payment_status = 'pending'
-           AND payment_period_start <= $3::date
-           AND payment_period_end >= $2::date`,
-            [orgId, from, to],
-          )
-        : Promise.resolve({ rows: [{ total: null }] }),
-      showPayoutFinance
-        ? query<{ total: string | null }>(
-            `SELECT COALESCE(SUM(vehicle_rental_fee), 0)::text as total
-         FROM driver_payouts
-         WHERE organization_id = $1
-           AND payment_period_start <= $3::date
-           AND payment_period_end >= $2::date`,
-            [orgId, from, to],
-          )
-        : Promise.resolve({ rows: [{ total: null }] }),
-      showPayoutFinance
-        ? query<{ count: string }>(
-            `SELECT COUNT(*)::text AS count
-         FROM driver_payouts
-         WHERE organization_id = $1
-           AND payment_status = 'pending'
-           AND payment_period_start <= $3::date
-           AND payment_period_end >= $2::date`,
-            [orgId, from, to],
-          )
-        : Promise.resolve({ rows: [{ count: null }] }),
-      showPayoutFinance
-        ? query<{ total: string; drivers: string }>(
-            `SELECT COALESCE(SUM(remaining_debt_amount), 0)::text AS total,
-                COUNT(DISTINCT driver_id)::text AS drivers
-         FROM driver_payouts
-         WHERE organization_id = $1 AND COALESCE(remaining_debt_amount, 0) > 0`,
-            [orgId],
-          )
-        : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
-      showLoanFinance
-        ? query<{ total: string; drivers: string }>(
-            `SELECT COALESCE(SUM(remaining_balance), 0)::text AS total,
-                COUNT(DISTINCT driver_id)::text AS drivers
-         FROM driver_loans
-         WHERE organization_id = $1
-           AND status = 'active'
-           AND COALESCE(remaining_balance, 0) > 0`,
-            [orgId],
-          )
-        : Promise.resolve({ rows: [{ total: null, drivers: null }] }),
-      showRentalAlerts
-        ? query<{ count: string }>(
-            `SELECT COUNT(*)::text AS count
-         FROM rental_bookings
-         WHERE organization_id = $1
-           AND status = 'active'
-           AND end_at < NOW()`,
-            [orgId],
-          )
-        : Promise.resolve({ rows: [{ count: null }] }),
-    ]);
-
-    const outstandingDebt = showPayoutFinance
-      ? parseFloat(debtRes.rows[0]?.total ?? "0")
-      : null;
-    const driversWithDebt = showPayoutFinance
-      ? parseInt(debtRes.rows[0]?.drivers ?? "0", 10)
-      : null;
-    const outstandingLoans = showLoanFinance
-      ? parseFloat(loansRes.rows[0]?.total ?? "0")
-      : null;
-    const driversWithLoans = showLoanFinance
-      ? parseInt(loansRes.rows[0]?.drivers ?? "0", 10)
-      : null;
-    const overdueRentals = showRentalAlerts
-      ? parseInt(overdueRentalsRes.rows[0]?.count ?? "0", 10)
-      : null;
-    const pendingDocuments = parseInt(pendingDocsRes.rows[0]?.count ?? "0", 10);
-    const expiredDocuments = parseInt(expiredDocsRes.rows[0]?.count ?? "0", 10);
-    const pendingPayoutRows = showPayoutFinance
-      ? parseInt(pendingPayoutsCountRes.rows[0]?.count ?? "0", 10)
-      : null;
-
-    const alertCount =
-      (showPayoutFinance && (outstandingDebt ?? 0) > 0 ? 1 : 0) +
-      (showLoanFinance && (outstandingLoans ?? 0) > 0 ? 1 : 0) +
-      (showRentalAlerts && (overdueRentals ?? 0) > 0 ? 1 : 0) +
-      (expiredDocuments > 0 ? 1 : 0) +
-      (pendingDocuments > 0 ? 1 : 0) +
-      (showPayoutFinance && (pendingPayoutRows ?? 0) > 0 ? 1 : 0);
-
-    return res.json({
-      totalDrivers: parseInt(driversRes.rows[0]?.count ?? "0", 10),
-      activeDrivers: parseInt(activeRes.rows[0]?.count ?? "0", 10),
-      pendingDocuments,
-      expiredDocuments,
-      totalVehicles: parseInt(vehiclesRes.rows[0]?.count ?? "0", 10),
-      assignedVehicles: parseInt(assignedVehiclesRes.rows[0]?.count ?? "0", 10),
-      totalCommissionEarned: showCommissionFinance
-        ? parseFloat(totalCommissionRes.rows[0]?.total ?? "0")
-        : null,
-      pendingPayments: showPayoutFinance
-        ? parseFloat(pendingPaymentsRes.rows[0]?.total ?? "0")
-        : null,
-      totalVehicleRentalFees: showPayoutFinance
-        ? parseFloat(vehicleRentalFeesRes.rows[0]?.total ?? "0")
-        : null,
-      pendingPayoutRows,
-      outstandingDebt,
-      driversWithDebt,
-      outstandingLoans,
-      driversWithLoans,
-      overdueRentals,
-      alertCount,
-      periodFrom: from,
-      periodTo: to,
-    });
+    const stats = await loadDashboardStats(orgId, from, to, req.user?.permissions);
+    return res.json(stats);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Dashboard stats error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/ops-digest", async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  const period = parsePeriodQuery(req);
+  if ("error" in period) {
+    return res.status(400).json({ message: period.error });
+  }
+  const { from, to } = period;
+
+  try {
+    const stats = await loadDashboardStats(orgId, from, to, req.user?.permissions);
+    const items = buildOpsDigestItems({
+      pendingDocuments: stats.pendingDocuments,
+      expiredDocuments: stats.expiredDocuments,
+      pendingPayoutRows: stats.pendingPayoutRows,
+      pendingPayments: stats.pendingPayments,
+      outstandingDebt: stats.outstandingDebt,
+      driversWithDebt: stats.driversWithDebt,
+      outstandingLoans: stats.outstandingLoans,
+      driversWithLoans: stats.driversWithLoans,
+      overdueRentals: stats.overdueRentals,
+      periodFrom: from,
+      periodTo: to,
+    });
+
+    let narrative: string | null = null;
+    if (isAiEnabled() && items.length > 0) {
+      try {
+        narrative = await narrateOpsDigest(items, from, to);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Ops digest narrative error", err);
+        narrative = null;
+      }
+    }
+
+    return res.json({
+      generatedAt: new Date().toISOString(),
+      periodFrom: from,
+      periodTo: to,
+      aiEnabled: isAiEnabled(),
+      items,
+      narrative,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Dashboard ops-digest error", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
