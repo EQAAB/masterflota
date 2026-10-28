@@ -312,6 +312,40 @@ export function getConsolidatedPayouts(params: {
   return api.get<ConsolidatedPayoutsResponse>("/earnings/payouts/consolidated", { params });
 }
 
+export type PayoutExplainResponse = {
+  summary: string;
+  bullets: string[];
+  disclaimer: string;
+  aiEnabled: true;
+  breakdown: {
+    driverId: string;
+    driverName: string;
+    weekStart: string;
+    weekEnd: string;
+    currency: string;
+    status: string;
+    finalNet: number;
+    totalGross: number;
+    totalPlatformFees: number;
+    totalCommission: number;
+    totalCash: number;
+    totalAccountOpeningFee: number;
+    totalVehicleRent: number;
+    debtApplied: number;
+    remainingDebt: number;
+    debtOffset: number;
+    outstandingLoan: number;
+  };
+};
+
+export function explainPayout(body: {
+  driverId: string;
+  weekStart: string;
+  weekEnd: string;
+}) {
+  return api.post<PayoutExplainResponse>("/earnings/payouts/explain", body);
+}
+
 export function postPayDriverConsolidated(body: {
   driverId: string;
   weekStart: string;

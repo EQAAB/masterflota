@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18n";
 import {
+  fetchOpsDigest,
   getDashboardStats,
   getDriverStatusDistribution,
   getDocumentStats,
@@ -13,6 +14,7 @@ import {
 } from "../../api/dashboard";
 import type { DashboardActivityItem } from "../../api/dashboard";
 import { KpiStatCard } from "../../components/dashboard/KpiStatCard";
+import { OpsDigestCard } from "../../components/dashboard/OpsDigestCard";
 import type { ActivityRow } from "../../components/dashboard/ActivityTable";
 import { ActivityTimeline } from "../../components/dashboard/ActivityTimeline";
 import { AssignmentsFeed } from "../../components/dashboard/AssignmentsFeed";
@@ -142,6 +144,10 @@ export function DashboardPage() {
     queryKey: ["dashboard", "recent-assignments", range.from, range.to],
     queryFn: () => getRecentAssignments(5, periodParams).then((r) => r.data.items),
   });
+  const opsDigestQuery = useQuery({
+    queryKey: ["dashboard", "ops-digest", range.from, range.to],
+    queryFn: () => fetchOpsDigest(periodParams).then((r) => r.data),
+  });
 
   const stats = statsQuery.data?.data;
   const statusData = statusQuery.data?.data ?? [];
@@ -251,6 +257,14 @@ export function DashboardPage() {
             </Link>
           </div>
         </section>
+
+        <OpsDigestCard
+          items={opsDigestQuery.data?.items ?? []}
+          narrative={opsDigestQuery.data?.narrative ?? null}
+          aiEnabled={opsDigestQuery.data?.aiEnabled ?? false}
+          isLoading={opsDigestQuery.isLoading}
+          isError={opsDigestQuery.isError}
+        />
 
         <section>
           <div className="flex flex-wrap items-end justify-between gap-2">

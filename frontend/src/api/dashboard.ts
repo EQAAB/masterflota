@@ -67,6 +67,32 @@ export function getDashboardStats(params: DashboardPeriodParams) {
   });
 }
 
+export type OpsDigestSeverity = "high" | "medium" | "low";
+
+export type OpsDigestItem = {
+  id: string;
+  severity: OpsDigestSeverity;
+  title: string;
+  detail: string;
+  link: string;
+  count: number;
+};
+
+export type OpsDigestResponse = {
+  generatedAt: string;
+  periodFrom: string;
+  periodTo: string;
+  aiEnabled: boolean;
+  items: OpsDigestItem[];
+  narrative: string | null;
+};
+
+export function fetchOpsDigest(params: DashboardPeriodParams) {
+  return api.get<OpsDigestResponse>("/dashboard/ops-digest", {
+    params: { from: params.from, to: params.to },
+  });
+}
+
 export function getPlatformEarnings(params: DashboardPeriodParams) {
   return api.get<PlatformEarningsResponse>("/dashboard/platform-earnings", {
     params: { from: params.from, to: params.to },

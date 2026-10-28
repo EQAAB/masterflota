@@ -62,6 +62,12 @@ import {
   payAllConsolidated,
   payDriverConsolidated,
 } from "./consolidatedPayouts";
+import {
+  AiDisabledError,
+  explainPayoutBreakdown,
+  loadPayoutExplainBreakdown,
+} from "../../lib/ai/payoutExplain";
+import { assertAiEnabled } from "../../lib/ai/openaiClient";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import {
   AppendToExistingWeekRequiredError,
@@ -1552,6 +1558,68 @@ router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, 
     // eslint-disable-next-line no-console
     console.error("Earnings payouts bulk update error", err);
     return res.status(500).json({ message: "Bulk update failed" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/payouts/explain", requirePayoutsView, async (req, res) => {
+  const orgId = requireOrgId(req, res);
+  if (!orgId) return;
+
+  try {
+    assertAiEnabled();
+  } catch (err) {
+    if (err instanceof AiDisabledError) {
+      return res.status(503).json({ message: err.message });
+    }
+    throw err;
+  }
+
+  const body = req.body as {
+    driverId?: unknown;
+    weekStart?: unknown;
+    weekEnd?: unknown;
+  };
+  const driverId =
+    typeof body.driverId === "string" && UUID_RE.test(body.driverId) ? body.driverId : null;
+  const weekStart =
+    typeof body.weekStart === "string" ? body.weekStart.trim().slice(0, 10) : "";
+  const weekEnd = typeof body.weekEnd === "string" ? body.weekEnd.trim().slice(0, 10) : "";
+
+  if (!driverId) {
+    return res.status(400).json({ message: "driverId is required" });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || !/^\d{4}-\d{2}-\d{2}$/.test(weekEnd)) {
+    return res.status(400).json({ message: "weekStart and weekEnd are required (YYYY-MM-DD)" });
+  }
+  if (weekStart > weekEnd) {
+    return res.status(400).json({ message: "weekStart must be on or before weekEnd" });
+  }
+
+  const client = await pool.connect();
+  try {
+    const breakdown = await loadPayoutExplainBreakdown(
+      client,
+      orgId,
+      driverId,
+      weekStart,
+      weekEnd,
+    );
+    if (!breakdown) {
+      return res.status(404).json({ message: "No payout found for this driver and week" });
+    }
+    const result = await explainPayoutBreakdown(breakdown);
+    return res.json(result);
+  } catch (err) {
+    if (err instanceof AiDisabledError) {
+      return res.status(503).json({ message: err.message });
+    }
+    // eslint-disable-next-line no-console
+    console.error("Payout explain error", err);
+    return res.status(500).json({
+      message: err instanceof Error ? err.message : "Failed to explain payout",
+    });
   } finally {
     client.release();
   }
