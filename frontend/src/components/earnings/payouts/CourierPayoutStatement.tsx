@@ -7,7 +7,7 @@ import { getAppBranding } from "../../../lib/appBranding";
 import { formatCurrency } from "../../../utils/currency";
 import { computeUnifiedBreakdown, formatPeriodParts } from "./payoutBreakdownUtils";
 import type { WeekFeeBreakdown } from "./payoutFeeBreakdown";
-import { PlatformLogo } from "./payoutDetailUi";
+import { BoltPlatformLogo, GlovoPlatformLogo, UberPlatformLogo, WoltPlatformLogo } from "../../drivers/platformLogos";
 import { buildCourierStatementModel, statementPlatformSummary } from "./courierStatementModel";
 
 type CourierPayoutStatementProps = {
@@ -21,6 +21,19 @@ function formatStatementDate(iso: string): string {
   const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
   if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(d);
+}
+
+function StatementPlatformMark({ platform }: { platform: string }) {
+  const code = platform.toLowerCase();
+  if (code === "uber") return <UberPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+  if (code === "bolt" || code === "bolt_taxi" || code === "bolt_courier") {
+    return <BoltPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+  }
+  if (code === "wolt" || code === "wolt_courier") {
+    return <WoltPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+  }
+  if (code === "glovo") return <GlovoPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+  return <span className="payout-statement__mark" aria-hidden />;
 }
 
 export function CourierPayoutStatement({
@@ -85,9 +98,9 @@ export function CourierPayoutStatement({
           <div>
             <dt>{t("pages.earningsPayouts.statement.platform")}</dt>
             <dd className="payout-statement__platform">
-              {model.platforms.slice(0, 3).map((p) => (
-                <PlatformLogo key={p.platform} platform={p.platform} size="sm" />
-              ))}
+              {!model.multiPlatform && model.platforms[0] ? (
+                <StatementPlatformMark platform={model.platforms[0].platform} />
+              ) : null}
               <span>{platformLabel}</span>
             </dd>
           </div>
@@ -105,7 +118,7 @@ export function CourierPayoutStatement({
             {model.platforms.map((p) => (
               <li key={p.platform}>
                 <span className="payout-statement__platform">
-                  <PlatformLogo platform={p.platform} size="sm" />
+                  <StatementPlatformMark platform={p.platform} />
                   {p.label}
                 </span>
                 <span className="tabular-nums">{formatCurrency(p.netIncome)}</span>
@@ -125,7 +138,12 @@ export function CourierPayoutStatement({
         <tbody>
           {model.lines.map((line) => (
             <tr key={line.key}>
-              <td>{line.label}</td>
+              <td>
+                <span className="payout-statement__line">
+                  <span className={`payout-statement__mark is-${line.kind}`} aria-hidden />
+                  {line.label}
+                </span>
+              </td>
               <td className={line.kind === "deduction" ? "is-deduction" : "is-income"}>
                 {formatCurrency(line.amount)}
               </td>
