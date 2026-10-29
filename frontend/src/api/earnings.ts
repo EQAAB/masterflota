@@ -312,11 +312,27 @@ export function getConsolidatedPayouts(params: {
   return api.get<ConsolidatedPayoutsResponse>("/earnings/payouts/consolidated", { params });
 }
 
+export type PayoutExplainPlatformLine = {
+  platform: string;
+  gross: number;
+  platformFees: number;
+  netIncome: number;
+  commission: number;
+  cash: number;
+  accountOpeningFee: number;
+  vehicleRent: number;
+  rawNet: number;
+  netDriverPayout: number;
+  paymentStatus: string;
+};
+
 export type PayoutExplainResponse = {
   summary: string;
   bullets: string[];
   disclaimer: string;
-  aiEnabled: true;
+  aiEnabled: boolean;
+  cached?: boolean;
+  aiSkipped?: boolean;
   breakdown: {
     driverId: string;
     driverName: string;
@@ -335,6 +351,7 @@ export type PayoutExplainResponse = {
     remainingDebt: number;
     debtOffset: number;
     outstandingLoan: number;
+    platforms: PayoutExplainPlatformLine[];
   };
 };
 
