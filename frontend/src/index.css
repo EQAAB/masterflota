@@ -838,11 +838,229 @@ body {
     @apply grid-cols-2;
   }
 
+  .payout-statement-host {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 720px;
+    background: #fff;
+    pointer-events: none;
+  }
+
+  .payout-statement-host--capture {
+    left: 0;
+    z-index: 0;
+  }
+
+  .payout-statement {
+    width: 720px;
+    background: #fff;
+    color: #0f172a;
+    padding: 28px 32px 36px;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .payout-statement__header {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .payout-statement__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .payout-statement__brand-name {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .payout-statement__brand-role {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .payout-statement__title {
+    margin-top: 18px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .payout-statement__week {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #475569;
+  }
+
+  .payout-statement__meta {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    font-size: 13px;
+  }
+
+  .payout-statement__meta div {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 8px;
+  }
+
+  .payout-statement__meta dt {
+    color: #64748b;
+  }
+
+  .payout-statement__meta dd {
+    font-weight: 600;
+  }
+
+  .payout-statement__platform {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .payout-statement__platforms {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .payout-statement__section-label {
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .payout-statement__platforms ul {
+    display: grid;
+    gap: 6px;
+  }
+
+  .payout-statement__platforms li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .payout-statement__table {
+    width: 100%;
+    margin-top: 18px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .payout-statement__table th {
+    padding: 10px 8px;
+    background: #f8fafc;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    text-align: left;
+  }
+
+  .payout-statement__table th:last-child,
+  .payout-statement__table td:last-child {
+    text-align: right;
+  }
+
+  .payout-statement__table td {
+    padding: 12px 8px;
+    border-bottom: 1px dashed #e2e8f0;
+    font-weight: 600;
+  }
+
+  .payout-statement__table td.is-deduction {
+    color: #e11d48;
+  }
+
+  .payout-statement__table td.is-income {
+    color: #0f172a;
+  }
+
+  .payout-statement__final {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #ecfdf5;
+    color: #065f46;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .payout-statement__final strong {
+    font-size: 22px;
+  }
+
+  .payout-statement__final.is-debt {
+    background: #fff1f2;
+    color: #9f1239;
+  }
+
+  .payout-statement__footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .payout-statement__thanks {
+    text-align: right;
+  }
+
+  .payout-statement__thanks p:first-child {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
   @media print {
     .fm-payout-detail-summary__actions,
     .fm-payout-detail-final-panel__actions,
     .fm-payout-detail-bottom-grid article:last-child {
       display: none !important;
+    }
+
+    .payout-statement-host {
+      display: none !important;
+    }
+
+    body.printing-payout-statement * {
+      visibility: hidden;
+    }
+
+    body.printing-payout-statement .payout-statement-host,
+    body.printing-payout-statement .payout-statement-host * {
+      visibility: visible;
+    }
+
+    body.printing-payout-statement .payout-statement-host {
+      display: block !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 720px;
     }
   }
 
