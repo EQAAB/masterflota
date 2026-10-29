@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { AiDisabledError, chatJsonCompletion } from "./openaiClient";
+import { AiDisabledError, AiRateLimitError, chatJsonCompletion } from "./openaiClient";
 import { PAYOUT_EXPLAIN_SYSTEM } from "./prompts";
 import {
   listConsolidatedPayouts,
@@ -9,6 +9,9 @@ import { roundMoney } from "../../modules/earnings/debtAllocation";
 
 export const PAYOUT_EXPLAIN_DISCLAIMER =
   "Calculated by Fleet Manager rules; AI only explains.";
+
+export const PAYOUT_EXPLAIN_LIMIT_DISCLAIMER =
+  "Calculated by Fleet Manager rules. AI explanation skipped due to rate limits.";
 
 export type PayoutExplainBreakdown = {
   driverId: string;
@@ -156,51 +159,103 @@ export type PayoutExplainResult = {
   bullets: string[];
   disclaimer: string;
   breakdown: PayoutExplainBreakdown;
-  aiEnabled: true;
+  aiEnabled: boolean;
+  cached?: boolean;
+  aiSkipped?: boolean;
 };
+
+export function buildRuleBasedPayoutExplain(
+  breakdown: PayoutExplainBreakdown,
+  opts?: { aiSkipped?: boolean },
+): PayoutExplainResult {
+  const c = breakdown.currency;
+  const bullets: string[] = [
+    `Gross earnings: ${breakdown.totalGross.toFixed(2)} ${c}`,
+    `Platform fees: ${breakdown.totalPlatformFees.toFixed(2)} ${c}`,
+    `Company commission: ${breakdown.totalCommission.toFixed(2)} ${c}`,
+  ];
+  if (breakdown.totalCash > 0.02) {
+    bullets.push(`Cash collected: ${breakdown.totalCash.toFixed(2)} ${c}`);
+  }
+  if (breakdown.totalAccountOpeningFee > 0.02) {
+    bullets.push(`Account opening fee: ${breakdown.totalAccountOpeningFee.toFixed(2)} ${c}`);
+  }
+  if (breakdown.totalVehicleRent > 0.02) {
+    bullets.push(`Vehicle rent: ${breakdown.totalVehicleRent.toFixed(2)} ${c}`);
+  }
+  if (breakdown.debtOffset > 0.02) {
+    bullets.push(`Cross-platform debt offset: ${breakdown.debtOffset.toFixed(2)} ${c}`);
+  }
+  if (breakdown.debtApplied > 0.02) {
+    bullets.push(`Debt applied from prior weeks: ${breakdown.debtApplied.toFixed(2)} ${c}`);
+  }
+  if (breakdown.remainingDebt > 0.02) {
+    bullets.push(`Remaining debt: ${breakdown.remainingDebt.toFixed(2)} ${c}`);
+  }
+  if (breakdown.outstandingLoan > 0.02) {
+    bullets.push(`Outstanding loan balance: ${breakdown.outstandingLoan.toFixed(2)} ${c}`);
+  }
+  bullets.push(`Final net: ${breakdown.finalNet.toFixed(2)} ${c}`);
+
+  return {
+    summary: `Net payout for ${breakdown.driverName} (${breakdown.weekStart} – ${breakdown.weekEnd}) is ${breakdown.finalNet.toFixed(2)} ${c}.`,
+    bullets,
+    disclaimer: opts?.aiSkipped ? PAYOUT_EXPLAIN_LIMIT_DISCLAIMER : PAYOUT_EXPLAIN_DISCLAIMER,
+    breakdown,
+    aiEnabled: false,
+    aiSkipped: opts?.aiSkipped === true,
+  };
+}
 
 export async function explainPayoutBreakdown(
   breakdown: PayoutExplainBreakdown,
 ): Promise<PayoutExplainResult> {
-  const raw = await chatJsonCompletion({
-    system: PAYOUT_EXPLAIN_SYSTEM,
-    user: JSON.stringify(breakdown),
-    maxTokens: 900,
-  });
-
-  let parsed: { summary?: unknown; bullets?: unknown };
   try {
-    parsed = JSON.parse(raw) as { summary?: unknown; bullets?: unknown };
-  } catch {
-    throw new Error("Failed to parse AI payout explanation");
+    const raw = await chatJsonCompletion({
+      system: PAYOUT_EXPLAIN_SYSTEM,
+      user: JSON.stringify(breakdown),
+      maxTokens: 900,
+    });
+
+    let parsed: { summary?: unknown; bullets?: unknown };
+    try {
+      parsed = JSON.parse(raw) as { summary?: unknown; bullets?: unknown };
+    } catch {
+      throw new Error("Failed to parse AI payout explanation");
+    }
+
+    const summary =
+      typeof parsed.summary === "string" && parsed.summary.trim()
+        ? parsed.summary.trim()
+        : `Net payout for ${breakdown.driverName} (${breakdown.weekStart} – ${breakdown.weekEnd}) is ${breakdown.finalNet.toFixed(2)} ${breakdown.currency}.`;
+
+    let bullets = Array.isArray(parsed.bullets)
+      ? parsed.bullets
+          .filter((b): b is string => typeof b === "string" && b.trim().length > 0)
+          .map((b) => b.trim())
+      : [];
+
+    if (bullets.length === 0) {
+      return {
+        ...buildRuleBasedPayoutExplain(breakdown),
+        summary,
+        aiEnabled: true,
+      };
+    }
+
+    return {
+      summary,
+      bullets,
+      disclaimer: PAYOUT_EXPLAIN_DISCLAIMER,
+      breakdown,
+      aiEnabled: true,
+    };
+  } catch (err) {
+    if (err instanceof AiRateLimitError) {
+      return buildRuleBasedPayoutExplain(breakdown, { aiSkipped: true });
+    }
+    throw err;
   }
-
-  const summary =
-    typeof parsed.summary === "string" && parsed.summary.trim()
-      ? parsed.summary.trim()
-      : `Net payout for ${breakdown.driverName} (${breakdown.weekStart} – ${breakdown.weekEnd}) is ${breakdown.finalNet.toFixed(2)} ${breakdown.currency}.`;
-
-  const bullets = Array.isArray(parsed.bullets)
-    ? parsed.bullets.filter((b): b is string => typeof b === "string" && b.trim().length > 0).map((b) => b.trim())
-    : [];
-
-  if (bullets.length === 0) {
-    bullets.push(
-      `Gross earnings: ${breakdown.totalGross.toFixed(2)} ${breakdown.currency}`,
-      `Platform fees: ${breakdown.totalPlatformFees.toFixed(2)} ${breakdown.currency}`,
-      `Company commission: ${breakdown.totalCommission.toFixed(2)} ${breakdown.currency}`,
-      `Vehicle rent: ${breakdown.totalVehicleRent.toFixed(2)} ${breakdown.currency}`,
-      `Final net: ${breakdown.finalNet.toFixed(2)} ${breakdown.currency}`,
-    );
-  }
-
-  return {
-    summary,
-    bullets,
-    disclaimer: PAYOUT_EXPLAIN_DISCLAIMER,
-    breakdown,
-    aiEnabled: true,
-  };
 }
 
-export { AiDisabledError };
+export { AiDisabledError, AiRateLimitError };

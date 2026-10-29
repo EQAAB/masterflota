@@ -212,7 +212,8 @@ APP_VERSION=dev
 # Recommended free tier (Groq):
 # OPENAI_API_KEY=gsk_your_groq_key
 # OPENAI_BASE_URL=https://api.groq.com/openai/v1
-# OPENAI_MODEL=llama-3.3-70b-versatile
+# OPENAI_MODEL=openai/gpt-oss-120b
+# (lighter alternative: openai/gpt-oss-20b)
 # AI_FEATURES_ENABLED=true
 #
 # Or OpenAI (omit OPENAI_BASE_URL):
@@ -231,7 +232,7 @@ APP_VERSION=dev
 | `NODE_ENV`     | Runtime environment            | *(unset = development)*  |
 | `OPENAI_API_KEY` | API key for Payout Explainer / Ops Digest (server-side only; Groq `gsk_...` or OpenAI `sk-...`) | *(empty = AI off)* |
 | `OPENAI_BASE_URL` | OpenAI-compatible API base URL (set for Groq: `https://api.groq.com/openai/v1`) | *(empty = OpenAI default host)* |
-| `OPENAI_MODEL` | Chat model name | `gpt-4o-mini` (use a Groq model id when using Groq) |
+| `OPENAI_MODEL` | Chat model name | `gpt-4o-mini` (Groq: `openai/gpt-oss-120b` or `openai/gpt-oss-20b`) |
 | `AI_FEATURES_ENABLED` | Must be `true` **and** key set to enable AI endpoints | `false` |
 
 **Where to set the AI key:** only in `backend/.env` (same file as `DATABASE_URL`). On the VM after editing, restart the API: `sudo systemctl restart fleet-api`. Do **not** add `OPENAI_API_KEY` to frontend env vars.
