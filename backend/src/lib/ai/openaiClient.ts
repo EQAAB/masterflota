@@ -4,7 +4,9 @@ import { env } from "../../config/env";
 export class AiDisabledError extends Error {
   readonly statusCode = 503;
 
-  constructor(message = "AI features are not configured. Set OPENAI_API_KEY and AI_FEATURES_ENABLED=true in backend/.env.") {
+  constructor(
+    message = "AI features are not configured. Set OPENAI_API_KEY and AI_FEATURES_ENABLED=true in backend/.env (optional OPENAI_BASE_URL for Groq or other OpenAI-compatible providers).",
+  ) {
     super(message);
     this.name = "AiDisabledError";
   }
@@ -25,7 +27,10 @@ let client: OpenAI | null = null;
 export function getOpenAIClient(): OpenAI {
   assertAiEnabled();
   if (!client) {
-    client = new OpenAI({ apiKey: env.openaiApiKey });
+    client = new OpenAI({
+      apiKey: env.openaiApiKey,
+      ...(env.openaiBaseUrl ? { baseURL: env.openaiBaseUrl } : {}),
+    });
   }
   return client;
 }
@@ -48,7 +53,7 @@ export async function chatJsonCompletion(params: {
   });
   const text = completion.choices[0]?.message?.content?.trim();
   if (!text) {
-    throw new Error("OpenAI returned an empty response");
+    throw new Error("AI provider returned an empty response");
   }
   return text;
 }

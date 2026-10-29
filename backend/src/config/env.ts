@@ -69,6 +69,7 @@ export const env = {
   anafCallbackUrl: process.env.ANAF_CALLBACK_URL ?? "",
   frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:5173",
   openaiApiKey: process.env.OPENAI_API_KEY?.trim() ?? "",
+  openaiBaseUrl: process.env.OPENAI_BASE_URL?.trim() || "",
   openaiModel: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
   aiFeaturesEnabled:
     process.env.AI_FEATURES_ENABLED === "true" &&
