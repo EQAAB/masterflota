@@ -64,10 +64,19 @@ import {
 } from "./consolidatedPayouts";
 import {
   AiDisabledError,
+  buildRuleBasedPayoutExplain,
   explainPayoutBreakdown,
   loadPayoutExplainBreakdown,
+  type PayoutExplainResult,
 } from "../../lib/ai/payoutExplain";
 import { assertAiEnabled } from "../../lib/ai/openaiClient";
+import {
+  AI_EXPLAIN_CACHE_TTL_MS,
+  getAiCache,
+  payoutExplainCacheKey,
+  setAiCache,
+} from "../../lib/ai/aiCache";
+import { aiExplainRateLimiter } from "../../middleware/rateLimit";
 import { insertEarningsPreviewStaging } from "./earningsPreviewStage";
 import {
   AppendToExistingWeekRequiredError,
@@ -1563,18 +1572,19 @@ router.patch("/payouts/bulk", requirePermission("payouts.approve"), async (req, 
   }
 });
 
-router.post("/payouts/explain", requirePayoutsView, async (req, res) => {
+router.post("/payouts/explain", requirePayoutsView, aiExplainRateLimiter, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
-  try {
-    assertAiEnabled();
-  } catch (err) {
-    if (err instanceof AiDisabledError) {
-      return res.status(503).json({ message: err.message });
+  const aiConfigured = (() => {
+    try {
+      assertAiEnabled();
+      return true;
+    } catch (err) {
+      if (err instanceof AiDisabledError) return false;
+      throw err;
     }
-    throw err;
-  }
+  })();
 
   const body = req.body as {
     driverId?: unknown;
@@ -1598,8 +1608,9 @@ router.post("/payouts/explain", requirePayoutsView, async (req, res) => {
   }
 
   const client = await pool.connect();
+  let breakdown: Awaited<ReturnType<typeof loadPayoutExplainBreakdown>> = null;
   try {
-    const breakdown = await loadPayoutExplainBreakdown(
+    breakdown = await loadPayoutExplainBreakdown(
       client,
       orgId,
       driverId,
@@ -1609,7 +1620,31 @@ router.post("/payouts/explain", requirePayoutsView, async (req, res) => {
     if (!breakdown) {
       return res.status(404).json({ message: "No payout found for this driver and week" });
     }
+
+    const cacheKey = payoutExplainCacheKey({
+      orgId,
+      driverId,
+      weekStart,
+      weekEnd,
+      finalNet: breakdown.finalNet,
+      totalGross: breakdown.totalGross,
+    });
+    const cached = getAiCache<PayoutExplainResult>(cacheKey);
+    if (cached) {
+      return res.json({ ...cached, cached: true });
+    }
+
+    if (!aiConfigured) {
+      return res.status(503).json({
+        message:
+          "AI features are not configured. Set OPENAI_API_KEY and AI_FEATURES_ENABLED=true in backend/.env.",
+      });
+    }
+
     const result = await explainPayoutBreakdown(breakdown);
+    if (result.aiEnabled && !result.aiSkipped) {
+      setAiCache(cacheKey, result, AI_EXPLAIN_CACHE_TTL_MS);
+    }
     return res.json(result);
   } catch (err) {
     if (err instanceof AiDisabledError) {
@@ -1617,6 +1652,9 @@ router.post("/payouts/explain", requirePayoutsView, async (req, res) => {
     }
     // eslint-disable-next-line no-console
     console.error("Payout explain error", err);
+    if (breakdown) {
+      return res.json(buildRuleBasedPayoutExplain(breakdown, { aiSkipped: true }));
+    }
     return res.status(500).json({
       message: err instanceof Error ? err.message : "Failed to explain payout",
     });

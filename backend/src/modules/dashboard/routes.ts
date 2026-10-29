@@ -7,6 +7,13 @@ import { query } from "../../db/pool";
 import { handleRecentAssignments } from "../vehicles/vehicleAssignmentHistoryHandlers";
 import { buildOpsDigestItems, narrateOpsDigest } from "../../lib/ai/opsDigest";
 import { isAiEnabled } from "../../lib/ai/openaiClient";
+import {
+  AI_DIGEST_CACHE_TTL_MS,
+  getAiCache,
+  opsDigestCacheKey,
+  setAiCache,
+} from "../../lib/ai/aiCache";
+import { aiOpsDigestRateLimiter } from "../../middleware/rateLimit";
 
 const router = Router();
 
@@ -291,7 +298,7 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-router.get("/ops-digest", async (req, res) => {
+router.get("/ops-digest", aiOpsDigestRateLimiter, async (req, res) => {
   const orgId = requireOrgId(req, res);
   if (!orgId) return;
 
@@ -319,12 +326,26 @@ router.get("/ops-digest", async (req, res) => {
 
     let narrative: string | null = null;
     if (isAiEnabled() && items.length > 0) {
-      try {
-        narrative = await narrateOpsDigest(items, from, to);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("Ops digest narrative error", err);
-        narrative = null;
+      const cacheKey = opsDigestCacheKey({
+        orgId,
+        from,
+        to,
+        items: items.map((i) => ({ id: i.id, count: i.count, severity: i.severity })),
+      });
+      const cachedNarrative = getAiCache<string>(cacheKey);
+      if (cachedNarrative) {
+        narrative = cachedNarrative;
+      } else {
+        try {
+          narrative = await narrateOpsDigest(items, from, to);
+          if (narrative) {
+            setAiCache(cacheKey, narrative, AI_DIGEST_CACHE_TTL_MS);
+          }
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error("Ops digest narrative error", err);
+          narrative = null;
+        }
       }
     }
 
