@@ -1,8 +1,11 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { explainPayout, type PayoutExplainResponse } from "../../../api/earnings";
+import {
+  explainPayout,
+  type PayoutExplainResponse,
+} from "../../../api/earnings";
 import { btnPrimary, btnSecondary } from "../../../theme/classNames";
 
 export type PayoutExplainModalProps = {
@@ -14,6 +17,8 @@ export type PayoutExplainModalProps = {
   driverName: string;
 };
 
+type ViewMode = "short" | "platforms";
+
 function errMessage(e: unknown, fallback: string): string {
   if (axios.isAxiosError(e)) {
     const m = e.response?.data as { message?: string } | undefined;
@@ -21,6 +26,50 @@ function errMessage(e: unknown, fallback: string): string {
     return e.message;
   }
   return e instanceof Error ? e.message : fallback;
+}
+
+function formatMoney(n: number, currency: string): string {
+  return `${n.toFixed(2)} ${currency}`;
+}
+
+function platformLabel(platform: string): string {
+  return platform.replace(/_/g, " ");
+}
+
+function buildPlatformBullets(
+  data: PayoutExplainResponse,
+  labels: {
+    combinedFinal: string;
+    vehicleRent: string;
+    debtApplied: string;
+    debtOffset: string;
+  },
+): string[] {
+  const { breakdown } = data;
+  const c = breakdown.currency;
+  const platforms = breakdown.platforms ?? [];
+  const lines = platforms.map((p) => {
+    const parts = [
+      `gross ${formatMoney(p.gross, c)}`,
+      `fees ${formatMoney(p.platformFees, c)}`,
+      `commission ${formatMoney(p.commission, c)}`,
+    ];
+    if (p.cash > 0.02) parts.push(`cash ${formatMoney(p.cash, c)}`);
+    parts.push(`net ${formatMoney(p.netDriverPayout, c)}`);
+    return `${platformLabel(p.platform)}: ${parts.join(" · ")}`;
+  });
+
+  if (breakdown.totalVehicleRent > 0.02) {
+    lines.push(`${labels.vehicleRent}: ${formatMoney(breakdown.totalVehicleRent, c)}`);
+  }
+  if (breakdown.debtOffset > 0.02) {
+    lines.push(`${labels.debtOffset}: ${formatMoney(breakdown.debtOffset, c)}`);
+  }
+  if (breakdown.debtApplied > 0.02) {
+    lines.push(`${labels.debtApplied}: ${formatMoney(breakdown.debtApplied, c)}`);
+  }
+  lines.push(`${labels.combinedFinal}: ${formatMoney(breakdown.finalNet, c)}`);
+  return lines;
 }
 
 export function PayoutExplainModal({
@@ -35,6 +84,7 @@ export function PayoutExplainModal({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("short");
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -45,6 +95,7 @@ export function PayoutExplainModal({
     if (!open) {
       mutation.reset();
       setCopied(false);
+      setViewMode("short");
       return;
     }
     mutation.mutate();
@@ -65,13 +116,28 @@ export function PayoutExplainModal({
     };
   }, [open, onClose, mutation.isPending]);
 
-  if (!open) return null;
-
   const data: PayoutExplainResponse | undefined = mutation.data;
+  const platformCount = data?.breakdown?.platforms?.length ?? 0;
+  const showViewToggle = platformCount > 1;
+  const effectiveMode: ViewMode =
+    showViewToggle && viewMode === "platforms" ? "platforms" : "short";
+
+  const visibleBullets = useMemo(() => {
+    if (!data) return [];
+    if (effectiveMode === "short") return data.bullets;
+    return buildPlatformBullets(data, {
+      combinedFinal: t("pages.earningsPayouts.detail.explainPayoutCombinedFinal"),
+      vehicleRent: t("pages.earningsPayouts.detail.explainPayoutVehicleRent"),
+      debtApplied: t("pages.earningsPayouts.detail.explainPayoutDebtApplied"),
+      debtOffset: t("pages.earningsPayouts.detail.explainPayoutDebtOffset"),
+    });
+  }, [data, effectiveMode, t]);
+
+  if (!open) return null;
 
   async function handleCopy() {
     if (!data) return;
-    const text = [data.summary, "", ...data.bullets.map((b) => `• ${b}`), "", data.disclaimer].join(
+    const text = [data.summary, "", ...visibleBullets.map((b) => `• ${b}`), "", data.disclaimer].join(
       "\n",
     );
     try {
@@ -109,6 +175,40 @@ export function PayoutExplainModal({
               to: weekEnd,
             })}
           </p>
+          {data && showViewToggle && (
+            <div
+              className="mt-3 inline-flex rounded-lg border border-border bg-slate-50 p-0.5"
+              role="tablist"
+              aria-label={t("pages.earningsPayouts.detail.explainPayoutViewAria")}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={effectiveMode === "short"}
+                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                  effectiveMode === "short"
+                    ? "bg-white text-ink shadow-sm"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+                onClick={() => setViewMode("short")}
+              >
+                {t("pages.earningsPayouts.detail.explainPayoutViewShort")}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={effectiveMode === "platforms"}
+                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                  effectiveMode === "platforms"
+                    ? "bg-white text-ink shadow-sm"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+                onClick={() => setViewMode("platforms")}
+              >
+                {t("pages.earningsPayouts.detail.explainPayoutViewPlatforms")}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
@@ -124,7 +224,7 @@ export function PayoutExplainModal({
             <div className="space-y-4">
               <p className="text-sm leading-relaxed text-ink">{data.summary}</p>
               <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink">
-                {data.bullets.map((b) => (
+                {visibleBullets.map((b) => (
                   <li key={b}>{b}</li>
                 ))}
               </ul>
