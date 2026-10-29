@@ -249,11 +249,13 @@ export function CombinedPayoutDetailsPage() {
     setStatementBusy(true);
     el.classList.add("payout-statement-host--capture");
     try {
+      const sheet = el.querySelector<HTMLElement>(".payout-statement") ?? el;
       const safeName = `${row.first_name}-${row.last_name}`.replace(/\s+/g, "-");
-      await exportPdfFromElement(el, {
+      await exportPdfFromElement(sheet, {
         orientation: "portrait",
         filename: `payout-statement-${safeName}-${weekStart}.pdf`,
         scale: 2,
+        fitContent: true,
       });
     } catch (e) {
       setError(errMessage(e));
