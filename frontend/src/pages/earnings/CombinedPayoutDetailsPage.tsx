@@ -21,6 +21,8 @@ import { PayoutExplainModal } from "../../components/earnings/payouts/PayoutExpl
 import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWeekNavigator";
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
 import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
+import { CourierPayoutStatement } from "../../components/earnings/payouts/CourierPayoutStatement";
+import { exportPdfFromElement } from "../../lib/exportPdfFromElement";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
@@ -49,6 +51,7 @@ export function CombinedPayoutDetailsPage() {
   const canAdjust = useCanAdjustPayouts();
   const queryClient = useQueryClient();
   const printRef = useRef<HTMLDivElement>(null);
+  const statementRef = useRef<HTMLDivElement>(null);
 
   const defaultWeek = useMemo(() => getPreviousWeek(), []);
   const weekStart = searchParams.get("from")?.trim() || defaultWeek.start;
@@ -58,6 +61,7 @@ export function CombinedPayoutDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
+  const [statementBusy, setStatementBusy] = useState(false);
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
   const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
@@ -239,6 +243,36 @@ export function CombinedPayoutDetailsPage() {
     window.print();
   }
 
+  async function handleDownloadStatement() {
+    const el = statementRef.current;
+    if (!el || !row) return;
+    setStatementBusy(true);
+    el.classList.add("payout-statement-host--capture");
+    try {
+      const safeName = `${row.first_name}-${row.last_name}`.replace(/\s+/g, "-");
+      await exportPdfFromElement(el, {
+        orientation: "portrait",
+        filename: `payout-statement-${safeName}-${weekStart}.pdf`,
+        scale: 2,
+      });
+    } catch (e) {
+      setError(errMessage(e));
+    } finally {
+      el.classList.remove("payout-statement-host--capture");
+      setStatementBusy(false);
+    }
+  }
+
+  function handlePrintStatement() {
+    document.body.classList.add("printing-payout-statement");
+    const cleanup = () => {
+      document.body.classList.remove("printing-payout-statement");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+  }
+
   if (!canAccess) {
     return <p className="p-6 text-ink-muted">{t("common.noAccess")}</p>;
   }
@@ -307,7 +341,19 @@ export function CombinedPayoutDetailsPage() {
           onOpenReleaseHold={canApprove ? setReleaseHoldRow : undefined}
           onDownloadReport={handleDownloadReport}
           onPrint={handlePrint}
+          onDownloadStatement={handleDownloadStatement}
+          onPrintStatement={handlePrintStatement}
           downloadBusy={downloadBusy}
+          statementBusy={statementBusy}
+        />
+      </div>
+
+      <div ref={statementRef} className="payout-statement-host" aria-hidden>
+        <CourierPayoutStatement
+          row={row}
+          payoutItems={payoutItems}
+          weekFeeBreakdown={weekFeeBreakdown}
+          loanRepayments={loanRepaymentsQuery.data ?? []}
         />
       </div>
 

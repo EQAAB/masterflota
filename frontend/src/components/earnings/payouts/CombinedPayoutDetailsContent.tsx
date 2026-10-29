@@ -53,7 +53,10 @@ export type CombinedPayoutDetailsContentProps = {
   onOpenReleaseHold?: (payout: PayoutListItem) => void;
   onDownloadReport?: () => void;
   onPrint?: () => void;
+  onDownloadStatement?: () => void;
+  onPrintStatement?: () => void;
   downloadBusy?: boolean;
+  statementBusy?: boolean;
 };
 
 function statusDisplay(status: string): string {
@@ -157,6 +160,8 @@ function ActionsMenu({
   onPay,
   onDownloadReport,
   onPrint,
+  onDownloadStatement,
+  onPrintStatement,
   onOpenDebtActions,
   onOpenLoanActions,
   onOpenCustomFees,
@@ -169,6 +174,8 @@ function ActionsMenu({
   onPay?: () => void;
   onDownloadReport?: () => void;
   onPrint?: () => void;
+  onDownloadStatement?: () => void;
+  onPrintStatement?: () => void;
   onOpenDebtActions?: (p: PayoutListItem) => void;
   onOpenLoanActions?: () => void;
   onOpenCustomFees?: (p: PayoutListItem) => void;
@@ -285,6 +292,30 @@ function ActionsMenu({
                 {t("pages.earningsPayouts.detail.printMenu")}
               </button>
             )}
+            {onDownloadStatement && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50"
+                onClick={() => {
+                  setOpen(false);
+                  onDownloadStatement();
+                }}
+              >
+                {t("pages.earningsPayouts.detail.downloadStatement")}
+              </button>
+            )}
+            {onPrintStatement && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50"
+                onClick={() => {
+                  setOpen(false);
+                  onPrintStatement();
+                }}
+              >
+                {t("pages.earningsPayouts.detail.printStatement")}
+              </button>
+            )}
           </div>
         </>
       )}
@@ -321,7 +352,10 @@ export function CombinedPayoutDetailsContent({
   onOpenReleaseHold,
   onDownloadReport,
   onPrint,
+  onDownloadStatement,
+  onPrintStatement,
   downloadBusy,
+  statementBusy,
 }: CombinedPayoutDetailsContentProps) {
   const { t } = useTranslation();
   const breakdown = useMemo(() => computeUnifiedBreakdown(row, payoutItems), [row, payoutItems]);
@@ -857,6 +891,8 @@ export function CombinedPayoutDetailsContent({
             onPay={onPay}
             onDownloadReport={onDownloadReport}
             onPrint={onPrint}
+            onDownloadStatement={onDownloadStatement}
+            onPrintStatement={onPrintStatement}
             onOpenDebtActions={onOpenDebtActions}
             onOpenLoanActions={onOpenLoanActions}
             onOpenCustomFees={onOpenCustomFees}
@@ -1105,6 +1141,8 @@ export function CombinedPayoutDetailsContent({
               onPay={onPay}
               onDownloadReport={onDownloadReport}
               onPrint={onPrint}
+              onDownloadStatement={onDownloadStatement}
+              onPrintStatement={onPrintStatement}
               onOpenDebtActions={onOpenDebtActions}
               onOpenLoanActions={onOpenLoanActions}
               onOpenCustomFees={onOpenCustomFees}
@@ -1298,6 +1336,23 @@ export function CombinedPayoutDetailsContent({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               {t("pages.earningsPayouts.detail.printMenu")}
+            </button>
+            <button
+              type="button"
+              disabled={statementBusy || !onDownloadStatement}
+              className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`}
+              onClick={onDownloadStatement}
+            >
+              <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              {statementBusy ? t("pages.earningsPayouts.detail.downloadingStatement") : t("pages.earningsPayouts.detail.downloadStatement")}
+            </button>
+            <button type="button" className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`} onClick={onPrintStatement}>
+              <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {t("pages.earningsPayouts.detail.printStatement")}
             </button>
             <Link to={statementUrl} className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`}>
               <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
