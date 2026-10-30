@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PayoutListItem } from "../../../api/earnings";
 import { computeUnifiedBreakdown, type UnifiedPayoutBreakdown } from "./payoutBreakdownUtils";
 import { buildCourierStatementModel } from "./courierStatementModel";
+import { payoutItemPlatformId, statementDisplayId, statementReference, statementSummaryId } from "./courierStatementFormat";
 
 function line(partial: Partial<PayoutListItem> & Pick<PayoutListItem, "id">): PayoutListItem {
   return {
@@ -124,5 +125,65 @@ describe("buildCourierStatementModel", () => {
     expect(other?.amount).toBe(-20);
     const sum = Math.round(model.lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
     expect(sum).toBe(80);
+  });
+});
+
+describe("statementReference", () => {
+  it("prefers the driver payment id and prefixes the week start", () => {
+    expect(
+      statementReference({
+        payment_period_start: "2026-10-12",
+        driver_payment_id: "1a2b3c4d-0000-0000-0000-000000000000",
+        platform_payout_ids: ["ffffffff-0000-0000-0000-000000000000"],
+      }),
+    ).toBe("PS-20261012-1A2B3C4D");
+  });
+
+  it("falls back to the first platform payout, then to a dash", () => {
+    expect(
+      statementReference({
+        payment_period_start: "2026-10-12",
+        driver_payment_id: null,
+        platform_payout_ids: ["abcdef01-0000-0000-0000-000000000000"],
+      }),
+    ).toBe("PS-20261012-ABCDEF01");
+    expect(
+      statementReference({ payment_period_start: "2026-10-12", driver_payment_id: null, platform_payout_ids: [] }),
+    ).toBe("-");
+  });
+});
+
+describe("statement courier IDs", () => {
+  it("uses the driver platform ID such as uber_driver_id or glovo_courier_id", () => {
+    expect(
+      payoutItemPlatformId({
+        earnings_platform: "uber",
+        uber_driver_id: "4422610",
+        platform_id: "a28b0349-8011-4939-b60c-ca9d860a8dd4",
+      }),
+    ).toBe("4422610");
+    expect(
+      payoutItemPlatformId({
+        earnings_platform: "glovo",
+        glovo_courier_id: "4422610",
+        platform_id: null,
+      }),
+    ).toBe("4422610");
+    expect(
+      payoutItemPlatformId({
+        earnings_platform: "bolt_taxi",
+        bolt_driver_id: "4422610",
+        bolt_taxi_driver_uuid: "a28b0349-8011-4939-b60c-ca9d860a8dd4",
+      }),
+    ).toBe("4422610");
+  });
+
+  it("shows the platform ID, including an Uber or Bolt Taxi UUID", () => {
+    const uuid = "a28b0349-8011-4939-b60c-ca9d860a8dd4";
+    expect(statementDisplayId(uuid)).toBe(uuid);
+    expect(statementDisplayId("  073 ")).toBe("073");
+    expect(statementDisplayId("")).toBe("-");
+    expect(statementSummaryId([uuid], false)).toBe(uuid);
+    expect(statementSummaryId(["4403346"], false)).toBe("4403346");
   });
 });

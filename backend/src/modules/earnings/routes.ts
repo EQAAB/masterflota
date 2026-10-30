@@ -1229,6 +1229,12 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
   const listParams = [...params, pageSize, offset];
     const listRes = await pool.query(
     `SELECT dp.id::text, dp.driver_id::text, ${payoutPlatformIdSelectSql},
+            NULLIF(BTRIM(d.uber_driver_id), '') AS uber_driver_id,
+            NULLIF(BTRIM(d.glovo_courier_id), '') AS glovo_courier_id,
+            NULLIF(BTRIM(d.bolt_courier_id), '') AS bolt_courier_id,
+            NULLIF(BTRIM(d.bolt_driver_id), '') AS bolt_driver_id,
+            NULLIF(BTRIM(d.bolt_taxi_driver_uuid::text), '') AS bolt_taxi_driver_uuid,
+            NULLIF(BTRIM(d.wolt_courier_id), '') AS wolt_courier_id,
             dp.payment_period_start::text, dp.payment_period_end::text,
             dp.net_driver_payout::text, dp.payment_status, dp.payment_date::text,
             dp.hold_reason, dp.hold_released_at::text, dp.hold_notes,

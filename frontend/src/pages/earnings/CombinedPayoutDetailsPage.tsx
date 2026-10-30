@@ -23,6 +23,15 @@ import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payou
 import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
 import { CourierPayoutStatement } from "../../components/earnings/payouts/CourierPayoutStatement";
 import { downloadCourierStatementPdf } from "../../components/earnings/payouts/courierStatementPdf";
+import {
+  STATEMENT_MARGIN_BOTTOM_MM,
+  STATEMENT_MARGIN_TOP_MM,
+  STATEMENT_PAPERS,
+  loadStatementPaperWidth,
+  saveStatementPaperWidth,
+  statementPaperMarginXMm,
+  type StatementPaperWidth,
+} from "../../components/earnings/payouts/courierStatementPaper";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
@@ -62,6 +71,7 @@ export function CombinedPayoutDetailsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [statementBusy, setStatementBusy] = useState(false);
+  const [statementPaperWidth, setStatementPaperWidth] = useState<StatementPaperWidth>(loadStatementPaperWidth);
   const [debtModalRow, setDebtModalRow] = useState<PayoutListItem | null>(null);
   const [customFeesModalRow, setCustomFeesModalRow] = useState<PayoutListItem | null>(null);
   const [releaseHoldRow, setReleaseHoldRow] = useState<PayoutListItem | null>(null);
@@ -178,6 +188,9 @@ export function CombinedPayoutDetailsPage() {
     staleTime: 30_000,
   });
 
+  /** Missing fees or loans would land in "Other adjustments" on the statement. */
+  const statementLoading = weekFeeBreakdown.isLoading || loanRepaymentsQuery.isLoading;
+
   const payMut = useMutation({
     mutationFn: () => postPayDriverConsolidated({ driverId: driverId!, weekStart, weekEnd }),
     onSuccess: () => {
@@ -243,13 +256,26 @@ export function CombinedPayoutDetailsPage() {
     window.print();
   }
 
-  async function handleDownloadStatement() {
-    const source = statementRef.current?.querySelector<HTMLElement>(".payout-statement");
-    if (!row || !source) return;
+  function handleStatementPaperChange(width: StatementPaperWidth) {
+    setStatementPaperWidth(width);
+    saveStatementPaperWidth(width);
+  }
+
+  /** Clone the statement into a receipt-width root on <body> (outside the app layout). */
+  function mountStatement(source: Element, modifier: string): HTMLDivElement {
+    const paper = STATEMENT_PAPERS[statementPaperWidth];
     const mount = document.createElement("div");
-    mount.className = "payout-statement-print-root payout-statement-print-root--capture";
+    mount.className = `payout-statement-print-root ${modifier}${statementPaperWidth === 112 ? " payout-statement-print-root--wide" : ""}`;
+    mount.style.setProperty("--receipt-width", `${paper.printMm}mm`);
     mount.appendChild(source.cloneNode(true));
     document.body.appendChild(mount);
+    return mount;
+  }
+
+  async function handleDownloadStatement() {
+    const source = statementRef.current?.querySelector<HTMLElement>(".payout-statement");
+    if (!row || !source || statementLoading) return;
+    const mount = mountStatement(source, "payout-statement-print-root--capture");
     setStatementBusy(true);
     try {
       await new Promise<void>((resolve) => {
@@ -260,6 +286,7 @@ export function CombinedPayoutDetailsPage() {
       await downloadCourierStatementPdf({
         element: sheet,
         filename: `payout-statement-${safeName}-${weekStart}.pdf`,
+        paper: STATEMENT_PAPERS[statementPaperWidth],
       });
     } catch (e) {
       setError(errMessage(e));
@@ -271,15 +298,22 @@ export function CombinedPayoutDetailsPage() {
 
   function handlePrintStatement() {
     const source = statementRef.current?.querySelector(".payout-statement");
-    if (!source) return;
-    const mount = document.createElement("div");
-    mount.className = "payout-statement-print-root";
-    mount.appendChild(source.cloneNode(true));
-    document.body.appendChild(mount);
+    if (!source || statementLoading) return;
+    const paper = STATEMENT_PAPERS[statementPaperWidth];
+    const mount = mountStatement(source, "payout-statement-print-root--measure");
+    // One page sized to the receipt, so the CT-S4500 cuts once right after the footer.
+    const contentMm = Math.ceil((mount.getBoundingClientRect().height * 25.4) / 96);
+    // +1mm keeps sub-pixel rounding from spilling onto a second (blank, cut) page.
+    const heightMm = contentMm + STATEMENT_MARGIN_TOP_MM + STATEMENT_MARGIN_BOTTOM_MM + 1;
+    mount.classList.remove("payout-statement-print-root--measure");
+    const pageStyle = document.createElement("style");
+    pageStyle.textContent = `@page payout-statement { size: ${paper.pageMm}mm ${heightMm}mm; margin: ${STATEMENT_MARGIN_TOP_MM}mm ${statementPaperMarginXMm(paper)}mm ${STATEMENT_MARGIN_BOTTOM_MM}mm; }`;
+    document.head.appendChild(pageStyle);
     document.body.classList.add("printing-payout-statement");
     const cleanup = () => {
       document.body.classList.remove("printing-payout-statement");
       mount.remove();
+      pageStyle.remove();
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
@@ -358,6 +392,9 @@ export function CombinedPayoutDetailsPage() {
           onPrintStatement={handlePrintStatement}
           downloadBusy={downloadBusy}
           statementBusy={statementBusy}
+          statementDisabled={statementLoading}
+          statementPaperWidth={statementPaperWidth}
+          onStatementPaperWidthChange={handleStatementPaperChange}
         />
       </div>
 

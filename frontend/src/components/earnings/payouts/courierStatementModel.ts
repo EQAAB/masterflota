@@ -2,6 +2,7 @@ import type { ConsolidatedDriverPayout, PayoutListItem } from "../../../api/earn
 import type { WeekLoanRepayment } from "../../../api/driverLoans";
 import i18n from "../../../i18n";
 import { earningsPlatformLabel } from "../../../utils/earningsPlatformLabel";
+import { payoutItemPlatformId, statementDisplayId } from "./courierStatementFormat";
 import type { UnifiedPayoutBreakdown } from "./payoutBreakdownUtils";
 import type { WeekFeeBreakdown } from "./payoutFeeBreakdown";
 
@@ -150,7 +151,11 @@ export function buildCourierStatementModel(params: {
   }));
 
   const courierIds = [
-    ...new Set(payoutItems.map((p) => p.platform_id?.trim()).filter((id): id is string => Boolean(id))),
+    ...new Set(
+      payoutItems
+        .map((p) => statementDisplayId(payoutItemPlatformId(p)))
+        .filter((id) => id !== "-"),
+    ),
   ];
 
   return {

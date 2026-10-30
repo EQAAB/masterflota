@@ -15,7 +15,9 @@ import {
   statementDisplayId,
   statementFinalAmountKey,
   statementGeneratedBy,
+  payoutItemPlatformId,
   statementPayoutDateIso,
+  statementReference,
   statementSummaryId,
 } from "./courierStatementFormat";
 
@@ -39,16 +41,16 @@ function StatementPlatformMark({ platform }: { platform: string }) {
 }
 
 function courierIdsForPlatform(items: PayoutListItem[], platform: string): string {
+  const code = platform.trim().toLowerCase();
   const ids = [
     ...new Set(
       items
-        .filter((item) => (item.earnings_platform ?? "") === platform)
-        .map((item) => item.platform_id?.trim())
-        .filter((id): id is string => Boolean(id)),
+        .filter((item) => (item.earnings_platform ?? "").trim().toLowerCase() === code)
+        .map((item) => statementDisplayId(payoutItemPlatformId(item)))
+        .filter((id) => id !== "-"),
     ),
   ];
-  const visible = ids.map((id) => statementDisplayId(id)).filter((id) => id !== "-");
-  return visible.length ? visible.join(", ") : "-";
+  return ids.length ? ids.join(", ") : "-";
 }
 
 export function CourierPayoutStatement({
@@ -108,8 +110,12 @@ export function CourierPayoutStatement({
 
       <dl className="payout-statement__summary">
         <div>
+          <dt>{t("pages.earningsPayouts.statement.statementNo")}</dt>
+          <dd>{statementReference(row)}</dd>
+        </div>
+        <div>
           <dt>{t("pages.earningsPayouts.statement.courierId")}</dt>
-          <dd>{statementSummaryId(model.courierIds, model.multiPlatform)}</dd>
+          <dd className="payout-statement__id">{statementSummaryId(model.courierIds, model.multiPlatform)}</dd>
         </div>
         <div>
           <dt>{t("pages.earningsPayouts.statement.courierName")}</dt>
@@ -130,7 +136,7 @@ export function CourierPayoutStatement({
           <thead>
             <tr>
               <th>{t("pages.earningsPayouts.statement.platform")}</th>
-              <th>{t("pages.earningsPayouts.statement.courierId")}</th>
+              <th>{t("pages.earningsPayouts.statement.platformId")}</th>
               <th>{t("pages.earningsPayouts.statement.netIncome")}</th>
             </tr>
           </thead>
@@ -143,7 +149,7 @@ export function CourierPayoutStatement({
                     <span>{platform.label}</span>
                   </span>
                 </td>
-                <td>{courierIdsForPlatform(payoutItems, platform.platform)}</td>
+                <td className="payout-statement__id">{courierIdsForPlatform(payoutItems, platform.platform)}</td>
                 <td className="tabular-nums">{formatCurrency(platform.netIncome)}</td>
               </tr>
             ))}

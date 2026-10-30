@@ -68,6 +68,13 @@ export interface PayoutListItem {
   id: string;
   driver_id: string;
   platform_id: string | null;
+  /** Driver platform IDs joined for the payout statement (e.g. uber_driver_id 4422610). */
+  uber_driver_id?: string | null;
+  glovo_courier_id?: string | null;
+  bolt_courier_id?: string | null;
+  bolt_driver_id?: string | null;
+  bolt_taxi_driver_uuid?: string | null;
+  wolt_courier_id?: string | null;
   /** Earnings provider code from `earnings_records.platform` (e.g. uber, glovo). */
   earnings_platform?: string | null;
   driver_name?: string;

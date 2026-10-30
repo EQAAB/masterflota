@@ -847,9 +847,14 @@ body {
     pointer-events: none;
   }
 
+  /*
+   * Receipt for the Citizen CT-S4500 (203 DPI direct thermal). Pure black on white only:
+   * greys and tints get dithered into speckle, and hairlines under ~0.3mm fade.
+   * --receipt-width is the printable width (104mm on a 112mm roll, 72mm on 80mm).
+   */
   .payout-statement-print-root {
     display: none;
-    width: 72mm;
+    width: var(--receipt-width, 72mm);
     margin: 0;
     padding: 0;
     background: #fff;
@@ -865,11 +870,34 @@ body {
     pointer-events: none;
   }
 
+  .payout-statement-print-root--measure {
+    display: block;
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .payout-statement-print-root .payout-statement {
-    width: 72mm;
+    width: var(--receipt-width, 72mm);
     padding: 0;
     color: #000;
     font-size: 10px;
+    -webkit-font-smoothing: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Platform logos print as solid black marks instead of dithered colour. */
+  .payout-statement-print-root .payout-statement__logo {
+    filter: grayscale(1) contrast(2);
+  }
+
+  .payout-statement-print-root .payout-statement__summary dt,
+  .payout-statement-print-root .payout-statement__issuer-role,
+  .payout-statement-print-root .payout-statement__footer p {
+    font-weight: 600;
   }
 
   .payout-statement-print-root .payout-statement__brand-row {
@@ -917,7 +945,7 @@ body {
   }
 
   .payout-statement-print-root .payout-statement__heading p {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.04em;
   }
 
@@ -962,6 +990,7 @@ body {
 
   .payout-statement-print-root .payout-statement__table td {
     border-bottom: 1px dashed #000;
+    font-weight: 600;
   }
 
   .payout-statement-print-root .payout-statement__final,
@@ -984,8 +1013,52 @@ body {
 
   .payout-statement-print-root .payout-statement__footer {
     margin-top: 8px;
-    font-size: 8px;
+    font-size: 9px;
     color: #000;
+  }
+
+  /* 112mm roll: 104mm printable, so scale the type up rather than leave wide gaps. */
+  .payout-statement-print-root--wide .payout-statement,
+  .payout-statement-print-root--wide .payout-statement__table,
+  .payout-statement-print-root--wide .payout-statement__summary div,
+  .payout-statement-print-root--wide .payout-statement__final {
+    font-size: 13px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__platform-brand,
+  .payout-statement-print-root--wide .payout-statement__issuer-name {
+    font-size: 15px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__logo {
+    height: 20px !important;
+    width: 20px !important;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__heading h1 {
+    font-size: 18px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__heading p,
+  .payout-statement-print-root--wide .payout-statement__footer {
+    font-size: 11px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__summary {
+    padding: 0 8px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__summary div {
+    padding: 6px 0;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__table th,
+  .payout-statement-print-root--wide .payout-statement__table td {
+    padding: 6px 4px;
+  }
+
+  .payout-statement-print-root--wide .payout-statement__final strong {
+    font-size: 20px;
   }
 
   .payout-statement {
@@ -1090,6 +1163,7 @@ body {
   }
 
   .payout-statement__summary dt {
+    flex-shrink: 0;
     color: #64748b;
   }
 
@@ -1100,6 +1174,17 @@ body {
 
   .payout-statement__summary dd span {
     display: block;
+  }
+
+  /* Uber / Bolt Taxi IDs are 36-char UUIDs: wrap them inside the receipt width. */
+  .payout-statement__id {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .payout-statement__platforms-table td.payout-statement__id {
+    font-size: 0.85em;
   }
 
   .payout-statement__platforms-table {
@@ -3119,7 +3204,8 @@ body {
   }
 }
 
+/* CT-S4500 112mm roll; the print handler overrides size/margins to the chosen roll and receipt height. */
 @page payout-statement {
-  size: A4 portrait;
-  margin: 16mm;
+  size: 112mm 297mm;
+  margin: 2mm 4mm 8mm;
 }
