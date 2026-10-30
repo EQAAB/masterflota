@@ -1,6 +1,21 @@
 import type { AppBranding } from "../../../lib/appBranding";
 import i18n from "../../../i18n";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Short platform ID for the statement. UUIDs are omitted. */
+export function statementDisplayId(id: string | null | undefined): string {
+  const value = id?.trim() ?? "";
+  if (!value || UUID_RE.test(value)) return "-";
+  return value;
+}
+
+/** One ID on the summary line. Several platforms keep their IDs on the platform rows. */
+export function statementSummaryId(ids: string[], multiPlatform: boolean): string {
+  if (multiPlatform || ids.length !== 1) return "-";
+  return statementDisplayId(ids[0]);
+}
+
 function statementLocale(): string {
   return (i18n.language || "en").toLowerCase().startsWith("ro") ? "ro-RO" : "en-GB";
 }

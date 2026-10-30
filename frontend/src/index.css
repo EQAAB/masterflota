@@ -847,6 +847,10 @@ body {
     pointer-events: none;
   }
 
+  .payout-statement-print-root {
+    display: none;
+  }
+
   .payout-statement {
     width: 520px;
     box-sizing: border-box;
@@ -1090,57 +1094,143 @@ body {
       display: none !important;
     }
 
-    body.printing-payout-statement * {
-      visibility: hidden;
-    }
-
-    body.printing-payout-statement .payout-statement-host,
-    body.printing-payout-statement .payout-statement-host * {
-      visibility: visible;
-    }
-
-    body.printing-payout-statement .payout-statement-host {
-      display: block !important;
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-    }
-
     body.printing-payout-statement {
       page: payout-statement;
     }
 
+    body.printing-payout-statement > :not(.payout-statement-print-root) {
+      display: none !important;
+    }
+
+    body.printing-payout-statement > .payout-statement-print-root {
+      display: block !important;
+      width: 72mm;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+    }
+
     body.printing-payout-statement .payout-statement {
-      width: 100%;
+      width: 72mm;
       padding: 0;
       color: #000;
+      font-size: 10px;
     }
 
-    body.printing-payout-statement .payout-statement__heading h1,
-    body.printing-payout-statement .payout-statement__summary dd,
-    body.printing-payout-statement .payout-statement__table td,
-    body.printing-payout-statement .payout-statement__issuer-name,
-    body.printing-payout-statement .payout-statement__platform-brand,
-    body.printing-payout-statement .payout-statement__thanks,
-    body.printing-payout-statement .payout-statement__final,
-    body.printing-payout-statement .payout-statement__final strong {
+    body.printing-payout-statement .payout-statement__brand-row {
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    body.printing-payout-statement .payout-statement__platforms-logos {
+      gap: 4px 6px;
+    }
+
+    body.printing-payout-statement .payout-statement__platform-brand {
+      gap: 4px;
+      font-size: 11px;
       color: #000;
     }
 
+    body.printing-payout-statement .payout-statement__logo {
+      height: 14px !important;
+      width: 14px !important;
+      box-shadow: none !important;
+    }
+
+    body.printing-payout-statement .payout-statement__issuer-name {
+      font-size: 11px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__issuer-role,
     body.printing-payout-statement .payout-statement__heading p,
     body.printing-payout-statement .payout-statement__summary dt,
     body.printing-payout-statement .payout-statement__section-head,
     body.printing-payout-statement .payout-statement__table th,
-    body.printing-payout-statement .payout-statement__issuer-role,
     body.printing-payout-statement .payout-statement__footer {
-      color: #222;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__heading {
+      margin-top: 8px;
+    }
+
+    body.printing-payout-statement .payout-statement__heading h1 {
+      font-size: 13px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__heading p {
+      font-size: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    body.printing-payout-statement .payout-statement__summary {
+      margin-top: 8px;
+      border: 1px solid #000;
+      border-radius: 0;
+      padding: 0 4px;
+    }
+
+    body.printing-payout-statement .payout-statement__summary div {
+      padding: 4px 0;
+      border-bottom-color: #000;
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__summary dd,
+    body.printing-payout-statement .payout-statement__table td,
+    body.printing-payout-statement .payout-statement__thanks {
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__section-head,
+    body.printing-payout-statement .payout-statement__platforms-table {
+      margin-top: 8px;
+    }
+
+    body.printing-payout-statement .payout-statement__table {
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__table th,
+    body.printing-payout-statement .payout-statement__table td {
+      padding: 4px 2px;
+      background: #fff;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__table th {
+      border-bottom: 1px solid #000;
+    }
+
+    body.printing-payout-statement .payout-statement__table td {
+      border-bottom: 1px dashed #000;
     }
 
     body.printing-payout-statement .payout-statement__final,
     body.printing-payout-statement .payout-statement__final.is-debt {
-      background: #f3f4f6;
-      border: 1px solid #111;
+      margin-top: 8px;
+      padding: 6px 0;
+      border: 0;
+      border-top: 2px solid #000;
+      border-bottom: 2px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__final strong {
+      font-size: 14px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__footer {
+      margin-top: 8px;
+      font-size: 8px;
       color: #000;
     }
 
@@ -1156,11 +1246,6 @@ body {
 
     body.printing-payout-statement .payout-statement__table thead {
       display: table-header-group;
-    }
-
-    body.printing-payout-statement .payout-statement__table th {
-      background: #f3f4f6;
-      border-bottom: 1px solid #111;
     }
   }
 

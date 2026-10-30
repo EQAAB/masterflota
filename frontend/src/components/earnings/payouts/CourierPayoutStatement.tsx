@@ -12,9 +12,11 @@ import { buildCourierStatementModel } from "./courierStatementModel";
 import {
   formatStatementDay,
   formatStatementWeek,
+  statementDisplayId,
   statementFinalAmountKey,
   statementGeneratedBy,
   statementPayoutDateIso,
+  statementSummaryId,
 } from "./courierStatementFormat";
 
 type CourierPayoutStatementProps = {
@@ -45,7 +47,8 @@ function courierIdsForPlatform(items: PayoutListItem[], platform: string): strin
         .filter((id): id is string => Boolean(id)),
     ),
   ];
-  return ids.length ? ids.join(", ") : "-";
+  const visible = ids.map((id) => statementDisplayId(id)).filter((id) => id !== "-");
+  return visible.length ? visible.join(", ") : "-";
 }
 
 export function CourierPayoutStatement({
@@ -106,11 +109,7 @@ export function CourierPayoutStatement({
       <dl className="payout-statement__summary">
         <div>
           <dt>{t("pages.earningsPayouts.statement.courierId")}</dt>
-          <dd>
-            {model.courierIds.length === 0
-              ? "-"
-              : model.courierIds.map((id) => <span key={id}>{id}</span>)}
-          </dd>
+          <dd>{statementSummaryId(model.courierIds, model.multiPlatform)}</dd>
         </div>
         <div>
           <dt>{t("pages.earningsPayouts.statement.courierName")}</dt>

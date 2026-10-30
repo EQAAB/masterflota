@@ -263,9 +263,16 @@ export function CombinedPayoutDetailsPage() {
   }
 
   function handlePrintStatement() {
+    const source = statementRef.current?.querySelector(".payout-statement");
+    if (!source) return;
+    const mount = document.createElement("div");
+    mount.className = "payout-statement-print-root";
+    mount.appendChild(source.cloneNode(true));
+    document.body.appendChild(mount);
     document.body.classList.add("printing-payout-statement");
     const cleanup = () => {
       document.body.classList.remove("printing-payout-statement");
+      mount.remove();
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);

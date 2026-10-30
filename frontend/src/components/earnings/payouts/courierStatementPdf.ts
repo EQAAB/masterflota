@@ -11,7 +11,9 @@ import {
   formatStatementWeek,
   statementFinalAmountKey,
   statementGeneratedBy,
+  statementDisplayId,
   statementPayoutDateIso,
+  statementSummaryId,
 } from "./courierStatementFormat";
 
 function pdfText(value: string): string {
@@ -65,7 +67,7 @@ export async function downloadCourierStatementPdf(params: {
   pdf.setTextColor(100, 116, 139);
   pdf.text(pdfText(i18n.t("pages.earningsPayouts.statement.subtitle")).toUpperCase(), pageW / 2, y, { align: "center" });
 
-  const courierId = model.courierIds.length ? model.courierIds.join(", ") : "-";
+  const courierId = statementSummaryId(model.courierIds, model.multiPlatform);
   const driverName = `${row.first_name} ${row.last_name}`.trim() || "-";
   const weekLabel = formatStatementWeek(row.payment_period_start, row.payment_period_end);
   const payoutDate = formatStatementDay(statementPayoutDateIso(row));
@@ -109,10 +111,14 @@ export async function downloadCourierStatementPdf(params: {
     pdf.text(pdfText(i18n.t("pages.earningsPayouts.statement.byPlatform")).toUpperCase(), left, y);
     for (const platform of model.platforms) {
       y += 6;
+      const platformId = statementDisplayId(
+        payoutItems.find((item) => (item.earnings_platform ?? "") === platform.platform)?.platform_id,
+      );
+      const platformLabel = platformId === "-" ? platform.label : `${platform.label}  ${platformId}`;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(9);
       pdf.setTextColor(15, 23, 42);
-      pdf.text(pdfText(platform.label), left, y);
+      pdf.text(pdfText(platformLabel), left, y);
       pdf.text(money(platform.netIncome), right, y, { align: "right" });
     }
     y += 6;
