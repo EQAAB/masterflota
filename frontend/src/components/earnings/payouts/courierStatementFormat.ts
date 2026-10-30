@@ -1,19 +1,64 @@
 import type { AppBranding } from "../../../lib/appBranding";
 import i18n from "../../../i18n";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Short platform ID for the statement. UUIDs are omitted. */
+/** Platform ID for the statement, including Uber and Bolt Taxi UUIDs. */
 export function statementDisplayId(id: string | null | undefined): string {
-  const value = id?.trim() ?? "";
-  if (!value || UUID_RE.test(value)) return "-";
-  return value;
+  return id?.trim() || "-";
+}
+
+type PlatformIdSource = {
+  earnings_platform?: string | null;
+  platform_id?: string | null;
+  uber_driver_id?: string | null;
+  glovo_courier_id?: string | null;
+  bolt_courier_id?: string | null;
+  bolt_driver_id?: string | null;
+  bolt_taxi_driver_uuid?: string | null;
+  wolt_courier_id?: string | null;
+};
+
+function firstId(...values: Array<string | null | undefined>): string {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
+/** Driver platform ID for this payout leg: uber_driver_id, glovo_courier_id, and the matching Bolt/Wolt field. */
+export function payoutItemPlatformId(item: PlatformIdSource): string {
+  const code = (item.earnings_platform ?? "").trim().toLowerCase();
+  if (code === "uber") return firstId(item.uber_driver_id, item.platform_id);
+  if (code === "glovo") return firstId(item.glovo_courier_id, item.platform_id);
+  if (code === "bolt" || code === "bolt_courier") {
+    return firstId(item.bolt_courier_id, item.bolt_driver_id, item.platform_id);
+  }
+  if (code === "bolt_taxi") {
+    return firstId(item.bolt_driver_id, item.bolt_courier_id, item.bolt_taxi_driver_uuid, item.platform_id);
+  }
+  if (code === "wolt" || code === "wolt_courier") return firstId(item.wolt_courier_id, item.platform_id);
+  return firstId(item.platform_id);
 }
 
 /** One ID on the summary line. Several platforms keep their IDs on the platform rows. */
 export function statementSummaryId(ids: string[], multiPlatform: boolean): string {
   if (multiPlatform || ids.length !== 1) return "-";
   return statementDisplayId(ids[0]);
+}
+
+/**
+ * Traceable statement number: PS-<week start yyyymmdd>-<first 8 hex of the payout id>.
+ * Uses the driver payment when paid, otherwise the first platform payout.
+ */
+export function statementReference(row: {
+  payment_period_start: string;
+  driver_payment_id: string | null;
+  platform_payout_ids: string[];
+}): string {
+  const id = row.driver_payment_id ?? row.platform_payout_ids[0] ?? "";
+  const tail = id.replace(/-/g, "").slice(0, 8).toUpperCase();
+  const week = row.payment_period_start.slice(0, 10).replace(/-/g, "");
+  return tail ? `PS-${week}-${tail}` : "-";
 }
 
 function statementLocale(): string {

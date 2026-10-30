@@ -35,6 +35,7 @@ import {
 import type { WeekLoanRepayment } from "../../../api/driverLoans";
 import { LineRow, PlatformLogo } from "./payoutDetailUi";
 import { PlatformEarningsCard } from "./PlatformEarningsCard";
+import type { StatementPaperWidth } from "./courierStatementPaper";
 
 export type CombinedPayoutDetailsContentProps = {
   row: ConsolidatedDriverPayout;
@@ -57,6 +58,10 @@ export type CombinedPayoutDetailsContentProps = {
   onPrintStatement?: () => void;
   downloadBusy?: boolean;
   statementBusy?: boolean;
+  /** Fees or loan repayments still loading; the statement would be incomplete. */
+  statementDisabled?: boolean;
+  statementPaperWidth?: StatementPaperWidth;
+  onStatementPaperWidthChange?: (width: StatementPaperWidth) => void;
 };
 
 function statusDisplay(status: string): string {
@@ -162,6 +167,7 @@ function ActionsMenu({
   onPrint,
   onDownloadStatement,
   onPrintStatement,
+  statementDisabled,
   onOpenDebtActions,
   onOpenLoanActions,
   onOpenCustomFees,
@@ -176,6 +182,7 @@ function ActionsMenu({
   onPrint?: () => void;
   onDownloadStatement?: () => void;
   onPrintStatement?: () => void;
+  statementDisabled?: boolean;
   onOpenDebtActions?: (p: PayoutListItem) => void;
   onOpenLoanActions?: () => void;
   onOpenCustomFees?: (p: PayoutListItem) => void;
@@ -295,7 +302,8 @@ function ActionsMenu({
             {onDownloadStatement && (
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50"
+                disabled={statementDisabled}
+                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => {
                   setOpen(false);
                   onDownloadStatement();
@@ -307,7 +315,8 @@ function ActionsMenu({
             {onPrintStatement && (
               <button
                 type="button"
-                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50"
+                disabled={statementDisabled}
+                className="block w-full px-3 py-2 text-left text-xs text-ink hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => {
                   setOpen(false);
                   onPrintStatement();
@@ -356,6 +365,9 @@ export function CombinedPayoutDetailsContent({
   onPrintStatement,
   downloadBusy,
   statementBusy,
+  statementDisabled,
+  statementPaperWidth,
+  onStatementPaperWidthChange,
 }: CombinedPayoutDetailsContentProps) {
   const { t } = useTranslation();
   const breakdown = useMemo(() => computeUnifiedBreakdown(row, payoutItems), [row, payoutItems]);
@@ -893,6 +905,7 @@ export function CombinedPayoutDetailsContent({
             onPrint={onPrint}
             onDownloadStatement={onDownloadStatement}
             onPrintStatement={onPrintStatement}
+            statementDisabled={statementDisabled}
             onOpenDebtActions={onOpenDebtActions}
             onOpenLoanActions={onOpenLoanActions}
             onOpenCustomFees={onOpenCustomFees}
@@ -1143,6 +1156,7 @@ export function CombinedPayoutDetailsContent({
               onPrint={onPrint}
               onDownloadStatement={onDownloadStatement}
               onPrintStatement={onPrintStatement}
+              statementDisabled={statementDisabled}
               onOpenDebtActions={onOpenDebtActions}
               onOpenLoanActions={onOpenLoanActions}
               onOpenCustomFees={onOpenCustomFees}
@@ -1337,9 +1351,29 @@ export function CombinedPayoutDetailsContent({
               </svg>
               {t("pages.earningsPayouts.detail.printMenu")}
             </button>
+            {statementPaperWidth && onStatementPaperWidthChange && (
+              <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                <span>{t("pages.earningsPayouts.detail.receiptWidth")}</span>
+                <div className="inline-flex overflow-hidden rounded-md ring-1 ring-slate-200" role="group">
+                  {([112, 80] as const).map((width) => (
+                    <button
+                      key={width}
+                      type="button"
+                      aria-pressed={statementPaperWidth === width}
+                      className={`px-2.5 py-1 font-semibold ${
+                        statementPaperWidth === width ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                      onClick={() => onStatementPaperWidthChange(width)}
+                    >
+                      {width} mm
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               type="button"
-              disabled={statementBusy || !onDownloadStatement}
+              disabled={statementBusy || statementDisabled || !onDownloadStatement}
               className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`}
               onClick={onDownloadStatement}
             >
@@ -1348,7 +1382,12 @@ export function CombinedPayoutDetailsContent({
               </svg>
               {statementBusy ? t("pages.earningsPayouts.detail.downloadingStatement") : t("pages.earningsPayouts.detail.downloadStatement")}
             </button>
-            <button type="button" className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`} onClick={onPrintStatement}>
+            <button
+              type="button"
+              disabled={statementDisabled || !onPrintStatement}
+              className={`${btnSecondary} w-full !justify-start !gap-2 !py-2 !text-xs`}
+              onClick={onPrintStatement}
+            >
               <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
