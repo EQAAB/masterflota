@@ -3,12 +3,19 @@ import { useTranslation } from "react-i18next";
 import type { ConsolidatedDriverPayout, PayoutListItem } from "../../../api/earnings";
 import type { WeekLoanRepayment } from "../../../api/driverLoans";
 import { FleetManagerLogoMark } from "../../brand/FleetManagerLogoMark";
+import { BoltPlatformLogo, GlovoPlatformLogo, UberPlatformLogo, WoltPlatformLogo } from "../../drivers/platformLogos";
 import { getAppBranding } from "../../../lib/appBranding";
 import { formatCurrency } from "../../../utils/currency";
-import { computeUnifiedBreakdown, formatPeriodParts } from "./payoutBreakdownUtils";
+import { computeUnifiedBreakdown } from "./payoutBreakdownUtils";
 import type { WeekFeeBreakdown } from "./payoutFeeBreakdown";
-import { BoltPlatformLogo, GlovoPlatformLogo, UberPlatformLogo, WoltPlatformLogo } from "../../drivers/platformLogos";
-import { buildCourierStatementModel, statementPlatformSummary } from "./courierStatementModel";
+import { buildCourierStatementModel } from "./courierStatementModel";
+import {
+  formatStatementDay,
+  formatStatementWeek,
+  statementFinalAmountKey,
+  statementGeneratedBy,
+  statementPayoutDateIso,
+} from "./courierStatementFormat";
 
 type CourierPayoutStatementProps = {
   row: ConsolidatedDriverPayout;
@@ -17,23 +24,28 @@ type CourierPayoutStatementProps = {
   loanRepayments?: WeekLoanRepayment[];
 };
 
-function formatStatementDate(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(d);
-}
-
 function StatementPlatformMark({ platform }: { platform: string }) {
   const code = platform.toLowerCase();
-  if (code === "uber") return <UberPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+  const className = "payout-statement__logo !h-8 !w-8 !rounded-md !shadow-none";
+  if (code === "uber") return <UberPlatformLogo className={className} />;
   if (code === "bolt" || code === "bolt_taxi" || code === "bolt_courier") {
-    return <BoltPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
+    return <BoltPlatformLogo className={className} />;
   }
-  if (code === "wolt" || code === "wolt_courier") {
-    return <WoltPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
-  }
-  if (code === "glovo") return <GlovoPlatformLogo className="!h-6 !w-6 !rounded-md !shadow-none" />;
-  return <span className="payout-statement__mark" aria-hidden />;
+  if (code === "wolt" || code === "wolt_courier") return <WoltPlatformLogo className={className} />;
+  if (code === "glovo") return <GlovoPlatformLogo className={className} />;
+  return null;
+}
+
+function courierIdsForPlatform(items: PayoutListItem[], platform: string): string {
+  const ids = [
+    ...new Set(
+      items
+        .filter((item) => (item.earnings_platform ?? "") === platform)
+        .map((item) => item.platform_id?.trim())
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  return ids.length ? ids.join(", ") : "-";
 }
 
 export function CourierPayoutStatement({
@@ -59,74 +71,91 @@ export function CourierPayoutStatement({
     [breakdown, payoutItems, weekFeeBreakdown, loanRepayments],
   );
 
-  const period = formatPeriodParts(row.payment_period_start, row.payment_period_end);
-  const weekLabel = period
-    ? `${period.range} ${period.year}`
-    : `${row.payment_period_start.slice(0, 10)} – ${row.payment_period_end.slice(0, 10)}`;
-  const driverName = `${row.first_name} ${row.last_name}`.trim();
-  const platformLabel = statementPlatformSummary(row, model.platforms);
+  const driverName = `${row.first_name} ${row.last_name}`.trim() || "-";
   const payable = model.finalNet >= -0.02;
-  const status = t(`pages.earningsPayouts.payoutStatusShort.${row.consolidated_status}`, {
-    defaultValue: row.consolidated_status.replace(/_/g, " "),
-  });
+  const headerPlatforms = model.platforms.length
+    ? model.platforms
+    : row.platforms.map((platform) => ({ platform, label: platform, netIncome: 0 }));
 
   return (
     <article className="payout-statement">
-      <header className="payout-statement__header">
-        <div>
-          <div className="payout-statement__brand">
-            <FleetManagerLogoMark className="h-10 w-10" title={brand.appName} monogram={brand.logoMonogram} />
+      <header className="payout-statement__top">
+        <div className="payout-statement__brand-row">
+          <div className="payout-statement__platforms-logos">
+            {headerPlatforms.map((platform) => (
+              <span key={platform.platform} className="payout-statement__platform-brand">
+                <StatementPlatformMark platform={platform.platform} />
+                <span>{platform.label}</span>
+              </span>
+            ))}
+          </div>
+          <div className="payout-statement__issuer">
+            <FleetManagerLogoMark className="h-9 w-9" title={brand.appName} monogram={brand.logoMonogram} />
             <div>
-              <p className="payout-statement__brand-name">{brand.appName}</p>
-              <p className="payout-statement__brand-role">{t("pages.earningsPayouts.statement.partnerRole")}</p>
+              <p className="payout-statement__issuer-name">{brand.appName}</p>
+              <p className="payout-statement__issuer-role">{t("pages.earningsPayouts.statement.fleetRole")}</p>
             </div>
           </div>
-          <h1 className="payout-statement__title">{t("pages.earningsPayouts.statement.title")}</h1>
-          <p className="payout-statement__week">
-            {t("pages.earningsPayouts.statement.week", { week: weekLabel })}
-          </p>
         </div>
-        <dl className="payout-statement__meta">
-          <div>
-            <dt>{t("pages.earningsPayouts.statement.courier")}</dt>
-            <dd>{driverName}</dd>
-          </div>
-          <div>
-            <dt>{t("pages.earningsPayouts.statement.courierId")}</dt>
-            <dd>{model.courierIds.length ? model.courierIds.join(", ") : "—"}</dd>
-          </div>
-          <div>
-            <dt>{t("pages.earningsPayouts.statement.platform")}</dt>
-            <dd className="payout-statement__platform">
-              {!model.multiPlatform && model.platforms[0] ? (
-                <StatementPlatformMark platform={model.platforms[0].platform} />
-              ) : null}
-              <span>{platformLabel}</span>
-            </dd>
-          </div>
-          <div>
-            <dt>{t("common.status")}</dt>
-            <dd>{status}</dd>
-          </div>
-        </dl>
+        <div className="payout-statement__heading">
+          <h1>{t("pages.earningsPayouts.statement.title")}</h1>
+          <p>{t("pages.earningsPayouts.statement.subtitle")}</p>
+        </div>
       </header>
 
+      <dl className="payout-statement__summary">
+        <div>
+          <dt>{t("pages.earningsPayouts.statement.courierId")}</dt>
+          <dd>
+            {model.courierIds.length === 0
+              ? "-"
+              : model.courierIds.map((id) => <span key={id}>{id}</span>)}
+          </dd>
+        </div>
+        <div>
+          <dt>{t("pages.earningsPayouts.statement.courierName")}</dt>
+          <dd>{driverName}</dd>
+        </div>
+        <div>
+          <dt>{t("pages.earningsPayouts.statement.weekLabel")}</dt>
+          <dd>{formatStatementWeek(row.payment_period_start, row.payment_period_end)}</dd>
+        </div>
+        <div>
+          <dt>{t("pages.earningsPayouts.statement.payoutDate")}</dt>
+          <dd>{formatStatementDay(statementPayoutDateIso(row))}</dd>
+        </div>
+      </dl>
+
       {model.multiPlatform && (
-        <section className="payout-statement__platforms" aria-label={t("pages.earningsPayouts.statement.byPlatform")}>
-          <p className="payout-statement__section-label">{t("pages.earningsPayouts.statement.byPlatform")}</p>
-          <ul>
-            {model.platforms.map((p) => (
-              <li key={p.platform}>
-                <span className="payout-statement__platform">
-                  <StatementPlatformMark platform={p.platform} />
-                  {p.label}
-                </span>
-                <span className="tabular-nums">{formatCurrency(p.netIncome)}</span>
-              </li>
+        <table className="payout-statement__table payout-statement__platforms-table">
+          <thead>
+            <tr>
+              <th>{t("pages.earningsPayouts.statement.platform")}</th>
+              <th>{t("pages.earningsPayouts.statement.courierId")}</th>
+              <th>{t("pages.earningsPayouts.statement.netIncome")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {model.platforms.map((platform) => (
+              <tr key={platform.platform}>
+                <td>
+                  <span className="payout-statement__platform-brand">
+                    <StatementPlatformMark platform={platform.platform} />
+                    <span>{platform.label}</span>
+                  </span>
+                </td>
+                <td>{courierIdsForPlatform(payoutItems, platform.platform)}</td>
+                <td className="tabular-nums">{formatCurrency(platform.netIncome)}</td>
+              </tr>
             ))}
-          </ul>
-        </section>
+          </tbody>
+        </table>
       )}
+
+      <div className="payout-statement__section-head">
+        <span>{t("pages.earningsPayouts.statement.earningsHeading")}</span>
+        <span>{t("pages.earningsPayouts.statement.currencyCode")}</span>
+      </div>
 
       <table className="payout-statement__table">
         <thead>
@@ -138,40 +167,22 @@ export function CourierPayoutStatement({
         <tbody>
           {model.lines.map((line) => (
             <tr key={line.key}>
-              <td>
-                <span className="payout-statement__line">
-                  <span className={`payout-statement__mark is-${line.kind}`} aria-hidden />
-                  {line.label}
-                </span>
-              </td>
-              <td className={line.kind === "deduction" ? "is-deduction" : "is-income"}>
-                {formatCurrency(line.amount)}
-              </td>
+              <td>{line.label}</td>
+              <td className="tabular-nums">{formatCurrency(line.amount)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <div className={`payout-statement__final${payable ? "" : " is-debt"}`}>
-        <span>{t("pages.earningsPayouts.statement.finalAmount")}</span>
+        <span>{t(statementFinalAmountKey(row.consolidated_status, model.finalNet))}</span>
         <strong className="tabular-nums">{formatCurrency(model.finalNet)}</strong>
       </div>
 
       <footer className="payout-statement__footer">
-        <div>
-          <p>
-            {t("pages.earningsPayouts.statement.date", {
-              date: formatStatementDate(row.payment_period_end),
-            })}
-          </p>
-          <p>
-            {t("pages.earningsPayouts.statement.generatedBy", { name: brand.appName })}
-          </p>
-        </div>
-        <div className="payout-statement__thanks">
-          <p>{t("pages.earningsPayouts.statement.thanks")}</p>
-          <p>{t("pages.earningsPayouts.statement.tagline")}</p>
-        </div>
+        <p className="payout-statement__thanks">{t("pages.earningsPayouts.statement.thanks")}</p>
+        <p>{statementGeneratedBy(brand)}</p>
+        <p>{t("pages.earningsPayouts.statement.disclaimer")}</p>
       </footer>
     </article>
   );

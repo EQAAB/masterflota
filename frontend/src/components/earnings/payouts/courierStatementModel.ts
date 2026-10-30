@@ -35,8 +35,17 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function pushLine(lines: StatementLine[], line: StatementLine) {
-  if (Math.abs(line.amount) <= EPS) return;
+function deductionAmount(value: number): number {
+  const abs = Math.abs(value);
+  return abs <= EPS ? 0 : -round2(abs);
+}
+
+function lineKind(amount: number): StatementLineKind {
+  return amount < -EPS ? "deduction" : "income";
+}
+
+function pushLine(lines: StatementLine[], line: StatementLine, always = false) {
+  if (!always && Math.abs(line.amount) <= EPS) return;
   lines.push(line);
 }
 
@@ -49,53 +58,58 @@ export function buildCourierStatementModel(params: {
   const { breakdown, payoutItems, weekFeeBreakdown, loanRepayments = [] } = params;
   const lines: StatementLine[] = [];
 
+  const netIncome = Math.abs(breakdown.totalNetIncome) <= EPS ? 0 : round2(breakdown.totalNetIncome);
   pushLine(lines, {
     key: "net-income",
     label: i18n.t("pages.earningsPayouts.statement.netIncome"),
-    amount: breakdown.totalNetIncome,
-    kind: breakdown.totalNetIncome < 0 ? "deduction" : "income",
-  });
+    amount: netIncome,
+    kind: lineKind(netIncome),
+  }, true);
+  const fleetCommission = deductionAmount(breakdown.totalFleetSub);
   pushLine(lines, {
     key: "fleet-commission",
     label: i18n.t("pages.earningsPayouts.statement.fleetCommission"),
-    amount: -Math.abs(breakdown.totalFleetSub),
-    kind: "deduction",
-  });
+    amount: fleetCommission,
+    kind: lineKind(fleetCommission),
+  }, true);
+  const cash = deductionAmount(breakdown.totalCashBalance);
   pushLine(lines, {
     key: "cash",
     label: i18n.t("pages.earningsPayouts.statement.cashBalance"),
-    amount: -Math.abs(breakdown.totalCashBalance),
-    kind: "deduction",
-  });
+    amount: cash,
+    kind: lineKind(cash),
+  }, true);
 
-  const openingFee = round2(breakdown.platforms.reduce((s, p) => s + p.accountOpeningFee, 0));
+  const openingFee = deductionAmount(breakdown.platforms.reduce((s, p) => s + p.accountOpeningFee, 0));
   pushLine(lines, {
-    key: "opening-fee",
-    label: i18n.t("pages.earningsPayouts.statement.accountOpeningFee"),
-    amount: -Math.abs(openingFee),
-    kind: "deduction",
-  });
+    key: "tax",
+    label: i18n.t("pages.earningsPayouts.statement.tax"),
+    amount: openingFee,
+    kind: lineKind(openingFee),
+  }, true);
 
   for (const fee of weekFeeBreakdown?.items ?? []) {
     pushLine(lines, {
       key: fee.id,
       label: fee.feeName,
       amount: fee.signedAmount,
-      kind: fee.signedAmount < 0 ? "deduction" : "income",
+      kind: lineKind(fee.signedAmount),
     });
   }
 
+  const vehicleRent = deductionAmount(breakdown.customFeeVehicleRent);
   pushLine(lines, {
     key: "vehicle-rent",
     label: i18n.t("pages.earningsPayouts.statement.vehicleRent"),
-    amount: -Math.abs(breakdown.customFeeVehicleRent),
-    kind: "deduction",
-  });
+    amount: vehicleRent,
+    kind: lineKind(vehicleRent),
+  }, true);
+  const debtApplied = deductionAmount(breakdown.totalDebtApplied);
   pushLine(lines, {
     key: "debt-applied",
     label: i18n.t("pages.earningsPayouts.statement.debtApplied"),
-    amount: -Math.abs(breakdown.totalDebtApplied),
-    kind: "deduction",
+    amount: debtApplied,
+    kind: lineKind(debtApplied),
   });
 
   for (const repayment of loanRepayments) {
@@ -107,7 +121,7 @@ export function buildCourierStatementModel(params: {
       key: `loan-${repayment.id}`,
       label,
       amount: -amount,
-      kind: "deduction",
+      kind: lineKind(-amount),
     });
   }
 

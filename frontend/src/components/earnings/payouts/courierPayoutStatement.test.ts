@@ -21,7 +21,7 @@ function line(partial: Partial<PayoutListItem> & Pick<PayoutListItem, "id">): Pa
     tips: "0",
     total_platform_fees: "0",
     total_daily_cash: "308.44",
-    account_opening_fee: "0",
+    account_opening_fee: "100",
     company_commission: "222.80",
     net_income: "2227.97",
     vehicle_rental_fee: "0",
@@ -53,35 +53,23 @@ function rowFor(finalNet: string) {
 }
 
 describe("buildCourierStatementModel", () => {
-  it("lists non-zero deductions and reconciles to the final payable", () => {
+  it("keeps the standard ladder, including a zero vehicle rent", () => {
     const items = [line({ id: "p1" })];
     const breakdown = computeUnifiedBreakdown(rowFor("1596.73") as never, items);
     const model = buildCourierStatementModel({
       breakdown,
       payoutItems: items,
-      weekFeeBreakdown: {
-        items: [
-          {
-            id: "tax",
-            payoutId: "p1",
-            feeName: "Tax",
-            signedAmount: -100,
-            source: "recurring",
-          },
-        ],
-        anchorPlatform: "glovo",
-        anchorPayoutId: "p1",
-        isLoading: false,
-      },
     });
 
-    expect(model.lines.map((l) => l.label)).toEqual([
-      expect.stringMatching(/net income/i),
-      expect.stringMatching(/commission/i),
-      expect.stringMatching(/cash/i),
-      "Tax",
+    expect(model.lines.map((l) => l.key)).toEqual([
+      "net-income",
+      "fleet-commission",
+      "cash",
+      "tax",
+      "vehicle-rent",
     ]);
-    expect(model.lines.find((l) => l.key === "vehicle-rent")).toBeUndefined();
+    expect(model.lines.find((l) => l.key === "tax")?.amount).toBe(-100);
+    expect(model.lines.find((l) => l.key === "vehicle-rent")?.amount).toBe(0);
     const sum = Math.round(model.lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
     expect(sum).toBe(model.finalNet);
     expect(model.multiPlatform).toBe(false);
