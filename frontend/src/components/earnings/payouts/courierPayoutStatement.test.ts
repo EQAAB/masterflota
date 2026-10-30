@@ -76,6 +76,35 @@ describe("buildCourierStatementModel", () => {
     expect(model.courierIds).toEqual(["073"]);
   });
 
+  it("hides the zero account-opening tax row when a fee named Tax is already listed", () => {
+    const items = [line({ id: "p1", account_opening_fee: "0" })];
+    const breakdown = computeUnifiedBreakdown(rowFor("1596.73") as never, items);
+    const model = buildCourierStatementModel({
+      breakdown,
+      payoutItems: items,
+      weekFeeBreakdown: {
+        items: [
+          {
+            id: "fee-tax",
+            payoutId: "p1",
+            feeName: "Tax",
+            signedAmount: -100,
+            source: "recurring",
+          },
+        ],
+        anchorPlatform: "glovo",
+        anchorPayoutId: "p1",
+        isLoading: false,
+      },
+    });
+
+    const taxLines = model.lines.filter((l) => l.label.trim().toLowerCase() === "tax" || l.key === "tax");
+    expect(taxLines).toHaveLength(1);
+    expect(taxLines[0]?.key).toBe("fee-tax");
+    expect(taxLines[0]?.amount).toBe(-100);
+    expect(model.lines.find((l) => l.key === "tax")).toBeUndefined();
+  });
+
   it("adds an other-adjustments line when the ladder does not match final net", () => {
     const breakdown = {
       totalNetIncome: 100,

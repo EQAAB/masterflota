@@ -81,12 +81,19 @@ export function buildCourierStatementModel(params: {
   }, true);
 
   const openingFee = deductionAmount(breakdown.platforms.reduce((s, p) => s + p.accountOpeningFee, 0));
-  pushLine(lines, {
-    key: "tax",
-    label: i18n.t("pages.earningsPayouts.statement.tax"),
-    amount: openingFee,
-    kind: lineKind(openingFee),
-  }, true);
+  const taxLabel = i18n.t("pages.earningsPayouts.statement.tax").trim().toLowerCase();
+  const feeNamedTax = (weekFeeBreakdown?.items ?? []).some((fee) => {
+    const name = fee.feeName.trim().toLowerCase();
+    return Math.abs(fee.signedAmount) > EPS && (name === taxLabel || name === "tax" || name === "taxa" || name === "taxă");
+  });
+  if (!(feeNamedTax && Math.abs(openingFee) <= EPS)) {
+    pushLine(lines, {
+      key: "tax",
+      label: i18n.t("pages.earningsPayouts.statement.tax"),
+      amount: openingFee,
+      kind: lineKind(openingFee),
+    }, true);
+  }
 
   for (const fee of weekFeeBreakdown?.items ?? []) {
     pushLine(lines, {
