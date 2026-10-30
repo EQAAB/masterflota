@@ -244,20 +244,27 @@ export function CombinedPayoutDetailsPage() {
   }
 
   async function handleDownloadStatement() {
-    if (!row) return;
+    const source = statementRef.current?.querySelector<HTMLElement>(".payout-statement");
+    if (!row || !source) return;
+    const mount = document.createElement("div");
+    mount.className = "payout-statement-print-root payout-statement-print-root--capture";
+    mount.appendChild(source.cloneNode(true));
+    document.body.appendChild(mount);
     setStatementBusy(true);
     try {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+      const sheet = mount.querySelector<HTMLElement>(".payout-statement") ?? mount;
       const safeName = `${row.first_name}-${row.last_name}`.replace(/\s+/g, "-");
       await downloadCourierStatementPdf({
-        row,
-        payoutItems,
-        weekFeeBreakdown,
-        loanRepayments: loanRepaymentsQuery.data ?? [],
+        element: sheet,
         filename: `payout-statement-${safeName}-${weekStart}.pdf`,
       });
     } catch (e) {
       setError(errMessage(e));
     } finally {
+      mount.remove();
       setStatementBusy(false);
     }
   }
