@@ -30,6 +30,7 @@ import {
   payoutPlatformFromFilter,
   type DriverPayoutPlatform,
 } from "./payoutPlatform";
+import { payoutPlatformIdSelectSql } from "./payoutPlatformId";
 import { extractDateFromFilename, weekBoundsFromDates } from "./filenameDate";
 import { totalLinesInFile } from "../../lib/filterParsedRows";
 import { getPreviousWeek } from "../../lib/paymentWeek";
@@ -1135,7 +1136,7 @@ async function fetchEarningsReportRows(
   const boundedLimit = Math.max(1, Math.min(REPORT_MAX_ROWS, limit));
   const listParams = [...params, boundedLimit];
   const { rows } = await pool.query<EarningsReportRow>(
-    `SELECT dp.id::text, dp.driver_id::text, dp.platform_id,
+    `SELECT dp.id::text, dp.driver_id::text, ${payoutPlatformIdSelectSql},
             dp.payment_period_start::text, dp.payment_period_end::text,
             TO_CHAR(dp.payment_period_start, 'YYYY-MM-DD') AS period_start_label,
             TO_CHAR(dp.payment_period_end, 'YYYY-MM-DD') AS period_end_label,
@@ -1227,7 +1228,7 @@ async function fetchPayoutList(orgId: string, filters: PayoutReportFilters, page
 
   const listParams = [...params, pageSize, offset];
     const listRes = await pool.query(
-    `SELECT dp.id::text, dp.driver_id::text, dp.platform_id,
+    `SELECT dp.id::text, dp.driver_id::text, ${payoutPlatformIdSelectSql},
             dp.payment_period_start::text, dp.payment_period_end::text,
             dp.net_driver_payout::text, dp.payment_status, dp.payment_date::text,
             dp.hold_reason, dp.hold_released_at::text, dp.hold_notes,

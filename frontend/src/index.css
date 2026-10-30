@@ -842,92 +842,131 @@ body {
     position: fixed;
     left: -10000px;
     top: 0;
-    width: 720px;
+    width: 520px;
     background: #fff;
     pointer-events: none;
   }
 
-  .payout-statement-host--capture {
-    left: 0;
-    z-index: 0;
+  .payout-statement-print-root {
+    display: none;
   }
 
   .payout-statement {
-    width: 720px;
+    width: 520px;
     box-sizing: border-box;
     background: #fff;
     color: #0f172a;
-    padding: 28px 32px 20px;
+    padding: 28px 28px 24px;
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   }
 
-  .payout-statement__header {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e2e8f0;
+  .payout-statement__top {
+    margin-bottom: 4px;
   }
 
-  .payout-statement__brand {
+  .payout-statement__brand-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 16px;
   }
 
-  .payout-statement__brand-name {
-    font-size: 18px;
-    font-weight: 700;
+  .payout-statement__platforms-logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    min-width: 0;
+  }
+
+  .payout-statement__platform-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #000;
+  }
+
+  .payout-statement__issuer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .payout-statement__issuer-name {
+    font-size: 16px;
+    font-weight: 800;
     line-height: 1.1;
+    color: #003d38;
   }
 
-  .payout-statement__brand-role {
+  .payout-statement__issuer-role {
     margin-top: 2px;
-    font-size: 11px;
-    color: #64748b;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #222;
   }
 
-  .payout-statement__title {
+  .payout-statement__heading {
     margin-top: 18px;
-    font-size: 22px;
+    text-align: center;
+  }
+
+  .payout-statement__heading h1 {
+    font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.02em;
   }
 
-  .payout-statement__week {
+  .payout-statement__heading p {
     margin-top: 4px;
-    font-size: 13px;
-    color: #475569;
-  }
-
-  .payout-statement__meta {
-    display: grid;
-    gap: 8px;
-    align-content: start;
-    font-size: 13px;
-  }
-
-  .payout-statement__meta div {
-    display: grid;
-    grid-template-columns: 92px 1fr;
-    gap: 8px;
-  }
-
-  .payout-statement__meta dt {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: #64748b;
   }
 
-  .payout-statement__meta dd {
-    font-weight: 600;
+  .payout-statement__summary {
+    margin-top: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2px 14px;
   }
 
-  .payout-statement__platform {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+  .payout-statement__summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+  }
+
+  .payout-statement__summary div:last-child {
+    border-bottom: 0;
+  }
+
+  .payout-statement__summary dt {
+    color: #64748b;
+  }
+
+  .payout-statement__summary dd {
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .payout-statement__summary dd span {
+    display: block;
+  }
+
+  .payout-statement__platforms-table {
+    margin-top: 16px;
   }
 
   .payout-statement__platforms {
@@ -959,11 +998,23 @@ body {
     font-weight: 600;
   }
 
+  .payout-statement__section-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
   .payout-statement__table {
     width: 100%;
-    margin-top: 18px;
+    margin-top: 8px;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .payout-statement__table th {
@@ -982,58 +1033,33 @@ body {
     text-align: right;
   }
 
-  .payout-statement__line {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .payout-statement__mark {
-    width: 18px;
-    height: 18px;
-    flex: 0 0 18px;
-    border-radius: 6px;
-    background: #e2e8f0;
-  }
-
-  .payout-statement__mark.is-deduction {
-    background: #fecdd3;
-  }
-
-  .payout-statement__mark.is-income {
-    background: #d1fae5;
-  }
-
   .payout-statement__table td {
-    padding: 12px 8px;
+    padding: 11px 8px;
     border-bottom: 1px dashed #e2e8f0;
     font-weight: 600;
   }
 
-  .payout-statement__table td.is-deduction {
-    color: #e11d48;
-  }
-
-  .payout-statement__table td.is-income {
-    color: #0f172a;
-  }
-
   .payout-statement__final {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    gap: 4px;
     margin-top: 16px;
-    padding: 16px 18px;
+    padding: 14px 18px;
     border-radius: 14px;
     background: #ecfdf5;
     color: #065f46;
-    font-size: 16px;
+    text-align: center;
+    font-size: 12px;
     font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .payout-statement__final strong {
     font-size: 22px;
+    letter-spacing: 0;
+    text-transform: none;
   }
 
   .payout-statement__final.is-debt {
@@ -1042,23 +1068,19 @@ body {
   }
 
   .payout-statement__footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
     margin-top: 22px;
-    padding-top: 14px;
-    border-top: 1px solid #e2e8f0;
+    text-align: center;
     font-size: 12px;
     color: #64748b;
   }
 
   .payout-statement__thanks {
-    text-align: right;
-  }
-
-  .payout-statement__thanks p:first-child {
     font-weight: 700;
     color: #0f172a;
+  }
+
+  .payout-statement__footer p + p {
+    margin-top: 4px;
   }
 
   @media print {
@@ -1072,21 +1094,158 @@ body {
       display: none !important;
     }
 
-    body.printing-payout-statement * {
-      visibility: hidden;
+    body.printing-payout-statement {
+      page: payout-statement;
     }
 
-    body.printing-payout-statement .payout-statement-host,
-    body.printing-payout-statement .payout-statement-host * {
-      visibility: visible;
+    body.printing-payout-statement > :not(.payout-statement-print-root) {
+      display: none !important;
     }
 
-    body.printing-payout-statement .payout-statement-host {
+    body.printing-payout-statement > .payout-statement-print-root {
       display: block !important;
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 720px;
+      width: 72mm;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement {
+      width: 72mm;
+      padding: 0;
+      color: #000;
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__brand-row {
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    body.printing-payout-statement .payout-statement__platforms-logos {
+      gap: 4px 6px;
+    }
+
+    body.printing-payout-statement .payout-statement__platform-brand {
+      gap: 4px;
+      font-size: 11px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__logo {
+      height: 14px !important;
+      width: 14px !important;
+      box-shadow: none !important;
+    }
+
+    body.printing-payout-statement .payout-statement__issuer-name {
+      font-size: 11px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__issuer-role,
+    body.printing-payout-statement .payout-statement__heading p,
+    body.printing-payout-statement .payout-statement__summary dt,
+    body.printing-payout-statement .payout-statement__section-head,
+    body.printing-payout-statement .payout-statement__table th,
+    body.printing-payout-statement .payout-statement__footer {
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__heading {
+      margin-top: 8px;
+    }
+
+    body.printing-payout-statement .payout-statement__heading h1 {
+      font-size: 13px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__heading p {
+      font-size: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    body.printing-payout-statement .payout-statement__summary {
+      margin-top: 8px;
+      border: 1px solid #000;
+      border-radius: 0;
+      padding: 0 4px;
+    }
+
+    body.printing-payout-statement .payout-statement__summary div {
+      padding: 4px 0;
+      border-bottom-color: #000;
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__summary dd,
+    body.printing-payout-statement .payout-statement__table td,
+    body.printing-payout-statement .payout-statement__thanks {
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__section-head,
+    body.printing-payout-statement .payout-statement__platforms-table {
+      margin-top: 8px;
+    }
+
+    body.printing-payout-statement .payout-statement__table {
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__table th,
+    body.printing-payout-statement .payout-statement__table td {
+      padding: 4px 2px;
+      background: #fff;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__table th {
+      border-bottom: 1px solid #000;
+    }
+
+    body.printing-payout-statement .payout-statement__table td {
+      border-bottom: 1px dashed #000;
+    }
+
+    body.printing-payout-statement .payout-statement__final,
+    body.printing-payout-statement .payout-statement__final.is-debt {
+      margin-top: 8px;
+      padding: 6px 0;
+      border: 0;
+      border-top: 2px solid #000;
+      border-bottom: 2px solid #000;
+      border-radius: 0;
+      background: #fff;
+      color: #000;
+      font-size: 10px;
+    }
+
+    body.printing-payout-statement .payout-statement__final strong {
+      font-size: 14px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__footer {
+      margin-top: 8px;
+      font-size: 8px;
+      color: #000;
+    }
+
+    body.printing-payout-statement .payout-statement__top,
+    body.printing-payout-statement .payout-statement__summary,
+    body.printing-payout-statement .payout-statement__summary div,
+    body.printing-payout-statement .payout-statement__final,
+    body.printing-payout-statement .payout-statement__footer,
+    body.printing-payout-statement .payout-statement__table tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    body.printing-payout-statement .payout-statement__table thead {
+      display: table-header-group;
     }
   }
 
@@ -2949,4 +3108,9 @@ body {
   .fm-settings-roles__skeleton {
     @apply animate-pulse rounded-xl bg-slate-200/60;
   }
+}
+
+@page payout-statement {
+  size: A4 portrait;
+  margin: 16mm;
 }

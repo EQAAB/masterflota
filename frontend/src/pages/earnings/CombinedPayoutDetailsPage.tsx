@@ -22,7 +22,7 @@ import { PayoutWeekNavigator } from "../../components/earnings/payouts/PayoutWee
 import { computeUnifiedBreakdown } from "../../components/earnings/payouts/payoutBreakdownUtils";
 import { buildWeekFeeBreakdown } from "../../components/earnings/payouts/payoutFeeBreakdown";
 import { CourierPayoutStatement } from "../../components/earnings/payouts/CourierPayoutStatement";
-import { exportPdfFromElement } from "../../lib/exportPdfFromElement";
+import { downloadCourierStatementPdf } from "../../components/earnings/payouts/courierStatementPdf";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
 import { DebtActionsModal } from "../../components/earnings/DebtActionsModal";
 import { CustomFeesModal } from "../../components/earnings/CustomFeesModal";
@@ -244,31 +244,35 @@ export function CombinedPayoutDetailsPage() {
   }
 
   async function handleDownloadStatement() {
-    const el = statementRef.current;
-    if (!el || !row) return;
+    if (!row) return;
     setStatementBusy(true);
-    el.classList.add("payout-statement-host--capture");
     try {
-      const sheet = el.querySelector<HTMLElement>(".payout-statement") ?? el;
       const safeName = `${row.first_name}-${row.last_name}`.replace(/\s+/g, "-");
-      await exportPdfFromElement(sheet, {
-        orientation: "portrait",
+      await downloadCourierStatementPdf({
+        row,
+        payoutItems,
+        weekFeeBreakdown,
+        loanRepayments: loanRepaymentsQuery.data ?? [],
         filename: `payout-statement-${safeName}-${weekStart}.pdf`,
-        scale: 2,
-        fitContent: true,
       });
     } catch (e) {
       setError(errMessage(e));
     } finally {
-      el.classList.remove("payout-statement-host--capture");
       setStatementBusy(false);
     }
   }
 
   function handlePrintStatement() {
+    const source = statementRef.current?.querySelector(".payout-statement");
+    if (!source) return;
+    const mount = document.createElement("div");
+    mount.className = "payout-statement-print-root";
+    mount.appendChild(source.cloneNode(true));
+    document.body.appendChild(mount);
     document.body.classList.add("printing-payout-statement");
     const cleanup = () => {
       document.body.classList.remove("printing-payout-statement");
+      mount.remove();
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
