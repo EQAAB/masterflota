@@ -301,12 +301,13 @@ export function CombinedPayoutDetailsPage() {
     const source = statementRef.current?.querySelector(".payout-statement");
     if (!source || statementLoading) return;
     const paper = STATEMENT_PAPERS[statementPaperWidth];
-    // Lay out off-screen (still visible to the layout engine) so height is real.
+    // Measure off-screen, then bring on-screen — otherwise left:-10000px prints blank.
     const mount = mountStatement(source, "payout-statement-print-root--measure");
     const sheet = mount.querySelector<HTMLElement>(".payout-statement") ?? mount;
     void sheet.offsetHeight;
     const heightMm = statementPrintPageHeightMm(Math.max(sheet.scrollHeight, sheet.offsetHeight));
     const marginX = statementPaperMarginXMm(paper);
+    mount.classList.remove("payout-statement-print-root--measure");
     // Set both named and default @page — Chromium often ignores named pages alone,
     // which left the CT-S4500 feeding a ~297mm blank form.
     const pageStyle = document.createElement("style");
