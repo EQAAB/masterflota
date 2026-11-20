@@ -19,9 +19,22 @@ export const STATEMENT_PAPERS: Record<StatementPaperWidth, StatementPaper> = {
 /** "203 DPI" heads are 8 dots/mm (203.2 DPI): 832 dots across 104mm. */
 export const STATEMENT_PRINTER_DOTS_PER_MM = 8;
 
-/** Top margin; the bottom gets extra feed so the cutter clears the footer. */
-export const STATEMENT_MARGIN_TOP_MM = 2;
-export const STATEMENT_MARGIN_BOTTOM_MM = 8;
+/** Tight margins so the CT-S4500 does not feed a long blank form. */
+export const STATEMENT_MARGIN_TOP_MM = 1;
+export const STATEMENT_MARGIN_BOTTOM_MM = 3;
+
+/** CSS px → mm at the standard 96 CSS dpi used by getBoundingClientRect / scrollHeight. */
+export const STATEMENT_CSS_DPI = 96;
+
+/**
+ * Page height for one receipt cut: content + margins, clamped so a failed
+ * measure cannot fall back to an A4-tall feed that wastes the roll.
+ */
+export function statementPrintPageHeightMm(contentHeightPx: number): number {
+  const contentMm = Math.max(1, Math.ceil((contentHeightPx * 25.4) / STATEMENT_CSS_DPI));
+  const heightMm = contentMm + STATEMENT_MARGIN_TOP_MM + STATEMENT_MARGIN_BOTTOM_MM + 1;
+  return Math.min(220, Math.max(40, heightMm));
+}
 
 const PAPER_STORAGE_KEY = "fm.payoutStatement.paperWidth";
 

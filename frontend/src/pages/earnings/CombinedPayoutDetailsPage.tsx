@@ -30,6 +30,7 @@ import {
   loadStatementPaperWidth,
   saveStatementPaperWidth,
   statementPaperMarginXMm,
+  statementPrintPageHeightMm,
   type StatementPaperWidth,
 } from "../../components/earnings/payouts/courierStatementPaper";
 import { ConfirmDialog } from "../../components/UI/ConfirmDialog";
@@ -300,14 +301,26 @@ export function CombinedPayoutDetailsPage() {
     const source = statementRef.current?.querySelector(".payout-statement");
     if (!source || statementLoading) return;
     const paper = STATEMENT_PAPERS[statementPaperWidth];
+    // Lay out off-screen (still visible to the layout engine) so height is real.
     const mount = mountStatement(source, "payout-statement-print-root--measure");
-    // One page sized to the receipt, so the CT-S4500 cuts once right after the footer.
-    const contentMm = Math.ceil((mount.getBoundingClientRect().height * 25.4) / 96);
-    // +1mm keeps sub-pixel rounding from spilling onto a second (blank, cut) page.
-    const heightMm = contentMm + STATEMENT_MARGIN_TOP_MM + STATEMENT_MARGIN_BOTTOM_MM + 1;
-    mount.classList.remove("payout-statement-print-root--measure");
+    const sheet = mount.querySelector<HTMLElement>(".payout-statement") ?? mount;
+    void sheet.offsetHeight;
+    const heightMm = statementPrintPageHeightMm(Math.max(sheet.scrollHeight, sheet.offsetHeight));
+    const marginX = statementPaperMarginXMm(paper);
+    // Set both named and default @page — Chromium often ignores named pages alone,
+    // which left the CT-S4500 feeding a ~297mm blank form.
     const pageStyle = document.createElement("style");
-    pageStyle.textContent = `@page payout-statement { size: ${paper.pageMm}mm ${heightMm}mm; margin: ${STATEMENT_MARGIN_TOP_MM}mm ${statementPaperMarginXMm(paper)}mm ${STATEMENT_MARGIN_BOTTOM_MM}mm; }`;
+    pageStyle.setAttribute("data-payout-statement-page", "1");
+    pageStyle.textContent = `
+      @page {
+        size: ${paper.pageMm}mm ${heightMm}mm;
+        margin: ${STATEMENT_MARGIN_TOP_MM}mm ${marginX}mm ${STATEMENT_MARGIN_BOTTOM_MM}mm;
+      }
+      @page payout-statement {
+        size: ${paper.pageMm}mm ${heightMm}mm;
+        margin: ${STATEMENT_MARGIN_TOP_MM}mm ${marginX}mm ${STATEMENT_MARGIN_BOTTOM_MM}mm;
+      }
+    `;
     document.head.appendChild(pageStyle);
     document.body.classList.add("printing-payout-statement");
     const cleanup = () => {

@@ -875,7 +875,6 @@ body {
     position: fixed;
     left: -10000px;
     top: 0;
-    visibility: hidden;
     pointer-events: none;
   }
 
@@ -936,7 +935,7 @@ body {
   }
 
   .payout-statement-print-root .payout-statement__heading {
-    margin-top: 8px;
+    margin-top: 4px;
   }
 
   .payout-statement-print-root .payout-statement__heading h1 {
@@ -950,14 +949,14 @@ body {
   }
 
   .payout-statement-print-root .payout-statement__summary {
-    margin-top: 8px;
+    margin-top: 4px;
     border: 1px solid #000;
     border-radius: 0;
     padding: 0 4px;
   }
 
   .payout-statement-print-root .payout-statement__summary div {
-    padding: 4px 0;
+    padding: 2px 0;
     border-bottom-color: #000;
     font-size: 10px;
   }
@@ -970,7 +969,7 @@ body {
 
   .payout-statement-print-root .payout-statement__section-head,
   .payout-statement-print-root .payout-statement__platforms-table {
-    margin-top: 8px;
+    margin-top: 4px;
   }
 
   .payout-statement-print-root .payout-statement__table {
@@ -979,7 +978,7 @@ body {
 
   .payout-statement-print-root .payout-statement__table th,
   .payout-statement-print-root .payout-statement__table td {
-    padding: 4px 2px;
+    padding: 2px 2px;
     background: #fff;
     color: #000;
   }
@@ -995,8 +994,8 @@ body {
 
   .payout-statement-print-root .payout-statement__final,
   .payout-statement-print-root .payout-statement__final.is-debt {
-    margin-top: 8px;
-    padding: 6px 0;
+    margin-top: 4px;
+    padding: 4px 0;
     border: 0;
     border-top: 2px solid #000;
     border-bottom: 2px solid #000;
@@ -1012,7 +1011,7 @@ body {
   }
 
   .payout-statement-print-root .payout-statement__footer {
-    margin-top: 8px;
+    margin-top: 4px;
     font-size: 9px;
     color: #000;
   }
@@ -1049,12 +1048,12 @@ body {
   }
 
   .payout-statement-print-root--wide .payout-statement__summary div {
-    padding: 6px 0;
+    padding: 3px 0;
   }
 
   .payout-statement-print-root--wide .payout-statement__table th,
   .payout-statement-print-root--wide .payout-statement__table td {
-    padding: 6px 4px;
+    padding: 3px 4px;
   }
 
   .payout-statement-print-root--wide .payout-statement__final strong {
@@ -1316,6 +1315,15 @@ body {
       display: none !important;
     }
 
+    html:has(body.printing-payout-statement),
+    body.printing-payout-statement {
+      height: auto !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+
     body.printing-payout-statement {
       page: payout-statement;
     }
@@ -1326,6 +1334,9 @@ body {
 
     body.printing-payout-statement > .payout-statement-print-root {
       display: block !important;
+      width: var(--receipt-width, 72mm) !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     body.printing-payout-statement .payout-statement__top,
@@ -3204,8 +3215,11 @@ body {
   }
 }
 
-/* CT-S4500 112mm roll; the print handler overrides size/margins to the chosen roll and receipt height. */
+/*
+ * Short fallback for the CT-S4500. The print handler overrides size to the
+ * measured receipt height — do not use A4-tall 297mm here or blank feed wastes the roll.
+ */
 @page payout-statement {
-  size: 112mm 297mm;
-  margin: 2mm 4mm 8mm;
+  size: 80mm 120mm;
+  margin: 1mm 4mm 3mm;
 }
